@@ -82,34 +82,45 @@ const BottomNav = ({ activeTab }) => {
 
         if (tab.isCenter) {
           return (
-            <button key={tab.id} style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: 'linear-gradient(145deg, #D4AF37 0%, #AA8C2C 100%)',
-              border: 'none',
-              color: '#3D1518',
-              cursor: 'pointer',
-              width: '62px',
-              height: '62px',
-              borderRadius: '50%',
-              transition: 'all 0.2s ease',
-              boxShadow: '0 4px 20px rgba(212, 175, 55, 0.35)',
-              flexShrink: 0
-            }} onClick={() => handleNavigation(tab.path)}>
+            <button
+              key={tab.id}
+              aria-label={tab.label}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: 'linear-gradient(145deg, #D4AF37 0%, #AA8C2C 100%)',
+                border: 'none',
+                color: '#3D1518',
+                cursor: 'pointer',
+                width: '62px',
+                height: '62px',
+                borderRadius: '50%',
+                transition: 'all 0.2s ease',
+                boxShadow: '0 4px 20px rgba(212, 175, 55, 0.35)',
+                flexShrink: 0
+              }}
+              onClick={() => handleNavigation(tab.path)}
+            >
               <div style={{ width: '28px', height: '28px' }}><tab.icon filled /></div>
             </button>
           );
         }
 
         return (
-          <button key={tab.id} style={{
-            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px',
-            background: 'none', border: 'none',
-            color: isActive ? '#F4E4BC' : 'rgba(255,255,255,0.7)',
-            cursor: 'pointer', padding: '6px 10px', borderRadius: 'var(--radius-sm)', transition: 'all 0.2s ease',
-            minWidth: '56px'
-          }} onClick={() => handleNavigation(tab.path)}>
+          <button
+            key={tab.id}
+            aria-label={tab.label}
+            aria-current={isActive ? 'page' : undefined}
+            style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px',
+              background: 'none', border: 'none',
+              color: isActive ? '#F4E4BC' : 'rgba(255,255,255,0.7)',
+              cursor: 'pointer', padding: '6px 10px', borderRadius: 'var(--radius-sm)', transition: 'all 0.2s ease',
+              minWidth: '56px'
+            }}
+            onClick={() => handleNavigation(tab.path)}
+          >
             <div style={{ width: '22px', height: '22px' }}><tab.icon filled={isActive} /></div>
             <span style={{ fontSize: '11px', fontWeight: '700', fontFamily: 'Outfit, sans-serif', letterSpacing: '0.2px' }}>{tab.label}</span>
           </button>

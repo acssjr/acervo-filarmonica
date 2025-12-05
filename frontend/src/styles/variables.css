@@ -5,6 +5,11 @@
   --primary-light: #FF7B6F;
   --primary-dark: #C94A40;
 
+  /* Accent (dourado institucional) */
+  --accent: #D4AF37;
+  --accent-light: #E5C555;
+  --accent-dark: #AA8C2C;
+
   /* Light theme (default) */
   --bg-primary: #F8F6F2;
   --bg-secondary: #FFFFFF;
@@ -35,4 +40,9 @@
   --border: #2A2A2A;
   --shadow: 0 2px 12px rgba(0,0,0,0.3);
   --shadow-lg: 0 8px 30px rgba(0,0,0,0.4);
+
+  /* Accent mantido igual - dourado institucional */
+  --accent: #D4AF37;
+  --accent-light: #E5C555;
+  --accent-dark: #AA8C2C;
 }

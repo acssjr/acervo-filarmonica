@@ -46,6 +46,7 @@ const HeaderActions = ({ inDarkHeader = false }) => {
       <button
         className="btn-hover"
         onClick={() => setShowNotifications(true)}
+        aria-label={unreadCount > 0 ? `Notificações (${unreadCount} não lidas)` : 'Notificações'}
         style={{
           width: '36px',
           height: '36px',
