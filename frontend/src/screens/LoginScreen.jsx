@@ -1,221 +1,27 @@
 // ===== LOGIN SCREEN =====
 // Tela de login com efeito glassmorphism
 
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '@contexts/AuthContext';
-import { useUI } from '@contexts/UIContext';
-import { useData } from '@contexts/DataContext';
-import Storage from '@services/storage';
-import { API, USE_API } from '@services/api';
-
-const API_BASE_URL = 'https://acervo-filarmonica-api.acssjr.workers.dev';
+import PropTypes from 'prop-types';
+import useLoginForm from '@hooks/useLoginForm';
+import { LoginBackground, LoginHeader, PinInput } from '@components/login';
 
 const LoginScreen = ({ onClose, required = false }) => {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { setUser } = useAuth();
-  const { showToast } = useUI();
-  const { setFavorites } = useData();
-  const [username, setUsername] = useState('');
-  const [pin, setPin] = useState(['', '', '', '']);
-  const [rememberMe, setRememberMe] = useState(() => Storage.get('rememberMe', false));
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [userFound, setUserFound] = useState(false);
-  const [userInfo, setUserInfo] = useState(null);
-  const pinRefs = [useRef(null), useRef(null), useRef(null), useRef(null)];
-  const cardRef = useRef(null);
-  const checkUserTimeout = useRef(null);
-
-  // Scroll suave para o card quando teclado abre (mobile)
-  const scrollToCard = useCallback(() => {
-    if (cardRef.current && window.innerWidth < 768) {
-      setTimeout(() => {
-        cardRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }, 300);
-    }
-  }, []);
-
-  // Carrega usuario salvo se "Lembrar-me" estava ativo
-  useEffect(() => {
-    if (rememberMe) {
-      const savedUsername = Storage.get('savedUsername', '');
-      if (savedUsername) {
-        setUsername(savedUsername);
-        checkUserExists(savedUsername);
-      }
-    }
-  }, []);
-
-  // Funcao para verificar usuario na API
-  const checkUserExists = async (usernameToCheck) => {
-    if (!usernameToCheck || usernameToCheck.length < 2) {
-      setUserFound(false);
-      setUserInfo(null);
-      return;
-    }
-
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/check-user`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: usernameToCheck })
-      });
-      const data = await response.json();
-
-      if (data.exists) {
-        setUserFound(true);
-        setUserInfo({ name: data.nome, instrument: data.instrumento });
-        setTimeout(() => pinRefs[0].current?.focus(), 100);
-      } else {
-        setUserFound(false);
-        setUserInfo(null);
-      }
-    } catch (e) {
-      console.error('Erro ao verificar usuario:', e);
-      setUserFound(false);
-      setUserInfo(null);
-    }
-  };
-
-  // Verifica se usuario existe quando digita (com debounce)
-  const handleUsernameChange = (value) => {
-    const normalized = value.toLowerCase().replace(/\s/g, '');
-    setUsername(normalized);
-    setError('');
-
-    if (checkUserTimeout.current) {
-      clearTimeout(checkUserTimeout.current);
-    }
-
-    if (!normalized || normalized.length < 2) {
-      setUserFound(false);
-      setUserInfo(null);
-      return;
-    }
-
-    checkUserTimeout.current = setTimeout(() => {
-      checkUserExists(normalized);
-    }, 300);
-  };
-
-  // Handler do PIN - autologin quando completo
-  const handlePinChange = async (index, value) => {
-    if (value && !/^\d$/.test(value)) return;
-
-    const newPin = [...pin];
-    newPin[index] = value;
-    setPin(newPin);
-    setError('');
-
-    if (value && index < 3) {
-      pinRefs[index + 1].current?.focus();
-    }
-
-    // Verifica se completou o PIN - AUTOLOGIN
-    if (value && index === 3) {
-      const fullPin = newPin.join('');
-      const normalizedUsername = username.toLowerCase().replace(/\s/g, '');
-
-      if (!normalizedUsername) {
-        setError('Digite seu usuario');
-        setPin(['', '', '', '']);
-        return;
-      }
-
-      setIsLoading(true);
-
-      try {
-        if (USE_API) {
-          const result = await API.login(normalizedUsername, fullPin);
-
-          if (result.success && result.user) {
-            Storage.set('rememberMe', rememberMe);
-            if (rememberMe) {
-              Storage.set('savedUsername', normalizedUsername);
-            } else {
-              Storage.remove('savedUsername');
-            }
-
-            const userData = {
-              id: result.user.id,
-              username: result.user.username,
-              name: result.user.nome,
-              isAdmin: result.user.admin,
-              instrument: result.user.instrumento_nome || 'Musico',
-              instrumento_id: result.user.instrumento_id,
-              foto_url: result.user.foto_url
-            };
-
-            setUser(userData);
-            Storage.set('user', userData);
-
-            try {
-              const favoritosIds = await API.getFavoritosIds();
-              if (favoritosIds && Array.isArray(favoritosIds)) {
-                const favoritosStr = favoritosIds.map(id => String(id));
-                setFavorites(favoritosStr);
-                Storage.set('favorites', favoritosStr);
-              }
-            } catch (e) {
-              console.log('Favoritos serao carregados depois');
-            }
-
-            showToast(`Bem-vindo, ${result.user.nome.split(' ')[0]}!`);
-
-            // Redireciona apos login bem-sucedido
-            if (onClose) {
-              onClose();
-            } else {
-              // Determina destino baseado no papel do usuario
-              const from = location.state?.from?.pathname;
-              let destino = userData.isAdmin ? '/admin' : '/';
-
-              // Se veio de uma rota especifica (exceto login), volta para la
-              if (from && from !== '/login' && from !== '/') {
-                // Mas admin nao deve ir para rotas de musico
-                if (!userData.isAdmin || from.startsWith('/admin')) {
-                  destino = from;
-                }
-              }
-
-              navigate(destino, { replace: true });
-            }
-
-            setIsLoading(false);
-            return;
-          }
-        }
-
-        setError('Usuario ou PIN incorreto');
-        setPin(['', '', '', '']);
-        pinRefs[0].current?.focus();
-
-        if (navigator.vibrate) {
-          navigator.vibrate([100, 50, 100]);
-        }
-      } catch (err) {
-        console.error('Erro no login:', err);
-        setError('Usuario ou PIN incorreto');
-        setPin(['', '', '', '']);
-        pinRefs[0].current?.focus();
-
-        if (navigator.vibrate) {
-          navigator.vibrate([100, 50, 100]);
-        }
-      }
-
-      setIsLoading(false);
-    }
-  };
-
-  // Handler do backspace no PIN
-  const handlePinKeyDown = (index, e) => {
-    if (e.key === 'Backspace' && !pin[index] && index > 0) {
-      pinRefs[index - 1].current?.focus();
-    }
-  };
+  const {
+    username,
+    pin,
+    rememberMe,
+    isLoading,
+    error,
+    userFound,
+    userInfo,
+    pinRefs,
+    cardRef,
+    handleUsernameChange,
+    handlePinChange,
+    handlePinKeyDown,
+    toggleRememberMe,
+    scrollToCard
+  } = useLoginForm({ onClose });
 
   return (
     <div style={{
@@ -228,29 +34,7 @@ const LoginScreen = ({ onClose, required = false }) => {
       overflowX: 'hidden',
       WebkitOverflowScrolling: 'touch'
     }}>
-      {/* Background com imagem e overlay */}
-      <div style={{
-        position: 'fixed',
-        inset: 0,
-        background: `
-          linear-gradient(135deg, rgba(61, 21, 24, 0.92) 0%, rgba(92, 26, 27, 0.88) 50%, rgba(61, 21, 24, 0.92) 100%),
-          url('/assets/images/banda/foto-banda-sao-goncalo.webp')
-        `,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        filter: 'brightness(0.9)',
-        zIndex: -2
-      }} />
-
-      {/* Padrao decorativo sutil */}
-      <div style={{
-        position: 'fixed',
-        inset: 0,
-        opacity: 0.03,
-        backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-        pointerEvents: 'none',
-        zIndex: -1
-      }} />
+      <LoginBackground />
 
       {/* Container scrollavel que centraliza o card */}
       <div style={{
@@ -304,80 +88,7 @@ const LoginScreen = ({ onClose, required = false }) => {
             </button>
           )}
 
-          {/* Header */}
-          <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-            {/* Logo */}
-            <div style={{
-              width: '80px',
-              height: '80px',
-              borderRadius: '50%',
-              background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(212, 175, 55, 0.05) 100%)',
-              border: '2px solid rgba(212, 175, 55, 0.4)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto 16px',
-              boxShadow: '0 8px 32px rgba(212, 175, 55, 0.2)',
-              overflow: 'hidden',
-              padding: '8px'
-            }}>
-              <img
-                src="/assets/images/ui/brasao-256x256.png"
-                alt="Brasao Filarmonica 25 de Marco"
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'contain'
-                }}
-              />
-            </div>
-
-            <h1 style={{
-              fontFamily: 'Outfit, sans-serif',
-              fontSize: '24px',
-              fontWeight: '700',
-              color: '#F4E4BC',
-              marginBottom: '4px'
-            }}>
-              Acervo Digital
-            </h1>
-
-            <p style={{
-              fontFamily: 'Outfit, sans-serif',
-              fontSize: '14px',
-              color: 'rgba(244, 228, 188, 0.6)'
-            }}>
-              S.F. 25 de Marco • Feira de Santana
-            </p>
-
-            {/* Status badge */}
-            <div style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              marginTop: '12px',
-              padding: '6px 12px',
-              background: 'rgba(34, 197, 94, 0.15)',
-              borderRadius: '20px',
-              border: '1px solid rgba(34, 197, 94, 0.3)'
-            }}>
-              <div style={{
-                width: '8px',
-                height: '8px',
-                borderRadius: '50%',
-                background: '#22C55E',
-                animation: 'pulse 2s ease-in-out infinite'
-              }} />
-              <span style={{
-                fontFamily: 'Outfit, sans-serif',
-                fontSize: '11px',
-                fontWeight: '600',
-                color: '#22C55E',
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px'
-              }}>Sistema Online</span>
-            </div>
-          </div>
+          <LoginHeader />
 
           {/* Form */}
           <div>
@@ -448,75 +159,14 @@ const LoginScreen = ({ onClose, required = false }) => {
             </div>
 
             {/* PIN */}
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                fontFamily: 'Outfit, sans-serif',
-                fontSize: '13px',
-                fontWeight: '600',
-                color: 'rgba(244, 228, 188, 0.8)',
-                marginBottom: '12px'
-              }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                  <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                </svg>
-                PIN
-              </label>
-              <div style={{
-                display: 'flex',
-                justifyContent: 'center',
-                gap: '12px'
-              }}>
-                {pin.map((digit, index) => (
-                  <input
-                    key={index}
-                    ref={pinRefs[index]}
-                    type="password"
-                    inputMode="numeric"
-                    maxLength={1}
-                    value={digit}
-                    onChange={e => handlePinChange(index, e.target.value)}
-                    onKeyDown={e => handlePinKeyDown(index, e)}
-                    disabled={isLoading}
-                    style={{
-                      width: '56px',
-                      minWidth: '56px',
-                      maxWidth: '56px',
-                      height: '56px',
-                      borderRadius: '12px',
-                      background: digit ? 'rgba(212, 175, 55, 0.15)' : 'rgba(255, 255, 255, 0.06)',
-                      border: digit
-                        ? '2px solid rgba(212, 175, 55, 0.4)'
-                        : '1px solid rgba(255, 255, 255, 0.12)',
-                      color: '#F4E4BC',
-                      fontSize: '22px',
-                      fontFamily: 'Outfit, sans-serif',
-                      fontWeight: '700',
-                      textAlign: 'center',
-                      outline: 'none',
-                      transition: 'all 0.2s ease',
-                      boxSizing: 'border-box',
-                      flexShrink: 0,
-                      flexGrow: 0
-                    }}
-                    onFocus={e => {
-                      e.target.style.borderColor = 'rgba(212, 175, 55, 0.5)';
-                      e.target.style.background = 'rgba(255, 255, 255, 0.1)';
-                      scrollToCard();
-                    }}
-                    onBlur={e => {
-                      if (!digit) {
-                        e.target.style.borderColor = 'rgba(255, 255, 255, 0.12)';
-                        e.target.style.background = 'rgba(255, 255, 255, 0.06)';
-                      }
-                    }}
-                  />
-                ))}
-              </div>
-            </div>
+            <PinInput
+              pin={pin}
+              pinRefs={pinRefs}
+              isLoading={isLoading}
+              onPinChange={handlePinChange}
+              onKeyDown={handlePinKeyDown}
+              onFocus={scrollToCard}
+            />
 
             {/* Erro */}
             {error && (
@@ -599,7 +249,7 @@ const LoginScreen = ({ onClose, required = false }) => {
 
             {/* Lembrar-me */}
             <label
-              onClick={() => setRememberMe(!rememberMe)}
+              onClick={toggleRememberMe}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -673,6 +323,11 @@ const LoginScreen = ({ onClose, required = false }) => {
       </div>
     </div>
   );
+};
+
+LoginScreen.propTypes = {
+  onClose: PropTypes.func,
+  required: PropTypes.bool
 };
 
 export default LoginScreen;
