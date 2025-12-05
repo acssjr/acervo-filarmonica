@@ -5,6 +5,8 @@ import { useState, useEffect } from 'react';
 import { useAdmin } from './AdminContext';
 import { useAuth } from '@contexts/AuthContext';
 import { API } from '@services/api';
+import { BREAKPOINTS } from '@constants/config';
+import { formatTimeAgo, getAtividadeInfo } from '@utils/formatters';
 import StatCard from './components/StatCard';
 import QuickActionButton from './components/QuickActionButton';
 
@@ -12,11 +14,11 @@ const AdminDashboard = () => {
   const { stats, loading } = useAdmin();
   const { user } = useAuth();
   const [atividades, setAtividades] = useState([]);
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < BREAKPOINTS.mobile);
 
   // Detecta mudanca de tamanho
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    const handleResize = () => setIsMobile(window.innerWidth < BREAKPOINTS.mobile);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
@@ -33,33 +35,6 @@ const AdminDashboard = () => {
     };
     loadAtividades();
   }, []);
-
-  // Formata tempo relativo
-  const formatTimeAgo = (dateString) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now - date;
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-
-    if (diffMins < 1) return 'agora';
-    if (diffMins < 60) return `${diffMins}min`;
-    if (diffHours < 24) return `${diffHours}h`;
-    if (diffDays === 1) return 'ontem';
-    if (diffDays < 7) return `${diffDays}d`;
-    return `${Math.floor(diffDays / 7)}sem`;
-  };
-
-  // Mapeia tipo para cor e texto
-  const getAtividadeInfo = (tipo) => {
-    const map = {
-      'nova_partitura': { action: 'Nova partitura', color: '#43B97F' },
-      'download': { action: 'Download', color: '#5B8DEF' },
-      'favorito': { action: 'Favorito', color: '#E54D87' }
-    };
-    return map[tipo] || { action: tipo, color: '#999' };
-  };
 
   return (
     <div style={{ padding: isMobile ? '16px' : '32px', maxWidth: '1200px', margin: '0 auto', fontFamily: 'Outfit, sans-serif' }}>
@@ -236,7 +211,7 @@ const AdminDashboard = () => {
             </div>
           ) : (
             atividades.slice(0, 10).map((a, i) => {
-              const info = getAtividadeInfo(a.tipo);
+              const info = getAtividadeInfo(a.tipo, true);
               return (
                 <div key={a.id || i} style={{
                   display: 'flex',
@@ -276,7 +251,7 @@ const AdminDashboard = () => {
                     fontFamily: 'Outfit, sans-serif',
                     flexShrink: 0
                   }}>
-                    {formatTimeAgo(a.criado_em)}
+                    {formatTimeAgo(a.criado_em, true)}
                   </div>
                 </div>
               );

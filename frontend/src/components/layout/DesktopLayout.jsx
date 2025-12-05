@@ -3,15 +3,16 @@
 
 import { useState, useEffect } from 'react';
 import { useUI } from '@contexts/UIContext';
+import { BREAKPOINTS } from '@constants/config';
 import DesktopSidebar from './DesktopSidebar';
 import DesktopHeader from './DesktopHeader';
 
 const DesktopLayout = ({ children, activeTab, onTabChange }) => {
-  const [isDesktop, setIsDesktop] = useState(typeof window !== 'undefined' ? window.innerWidth >= 1024 : false);
+  const [isDesktop, setIsDesktop] = useState(typeof window !== 'undefined' ? window.innerWidth >= BREAKPOINTS.desktop : false);
   const { sidebarCollapsed } = useUI();
 
   useEffect(() => {
-    const handleResize = () => setIsDesktop(window.innerWidth >= 1024);
+    const handleResize = () => setIsDesktop(window.innerWidth >= BREAKPOINTS.desktop);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);

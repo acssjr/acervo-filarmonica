@@ -2,8 +2,7 @@
 // Conecta com o backend Cloudflare Workers
 
 import Storage from './storage';
-
-const API_BASE_URL = 'https://acervo-filarmonica-api.acssjr.workers.dev';
+import { API_BASE_URL, TOKEN_EXPIRY_BUFFER_MS } from '@constants/api';
 
 // Callback para notificar quando token expirar
 let onTokenExpired = null;
@@ -19,9 +18,8 @@ export const API = {
     const expiresAt = Storage.get('tokenExpiresAt', null);
     if (!expiresAt) return false;
 
-    // Considera expirado 5 minutos antes para evitar problemas
-    const bufferMs = 5 * 60 * 1000;
-    return Date.now() > (expiresAt - bufferMs);
+    // Considera expirado alguns minutos antes para evitar problemas
+    return Date.now() > (expiresAt - TOKEN_EXPIRY_BUFFER_MS);
   },
 
   // Limpa autenticação

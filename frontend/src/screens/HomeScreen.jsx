@@ -7,6 +7,7 @@ import { useAuth } from '@contexts/AuthContext';
 import { useData } from '@contexts/DataContext';
 import { API } from '@services/api';
 import { CATEGORIES } from '@constants/categories';
+import { formatTimeAgo, getAtividadeInfo } from '@utils/formatters';
 import HomeHeader from '@components/common/HomeHeader';
 import HeaderActions from '@components/common/HeaderActions';
 import FeaturedSheets from '@components/music/FeaturedSheets';
@@ -38,34 +39,6 @@ const HomeScreen = () => {
     };
     loadAtividades();
   }, [user]);
-
-  // Formata tempo relativo
-  const formatTimeAgo = (dateString) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now - date;
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-
-    if (diffMins < 1) return 'agora mesmo';
-    if (diffMins < 60) return `${diffMins} min atrás`;
-    if (diffHours < 24) return `${diffHours}h atrás`;
-    if (diffDays === 1) return 'ontem';
-    if (diffDays < 7) return `${diffDays} dias atrás`;
-    if (diffDays < 30) return `${Math.floor(diffDays / 7)} semana(s) atrás`;
-    return `${Math.floor(diffDays / 30)} mês(es) atrás`;
-  };
-
-  // Mapeia tipo para cor e texto
-  const getAtividadeInfo = (tipo) => {
-    const map = {
-      'nova_partitura': { action: 'Nova partitura adicionada', color: '#43B97F' },
-      'download': { action: 'Partitura baixada', color: '#5B8DEF' },
-      'favorito': { action: 'Favorito adicionado', color: '#E54D87' }
-    };
-    return map[tipo] || { action: tipo, color: '#999' };
-  };
 
   return (
     <div style={{ width: '100%', overflow: 'visible' }}>
