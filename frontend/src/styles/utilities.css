@@ -1,0 +1,110 @@
+/* ===== UTILITY CLASSES ===== */
+
+/* Card hover effects */
+.card-hover {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+.card-hover:active {
+  transform: scale(0.98);
+}
+
+/* Button hover effects */
+.btn-hover {
+  transition: all 0.2s ease;
+}
+.btn-hover:hover {
+  opacity: 0.9;
+}
+.btn-hover:active {
+  transform: scale(0.96);
+}
+
+/* Modal button effects */
+.modal-btn {
+  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+}
+.modal-btn:hover {
+  opacity: 0.9;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+}
+.modal-btn:active {
+  transform: scale(0.97);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+/* Instrument item hover */
+.instrument-item {
+  transition: background 0.15s ease;
+}
+.instrument-item:hover {
+  background: var(--bg-card) !important;
+}
+.instrument-item:active {
+  background: var(--border) !important;
+}
+
+/* Progress bar */
+.progress-bar {
+  display: flex;
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--border);
+}
+.progress-segment {
+  height: 100%;
+  transition: width 0.5s ease;
+}
+
+/* Featured card */
+.featured-card {
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.featured-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 28px rgba(0,0,0,0.35);
+}
+
+.featured-card:active {
+  transform: scale(0.97);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+/* Mobile: only active, no hover */
+@media (max-width: 1023px) {
+  .featured-card:hover {
+    transform: none;
+    box-shadow: none;
+  }
+  .featured-card:active {
+    transform: scale(0.97);
+  }
+}
+
+/* Featured scroll - hide scrollbar */
+.featured-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.featured-scroll {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Mobile only visibility */
+.mobile-only {
+  display: block;
+}
+
+@media (min-width: 1024px) {
+  .mobile-only {
+    display: none !important;
+  }
+}

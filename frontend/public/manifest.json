@@ -1,0 +1,16 @@
+{
+  "name": "Acervo Digital - Filarmonica 25 de Marco",
+  "short_name": "Acervo",
+  "description": "Acervo digital de partituras da Sociedade Filarmonica 25 de Marco",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F8F6F2",
+  "theme_color": "#722F37",
+  "icons": [
+    {
+      "src": "/assets/images/ui/brasao-256x256.png",
+      "sizes": "256x256",
+      "type": "image/png"
+    }
+  ]
+}

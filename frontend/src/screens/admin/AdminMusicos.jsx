@@ -1,0 +1,334 @@
+// ===== ADMIN MUSICOS =====
+// Gerenciamento de musicos
+
+import { useState, useEffect } from 'react';
+import { useUI } from '@contexts/UIContext';
+import { API } from '@services/api';
+import UsuarioFormModal from './modals/UsuarioFormModal';
+import ResetPinModal from './modals/ResetPinModal';
+
+const AdminMusicos = () => {
+  const { showToast } = useUI();
+  const [usuarios, setUsuarios] = useState([]);
+  const [instrumentos, setInstrumentos] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [showModal, setShowModal] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
+  const [showResetPin, setShowResetPin] = useState(null);
+
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const [users, instr] = await Promise.all([
+        API.getUsuarios(),
+        API.getInstrumentos()
+      ]);
+      setUsuarios(users || []);
+      setInstrumentos(instr || []);
+    } catch (e) {
+      showToast('Erro ao carregar dados', 'error');
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => { loadData(); }, []);
+
+  // Listener para acao de novo
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.detail === 'novo') setShowModal(true);
+    };
+    window.addEventListener('admin-musicos-action', handler);
+    return () => window.removeEventListener('admin-musicos-action', handler);
+  }, []);
+
+  const filtered = usuarios.filter(u =>
+    !u.admin && (
+      u.nome?.toLowerCase().includes(search.toLowerCase()) ||
+      u.username?.toLowerCase().includes(search.toLowerCase())
+    )
+  );
+
+  const handleSave = async (data) => {
+    try {
+      if (editingUser) {
+        await API.updateUsuario(editingUser.id, data);
+        showToast('Musico atualizado!');
+      } else {
+        await API.createUsuario(data);
+        showToast('Musico cadastrado!');
+      }
+      setShowModal(false);
+      setEditingUser(null);
+      loadData();
+    } catch (e) {
+      showToast(e.message, 'error');
+    }
+  };
+
+  const handleResetPin = async (userId, newPin) => {
+    try {
+      await API.updateUsuario(userId, { pin: newPin });
+      showToast('PIN resetado!');
+      setShowResetPin(null);
+    } catch (e) {
+      showToast(e.message, 'error');
+    }
+  };
+
+  const handleToggleAtivo = async (user) => {
+    try {
+      await API.updateUsuario(user.id, { ativo: !user.ativo });
+      showToast(user.ativo ? 'Musico desativado' : 'Musico reativado');
+      loadData();
+    } catch (e) {
+      showToast(e.message, 'error');
+    }
+  };
+
+  return (
+    <div style={{ padding: '32px', maxWidth: '1000px', margin: '0 auto', fontFamily: 'Outfit, sans-serif' }}>
+      {/* Header */}
+      <div style={{ marginBottom: '32px', textAlign: 'center' }}>
+        <h1 style={{
+          fontSize: '26px',
+          fontWeight: '700',
+          color: 'var(--text-primary)',
+          fontFamily: 'Outfit, sans-serif',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '12px',
+          marginBottom: '8px'
+        }}>
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+          Musicos
+        </h1>
+        <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>
+          Gerencie os membros da filarmonica
+        </p>
+      </div>
+
+      {/* Botao Novo Musico */}
+      <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'center' }}>
+        <button
+          onClick={() => { setEditingUser(null); setShowModal(true); }}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            padding: '14px 28px',
+            borderRadius: '12px',
+            background: 'linear-gradient(145deg, #D4AF37 0%, #B8860B 100%)',
+            color: '#1a1a1a',
+            border: 'none',
+            fontSize: '15px',
+            fontWeight: '600',
+            cursor: 'pointer',
+            fontFamily: 'Outfit, sans-serif',
+            boxShadow: '0 4px 16px rgba(212, 175, 55, 0.3)',
+            transition: 'all 0.2s'
+          }}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          Novo Musico
+        </button>
+      </div>
+
+      {/* Search */}
+      <div style={{ marginBottom: '24px' }}>
+        <div className="search-bar" style={{ maxWidth: '100%' }}>
+          <svg className="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input
+            type="text"
+            placeholder="Buscar musico pelo nome ou instrumento..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
+          {search && (
+            <button className="clear-btn" onClick={() => setSearch('')}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div style={{ marginBottom: '20px', color: 'var(--text-secondary)', fontSize: '14px', display: 'flex', gap: '16px', alignItems: 'center' }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#22c55e' }}></span>
+          {filtered.filter(u => u.ativo).length} ativos
+        </span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#ef4444' }}></span>
+          {filtered.filter(u => !u.ativo).length} inativos
+        </span>
+      </div>
+
+      {/* Lista */}
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>
+          Carregando...
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {filtered.map(user => (
+            <div key={user.id} style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '16px 20px',
+              background: 'var(--bg-secondary)',
+              borderRadius: 'var(--radius-md)',
+              border: '1px solid var(--border)',
+              opacity: user.ativo ? 1 : 0.6
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                {/* Avatar com circulo dourado */}
+                <div style={{
+                  width: '52px',
+                  height: '52px',
+                  borderRadius: '50%',
+                  background: 'linear-gradient(145deg, #D4AF37 0%, #B8860B 100%)',
+                  padding: '3px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 2px 8px rgba(212, 175, 55, 0.3)'
+                }}>
+                  <div style={{
+                    width: '100%',
+                    height: '100%',
+                    borderRadius: '50%',
+                    background: 'linear-gradient(145deg, #722F37 0%, #5C1A1B 100%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '20px',
+                    color: '#F4E4BC',
+                    fontWeight: '600',
+                    fontFamily: 'Outfit, sans-serif'
+                  }}>
+                    {user.nome?.charAt(0)?.toUpperCase() || '?'}
+                  </div>
+                </div>
+                <div>
+                  <div style={{ fontWeight: '600', color: 'var(--text-primary)', marginBottom: '2px' }}>
+                    {user.nome}
+                    {!user.ativo && <span style={{ marginLeft: '8px', fontSize: '12px', color: '#e74c3c' }}>(inativo)</span>}
+                  </div>
+                  <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+                    @{user.username} • {user.instrumento_nome || 'Sem instrumento'}
+                  </div>
+                  {user.ultimo_acesso && (
+                    <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                      Ultimo acesso: {new Date(user.ultimo_acesso).toLocaleDateString('pt-BR')}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <button onClick={() => { setEditingUser(user); setShowModal(true); }} title="Editar" style={{
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: 'var(--radius-sm)',
+                  background: 'var(--bg-primary)',
+                  border: '1px solid var(--border)',
+                  color: 'var(--text-secondary)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                  </svg>
+                </button>
+                <button onClick={() => setShowResetPin(user)} title="Redefinir PIN" style={{
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: 'var(--radius-sm)',
+                  background: 'var(--bg-primary)',
+                  border: '1px solid var(--border)',
+                  color: 'var(--text-secondary)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                  </svg>
+                </button>
+                <button onClick={() => handleToggleAtivo(user)} title={user.ativo ? 'Desativar' : 'Ativar'} style={{
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: 'var(--radius-sm)',
+                  background: user.ativo ? 'rgba(231, 76, 60, 0.1)' : 'rgba(39, 174, 96, 0.1)',
+                  border: '1px solid ' + (user.ativo ? 'rgba(231, 76, 60, 0.3)' : 'rgba(39, 174, 96, 0.3)'),
+                  color: user.ativo ? '#e74c3c' : '#27ae60',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  {user.ativo ? (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="10"/>
+                      <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+                    </svg>
+                  ) : (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                  )}
+                </button>
+              </div>
+            </div>
+          ))}
+          {filtered.length === 0 && (
+            <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>
+              Nenhum musico encontrado
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Modal de Criar/Editar */}
+      {showModal && (
+        <UsuarioFormModal
+          usuario={editingUser}
+          instrumentos={instrumentos}
+          onSave={handleSave}
+          onClose={() => { setShowModal(false); setEditingUser(null); }}
+        />
+      )}
+
+      {/* Modal de Reset PIN */}
+      {showResetPin && (
+        <ResetPinModal
+          usuario={showResetPin}
+          onReset={handleResetPin}
+          onClose={() => setShowResetPin(null)}
+        />
+      )}
+    </div>
+  );
+};
+
+export default AdminMusicos;

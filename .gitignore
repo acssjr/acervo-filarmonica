@@ -1,0 +1,39 @@
+# Dependências
+node_modules/
+
+# Cloudflare
+.wrangler/
+.dev.vars
+
+# Sistema
+.DS_Store
+Thumbs.db
+nul
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Temp
+*.tmp
+*.temp
+
+# Vite
+frontend/dist/
+
+# MCP / Playwright
+.playwright-mcp/
+
+# Claude
+.claude/
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/

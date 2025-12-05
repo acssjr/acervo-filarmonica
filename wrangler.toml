@@ -1,0 +1,48 @@
+# ============================================================
+# ACERVO DIGITAL - Configuração Cloudflare Workers
+# Sociedade Filarmônica 25 de Março
+# ============================================================
+
+name = "acervo-filarmonica-api"
+main = "worker/index.js"
+compatibility_date = "2024-01-01"
+
+# Banco de dados D1
+[[d1_databases]]
+binding = "DB"
+database_name = "acervo-db"
+database_id = "2e8dc4fb-4f78-45fe-9e07-dcd05ea60d8c"
+
+# Bucket R2 para PDFs
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "acervo-pdfs"
+
+# KV para rate limiting (opcional - worker funciona sem)
+# Para criar: npx wrangler kv:namespace create RATE_LIMIT
+# [[kv_namespaces]]
+# binding = "RATE_LIMIT"
+# id = "<seu-kv-namespace-id>"
+
+# Variáveis de ambiente
+[vars]
+ENVIRONMENT = "production"
+# JWT_SECRET = "sua-chave-secreta-aqui" # Opcional - se não definido, usa derivada do database_id
+
+# ============================================================
+# COMANDOS ÚTEIS
+# ============================================================
+#
+# Deploy da API:
+#    npx wrangler deploy
+#
+# Deploy do Frontend:
+#    npx wrangler pages deploy frontend --project-name=acervo-filarmonica --branch=main --commit-dirty=true
+#
+# Ver logs em tempo real:
+#    npx wrangler tail acervo-filarmonica-api
+#
+# Executar SQL no banco:
+#    npx wrangler d1 execute acervo-db --remote --command="SELECT * FROM usuarios"
+#
+# ============================================================

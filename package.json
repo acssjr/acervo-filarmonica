@@ -1,0 +1,35 @@
+{
+  "name": "acervo-filarmonica",
+  "version": "1.5.0",
+  "description": "Acervo Digital da Sociedade Filarmônica 25 de Março",
+  "main": "worker/index.js",
+  "scripts": {
+    "dev": "wrangler pages dev frontend --d1=ACERVO_DB --r2=ACERVO_BUCKET",
+    "dev:worker": "wrangler dev worker/index.js",
+    "deploy": "wrangler deploy",
+    "deploy:pages": "wrangler pages deploy frontend --project-name=acervo-filarmonica",
+    "setup": "node scripts/setup.js",
+    "db:migrate": "wrangler d1 execute acervo-db --file=database/schema.sql"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/acssjr/acervo-filarmonica.git"
+  },
+  "keywords": [
+    "filarmonica",
+    "partituras",
+    "musica",
+    "banda"
+  ],
+  "author": "Antônio Júnior <acssjr@github.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/acssjr/acervo-filarmonica/issues"
+  },
+  "homepage": "https://github.com/acssjr/acervo-filarmonica#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.57.0",
+    "@types/node": "^24.10.1",
+    "wrangler": "^4.51.0"
+  }
+}

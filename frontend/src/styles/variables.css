@@ -1,0 +1,38 @@
+/* ===== CSS VARIABLES ===== */
+
+:root {
+  --primary: #E85A4F;
+  --primary-light: #FF7B6F;
+  --primary-dark: #C94A40;
+
+  /* Light theme (default) */
+  --bg-primary: #F8F6F2;
+  --bg-secondary: #FFFFFF;
+  --bg-card: #FFFFFF;
+  --bg-card-hover: #F5F3EF;
+  --text-primary: #1A1A1A;
+  --text-secondary: #5A5A5A;
+  --text-muted: #9A9A9A;
+  --border: #EEEBE6;
+  --shadow: 0 2px 12px rgba(0,0,0,0.06);
+  --shadow-lg: 0 8px 30px rgba(0,0,0,0.08);
+
+  /* Radius */
+  --radius-lg: 24px;
+  --radius: 18px;
+  --radius-sm: 12px;
+}
+
+/* Dark theme */
+[data-theme="dark"] {
+  --bg-primary: #121212;
+  --bg-secondary: #1A1A1A;
+  --bg-card: #1E1E1E;
+  --bg-card-hover: #262626;
+  --text-primary: #FFFFFF;
+  --text-secondary: #A0A0A0;
+  --text-muted: #9A9A9A; /* Melhorado para contraste WCAG AA (4.5:1) */
+  --border: #2A2A2A;
+  --shadow: 0 2px 12px rgba(0,0,0,0.3);
+  --shadow-lg: 0 8px 30px rgba(0,0,0,0.4);
+}
