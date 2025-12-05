@@ -1,10 +1,11 @@
 // ===== CATEGORY CARD =====
 // Card de categoria/gênero musical
 
+import { memo } from 'react';
 import { useUI } from '@contexts/UIContext';
 import CategoryIcon from '@components/common/CategoryIcon';
 
-const CategoryCard = ({ category, count, onClick, index }) => {
+const CategoryCard = memo(({ category, count, onClick, index }) => {
   const { theme } = useUI();
 
   return (
@@ -32,6 +33,8 @@ const CategoryCard = ({ category, count, onClick, index }) => {
       </div>
     </div>
   );
-};
+});
+
+CategoryCard.displayName = 'CategoryCard';
 
 export default CategoryCard;

@@ -19,7 +19,23 @@ const HomeScreen = () => {
   const { user } = useAuth();
   const { sheets, favorites, toggleFavorite } = useData();
   const [atividades, setAtividades] = useState([]);
-  const getCategoryCount = (catId) => sheets.filter(s => s.category === catId).length;
+
+  // Memoiza contagem por categoria (evita O(n) * categorias em cada render)
+  const categoryCounts = useMemo(() => {
+    const counts = {};
+    sheets.forEach(s => {
+      counts[s.category] = (counts[s.category] || 0) + 1;
+    });
+    return counts;
+  }, [sheets]);
+
+  const getCategoryCount = (catId) => categoryCounts[catId] || 0;
+
+  // Memoiza total de downloads
+  const totalDownloads = useMemo(() =>
+    sheets.reduce((acc, s) => acc + (s.downloads || 0), 0),
+  [sheets]);
+
   const recentSheets = useMemo(() => [...sheets].sort((a, b) => (b.downloads || 0) - (a.downloads || 0)).slice(0, 6), [sheets]);
 
   // Pega o primeiro nome do usuário
@@ -150,7 +166,7 @@ const HomeScreen = () => {
             textAlign: 'center'
           }}>
             <p style={{ fontSize: '32px', fontWeight: '800', color: '#5B8DEF', fontFamily: 'Outfit, sans-serif' }}>
-              {sheets.reduce((acc, s) => acc + (s.downloads || 0), 0)}
+              {totalDownloads}
             </p>
             <p style={{ fontSize: '13px', color: 'var(--text-muted)', fontFamily: 'Outfit, sans-serif' }}>
               Downloads

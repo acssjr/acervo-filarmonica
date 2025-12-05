@@ -26,6 +26,29 @@ const DesktopSidebar = ({ activeTab }) => {
     return Array.from(composerSet).sort();
   }, [sheets]);
 
+  // Memoiza categorias ordenadas por quantidade (evita recalcular em cada render)
+  const categoriesWithCount = useMemo(() => {
+    return CATEGORIES.map(cat => ({
+      ...cat,
+      count: sheets.filter(s => s.category === cat.id).length
+    })).sort((a, b) => b.count - a.count).slice(0, 4);
+  }, [sheets]);
+
+  // Memoiza compositores a exibir (top 3 por prioridade ou por quantidade)
+  const displayComposers = useMemo(() => {
+    const priorityComposers = ['Estevam Moura', 'Tertuliano Santos', 'Amando Nobre', 'Heraclio Guerreiro'];
+    const topComposers = priorityComposers.filter(name => composers.includes(name)).slice(0, 3);
+
+    if (topComposers.length > 0) return topComposers;
+
+    // Fallback: usa os que tem mais partituras
+    return composers
+      .map(comp => ({ name: comp, count: sheets.filter(s => s.composer === comp).length }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 3)
+      .map(c => c.name);
+  }, [composers, sheets]);
+
   const navItems = [
     { id: 'home', path: '/', icon: Icons.Home, label: 'Inicio' },
     { id: 'favorites', path: '/favoritos', icon: Icons.Heart, label: 'Favoritos' }
@@ -278,75 +301,67 @@ const DesktopSidebar = ({ activeTab }) => {
 
               {/* Lista de Generos - Top 4 */}
               <div>
-                {(() => {
-                  // Ordenar categorias por quantidade de partituras
-                  const categoriesWithCount = CATEGORIES.map(cat => ({
-                    ...cat,
-                    count: sheets.filter(s => s.category === cat.id).length
-                  })).sort((a, b) => b.count - a.count).slice(0, 4);
-
-                  return categoriesWithCount.map(cat => {
-                    const isActive = selectedCategory === cat.id;
-                    return (
-                      <button
-                        key={cat.id}
-                        onClick={() => { setSelectedCategory(null); setSelectedComposer(null); handleNavigation(`/acervo/${cat.id}`); }}
+                {categoriesWithCount.map(cat => {
+                  const isActive = selectedCategory === cat.id;
+                  return (
+                    <button
+                      key={cat.id}
+                      onClick={() => { setSelectedCategory(null); setSelectedComposer(null); handleNavigation(`/acervo/${cat.id}`); }}
+                      style={{
+                        width: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '10px 12px',
+                        paddingLeft: '14px',
+                        background: isActive ? 'rgba(212, 175, 55, 0.15)' : 'transparent',
+                        border: 'none',
+                        borderRadius: '8px',
+                        color: isActive ? '#D4AF37' : 'rgba(244, 228, 188, 0.85)',
+                        cursor: 'pointer',
+                        fontFamily: 'Outfit, sans-serif',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        transition: 'all 0.2s ease',
+                        marginBottom: '2px',
+                        position: 'relative'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!isActive) {
+                          e.currentTarget.style.background = 'rgba(212, 175, 55, 0.1)';
+                          e.currentTarget.style.color = '#F4E4BC';
+                        }
+                        const bar = e.currentTarget.querySelector('.sidebar-bar');
+                        if (bar) bar.style.height = isActive ? '24px' : '16px';
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!isActive) {
+                          e.currentTarget.style.background = 'transparent';
+                          e.currentTarget.style.color = 'rgba(244, 228, 188, 0.85)';
+                        }
+                        const bar = e.currentTarget.querySelector('.sidebar-bar');
+                        if (bar) bar.style.height = isActive ? '24px' : '0px';
+                      }}
+                    >
+                      <div
+                        className="sidebar-bar"
                         style={{
-                          width: '100%',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          padding: '10px 12px',
-                          paddingLeft: '14px',
-                          background: isActive ? 'rgba(212, 175, 55, 0.15)' : 'transparent',
-                          border: 'none',
-                          borderRadius: '8px',
-                          color: isActive ? '#D4AF37' : 'rgba(244, 228, 188, 0.85)',
-                          cursor: 'pointer',
-                          fontFamily: 'Outfit, sans-serif',
-                          fontSize: '14px',
-                          fontWeight: '500',
-                          transition: 'all 0.2s ease',
-                          marginBottom: '2px',
-                          position: 'relative'
+                          position: 'absolute',
+                          left: '0',
+                          top: '50%',
+                          transform: 'translateY(-50%)',
+                          width: '3px',
+                          height: isActive ? '24px' : '0px',
+                          background: '#D4AF37',
+                          borderRadius: '2px',
+                          transition: 'height 0.2s ease'
                         }}
-                        onMouseEnter={(e) => {
-                          if (!isActive) {
-                            e.currentTarget.style.background = 'rgba(212, 175, 55, 0.1)';
-                            e.currentTarget.style.color = '#F4E4BC';
-                          }
-                          const bar = e.currentTarget.querySelector('.sidebar-bar');
-                          if (bar) bar.style.height = isActive ? '24px' : '16px';
-                        }}
-                        onMouseLeave={(e) => {
-                          if (!isActive) {
-                            e.currentTarget.style.background = 'transparent';
-                            e.currentTarget.style.color = 'rgba(244, 228, 188, 0.85)';
-                          }
-                          const bar = e.currentTarget.querySelector('.sidebar-bar');
-                          if (bar) bar.style.height = isActive ? '24px' : '0px';
-                        }}
-                      >
-                        <div
-                          className="sidebar-bar"
-                          style={{
-                            position: 'absolute',
-                            left: '0',
-                            top: '50%',
-                            transform: 'translateY(-50%)',
-                            width: '3px',
-                            height: isActive ? '24px' : '0px',
-                            background: '#D4AF37',
-                            borderRadius: '2px',
-                            transition: 'height 0.2s ease'
-                          }}
-                        />
-                        <span>{cat.name}</span>
-                        <span style={{ fontSize: '11px', opacity: 0.5 }}>{cat.count}</span>
-                      </button>
-                    );
-                  });
-                })()}
+                      />
+                      <span>{cat.name}</span>
+                      <span style={{ fontSize: '11px', opacity: 0.5 }}>{cat.count}</span>
+                    </button>
+                  );
+                })}
 
                 {/* Ver todos */}
                 <button
@@ -420,87 +435,67 @@ const DesktopSidebar = ({ activeTab }) => {
 
               {/* Lista de Compositores - Top 3 por importancia */}
               <div>
-                {(() => {
-                  // Compositores prioritarios (ordem de importancia)
-                  const priorityComposers = ['Estevam Moura', 'Tertuliano Santos', 'Amando Nobre', 'Heraclio Guerreiro'];
-
-                  // Filtrar apenas os que existem no acervo
-                  const topComposers = priorityComposers
-                    .filter(name => composers.includes(name))
-                    .slice(0, 3);
-
-                  // Se nao tiver os prioritarios, usa os que tem mais partituras
-                  let displayComposers = topComposers;
-                  if (topComposers.length === 0) {
-                    displayComposers = composers
-                      .map(comp => ({ name: comp, count: sheets.filter(s => s.composer === comp).length }))
-                      .sort((a, b) => b.count - a.count)
-                      .slice(0, 3)
-                      .map(c => c.name);
-                  }
-
-                  return displayComposers.map(compName => (
-                    <button
-                      key={compName}
-                      onClick={() => { setSelectedComposer(compName); setSelectedCategory(null); handleNavigation('/acervo'); }}
+                {displayComposers.map(compName => (
+                  <button
+                    key={compName}
+                    onClick={() => { setSelectedComposer(compName); setSelectedCategory(null); handleNavigation('/acervo'); }}
+                    style={{
+                      width: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      padding: '10px 12px',
+                      paddingLeft: '14px',
+                      background: selectedComposer === compName ? 'rgba(212, 175, 55, 0.15)' : 'transparent',
+                      border: 'none',
+                      borderRadius: '8px',
+                      color: selectedComposer === compName ? '#D4AF37' : 'rgba(244, 228, 188, 0.85)',
+                      cursor: 'pointer',
+                      fontFamily: 'Outfit, sans-serif',
+                      fontSize: '13px',
+                      fontWeight: '500',
+                      transition: 'all 0.2s ease',
+                      marginBottom: '2px',
+                      textAlign: 'left',
+                      position: 'relative'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (selectedComposer !== compName) {
+                        e.currentTarget.style.background = 'rgba(212, 175, 55, 0.1)';
+                        e.currentTarget.style.color = '#F4E4BC';
+                      }
+                      const bar = e.currentTarget.querySelector('.sidebar-bar');
+                      if (bar) bar.style.height = selectedComposer === compName ? '24px' : '16px';
+                    }}
+                    onMouseLeave={(e) => {
+                      if (selectedComposer !== compName) {
+                        e.currentTarget.style.background = 'transparent';
+                        e.currentTarget.style.color = 'rgba(244, 228, 188, 0.85)';
+                      }
+                      const bar = e.currentTarget.querySelector('.sidebar-bar');
+                      if (bar) bar.style.height = selectedComposer === compName ? '24px' : '0px';
+                    }}
+                  >
+                    <div
+                      className="sidebar-bar"
                       style={{
-                        width: '100%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        padding: '10px 12px',
-                        paddingLeft: '14px',
-                        background: selectedComposer === compName ? 'rgba(212, 175, 55, 0.15)' : 'transparent',
-                        border: 'none',
-                        borderRadius: '8px',
-                        color: selectedComposer === compName ? '#D4AF37' : 'rgba(244, 228, 188, 0.85)',
-                        cursor: 'pointer',
-                        fontFamily: 'Outfit, sans-serif',
-                        fontSize: '13px',
-                        fontWeight: '500',
-                        transition: 'all 0.2s ease',
-                        marginBottom: '2px',
-                        textAlign: 'left',
-                        position: 'relative'
+                        position: 'absolute',
+                        left: '0',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        width: '3px',
+                        height: selectedComposer === compName ? '24px' : '0px',
+                        background: '#D4AF37',
+                        borderRadius: '2px',
+                        transition: 'height 0.2s ease'
                       }}
-                      onMouseEnter={(e) => {
-                        if (selectedComposer !== compName) {
-                          e.currentTarget.style.background = 'rgba(212, 175, 55, 0.1)';
-                          e.currentTarget.style.color = '#F4E4BC';
-                        }
-                        const bar = e.currentTarget.querySelector('.sidebar-bar');
-                        if (bar) bar.style.height = selectedComposer === compName ? '24px' : '16px';
-                      }}
-                      onMouseLeave={(e) => {
-                        if (selectedComposer !== compName) {
-                          e.currentTarget.style.background = 'transparent';
-                          e.currentTarget.style.color = 'rgba(244, 228, 188, 0.85)';
-                        }
-                        const bar = e.currentTarget.querySelector('.sidebar-bar');
-                        if (bar) bar.style.height = selectedComposer === compName ? '24px' : '0px';
-                      }}
-                    >
-                      <div
-                        className="sidebar-bar"
-                        style={{
-                          position: 'absolute',
-                          left: '0',
-                          top: '50%',
-                          transform: 'translateY(-50%)',
-                          width: '3px',
-                          height: selectedComposer === compName ? '24px' : '0px',
-                          background: '#D4AF37',
-                          borderRadius: '2px',
-                          transition: 'height 0.2s ease'
-                        }}
-                      />
-                      <span style={{
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap'
-                      }}>{compName}</span>
-                    </button>
-                  ));
-                })()}
+                    />
+                    <span style={{
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap'
+                    }}>{compName}</span>
+                  </button>
+                ))}
 
                 {/* Ver todos */}
                 <button
