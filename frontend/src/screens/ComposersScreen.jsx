@@ -15,12 +15,12 @@ const ComposersScreen = ({ composerSlugFromUrl }) => {
   // Compositores prioritários (ordem de importância para a banda)
   const priorityOrder = ['Estevam Moura', 'Tertuliano Santos', 'Amando Nobre', 'Heráclio Guerreiro'];
 
-  // Fotos dos compositores (caminhos locais)
+  // Fotos dos compositores (caminhos locais - WebP otimizado)
   const composerPhotos = {
-    'Estevam Moura': '/assets/images/compositores/estevam-moura.jpg',
-    'Tertuliano Santos': '/assets/images/compositores/tertuliano-santos.jpg',
-    'Amando Nobre': '/assets/images/compositores/amando-nobre.jpg',
-    'Heráclio Guerreiro': '/assets/images/compositores/heraclio-guerreiro.jpg'
+    'Estevam Moura': '/assets/images/compositores/estevam-moura.webp',
+    'Tertuliano Santos': '/assets/images/compositores/tertuliano-santos.webp',
+    'Amando Nobre': '/assets/images/compositores/amando-nobre.webp',
+    'Heráclio Guerreiro': '/assets/images/compositores/heraclio-guerreiro.webp'
   };
 
   // Calcular compositores com contagem

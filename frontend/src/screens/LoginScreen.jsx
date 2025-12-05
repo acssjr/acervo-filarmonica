@@ -234,7 +234,7 @@ const LoginScreen = ({ onClose, required = false }) => {
         inset: 0,
         background: `
           linear-gradient(135deg, rgba(61, 21, 24, 0.92) 0%, rgba(92, 26, 27, 0.88) 50%, rgba(61, 21, 24, 0.92) 100%),
-          url('/assets/images/banda/foto-banda-sao-goncalo.jpg')
+          url('/assets/images/banda/foto-banda-sao-goncalo.webp')
         `,
         backgroundSize: 'cover',
         backgroundPosition: 'center',

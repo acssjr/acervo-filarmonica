@@ -6,7 +6,7 @@ import { useAuth } from '@contexts/AuthContext';
 import { useUI } from '@contexts/UIContext';
 import { API } from '@services/api';
 import { Storage } from '@services/storage';
-import { ChangePinModal } from '@components/modals';
+import { ChangePinModal, AboutModal, ADMIN_CHANGELOG, ADMIN_ABOUT_CONFIG } from '@components/modals';
 
 const AdminConfig = () => {
   const { user, setUser } = useAuth();
@@ -361,210 +361,16 @@ const AdminConfig = () => {
 
       {showChangePin && <ChangePinModal onClose={() => setShowChangePin(false)} />}
 
-      {/* Modal Sobre com Changelog */}
-      {showAboutModal && (
-        <div style={{
-          position: 'fixed',
-          inset: 0,
-          zIndex: 9999,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          background: 'rgba(0,0,0,0.6)',
-          padding: '20px'
-        }} onClick={() => setShowAboutModal(false)}>
-          <div
-            style={{
-              background: 'var(--bg-primary)',
-              borderRadius: '20px',
-              width: '100%',
-              maxWidth: '480px',
-              maxHeight: '85vh',
-              boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
-              display: 'flex',
-              flexDirection: 'column',
-              overflow: 'hidden'
-            }}
-            onClick={e => e.stopPropagation()}
-          >
-            {/* Header */}
-            <div style={{ padding: '24px 24px 0', textAlign: 'center', flexShrink: 0 }}>
-              <div style={{
-                width: '70px',
-                height: '70px',
-                borderRadius: '18px',
-                background: 'linear-gradient(145deg, #722F37 0%, #5C1A1B 100%)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                margin: '0 auto 16px',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
-                overflow: 'hidden',
-                padding: '10px'
-              }}>
-                <img
-                  src="/assets/images/ui/brasao-256x256.png"
-                  alt="Brasao"
-                  style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-                />
-              </div>
-
-              <h3 style={{
-                fontFamily: 'Outfit, sans-serif',
-                fontSize: '18px',
-                fontWeight: '700',
-                color: 'var(--text-primary)',
-                marginBottom: '2px'
-              }}>Acervo Digital</h3>
-
-              <p style={{
-                fontFamily: 'Outfit, sans-serif',
-                fontSize: '13px',
-                color: 'var(--text-muted)',
-                marginBottom: '16px'
-              }}>Painel Administrativo</p>
-
-              {/* Info cards */}
-              <div style={{
-                background: 'var(--bg-card)',
-                borderRadius: '12px',
-                padding: '12px 16px',
-                marginBottom: '16px',
-                display: 'flex',
-                justifyContent: 'space-between',
-                textAlign: 'left'
-              }}>
-                <div>
-                  <p style={{ fontSize: '10px', color: 'var(--text-muted)', marginBottom: '2px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Versao</p>
-                  <p style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)' }}>2.1.0</p>
-                </div>
-                <div>
-                  <p style={{ fontSize: '10px', color: 'var(--text-muted)', marginBottom: '2px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Backend</p>
-                  <p style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text-primary)' }}>Cloudflare Workers</p>
-                </div>
-                <div>
-                  <p style={{ fontSize: '10px', color: 'var(--text-muted)', marginBottom: '2px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Dev</p>
-                  <p style={{ fontSize: '13px', fontWeight: '600', color: 'var(--primary)' }}>Antonio Jr.</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Changelog */}
-            <div style={{
-              flex: 1,
-              overflowY: 'auto',
-              padding: '0 24px',
-              WebkitOverflowScrolling: 'touch'
-            }}>
-              <p style={{
-                fontSize: '11px',
-                fontWeight: '600',
-                color: 'var(--text-muted)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px',
-                marginBottom: '12px'
-              }}>Historico de Atualizacoes</p>
-
-              {/* v2.1.0 */}
-              <div style={{ marginBottom: '16px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                  <span style={{
-                    background: 'var(--primary)',
-                    color: '#fff',
-                    fontSize: '11px',
-                    fontWeight: '700',
-                    padding: '3px 8px',
-                    borderRadius: '6px'
-                  }}>2.1.0</span>
-                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Atual</span>
-                </div>
-                <ul style={{ fontSize: '12px', color: 'var(--text-secondary)', paddingLeft: '16px', margin: 0 }}>
-                  <li style={{ marginBottom: '4px' }}><strong>Seguranca:</strong> Autenticacao JWT com expiracao de 24h</li>
-                  <li style={{ marginBottom: '4px' }}><strong>Seguranca:</strong> Senhas criptografadas com PBKDF2</li>
-                  <li style={{ marginBottom: '4px' }}><strong>Seguranca:</strong> Rate limiting para protecao contra ataques</li>
-                  <li style={{ marginBottom: '4px' }}><strong>Admin:</strong> Redirecionamento automatico para /admin</li>
-                  <li style={{ marginBottom: '4px' }}><strong>Admin:</strong> Toggle de tema movido para o header</li>
-                  <li style={{ marginBottom: '4px' }}><strong>UX:</strong> Sessao expira com aviso ao usuario</li>
-                  <li>Melhorias de performance e correcoes de bugs</li>
-                </ul>
-              </div>
-
-              {/* v2.0.0 */}
-              <div style={{ marginBottom: '16px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                  <span style={{
-                    background: 'var(--bg-card)',
-                    color: 'var(--text-primary)',
-                    fontSize: '11px',
-                    fontWeight: '600',
-                    padding: '3px 8px',
-                    borderRadius: '6px',
-                    border: '1px solid var(--border)'
-                  }}>2.0.0</span>
-                </div>
-                <ul style={{ fontSize: '12px', color: 'var(--text-secondary)', paddingLeft: '16px', margin: 0 }}>
-                  <li style={{ marginBottom: '4px' }}>Upload de pasta com multiplas partes</li>
-                  <li style={{ marginBottom: '4px' }}>Deteccao automatica de instrumentos</li>
-                  <li style={{ marginBottom: '4px' }}>Gerenciamento de partes no admin</li>
-                  <li style={{ marginBottom: '4px' }}>Sistema de favoritos sincronizado</li>
-                  <li>Correcao de bugs e melhorias gerais</li>
-                </ul>
-              </div>
-
-              {/* v1.0.0 */}
-              <div style={{ marginBottom: '16px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                  <span style={{
-                    background: 'var(--bg-card)',
-                    color: 'var(--text-primary)',
-                    fontSize: '11px',
-                    fontWeight: '600',
-                    padding: '3px 8px',
-                    borderRadius: '6px',
-                    border: '1px solid var(--border)'
-                  }}>1.0.0</span>
-                </div>
-                <ul style={{ fontSize: '12px', color: 'var(--text-secondary)', paddingLeft: '16px', margin: 0 }}>
-                  <li style={{ marginBottom: '4px' }}>Painel administrativo completo</li>
-                  <li style={{ marginBottom: '4px' }}>Dashboard com estatisticas</li>
-                  <li style={{ marginBottom: '4px' }}>Gerenciamento de musicos</li>
-                  <li style={{ marginBottom: '4px' }}>Gerenciamento de partituras</li>
-                  <li>Gerenciamento de categorias</li>
-                </ul>
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div style={{ padding: '16px 24px 24px', flexShrink: 0 }}>
-              <p style={{
-                fontSize: '11px',
-                color: 'var(--text-muted)',
-                textAlign: 'center',
-                marginBottom: '12px'
-              }}>
-                S.F. 25 de Marco • Feira de Santana, BA • Fundada em 1868
-              </p>
-              <button
-                onClick={() => setShowAboutModal(false)}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  background: 'var(--primary)',
-                  border: 'none',
-                  borderRadius: '10px',
-                  color: '#fff',
-                  fontFamily: 'Outfit, sans-serif',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  cursor: 'pointer'
-                }}
-              >
-                Fechar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Modal Sobre */}
+      <AboutModal
+        isOpen={showAboutModal}
+        onClose={() => setShowAboutModal(false)}
+        subtitle={ADMIN_ABOUT_CONFIG.subtitle}
+        maxWidth={ADMIN_ABOUT_CONFIG.maxWidth}
+        infoCards={ADMIN_ABOUT_CONFIG.infoCards}
+        changelog={ADMIN_CHANGELOG}
+        footerText={ADMIN_ABOUT_CONFIG.footerText}
+      />
     </div>
   );
 };
