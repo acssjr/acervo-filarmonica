@@ -1,0 +1,97 @@
+/* ===== BOTTOM NAV MODULE ===== */
+
+.nav {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 12px 8px;
+  z-index: 999;
+  width: calc(100% - 32px);
+  max-width: 420px;
+  border-radius: 28px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25), inset 0 0.5px 0 rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.nav.dark {
+  background: rgba(72, 20, 21, 0.85);
+}
+
+.nav.light {
+  background: rgba(92, 26, 27, 0.88);
+}
+
+.nav.visible {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.nav.hidden {
+  transform: translateX(-50%) translateY(100px);
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Botao central (busca) */
+.centerButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(145deg, #D4AF37 0%, #AA8C2C 100%);
+  border: none;
+  color: #3D1518;
+  cursor: pointer;
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 20px rgba(212, 175, 55, 0.35);
+  flex-shrink: 0;
+}
+
+.centerIcon {
+  width: 28px;
+  height: 28px;
+}
+
+/* Botao tab normal */
+.tabButton {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  transition: all 0.2s ease;
+  min-width: 56px;
+}
+
+.tabButton.active {
+  color: #F4E4BC;
+}
+
+.tabButton.inactive {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.tabIcon {
+  width: 22px;
+  height: 22px;
+}
+
+.tabLabel {
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Outfit', sans-serif;
+  letter-spacing: 0.2px;
+}

@@ -1,0 +1,95 @@
+/* ===== FILE CARD MODULE ===== */
+
+.card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px;
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  cursor: pointer;
+  border: 1px solid var(--border);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card.pressed {
+  transform: scale(0.98);
+}
+
+/* Thumbnail */
+.thumbnail {
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(145deg, #3a3a4a 0%, #2a2a38 100%);
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  position: relative;
+}
+
+/* Info */
+.info {
+  flex: 1;
+  min-width: 0;
+}
+
+.title {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text-primary);
+}
+
+.composer {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* Botoes */
+.iconButton {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.favButton {
+  composes: iconButton;
+}
+
+.favButton.active {
+  background: rgba(232, 90, 79, 0.1);
+  color: var(--primary);
+}
+
+.favButton.inactive {
+  background: transparent;
+  color: var(--text-muted);
+}
+
+.downloadButton {
+  composes: iconButton;
+  background: transparent;
+  color: var(--primary);
+}
+
+.icon {
+  width: 16px;
+  height: 16px;
+}
+
+.iconLarge {
+  width: 18px;
+  height: 18px;
+}

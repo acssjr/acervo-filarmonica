@@ -1,0 +1,175 @@
+/* ===== FEATURED CARD MODULE ===== */
+
+.card {
+  height: auto;
+  flex-shrink: 0;
+  align-self: flex-start;
+  background: linear-gradient(145deg, #722F37 0%, #5C1A1B 100%);
+  border-radius: 20px;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.card.mobile {
+  width: 200px;
+  min-width: 200px;
+  max-width: 200px;
+  padding: 20px;
+}
+
+.card.desktop {
+  width: 280px;
+  min-width: 280px;
+  max-width: 280px;
+  padding: 24px;
+}
+
+/* Borda dourada animada */
+.goldenBorder {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 20px;
+  padding: 2px;
+  background: linear-gradient(135deg, #D4AF37 0%, #F4E4BC 25%, #D4AF37 50%, #AA8C2C 75%, #D4AF37 100%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  animation: borderGlow 2s ease-in-out infinite;
+}
+
+/* Imagem decorativa */
+.decorativeImage {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 120px;
+  height: 120px;
+  background-size: cover;
+  background-position: center;
+  opacity: 0.15;
+  pointer-events: none;
+  mask-image: radial-gradient(ellipse at top right, black 0%, transparent 70%);
+  -webkit-mask-image: radial-gradient(ellipse at top right, black 0%, transparent 70%);
+}
+
+/* Badge */
+.badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: #D4AF37;
+  color: #3D1518;
+  font-size: 9px;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  z-index: 2;
+}
+
+/* Conteudo */
+.content {
+  position: relative;
+  z-index: 1;
+}
+
+/* Icone container */
+.iconContainer {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+
+.icon {
+  width: 24px;
+  height: 24px;
+  color: #F4E4BC;
+}
+
+/* Titulo */
+.title {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 4px;
+  color: #FFFFFF;
+  font-family: 'Outfit', sans-serif;
+}
+
+/* Compositor */
+.composer {
+  font-size: 13px;
+  font-family: 'Outfit', sans-serif;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Footer */
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Categoria tag */
+.categoryTag {
+  padding: 5px 10px;
+  background: rgba(212, 175, 55, 0.2);
+  border-radius: 8px;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+}
+
+.categoryText {
+  font-size: 11px;
+  font-family: 'Outfit', sans-serif;
+  color: #D4AF37;
+  font-weight: 600;
+}
+
+/* Botao favorito */
+.favButton {
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 8px;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.favButton.active {
+  background: rgba(212, 175, 55, 0.3);
+  border: 1px solid rgba(212, 175, 55, 0.5);
+  color: #D4AF37;
+}
+
+.favButton.inactive {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.favIcon {
+  width: 16px;
+  height: 16px;
+}
