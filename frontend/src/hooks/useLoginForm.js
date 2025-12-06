@@ -2,7 +2,7 @@
 // Hook com toda a logica de autenticacao do login
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@contexts/AuthContext';
 import { useUI } from '@contexts/UIContext';
 import { useData } from '@contexts/DataContext';
@@ -12,7 +12,6 @@ import { API_BASE_URL } from '@constants/api';
 
 const useLoginForm = ({ onClose }) => {
   const navigate = useNavigate();
-  const location = useLocation();
   const { setUser } = useAuth();
   const { showToast } = useUI();
   const { setFavorites } = useData();
@@ -172,17 +171,8 @@ const useLoginForm = ({ onClose }) => {
               onClose();
             } else {
               // Determina destino baseado no papel do usuario
-              const from = location.state?.from?.pathname;
-              let destino = userData.isAdmin ? '/admin' : '/';
-
-              // Se veio de uma rota especifica (exceto login), volta para la
-              if (from && from !== '/login' && from !== '/') {
-                // Mas admin nao deve ir para rotas de musico
-                if (!userData.isAdmin || from.startsWith('/admin')) {
-                  destino = from;
-                }
-              }
-
+              // Admin vai para /admin, usuario comum SEMPRE vai para home /
+              const destino = userData.isAdmin ? '/admin' : '/';
               navigate(destino, { replace: true });
             }
 
@@ -211,7 +201,7 @@ const useLoginForm = ({ onClose }) => {
 
       setIsLoading(false);
     }
-  }, [pin, username, rememberMe, onClose, location, navigate, setUser, setFavorites, showToast]);
+  }, [pin, username, rememberMe, onClose, navigate, setUser, setFavorites, showToast]);
 
   // Handler do backspace no PIN
   const handlePinKeyDown = useCallback((index, e) => {
