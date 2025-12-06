@@ -10,6 +10,7 @@ import { Icons } from '@constants/icons';
 import { CATEGORIES } from '@constants/categories';
 import CategoryIcon from '@components/common/CategoryIcon';
 import ThemeSelector from '@components/common/ThemeSelector';
+import AdminToggle from '@components/common/AdminToggle';
 import { getNextRehearsal } from '@hooks/useNextRehearsal';
 import { levenshtein } from '@utils/search';
 
@@ -257,6 +258,9 @@ const DesktopHeader = () => {
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
           {/* Seletor de tema inline */}
           <ThemeSelector inline />
+
+          {/* Toggle Admin (só para admins) */}
+          <AdminToggle />
 
           {/* Sininho de notificações */}
           <button

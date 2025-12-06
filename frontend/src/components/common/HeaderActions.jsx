@@ -6,6 +6,7 @@ import { useUI } from '@contexts/UIContext';
 import { useNotifications } from '@contexts/NotificationContext';
 import { Icons } from '@constants/icons';
 import ThemeSelector from './ThemeSelector';
+import AdminToggle from './AdminToggle';
 
 const HeaderActions = ({ inDarkHeader = false }) => {
   const { setShowNotifications } = useUI();
@@ -41,6 +42,9 @@ const HeaderActions = ({ inDarkHeader = false }) => {
     <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
       {/* Seletor de tema */}
       <ThemeSelector inDarkHeader={inDarkHeader} compact />
+
+      {/* Toggle Admin (só para admins) */}
+      <AdminToggle />
 
       {/* Sininho de notificações */}
       <button
