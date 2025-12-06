@@ -7,6 +7,60 @@ e este projeto adere ao [Versionamento Semantico](https://semver.org/lang/pt-BR/
 
 ---
 
+## [2.3.3] - 2025-12-06
+
+### Admin Toggle e Melhorias de Login
+
+**Objetivo:** Permitir que administradores alternem entre o modo usuário e admin sem precisar deslogar.
+
+### Adicionado
+
+- **Toggle Admin (Desktop e Mobile)**
+  - Novo componente `AdminToggle.jsx` com ícone de chave SVG
+  - Visível apenas para usuários com `isAdmin: true`
+  - Clique alterna instantaneamente entre `/` (acervo) e `/admin` (painel)
+  - Cores diferenciadas:
+    - Modo usuário: fundo vinho (`#722F37`) com ícone dourado
+    - Modo admin: fundo dourado (`#D4AF37`) com ícone escuro
+  - Ícone rotaciona 45° ao entrar no modo admin
+  - Animações suaves de fade-out/fade-in durante transição
+
+- **Ícone Key em icons.jsx**
+  - SVG de chave para o toggle admin
+  - Estilo consistente com demais ícones (stroke, viewBox 24x24)
+
+- **Animações CSS para transição admin**
+  - `@keyframes adminFadeOut` - fade + scale down (0.15s)
+  - `@keyframes adminFadeIn` - fade + scale up (0.2s)
+  - Classes: `body.admin-transition-out`, `body.admin-transition-in`
+  - Respeita `prefers-reduced-motion`
+
+### Corrigido
+
+- **Verificação de usuário no login mais precisa**
+  - Debounce aumentado de 150ms para 400ms
+  - Mínimo de caracteres para verificar: 2 → 3
+  - Loading indicator aparece apenas após 200ms de delay
+  - Evita "Não encontrado" enquanto usuário ainda digita
+
+### Arquivos Modificados
+
+| Arquivo | Alteração |
+|---------|-----------|
+| `components/common/AdminToggle.jsx` | Novo componente |
+| `components/common/HeaderActions.jsx` | Adicionado `<AdminToggle />` |
+| `components/layout/DesktopHeader.jsx` | Adicionado `<AdminToggle />` |
+| `constants/icons.jsx` | Adicionado ícone `Key` |
+| `styles/animations.css` | Animações de transição admin |
+| `hooks/useLoginForm.js` | Debounce e validação melhorados |
+
+### Próximos Passos
+
+- Marcar usuários "Antonio Júnior" e "Antonio Neves" como `admin: true` no banco D1
+- Testar toggle em desktop e mobile com usuário admin
+
+---
+
 ## [2.3.2] - 2025-12-06
 
 ### Carrossel de Compositores e Melhorias de UX
