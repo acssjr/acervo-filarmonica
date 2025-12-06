@@ -7,6 +7,95 @@ e este projeto adere ao [Versionamento Semantico](https://semver.org/lang/pt-BR/
 
 ---
 
+## [2.3.2] - 2025-12-06
+
+### Carrossel de Compositores e Melhorias de UX
+
+**Objetivo:** Redesenhar a seção de compositores no mobile com carrossel elegante e corrigir bugs de scroll.
+
+### Adicionado
+
+- **Carrossel de Compositores (Mobile)**
+  - Novo componente `ComposerCarousel.jsx` com design hero cards
+  - Glassmorphism com backdrop-filter blur no overlay de texto
+  - Fotos dos compositores com zoom-out para melhor visualização
+  - Auto-scroll com animação marquee (mesma do FeaturedSheets)
+  - Badge "Destaque" no primeiro compositor
+  - Indicador "Arraste →" antes da primeira interação
+  - Exibe top 3 compositores priorizando: Estevam Moura, Tertuliano Santos, Amando Nobre
+
+### Corrigido
+
+- **Scroll da tela de Compositores**
+  - Página abria com scroll no meio ao navegar do carrossel
+  - Adicionado `window.scrollTo(0, 0)` no mount do ComposersScreen
+
+- **Efeito de overscroll (bounce/rubber-band)**
+  - Restaurado `overscrollBehaviorX: 'contain'` no ComposerCarousel
+  - Aplicado também no FeaturedSheets para consistência
+  - Efeito de "esticar e voltar" ao arrastar além do limite
+
+### Alterado
+
+- **HomeScreen.jsx**
+  - Removida a grid de compositores (layout antigo bugado)
+  - Adicionado `ComposerCarousel` renderizado apenas no mobile (`useIsMobile`)
+
+- **ComposerCarousel.jsx** - Especificações visuais:
+  - Cards: 220px x 140px com borderRadius 14px
+  - Foto com `inset: -10%` para efeito zoom-out
+  - `backgroundPosition: center 30%` para enquadrar rostos
+  - Padding lateral: 20px
+  - Gap entre cards: 12px
+
+---
+
+## [2.3.1] - 2025-12-06
+
+### Busca com Transliteração e Melhorias de UX
+
+**Objetivo:** Permitir busca de partituras com grafias antigas portuguesas e melhorar experiência do usuário.
+
+### Adicionado
+
+- **Transliteração de Grafias Antigas**
+  - Busca por "ninfas" agora encontra "Nymphas" (grafia antiga)
+  - Suporte a conversões: ph→f, th→t, y→i, rh→r, etc.
+  - Regras de duplicação: ll→l, nn→n, pp→p, ss→s, tt→t, cc→c, ff→f
+  - Aplicado em `DesktopHeader.jsx` e `SearchScreen.jsx`
+
+- **Seção de Compositores na Home (Mobile)**
+  - Grid 2x3 com os 6 compositores mais populares
+  - Avatar com inicial e contagem de partituras
+  - Botão "Ver Todos" direcionando para `/compositores`
+
+- **Botão de Logout no Admin**
+  - Adicionado na sidebar do painel administrativo
+  - Ícone vermelho com hover effect
+  - Redireciona para `/login` após logout
+
+### Corrigido
+
+- **Dois botões X na barra de busca**
+  - Alterado `type="search"` para `type="text"` em todos os inputs de busca
+  - CSS adicionado para esconder botão X nativo do WebKit/Edge
+  - Arquivos: `SearchBar.jsx`, `DesktopHeader.jsx`, `SearchScreen.jsx`, `base.css`
+
+### Alterado
+
+- **base.css** - Regras CSS para ocultar controles nativos de input search:
+  ```css
+  input::-webkit-search-cancel-button,
+  input::-webkit-search-decoration,
+  input::-ms-clear,
+  input::-ms-reveal {
+    display: none;
+    -webkit-appearance: none;
+  }
+  ```
+
+---
+
 ## [2.3.0] - 2025-12-06
 
 ### Testes Automatizados e CI/CD

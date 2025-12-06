@@ -5,6 +5,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@contexts/AuthContext';
 import { useData } from '@contexts/DataContext';
+import { useIsMobile } from '@hooks/useResponsive';
 import { API } from '@services/api';
 import { CATEGORIES } from '@constants/categories';
 import { formatTimeAgo, getAtividadeInfo } from '@utils/formatters';
@@ -13,11 +14,13 @@ import HeaderActions from '@components/common/HeaderActions';
 import FeaturedSheets from '@components/music/FeaturedSheets';
 import CategoryCard from '@components/music/CategoryCard';
 import FileCard from '@components/music/FileCard';
+import ComposerCarousel from '@components/music/ComposerCarousel';
 
 const HomeScreen = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { sheets, favorites, toggleFavorite } = useData();
+  const isMobile = useIsMobile();
   const [atividades, setAtividades] = useState([]);
 
   // Memoiza contagem por categoria (evita O(n) * categorias em cada render)
@@ -120,84 +123,8 @@ const HomeScreen = () => {
         ))}
       </div>
 
-      {/* Secao de Compositores */}
-      <div style={{ padding: '32px 20px 0' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <h2 style={{ fontFamily: "Outfit, sans-serif", fontSize: '18px', fontWeight: '700' }}>Compositores</h2>
-          <button style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: '14px', fontWeight: '500', cursor: 'pointer', fontFamily: 'Outfit, sans-serif' }}
-            onClick={() => navigate('/compositores')}>Ver Todos</button>
-        </div>
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(2, 1fr)',
-          gap: '12px'
-        }}>
-          {topComposers.map((composer, index) => (
-            <button
-              key={composer.name}
-              onClick={() => navigate('/compositores')}
-              style={{
-                background: 'var(--bg-card)',
-                border: '1px solid var(--border)',
-                borderRadius: '14px',
-                padding: '16px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                transition: 'all 0.2s ease',
-                textAlign: 'left'
-              }}
-            >
-              <div style={{
-                width: '44px',
-                height: '44px',
-                borderRadius: '50%',
-                background: 'linear-gradient(145deg, #D4AF37 0%, #B8860B 100%)',
-                padding: '2px',
-                flexShrink: 0
-              }}>
-                <div style={{
-                  width: '100%',
-                  height: '100%',
-                  borderRadius: '50%',
-                  background: 'linear-gradient(145deg, #722F37 0%, #5C1A1B 100%)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#F4E4BC',
-                  fontFamily: 'Outfit, sans-serif',
-                  fontWeight: '700',
-                  fontSize: '16px'
-                }}>
-                  {composer.name.charAt(0).toUpperCase()}
-                </div>
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{
-                  fontFamily: 'Outfit, sans-serif',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  color: 'var(--text-primary)',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  marginBottom: '2px'
-                }}>
-                  {composer.name}
-                </p>
-                <p style={{
-                  fontFamily: 'Outfit, sans-serif',
-                  fontSize: '12px',
-                  color: 'var(--text-muted)'
-                }}>
-                  {composer.count} partitura{composer.count !== 1 ? 's' : ''}
-                </p>
-              </div>
-            </button>
-          ))}
-        </div>
-      </div>
+      {/* Secao de Compositores - Carrossel apenas no mobile */}
+      {isMobile && <ComposerCarousel composers={topComposers} />}
 
       {/* Seção de Estatísticas */}
       <div style={{ padding: '32px 20px' }}>

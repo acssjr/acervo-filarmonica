@@ -49,6 +49,11 @@ const ComposersScreen = ({ composerSlugFromUrl }) => {
       });
   }, [sheets]);
 
+  // Scroll to top quando a tela abrir
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   // Se vier slug da URL, redireciona para o acervo com o compositor selecionado
   useEffect(() => {
     if (composerSlugFromUrl && composersWithCount.length > 0) {

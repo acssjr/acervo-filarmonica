@@ -127,7 +127,8 @@ const FeaturedSheets = ({ sheets, onToggleFavorite, favorites }) => {
           WebkitOverflowScrolling: 'touch',
           scrollbarWidth: 'none',
           msOverflowStyle: 'none',
-          cursor: isDesktop ? 'grab' : 'default'
+          cursor: isDesktop ? 'grab' : 'default',
+          overscrollBehaviorX: 'contain'
         }}
       >
         <div
