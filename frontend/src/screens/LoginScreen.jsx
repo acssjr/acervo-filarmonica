@@ -129,7 +129,7 @@ const LoginScreen = ({ onClose, required = false }) => {
                 type="text"
                 name="username"
                 autoComplete="username"
-                placeholder="seu.usuario"
+                placeholder="seuusuario"
                 value={username}
                 onChange={e => handleUsernameChange(e.target.value)}
                 className="login-input"
