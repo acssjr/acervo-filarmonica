@@ -320,6 +320,7 @@ const SheetDetailModal = () => {
             {/* Botao Download - Meu Instrumento ou Grade (Maestro) */}
             <button
               onClick={() => download.handleSelectInstrument(isMaestro ? 'Grade' : userInstrument)}
+              aria-label={isMaestro ? 'Baixar grade' : `Baixar partitura para ${userInstrument}`}
               style={{
                 width: '100%',
                 padding: '12px 14px',
@@ -367,6 +368,7 @@ const SheetDetailModal = () => {
           <button
             onClick={() => toggleFavorite(selectedSheet.id)}
             aria-pressed={isFavorite}
+            aria-label={isFavorite ? `Remover ${selectedSheet.title} dos favoritos` : `Adicionar ${selectedSheet.title} aos favoritos`}
             style={{
               width: '100%',
               padding: '10px',

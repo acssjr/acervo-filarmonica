@@ -61,6 +61,7 @@ const FeaturedCard = memo(({ sheet, category, bgImage, isFav, onToggleFavorite, 
           <button
             onClick={(e) => { e.stopPropagation(); onToggleFavorite(sheet.id); }}
             className={`${styles.favButton} ${isFav ? styles.active : styles.inactive}`}
+            aria-label={isFav ? `Remover ${sheet.title} dos favoritos` : `Adicionar ${sheet.title} aos favoritos`}
           >
             <div className={styles.favIcon}><Icons.Heart filled={isFav} /></div>
           </button>

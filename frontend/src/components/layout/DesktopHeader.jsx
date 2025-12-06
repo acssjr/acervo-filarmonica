@@ -190,20 +190,21 @@ const DesktopHeader = () => {
           maxWidth: '400px',
           position: 'relative'
         }}>
-          <div className="search-bar" style={{ padding: '10px 16px' }}>
-            <svg className="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <div className="search-bar" role="search" style={{ padding: '10px 16px' }}>
+            <svg className="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <circle cx="11" cy="11" r="8" />
               <path d="m21 21-4.35-4.35" />
             </svg>
             <input
-              type="text"
+              type="search"
               placeholder="Buscar partituras..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              aria-label="Buscar partituras"
             />
             {searchQuery && (
-              <button className="clear-btn" onClick={() => setSearchQuery('')}>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <button className="clear-btn" onClick={() => setSearchQuery('')} aria-label="Limpar busca">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
                 </svg>
               </button>
@@ -222,6 +223,7 @@ const DesktopHeader = () => {
           {/* Sininho de notificações */}
           <button
             onClick={() => setShowNotifications(true)}
+            aria-label={unreadCount > 0 ? `Notificacoes (${unreadCount} nao lidas)` : 'Notificacoes'}
             style={{
               width: '40px',
               height: '40px',
@@ -356,6 +358,7 @@ const DesktopHeader = () => {
                     e.stopPropagation();
                     toggleFavorite(sheet.id);
                   }}
+                  aria-label={favorites.includes(sheet.id) ? `Remover ${sheet.title} dos favoritos` : `Adicionar ${sheet.title} aos favoritos`}
                   style={{
                     background: favorites.includes(sheet.id) ? 'rgba(232,90,79,0.1)' : 'transparent',
                     border: 'none',

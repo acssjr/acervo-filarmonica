@@ -45,6 +45,8 @@ const ThemeSelector = ({ inDarkHeader = false, compact = false, inline = false }
               key={option.id}
               onClick={() => setThemeMode(option.id)}
               title={option.label}
+              aria-label={`Tema ${option.label}`}
+              aria-pressed={isActive}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -119,6 +121,9 @@ const ThemeSelector = ({ inDarkHeader = false, compact = false, inline = false }
       <button
         className="btn-hover"
         onClick={handleClick}
+        aria-label={`Tema atual: ${currentOption?.label}. Clique para alterar`}
+        aria-haspopup={!isMobile}
+        aria-expanded={isOpen}
         style={{
           width: compact ? '36px' : '40px',
           height: compact ? '36px' : '40px',
@@ -162,6 +167,9 @@ const ThemeSelector = ({ inDarkHeader = false, compact = false, inline = false }
                   setThemeMode(option.id);
                   setIsOpen(false);
                 }}
+                aria-label={`Tema ${option.label}`}
+                aria-pressed={isActive}
+                role="menuitem"
                 style={{
                   width: '100%',
                   display: 'flex',

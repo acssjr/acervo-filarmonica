@@ -98,11 +98,7 @@
   scrollbar-width: none;
 }
 
-/* Mobile only visibility */
-.mobile-only {
-  display: block;
-}
-
+/* Mobile only visibility - nao define display para nao quebrar flex/grid */
 @media (min-width: 1024px) {
   .mobile-only {
     display: none !important;
