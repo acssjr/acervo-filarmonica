@@ -313,16 +313,15 @@ const AppContent = () => {
 const LoginRoute = () => {
   const { user } = useAuth();
   const { isLoading } = useData();
-  const location = useLocation();
 
   if (isLoading) {
     return <LoadingScreen />;
   }
 
-  // Se ja logado, redireciona
+  // Se ja logado, redireciona para pagina inicial (sempre)
+  // Admin -> /admin (dashboard), Usuario -> / (home)
   if (user) {
-    const from = location.state?.from?.pathname || (user.isAdmin ? '/admin' : '/');
-    return <Navigate to={from} replace />;
+    return <Navigate to={user.isAdmin ? '/admin' : '/'} replace />;
   }
 
   return <LoginScreen required={true} />;
