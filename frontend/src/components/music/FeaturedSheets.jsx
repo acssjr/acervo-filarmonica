@@ -3,32 +3,32 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useUI } from '@contexts/UIContext';
-import { CATEGORIES } from '@constants/categories';
+import { CATEGORIES_MAP } from '@constants/categories';
 import FeaturedCard from './FeaturedCard';
+
+// Movido para fora do componente (não recria a cada render)
+const CATEGORY_IMAGES = {
+  dobrado: 'https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=400&q=80',
+  marcha: 'https://images.unsplash.com/photo-1519892300165-cb5542fb47c7?w=400&q=80',
+  valsa: 'https://images.unsplash.com/photo-1507838153414-b4b713384a76?w=400&q=80',
+  fantasia: 'https://images.unsplash.com/photo-1465847899084-d164df4dedc6?w=400&q=80',
+  polaca: 'https://images.unsplash.com/photo-1520523839897-bd0b52f945a0?w=400&q=80',
+  bolero: 'https://images.unsplash.com/photo-1511192336575-5a79af67a629?w=400&q=80',
+  popular: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&q=80',
+  hinos: 'https://images.unsplash.com/photo-1438232992991-995b7058bbb3?w=400&q=80'
+};
 
 const FeaturedSheets = ({ sheets, onToggleFavorite, favorites }) => {
   const { theme } = useUI();
   const [isDesktop, setIsDesktop] = useState(typeof window !== 'undefined' ? window.innerWidth >= 1024 : false);
   const scrollRef = useRef(null);
   const [hasInteracted, setHasInteracted] = useState(false);
-  const isTouchDevice = typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
 
   useEffect(() => {
     const handleResize = () => setIsDesktop(window.innerWidth >= 1024);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
-
-  const categoryImages = {
-    dobrado: 'https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=400&q=80',
-    marcha: 'https://images.unsplash.com/photo-1519892300165-cb5542fb47c7?w=400&q=80',
-    valsa: 'https://images.unsplash.com/photo-1507838153414-b4b713384a76?w=400&q=80',
-    fantasia: 'https://images.unsplash.com/photo-1465847899084-d164df4dedc6?w=400&q=80',
-    polaca: 'https://images.unsplash.com/photo-1520523839897-bd0b52f945a0?w=400&q=80',
-    bolero: 'https://images.unsplash.com/photo-1511192336575-5a79af67a629?w=400&q=80',
-    popular: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&q=80',
-    hinos: 'https://images.unsplash.com/photo-1438232992991-995b7058bbb3?w=400&q=80'
-  };
 
   const featuredSheets = useMemo(() => {
     // Mostra apenas partituras marcadas como destaque
@@ -65,6 +65,27 @@ const FeaturedSheets = ({ sheets, onToggleFavorite, favorites }) => {
     }
   }, [hasInteracted]);
 
+  // Handlers memoizados para evitar re-renders
+  const handleMouseDown = useCallback((e) => {
+    if (isDesktop && scrollRef.current) {
+      scrollRef.current.dataset.startX = e.pageX;
+      scrollRef.current.dataset.scrollLeft = scrollRef.current.scrollLeft;
+      scrollRef.current.dataset.isDragging = 'true';
+    }
+  }, [isDesktop]);
+
+  const handleMouseMove = useCallback((e) => {
+    if (!isDesktop || !scrollRef.current || scrollRef.current.dataset.isDragging !== 'true') return;
+    const startX = parseFloat(scrollRef.current.dataset.startX);
+    const scrollLeft = parseFloat(scrollRef.current.dataset.scrollLeft);
+    const diff = e.pageX - startX;
+    scrollRef.current.scrollLeft = scrollLeft - diff;
+  }, [isDesktop]);
+
+  const handleMouseUp = useCallback(() => {
+    if (scrollRef.current) scrollRef.current.dataset.isDragging = 'false';
+  }, []);
+
   return (
     <div style={{ marginBottom: '32px', width: '100%', overflow: 'visible' }}>
       {/* Header */}
@@ -91,26 +112,10 @@ const FeaturedSheets = ({ sheets, onToggleFavorite, favorites }) => {
       {/* Cards - Scroll fluido tanto no desktop quanto mobile */}
       <div
         ref={scrollRef}
-        onMouseDown={(e) => {
-          if (isDesktop && scrollRef.current) {
-            scrollRef.current.dataset.startX = e.pageX;
-            scrollRef.current.dataset.scrollLeft = scrollRef.current.scrollLeft;
-            scrollRef.current.dataset.isDragging = 'true';
-          }
-        }}
-        onMouseMove={(e) => {
-          if (!isDesktop || !scrollRef.current || scrollRef.current.dataset.isDragging !== 'true') return;
-          const startX = parseFloat(scrollRef.current.dataset.startX);
-          const scrollLeft = parseFloat(scrollRef.current.dataset.scrollLeft);
-          const diff = e.pageX - startX;
-          scrollRef.current.scrollLeft = scrollLeft - diff;
-        }}
-        onMouseUp={() => {
-          if (scrollRef.current) scrollRef.current.dataset.isDragging = 'false';
-        }}
-        onMouseLeave={() => {
-          if (scrollRef.current) scrollRef.current.dataset.isDragging = 'false';
-        }}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
         style={{
           overflowX: hasInteracted ? 'auto' : 'hidden',
           overflowY: 'visible',
@@ -140,8 +145,8 @@ const FeaturedSheets = ({ sheets, onToggleFavorite, favorites }) => {
             <FeaturedCard
               key={`${sheet.id}-${index}`}
               sheet={sheet}
-              category={CATEGORIES.find(c => c.id === sheet.category)}
-              bgImage={categoryImages[sheet.category]}
+              category={CATEGORIES_MAP.get(sheet.category)}
+              bgImage={CATEGORY_IMAGES[sheet.category]}
               isFav={favorites.includes(sheet.id)}
               onToggleFavorite={onToggleFavorite}
               isDesktop={isDesktop}

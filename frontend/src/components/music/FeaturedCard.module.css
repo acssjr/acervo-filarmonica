@@ -26,7 +26,7 @@
   padding: 24px;
 }
 
-/* Borda dourada animada */
+/* Borda dourada animada (GPU accelerated via opacity) */
 .goldenBorder {
   position: absolute;
   top: 0;
@@ -42,6 +42,7 @@
   mask-composite: exclude;
   pointer-events: none;
   animation: borderGlow 2s ease-in-out infinite;
+  will-change: opacity;
 }
 
 /* Imagem decorativa */

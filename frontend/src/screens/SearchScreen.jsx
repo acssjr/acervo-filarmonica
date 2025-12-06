@@ -1,31 +1,36 @@
 // ===== SEARCH SCREEN =====
 // Tela de busca com fuzzy search
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useData } from '@contexts/DataContext';
-import { CATEGORIES } from '@constants/categories';
+import { CATEGORIES_MAP } from '@constants/categories';
 import { Icons } from '@constants/icons';
 import Header from '@components/common/Header';
 import CategoryIcon from '@components/common/CategoryIcon';
+import useDebounce from '@hooks/useDebounce';
 import { levenshtein } from '@utils/search';
 
 const SearchScreen = () => {
   const navigate = useNavigate();
-  const { sheets, favorites, toggleFavorite, setSelectedCategory } = useData();
+  const { sheets, favorites, toggleFavorite } = useData();
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Busca fuzzy nos sheets
-  const searchResults = useMemo(() => {
-    if (!searchQuery.trim()) return [];
+  // Debounce de 300ms para evitar re-renders excessivos
+  const debouncedQuery = useDebounce(searchQuery, 300);
 
-    const query = searchQuery.toLowerCase().trim();
+  // Busca fuzzy nos sheets (agora com debounce e Map O(1))
+  const searchResults = useMemo(() => {
+    if (!debouncedQuery.trim()) return [];
+
+    const query = debouncedQuery.toLowerCase().trim();
 
     return sheets
       .map(sheet => {
         const titleLower = sheet.title.toLowerCase();
         const composerLower = sheet.composer.toLowerCase();
-        const category = CATEGORIES.find(c => c.id === sheet.category);
+        // O(1) lookup via Map
+        const category = CATEGORIES_MAP.get(sheet.category);
         const categoryLower = category?.name.toLowerCase() || '';
 
         let score = 0;
@@ -49,7 +54,9 @@ const SearchScreen = () => {
       })
       .filter(sheet => sheet.score > 0)
       .sort((a, b) => b.score - a.score);
-  }, [searchQuery, sheets]);
+  }, [debouncedQuery, sheets]);
+
+  const handleClear = useCallback(() => setSearchQuery(''), []);
 
   return (
     <div style={{ width: '100%' }}>
@@ -89,7 +96,7 @@ const SearchScreen = () => {
           />
           {searchQuery && (
             <button
-              onClick={() => setSearchQuery('')}
+              onClick={handleClear}
               style={{
                 background: 'var(--bg-secondary)',
                 border: 'none',

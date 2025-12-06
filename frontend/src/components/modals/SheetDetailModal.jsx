@@ -8,7 +8,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@contexts/AuthContext';
 import { useUI } from '@contexts/UIContext';
 import { useData } from '@contexts/DataContext';
-import { CATEGORIES } from '@constants/categories';
+import { CATEGORIES_MAP } from '@constants/categories';
 import { Icons } from '@constants/icons';
 import { API_BASE_URL } from '@constants/api';
 import CategoryIcon from '@components/common/CategoryIcon';
@@ -42,36 +42,47 @@ const SheetDetailModal = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Buscar partes quando abrir o modal
+  // Buscar partes quando abrir o modal (com AbortController para cleanup)
   useEffect(() => {
-    if (selectedSheet) {
-      setShowInstrumentPicker(false);
-      download.handleCancelDownload();
+    if (!selectedSheet) return;
 
-      const fetchPartes = async () => {
-        setLoadingPartes(true);
-        try {
-          const response = await fetch(`${API_BASE_URL}/api/partituras/${selectedSheet.id}/partes`);
-          if (response.ok) {
-            const data = await response.json();
-            setPartes(data || []);
-          } else {
-            setPartes([]);
-          }
-        } catch (e) {
+    const abortController = new AbortController();
+    setShowInstrumentPicker(false);
+    download.handleCancelDownload();
+
+    const fetchPartes = async () => {
+      setLoadingPartes(true);
+      try {
+        const response = await fetch(
+          `${API_BASE_URL}/api/partituras/${selectedSheet.id}/partes`,
+          { signal: abortController.signal }
+        );
+        if (response.ok) {
+          const data = await response.json();
+          setPartes(data || []);
+        } else {
+          setPartes([]);
+        }
+      } catch (e) {
+        // Ignorar erros de abort
+        if (e.name !== 'AbortError') {
           console.error('Erro ao buscar partes:', e);
           setPartes([]);
         }
+      }
+      if (!abortController.signal.aborted) {
         setLoadingPartes(false);
-      };
+      }
+    };
 
-      fetchPartes();
-    }
+    fetchPartes();
+
+    return () => abortController.abort();
   }, [selectedSheet]);
 
   if (!selectedSheet) return null;
 
-  const category = CATEGORIES.find(c => c.id === selectedSheet.category);
+  const category = CATEGORIES_MAP.get(selectedSheet.category);
   const isFavorite = favorites.includes(selectedSheet.id);
   const userInstrument = user?.instrument || 'Trompete Bb';
   const isMaestro = userInstrument?.toLowerCase() === 'maestro';
