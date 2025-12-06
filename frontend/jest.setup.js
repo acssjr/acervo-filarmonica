@@ -1,10 +1,33 @@
-import '@testing-library/jest-dom';
-import { jest, beforeEach } from '@jest/globals';
+// ===== POLYFILLS PRIMEIRO =====
+// Devem ser definidos ANTES de qualquer import que os use
 import { TextEncoder, TextDecoder } from 'util';
-
-// Polyfill para TextEncoder/TextDecoder (necessario para react-router-dom)
 global.TextEncoder = TextEncoder;
 global.TextDecoder = TextDecoder;
+
+import '@testing-library/jest-dom';
+import { jest, beforeEach, afterEach, beforeAll, afterAll } from '@jest/globals';
+
+// ===== FETCH API POLYFILLS PARA MSW =====
+// MSW requer estas APIs disponiveis globalmente
+import { fetch, Headers, Request, Response } from 'undici';
+
+global.fetch = fetch;
+global.Headers = Headers;
+global.Request = Request;
+global.Response = Response;
+
+// ===== MSW SERVER SETUP =====
+// Seguindo o guia: intercepta requisicoes no nivel de rede
+import { server } from './src/__tests__/mocks/server.js';
+
+// Inicia servidor antes de todos os testes
+beforeAll(() => server.listen({ onUnhandledRequest: 'bypass' }));
+
+// Reseta handlers entre testes para garantir isolamento
+afterEach(() => server.resetHandlers());
+
+// Fecha servidor ao final
+afterAll(() => server.close());
 
 // Mock do localStorage com suporte ao prefixo fil_
 const createLocalStorageMock = () => {
@@ -58,3 +81,37 @@ Object.defineProperty(window, 'visualViewport', {
     removeEventListener: jest.fn(),
   },
 });
+
+// ===== MOCKS PARA DOWNLOAD (Fase 3 do guia) =====
+// Mock do URL.createObjectURL e revokeObjectURL
+// Necessario para testar downloads de arquivos
+let mockUrlCounter = 0;
+window.URL.createObjectURL = jest.fn((blob) => {
+  mockUrlCounter++;
+  return `blob:http://localhost:3000/mock-blob-${mockUrlCounter}`;
+});
+window.URL.revokeObjectURL = jest.fn();
+
+// ===== MOCK DO ResizeObserver =====
+// Seguindo o guia: JSDOM nao tem API de layout
+class ResizeObserverMock {
+  constructor(callback) {
+    this.callback = callback;
+  }
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+window.ResizeObserver = ResizeObserverMock;
+
+// ===== MOCK DO IntersectionObserver =====
+// Para componentes com lazy loading
+class IntersectionObserverMock {
+  constructor(callback) {
+    this.callback = callback;
+  }
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+window.IntersectionObserver = IntersectionObserverMock;

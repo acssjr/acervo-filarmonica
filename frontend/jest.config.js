@@ -1,5 +1,7 @@
 export default {
   testEnvironment: 'jsdom',
+  // setupFiles roda ANTES do ambiente, setupFilesAfterEnv roda DEPOIS
+  setupFiles: ['<rootDir>/jest.polyfills.js'],
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   extensionsToTreatAsEsm: ['.jsx'],
   moduleNameMapper: {
