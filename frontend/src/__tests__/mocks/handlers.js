@@ -20,20 +20,25 @@ const createHandler = (method, path, resolver) => {
 const API_BASE = API_BASE_PROD;
 
 // ===== DADOS MOCK =====
+// Estrutura que o backend retorna (useLoginForm espera esses campos)
 export const mockUser = {
   id: 1,
   username: 'musico.teste',
   nome: 'Músico Teste',
-  instrumento: 'Trompete Bb 1',
-  isAdmin: false
+  admin: false,
+  instrumento_nome: 'Trompete Bb 1',
+  instrumento_id: 1,
+  foto_url: null
 };
 
 export const mockAdminUser = {
   id: 2,
   username: 'admin',
   nome: 'Administrador',
-  instrumento: null,
-  isAdmin: true
+  admin: true,
+  instrumento_nome: null,
+  instrumento_id: null,
+  foto_url: null
 };
 
 export const mockSheets = [
@@ -94,6 +99,15 @@ export const handlers = [
     return HttpResponse.json([{ partitura_id: 1 }]);
   }),
 
+  http.get('/api/favoritos/ids', ({ request }) => {
+    const authHeader = request.headers.get('Authorization');
+    if (!authHeader) {
+      return HttpResponse.json({ error: 'Não autorizado' }, { status: 401 });
+    }
+    // Retorna array de IDs de partituras favoritas
+    return HttpResponse.json([1]);
+  }),
+
   http.post('/api/favoritos/:id', ({ params, request }) => {
     const authHeader = request.headers.get('Authorization');
     if (!authHeader) {
@@ -111,18 +125,21 @@ export const handlers = [
   }),
 
   // ----- AUTH (URLs relativas) -----
+  // Nota: o hook useLoginForm espera data.nome diretamente, nao data.user.nome
   http.post('/api/check-user', async ({ request }) => {
     const { username } = await request.json();
     if (username === 'musico.teste') {
       return HttpResponse.json({
         exists: true,
-        user: { nome: mockUser.nome, instrumento: mockUser.instrumento }
+        nome: mockUser.nome,
+        instrumento: mockUser.instrumento_nome
       });
     }
     if (username === 'admin') {
       return HttpResponse.json({
         exists: true,
-        user: { nome: mockAdminUser.nome, instrumento: null }
+        nome: mockAdminUser.nome,
+        instrumento: null
       });
     }
     return HttpResponse.json({ exists: false });
@@ -132,6 +149,7 @@ export const handlers = [
     const { username, pin } = await request.json();
     if (username === 'musico.teste' && pin === '1234') {
       return HttpResponse.json({
+        success: true,
         token: 'mock-jwt-token-user',
         user: mockUser,
         expiresIn: 86400
@@ -139,6 +157,7 @@ export const handlers = [
     }
     if (username === 'admin' && pin === '0000') {
       return HttpResponse.json({
+        success: true,
         token: 'mock-jwt-token-admin',
         user: mockAdminUser,
         expiresIn: 86400
@@ -193,14 +212,16 @@ export const handlers = [
     if (username === 'musico.teste') {
       return HttpResponse.json({
         exists: true,
-        user: { nome: mockUser.nome, instrumento: mockUser.instrumento }
+        nome: mockUser.nome,
+        instrumento: mockUser.instrumento_nome
       });
     }
 
     if (username === 'admin') {
       return HttpResponse.json({
         exists: true,
-        user: { nome: mockAdminUser.nome, instrumento: null }
+        nome: mockAdminUser.nome,
+        instrumento: null
       });
     }
 
@@ -212,6 +233,7 @@ export const handlers = [
 
     if (username === 'musico.teste' && pin === '1234') {
       return HttpResponse.json({
+        success: true,
         token: 'mock-jwt-token-user',
         user: mockUser,
         expiresIn: 86400
@@ -220,6 +242,7 @@ export const handlers = [
 
     if (username === 'admin' && pin === '0000') {
       return HttpResponse.json({
+        success: true,
         token: 'mock-jwt-token-admin',
         user: mockAdminUser,
         expiresIn: 86400
@@ -257,6 +280,14 @@ export const handlers = [
       return HttpResponse.json({ error: 'Não autorizado' }, { status: 401 });
     }
     return HttpResponse.json([{ partitura_id: 1 }]);
+  }),
+
+  http.get(`${API_BASE}/api/favoritos/ids`, ({ request }) => {
+    const authHeader = request.headers.get('Authorization');
+    if (!authHeader) {
+      return HttpResponse.json({ error: 'Não autorizado' }, { status: 401 });
+    }
+    return HttpResponse.json([1]);
   }),
 
   http.post(`${API_BASE}/api/favoritos/:id`, ({ params, request }) => {
