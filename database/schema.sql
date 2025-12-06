@@ -105,7 +105,7 @@ INSERT OR IGNORE INTO instrumentos (id, nome, familia, ordem) VALUES
     ('bombo', 'Bombo', 'Percussão', 24),
     ('pratos', 'Pratos', 'Percussão', 25),
     ('percussao', 'Percussão Geral', 'Percussão', 26),
-    ('regente', 'Regente (Score)', 'Outros', 27);
+    ('regente', 'Regente', 'Outros', 27);
 
 -- Tabela de Partes (arquivos individuais por instrumento)
 CREATE TABLE IF NOT EXISTS partes (

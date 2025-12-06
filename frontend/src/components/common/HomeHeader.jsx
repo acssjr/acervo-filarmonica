@@ -66,11 +66,7 @@ const HomeHeader = ({ userName, instrument, actions }) => {
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'flex-start',
-        marginBottom: '8px',
-        borderBottom: '1px solid var(--border)',
-        background: isDark
-          ? 'linear-gradient(180deg, rgba(212,175,55,0.06) 0%, transparent 100%)'
-          : 'linear-gradient(180deg, rgba(114,47,55,0.04) 0%, transparent 100%)'
+        marginBottom: '8px'
       }}>
         <div style={{ flex: 1 }}>
           {/* Saudação pequena */}

@@ -85,7 +85,11 @@ const SheetDetailModal = () => {
   const category = CATEGORIES_MAP.get(selectedSheet.category);
   const isFavorite = favorites.includes(selectedSheet.id);
   const userInstrument = user?.instrument || 'Trompete Bb';
-  const isMaestro = userInstrument?.toLowerCase() === 'maestro';
+  const userInstrumentLower = userInstrument?.toLowerCase() || '';
+  const isMaestro = userInstrumentLower === 'maestro' || userInstrumentLower === 'regente';
+
+  // Verifica se existe grade disponível para esta partitura
+  const hasGrade = partes.some(p => p.instrumento?.toLowerCase() === 'grade');
 
   // Lista de instrumentos disponiveis
   const availableInstruments = partes.length > 0
@@ -318,39 +322,77 @@ const SheetDetailModal = () => {
             }}>Baixar Partitura</p>
 
             {/* Botao Download - Meu Instrumento ou Grade (Maestro) */}
-            <button
-              onClick={() => download.handleSelectInstrument(isMaestro ? 'Grade' : userInstrument)}
-              aria-label={isMaestro ? 'Baixar grade' : `Baixar partitura para ${userInstrument}`}
-              style={{
-                width: '100%',
-                padding: '12px 14px',
-                borderRadius: '10px',
-                background: 'linear-gradient(145deg, #722F37 0%, #5C1A1B 100%)',
-                border: 'none',
-                color: '#F4E4BC',
-                fontFamily: 'Outfit, sans-serif',
-                fontSize: '13px',
-                fontWeight: '600',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                marginBottom: '8px',
-                boxShadow: '0 4px 12px rgba(114, 47, 55, 0.3)'
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <div style={{ width: '16px', height: '16px' }}><Icons.Download /></div>
-                <span>{isMaestro ? 'Baixar Grade' : 'Meu Instrumento'}</span>
-              </div>
-              <span style={{
-                background: 'rgba(244, 228, 188, 0.2)',
-                padding: '3px 8px',
-                borderRadius: '5px',
-                fontSize: '10px',
-                fontWeight: '700'
-              }}>{isMaestro ? 'Grade' : userInstrument}</span>
-            </button>
+            {isMaestro && !hasGrade && !loadingPartes ? (
+              /* Botão desabilitado quando não há grade */
+              <button
+                disabled
+                aria-label="Grade não disponível"
+                style={{
+                  width: '100%',
+                  padding: '12px 14px',
+                  borderRadius: '10px',
+                  background: 'var(--bg-secondary)',
+                  border: '1px solid var(--border)',
+                  color: 'var(--text-muted)',
+                  fontFamily: 'Outfit, sans-serif',
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  cursor: 'not-allowed',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  marginBottom: '8px',
+                  opacity: 0.6
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ width: '16px', height: '16px' }}><Icons.Download /></div>
+                  <span>Grade não disponível</span>
+                </div>
+                <span style={{
+                  background: 'var(--bg-card)',
+                  padding: '3px 8px',
+                  borderRadius: '5px',
+                  fontSize: '10px',
+                  fontWeight: '700'
+                }}>Indisponível</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => download.handleSelectInstrument(isMaestro ? 'Grade' : userInstrument)}
+                aria-label={isMaestro ? 'Baixar grade' : `Baixar partitura para ${userInstrument}`}
+                disabled={loadingPartes}
+                style={{
+                  width: '100%',
+                  padding: '12px 14px',
+                  borderRadius: '10px',
+                  background: loadingPartes ? 'var(--bg-secondary)' : 'linear-gradient(145deg, #722F37 0%, #5C1A1B 100%)',
+                  border: 'none',
+                  color: loadingPartes ? 'var(--text-muted)' : '#F4E4BC',
+                  fontFamily: 'Outfit, sans-serif',
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  cursor: loadingPartes ? 'wait' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  marginBottom: '8px',
+                  boxShadow: loadingPartes ? 'none' : '0 4px 12px rgba(114, 47, 55, 0.3)'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ width: '16px', height: '16px' }}><Icons.Download /></div>
+                  <span>{loadingPartes ? 'Carregando...' : (isMaestro ? 'Baixar Grade' : 'Meu Instrumento')}</span>
+                </div>
+                <span style={{
+                  background: 'rgba(244, 228, 188, 0.2)',
+                  padding: '3px 8px',
+                  borderRadius: '5px',
+                  fontSize: '10px',
+                  fontWeight: '700'
+                }}>{isMaestro ? 'Grade' : userInstrument}</span>
+              </button>
+            )}
 
             {/* Seletor de Outros Instrumentos */}
             <InstrumentSelector
