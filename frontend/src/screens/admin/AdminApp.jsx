@@ -8,6 +8,7 @@ import { useAuth } from '@contexts/AuthContext';
 import { useUI } from '@contexts/UIContext';
 import { API } from '@services/api';
 import ThemeSelector from '@components/common/ThemeSelector';
+import AdminToggle from '@components/common/AdminToggle';
 import AdminContext from './AdminContext';
 import AdminDashboard from './AdminDashboard';
 import AdminMusicos from './AdminMusicos';
@@ -229,24 +230,27 @@ const AdminApp = () => {
               <span style={{ fontWeight: '600', color: 'var(--text-primary)', fontSize: '14px' }}>Painel Admin</span>
             </div>
 
-            {/* Botao de Tema */}
-            <button
-              onClick={cycleTheme}
-              style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: '50%',
-                border: '1px solid var(--border)',
-                background: 'var(--bg-primary)',
-                color: 'var(--text-primary)',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
-            >
-              <ThemeIcon mode={themeMode} />
-            </button>
+            {/* Acoes Mobile */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <AdminToggle />
+              <button
+                onClick={cycleTheme}
+                style={{
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '50%',
+                  border: '1px solid var(--border)',
+                  background: 'var(--bg-primary)',
+                  color: 'var(--text-primary)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                <ThemeIcon mode={themeMode} />
+              </button>
+            </div>
           </div>
         )}
 
@@ -565,8 +569,11 @@ const AdminApp = () => {
                 </h1>
               </div>
 
-              {/* Toggle de tema */}
-              <ThemeSelector inline />
+              {/* Acoes do header */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <AdminToggle />
+                <ThemeSelector inline />
+              </div>
             </header>
           )}
 
