@@ -7,10 +7,11 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@contexts/AuthContext';
 import { useData } from '@contexts/DataContext';
 import { useUI } from '@contexts/UIContext';
-import { CATEGORIES } from '@constants/categories';
+import { CATEGORIES, CATEGORIES_MAP } from '@constants/categories';
 import { Icons } from '@constants/icons';
 import Header from '@components/common/Header';
 import IconButton from '@components/common/IconButton';
+import EmptyState from '@components/common/EmptyState';
 import CategoryCard from '@components/music/CategoryCard';
 import FileCard from '@components/music/FileCard';
 
@@ -30,8 +31,8 @@ const LibraryScreen = ({ categoryFromUrl, sheetIdFromUrl }) => {
   // Sincroniza categoria da URL com o estado
   useEffect(() => {
     if (categoryFromUrl) {
-      // Busca categoria pelo ID (que vem da URL)
-      const cat = CATEGORIES.find(c => c.id === categoryFromUrl);
+      // Busca categoria pelo ID (O(1) via Map)
+      const cat = CATEGORIES_MAP.get(categoryFromUrl);
       if (cat) {
         setSelectedCategory(cat.id);
         setSelectedComposer(null);
@@ -60,7 +61,7 @@ const LibraryScreen = ({ categoryFromUrl, sheetIdFromUrl }) => {
     return result;
   }, [sheets, selectedCategory, selectedComposer]);
 
-  const currentCategory = CATEGORIES.find(c => c.id === selectedCategory);
+  const currentCategory = CATEGORIES_MAP.get(selectedCategory);
   const getCategoryCount = (catId) => sheets.filter(s => s.category === catId).length;
 
   const handleBack = () => {
@@ -122,12 +123,7 @@ const LibraryScreen = ({ categoryFromUrl, sheetIdFromUrl }) => {
           </div>
         </div>
       ) : filteredSheets.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '60px 40px', color: 'var(--text-muted)' }}>
-          <div style={{ width: '64px', height: '64px', margin: '0 auto 16px', opacity: 0.3 }}>
-            <Icons.Folder />
-          </div>
-          <p>Nenhuma partitura encontrada</p>
-        </div>
+        <EmptyState icon={Icons.Folder} title="Nenhuma partitura encontrada" />
       ) : (
         <div className="files-grid" style={{ padding: '0 20px' }}>
           {filteredSheets.map(sheet => (

@@ -3,9 +3,10 @@
 
 import { useMemo } from 'react';
 import { useData } from '@contexts/DataContext';
-import { CATEGORIES } from '@constants/categories';
+import { CATEGORIES_MAP } from '@constants/categories';
 import { Icons } from '@constants/icons';
 import Header from '@components/common/Header';
+import EmptyState from '@components/common/EmptyState';
 import FileCard from '@components/music/FileCard';
 
 const FavoritesScreen = () => {
@@ -20,24 +21,18 @@ const FavoritesScreen = () => {
       <Header title="Favoritos" subtitle={`${favoriteSheets.length} partitura${favoriteSheets.length !== 1 ? 's' : ''}`} />
 
       {favoriteSheets.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '60px 40px', color: 'var(--text-muted)' }}>
-          <div style={{ width: '64px', height: '64px', margin: '0 auto 16px', opacity: 0.3 }}>
-            <Icons.Heart />
-          </div>
-          <p style={{ fontFamily: 'Outfit, sans-serif', fontSize: '15px', marginBottom: '8px' }}>
-            Nenhum favorito ainda
-          </p>
-          <p style={{ fontFamily: 'Outfit, sans-serif', fontSize: '13px', opacity: 0.7 }}>
-            Toque no coracao para adicionar
-          </p>
-        </div>
+        <EmptyState
+          icon={Icons.Heart}
+          title="Nenhum favorito ainda"
+          subtitle="Toque no coracao para adicionar"
+        />
       ) : (
         <div className="files-grid" style={{ padding: '0 20px' }}>
           {favoriteSheets.map(sheet => (
             <FileCard
               key={sheet.id}
               sheet={sheet}
-              category={CATEGORIES.find(c => c.id === sheet.category)}
+              category={CATEGORIES_MAP.get(sheet.category)}
               isFavorite={true}
               onToggleFavorite={() => toggleFavorite(sheet.id)}
             />

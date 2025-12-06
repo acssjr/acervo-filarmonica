@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { useUI } from '@contexts/UIContext';
 import { getNextRehearsal } from '@hooks/useNextRehearsal';
 import HeaderActions from './HeaderActions';
+import LogoBadge from './LogoBadge';
 
 const HomeHeader = ({ userName, instrument, actions }) => {
   const { theme } = useUI();
@@ -30,30 +31,7 @@ const HomeHeader = ({ userName, instrument, actions }) => {
           justifyContent: 'space-between'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            {/* Logo circular */}
-            <div style={{
-              width: '38px',
-              height: '38px',
-              borderRadius: '50%',
-              background: 'rgba(244, 228, 188, 0.15)',
-              border: '2px solid rgba(244, 228, 188, 0.3)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-              overflow: 'hidden',
-              padding: '4px'
-            }}>
-              <img
-                src="/assets/images/ui/brasao-256x256.png"
-                alt="Brasão"
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'contain'
-                }}
-              />
-            </div>
+            <LogoBadge size={38} variant="dark" />
             <div>
               <h2 style={{
                 fontFamily: 'Outfit, sans-serif',

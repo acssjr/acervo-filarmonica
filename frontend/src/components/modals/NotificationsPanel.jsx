@@ -7,6 +7,7 @@ import { useUI } from '@contexts/UIContext';
 import { useData } from '@contexts/DataContext';
 import { useNotifications } from '@contexts/NotificationContext';
 import { Icons } from '@constants/icons';
+import EmptyState from '@components/common/EmptyState';
 
 const NotificationsPanel = () => {
   const navigate = useNavigate();
@@ -154,12 +155,7 @@ const NotificationsPanel = () => {
         {/* Lista de notificacoes */}
         <div style={{ maxHeight: 'calc(70vh - 60px)', overflowY: 'auto' }}>
           {notifications.length === 0 ? (
-            <div style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--text-muted)' }}>
-              <div style={{ width: '48px', height: '48px', margin: '0 auto 12px', opacity: 0.5 }}>
-                <Icons.Bell />
-              </div>
-              <p style={{ fontFamily: 'Outfit, sans-serif' }}>Nenhuma notificacao</p>
-            </div>
+            <EmptyState icon={Icons.Bell} title="Nenhuma notificacao" size="small" />
           ) : (
             notifications.map(notification => (
               <div
