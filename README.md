@@ -8,8 +8,9 @@
 
 <br/>
 
-[![Versao](https://img.shields.io/badge/versao-2.2.0-722F37?style=for-the-badge&labelColor=D4AF37)](https://github.com/acssjr/acervo-filarmonica-refatorado)
+[![Versao](https://img.shields.io/badge/versao-2.3.0-722F37?style=for-the-badge&labelColor=D4AF37)](https://github.com/acssjr/acervo-filarmonica-refatorado)
 [![Status](https://img.shields.io/badge/status-em%20producao-success?style=for-the-badge)](https://acervo-filarmonica.pages.dev)
+[![CI](https://img.shields.io/github/actions/workflow/status/acssjr/acervo-filarmonica/ci.yml?style=for-the-badge&label=CI&logo=github)](https://github.com/acssjr/acervo-filarmonica/actions)
 [![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react&logoColor=white)](https://react.dev)
 [![Cloudflare](https://img.shields.io/badge/Cloudflare-Workers-F38020?style=for-the-badge&logo=cloudflare&logoColor=white)](https://workers.cloudflare.com)
 
@@ -29,6 +30,7 @@
 - [Stack Tecnologica](#-stack-tecnologica)
 - [Arquitetura](#-arquitetura)
 - [Seguranca](#-seguranca)
+- [Testes](#-testes)
 - [Instalacao](#-instalacao)
 - [Deploy](#-deploy)
 - [Banco de Dados](#-banco-de-dados)
@@ -167,6 +169,57 @@ database/
 
 ---
 
+## 🧪 Testes
+
+O projeto possui infraestrutura completa de testes automatizados:
+
+<table>
+<tr>
+<td width="50%" valign="top">
+
+### Unitarios (Jest)
+- **215 testes** passando
+- Testing Library para componentes React
+- MSW para mock de API
+- Cobertura em componentes criticos
+
+```bash
+cd frontend
+npm test                    # Todos
+npm test -- LoginScreen     # Especifico
+npm run test:coverage       # Com cobertura
+```
+
+</td>
+<td width="50%" valign="top">
+
+### E2E (Playwright)
+- **8 testes** com mocks (CI)
+- **8 testes** com backend real (local)
+- Simula fluxos reais do usuario
+
+```bash
+npm run test:e2e            # Headless
+npm run test:e2e:headed     # Visual
+npm run test:e2e:ui         # Interface
+```
+
+</td>
+</tr>
+</table>
+
+### CI/CD (GitHub Actions)
+
+Pipeline automatico em cada push:
+
+```
+Push/PR → Jest (215) + E2E Mocked (8) → Build → Deploy
+```
+
+[![CI Status](https://github.com/acssjr/acervo-filarmonica/actions/workflows/ci.yml/badge.svg)](https://github.com/acssjr/acervo-filarmonica/actions)
+
+---
+
 ## 💻 Instalacao
 
 ```bash
@@ -229,6 +282,15 @@ npx wrangler d1 execute acervo-db --remote \
 ## 📝 Changelog
 
 <details open>
+<summary><b>v2.3.0</b> - Dezembro 2025</summary>
+
+- 🧪 **Testes:** 215 testes unitarios (Jest) + 16 testes E2E (Playwright)
+- 🔄 **CI/CD:** Pipeline automatico com GitHub Actions
+- 📊 **Cobertura:** LoginScreen 100%, AdminDashboard 82%
+
+</details>
+
+<details>
 <summary><b>v2.2.0</b> - Dezembro 2025</summary>
 
 - 🏗 **Arquitetura:** Contexts separados (Auth, UI, Data, Notifications)

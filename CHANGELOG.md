@@ -7,6 +7,80 @@ e este projeto adere ao [Versionamento Semantico](https://semver.org/lang/pt-BR/
 
 ---
 
+## [2.3.0] - 2025-12-06
+
+### Testes Automatizados e CI/CD
+
+**Objetivo:** Implementar infraestrutura completa de testes para garantir qualidade do codigo em cada deploy.
+
+### Adicionado
+
+- **Testes Unitarios (Jest + Testing Library)**
+  - 215 testes cobrindo componentes criticos
+  - MSW (Mock Service Worker) para interceptar requisicoes de API
+  - Cobertura: LoginScreen 100%, AdminDashboard 82%, Hooks 60%+
+
+- **Testes E2E (Playwright)**
+  - 8 testes com mocks (rodam no CI automaticamente)
+  - 8 testes com backend real (rodam localmente/manual)
+  - Mocks em `tests/mocks/api-mocks.ts`
+  - Scripts: `npm run test:e2e`, `test:e2e:ui`, `test:e2e:headed`
+
+- **CI/CD (GitHub Actions)**
+  - Pipeline automatico em cada push/PR
+  - Jobs: Jest → E2E Mocked → Build
+  - Testes com backend real disponiveis via workflow_dispatch
+  - Upload de artefatos (coverage, build, playwright report)
+
+- **Arquivos de Teste Criados**
+  - `frontend/src/screens/LoginScreen.test.jsx` - 18 testes
+  - `frontend/src/screens/admin/AdminDashboard.test.jsx` - 20 testes
+  - `frontend/src/__tests__/mocks/handlers.js` - MSW handlers
+  - `tests/login.spec.ts` - E2E com backend real
+  - `tests/login-mocked.spec.ts` - E2E com mocks
+  - `tests/mocks/api-mocks.ts` - Mocks do Playwright
+  - `.github/workflows/ci.yml` - Pipeline CI/CD
+
+### Configurado
+
+- **Jest** com suporte a ESM modules (`jest.unstable_mockModule`)
+- **Playwright** com webServer automatico (inicia Vite)
+- **MSW** interceptando URLs relativas e absolutas
+
+### Fluxo de CI
+
+```
+Push/PR
+   ↓
+┌─────────────────┐    ┌─────────────────┐
+│   Jest (215)    │    │  E2E Mocked (8) │
+│   ~17 segundos  │    │   ~4 segundos   │
+└────────┬────────┘    └────────┬────────┘
+         │                      │
+         └──────────┬───────────┘
+                    ↓
+            ┌───────────────┐
+            │     Build     │
+            │   Vite prod   │
+            └───────────────┘
+```
+
+### Comandos Disponiveis
+
+```bash
+# Testes unitarios
+cd frontend && npm test                    # Roda todos
+cd frontend && npm test -- LoginScreen     # Roda arquivo especifico
+cd frontend && npm run test:coverage       # Com cobertura
+
+# Testes E2E
+npm run test:e2e                           # Headless
+npm run test:e2e:headed                    # Visual
+npm run test:e2e:ui                        # Interface interativa
+```
+
+---
+
 ## [2.2.0] - 2025-12-05
 
 ### Arquitetura - Split de React Contexts
@@ -123,4 +197,6 @@ e este projeto adere ao [Versionamento Semantico](https://semver.org/lang/pt-BR/
 - [ ] Debounce em persistencia localStorage
 - [ ] Error Boundaries
 - [ ] Modularizacao do backend (worker 1800+ linhas)
-- [ ] Testes unitarios basicos
+- [x] ~~Testes unitarios basicos~~ (v2.3.0 - 215 testes)
+- [x] ~~CI/CD automatizado~~ (v2.3.0 - GitHub Actions)
+- [ ] Aumentar cobertura de testes (Contexts, Utils)
