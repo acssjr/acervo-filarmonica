@@ -4,6 +4,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@contexts/AuthContext';
 import { useUI } from '@contexts/UIContext';
+import { useNotifications } from '@contexts/NotificationContext';
 import { Icons } from '@constants/icons';
 import { Storage } from '@services/storage';
 import Header from '@components/common/Header';
@@ -13,6 +14,7 @@ import { AboutModal, PROFILE_CHANGELOG, PROFILE_LEGACY_VERSIONS, PROFILE_ABOUT_C
 const ProfileScreen = () => {
   const { user, setUser } = useAuth();
   const { showToast, theme } = useUI();
+  const { clearNotifications } = useNotifications();
   const [showChangePinModal, setShowChangePinModal] = useState(false);
   const [showAboutModal, setShowAboutModal] = useState(false);
   const [profilePhoto, setProfilePhoto] = useState(() => Storage.get(`profilePhoto_${user?.id}`, null));
@@ -61,8 +63,9 @@ const ProfileScreen = () => {
     Storage.remove('authToken');
     Storage.remove('savedUsername');
     Storage.remove('rememberMe');
+    clearNotifications();
     setUser(null);
-    showToast('Voce saiu da conta');
+    showToast('Você saiu da conta');
   };
 
   if (!user) {
@@ -141,7 +144,7 @@ const ProfileScreen = () => {
 
   return (
     <div>
-      <Header title="Perfil" subtitle="Configuracoes da conta" />
+      <Header title="Perfil" subtitle="Configurações da conta" />
 
       {/* Foto e Info Principal */}
       <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -271,7 +274,7 @@ const ProfileScreen = () => {
 
         <SettingItem
           icon={<Icons.User />}
-          label="Informacoes Pessoais"
+          label="Informações Pessoais"
           value={user.instrument}
           onClick={() => showToast('Em breve!')}
         />
@@ -327,7 +330,7 @@ const ProfileScreen = () => {
             <line x1="12" y1="8" x2="12.01" y2="8" />
           </svg>}
           label="Acervo Digital"
-          value="Versao 2.2.0 - Dezembro 2025"
+          value="Versão 2.3.0 - Dezembro 2025"
           onClick={() => setShowAboutModal(true)}
         />
 

@@ -75,7 +75,7 @@ const ChangePinModal = ({ onClose }) => {
   const setNewPinValue = (pin) => {
     // Verifica se o novo PIN e igual ao atual
     if (pin === storedPin) {
-      setError('O novo PIN nao pode ser igual ao atual');
+      setError('O novo PIN não pode ser igual ao atual');
       setNewPin(['', '', '', '']);
       setTimeout(() => newPinRefs[0].current?.focus(), 100);
       return;
@@ -86,7 +86,7 @@ const ChangePinModal = ({ onClose }) => {
 
   const confirmNewPin = async (pin) => {
     if (pin !== newPin.join('')) {
-      setError('Os PINs nao conferem');
+      setError('Os PINs não conferem');
       setConfirmPin(['', '', '', '']);
       confirmPinRefs[0].current?.focus();
       return;

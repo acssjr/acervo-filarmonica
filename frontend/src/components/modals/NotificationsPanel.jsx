@@ -1,22 +1,28 @@
 // ===== NOTIFICATIONS PANEL =====
-// Painel de notificacoes
+// Painel de notificacoes de novas partituras
 
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUI } from '@contexts/UIContext';
 import { useData } from '@contexts/DataContext';
 import { useNotifications } from '@contexts/NotificationContext';
+import { useIsMobile } from '@hooks/useResponsive';
 import { Icons } from '@constants/icons';
 import EmptyState from '@components/common/EmptyState';
 
 const NotificationsPanel = () => {
   const navigate = useNavigate();
   const { showNotifications, setShowNotifications, theme } = useUI();
-  const { setSelectedCategory, sheets } = useData();
-  const { notifications, markNotificationAsRead, markAllNotificationsAsRead } = useNotifications();
+  const { sheets } = useData();
+  const { notifications, loading, markNotificationAsRead, markAllNotificationsAsRead, refreshNotifications } = useNotifications();
+  const isMobile = useIsMobile();
 
-  // Detecta se e dispositivo touch
-  const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+  // Recarrega notificacoes quando painel abre
+  useEffect(() => {
+    if (showNotifications) {
+      refreshNotifications();
+    }
+  }, [showNotifications, refreshNotifications]);
 
   // Bloqueia scroll do body quando painel esta aberto (apenas mobile)
   useEffect(() => {
@@ -58,12 +64,15 @@ const NotificationsPanel = () => {
   const handleNotificationClick = (notification) => {
     markNotificationAsRead(notification.id);
 
-    if (notification.type === 'new_sheet' && notification.sheetId) {
-      const sheet = sheets.find(s => s.id === notification.sheetId);
-      if (sheet) {
-        setSelectedCategory(sheet.category);
-        navigate('/acervo');
-      }
+    // Tenta encontrar a partitura pelo titulo
+    const sheet = sheets.find(s =>
+      s.title.toLowerCase() === notification.title.toLowerCase()
+    );
+
+    if (sheet) {
+      navigate(`/acervo/${sheet.category}/${sheet.id}`);
+    } else {
+      navigate('/acervo');
     }
 
     setShowNotifications(false);
@@ -132,7 +141,7 @@ const NotificationsPanel = () => {
           borderBottom: '1px solid var(--border)'
         }}>
           <h3 style={{ fontFamily: 'Outfit, sans-serif', fontSize: '18px', fontWeight: '700', color: 'var(--text-primary)' }}>
-            Notificacoes
+            Notificações
           </h3>
           {notifications.some(n => !n.read) && (
             <button
@@ -147,15 +156,30 @@ const NotificationsPanel = () => {
                 fontFamily: 'Outfit, sans-serif'
               }}
             >
-              Marcar todas como lidas
+              Marcar como lidas
             </button>
           )}
         </div>
 
         {/* Lista de notificacoes */}
         <div style={{ maxHeight: 'calc(70vh - 60px)', overflowY: 'auto' }}>
-          {notifications.length === 0 ? (
-            <EmptyState icon={Icons.Bell} title="Nenhuma notificacao" size="small" />
+          {loading ? (
+            <div style={{ padding: '40px 20px', textAlign: 'center' }}>
+              <div style={{
+                width: '32px',
+                height: '32px',
+                border: '3px solid var(--border)',
+                borderTopColor: 'var(--primary)',
+                borderRadius: '50%',
+                margin: '0 auto 12px',
+                animation: 'spin 1s linear infinite'
+              }} />
+              <p style={{ fontSize: '14px', color: 'var(--text-muted)', fontFamily: 'Outfit, sans-serif' }}>
+                Carregando...
+              </p>
+            </div>
+          ) : notifications.length === 0 ? (
+            <EmptyState icon={Icons.Music} title="Nenhuma partitura nova" size="small" />
           ) : (
             notifications.map(notification => (
               <div
@@ -163,7 +187,7 @@ const NotificationsPanel = () => {
                 onClick={() => handleNotificationClick(notification)}
                 style={{
                   display: 'flex',
-                  alignItems: 'flex-start',
+                  alignItems: 'center',
                   gap: '12px',
                   padding: '14px 20px',
                   cursor: 'pointer',
@@ -177,7 +201,7 @@ const NotificationsPanel = () => {
                   width: '40px',
                   height: '40px',
                   borderRadius: '10px',
-                  background: 'linear-gradient(135deg, #722F37 0%, #5C1A1B 100%)',
+                  background: 'linear-gradient(145deg, #722F37 0%, #5C1A1B 100%)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -195,14 +219,24 @@ const NotificationsPanel = () => {
                     fontWeight: notification.read ? '500' : '600',
                     color: 'var(--text-primary)',
                     marginBottom: '2px',
-                    fontFamily: 'Outfit, sans-serif'
+                    fontFamily: 'Outfit, sans-serif',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis'
                   }}>
                     {notification.title}
                   </p>
-                  <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '4px', fontFamily: 'Outfit, sans-serif' }}>
-                    {notification.message}
+                  <p style={{
+                    fontSize: '13px',
+                    color: 'var(--text-muted)',
+                    fontFamily: 'Outfit, sans-serif',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis'
+                  }}>
+                    {notification.composer || 'Compositor desconhecido'}
                   </p>
-                  <p style={{ fontSize: '12px', color: 'var(--text-muted)', opacity: 0.7, fontFamily: 'Outfit, sans-serif' }}>
+                  <p style={{ fontSize: '11px', color: 'var(--text-muted)', opacity: 0.6, fontFamily: 'Outfit, sans-serif', marginTop: '2px' }}>
                     {formatDate(notification.date)}
                   </p>
                 </div>
@@ -213,9 +247,8 @@ const NotificationsPanel = () => {
                     width: '8px',
                     height: '8px',
                     borderRadius: '50%',
-                    background: 'var(--primary)',
-                    flexShrink: 0,
-                    marginTop: '6px'
+                    background: '#D4AF37',
+                    flexShrink: 0
                   }} />
                 )}
               </div>

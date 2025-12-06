@@ -1,9 +1,10 @@
 // ===== NOTIFICATION CONTEXT =====
-// Gerencia notificacoes do usuario
+// Gerencia notificacoes de novas partituras e avisos
 // Separado para evitar re-renders em outros componentes
 
 import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import Storage from '@services/storage';
+import { API } from '@services/api';
 
 const NotificationContext = createContext();
 
@@ -15,42 +16,78 @@ export const useNotifications = () => {
   return context;
 };
 
-// Gera notificacoes iniciais
-const generateInitialNotifications = () => {
-  const now = new Date();
-  return [
-    { id: '1', type: 'new_sheet', sheetId: '1', title: 'Cisne Branco', message: 'Nova partitura adicionada', date: new Date(now - 2 * 24 * 60 * 60 * 1000).toISOString(), read: false },
-    { id: '2', type: 'new_sheet', sheetId: '3', title: 'Saudades', message: 'Nova partitura adicionada', date: new Date(now - 5 * 24 * 60 * 60 * 1000).toISOString(), read: false },
-  ];
+// Converte atividade de nova partitura para notificacao
+const activityToNotification = (activity) => {
+  return {
+    id: `activity-${activity.id}`,
+    type: 'nova_partitura',
+    title: activity.titulo,
+    composer: activity.detalhes, // compositor vem no campo detalhes
+    date: activity.criado_em,
+    read: Storage.get(`notification-read-${activity.id}`, false)
+  };
 };
 
 export const NotificationProvider = ({ children }) => {
-  const [notifications, setNotifications] = useState(() =>
-    Storage.get('notifications', generateInitialNotifications())
-  );
+  const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // Persiste notificacoes
-  useEffect(() => {
-    Storage.set('notifications', notifications);
-  }, [notifications]);
+  // Carrega novas partituras do backend como notificacoes
+  const loadNotifications = useCallback(async () => {
+    try {
+      setLoading(true);
+      const activities = await API.getAtividades();
 
-  const addNotification = useCallback((notification) => {
-    const newNotification = {
-      id: Date.now().toString(),
-      date: new Date().toISOString(),
-      read: false,
-      ...notification
-    };
-    setNotifications(prev => [newNotification, ...prev]);
+      if (activities && Array.isArray(activities)) {
+        // Filtra apenas novas partituras (tipo = 'nova_partitura')
+        const newSheets = activities
+          .filter(a => a.tipo === 'nova_partitura')
+          .slice(0, 30)
+          .map(activityToNotification);
+
+        setNotifications(newSheets);
+      }
+    } catch (error) {
+      console.log('Notificacoes: erro ao carregar');
+      setNotifications([]);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
+  // Carrega notificacoes ao montar
+  useEffect(() => {
+    loadNotifications();
+  }, [loadNotifications]);
+
   const markNotificationAsRead = useCallback((id) => {
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+    setNotifications(prev => prev.map(n => {
+      if (n.id === id) {
+        const activityId = id.replace('activity-', '');
+        Storage.set(`notification-read-${activityId}`, true);
+        return { ...n, read: true };
+      }
+      return n;
+    }));
   }, []);
 
   const markAllNotificationsAsRead = useCallback(() => {
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    setNotifications(prev => prev.map(n => {
+      const activityId = n.id.replace('activity-', '');
+      Storage.set(`notification-read-${activityId}`, true);
+      return { ...n, read: true };
+    }));
   }, []);
+
+  // Limpa notificacoes (para logout)
+  const clearNotifications = useCallback(() => {
+    setNotifications([]);
+  }, []);
+
+  // Recarrega notificacoes (para refresh manual)
+  const refreshNotifications = useCallback(() => {
+    loadNotifications();
+  }, [loadNotifications]);
 
   const unreadCount = useMemo(() =>
     notifications.filter(n => !n.read).length,
@@ -60,9 +97,11 @@ export const NotificationProvider = ({ children }) => {
   return (
     <NotificationContext.Provider value={{
       notifications,
-      addNotification,
+      loading,
       markNotificationAsRead,
       markAllNotificationsAsRead,
+      clearNotifications,
+      refreshNotifications,
       unreadCount
     }}>
       {children}

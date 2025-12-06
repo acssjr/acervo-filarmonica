@@ -4,6 +4,7 @@
 import { useState } from 'react';
 import { useAuth } from '@contexts/AuthContext';
 import { useUI } from '@contexts/UIContext';
+import { useNotifications } from '@contexts/NotificationContext';
 import { API } from '@services/api';
 import { Storage } from '@services/storage';
 import { ChangePinModal, AboutModal, ADMIN_CHANGELOG, ADMIN_ABOUT_CONFIG } from '@components/modals';
@@ -11,6 +12,7 @@ import { ChangePinModal, AboutModal, ADMIN_CHANGELOG, ADMIN_ABOUT_CONFIG } from 
 const AdminConfig = () => {
   const { user, setUser } = useAuth();
   const { showToast, themeMode, setThemeMode } = useUI();
+  const { clearNotifications } = useNotifications();
   const [showChangePin, setShowChangePin] = useState(false);
   const [showAboutModal, setShowAboutModal] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
@@ -18,6 +20,7 @@ const AdminConfig = () => {
   const handleLogout = () => {
     API.logout();
     Storage.remove('user');
+    clearNotifications();
     setUser(null);
     window.location.reload();
   };
@@ -83,7 +86,7 @@ const AdminConfig = () => {
           <circle cx="12" cy="12" r="3"/>
           <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
         </svg>
-        Configuracoes
+        Configurações
       </h1>
 
       {/* Foto de Perfil */}
@@ -216,7 +219,7 @@ const AdminConfig = () => {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
           <div>
             <div style={{ color: 'var(--text-primary)', marginBottom: '4px', fontFamily: 'Outfit, sans-serif' }}>
-              Usuario: <strong>{user?.username}</strong>
+              Usuário: <strong>{user?.username}</strong>
             </div>
             <div style={{ fontSize: '13px', color: 'var(--text-secondary)', fontFamily: 'Outfit, sans-serif' }}>
               {user?.name}

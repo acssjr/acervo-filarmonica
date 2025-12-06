@@ -261,7 +261,7 @@ const DesktopHeader = () => {
           {/* Sininho de notificações */}
           <button
             onClick={() => setShowNotifications(true)}
-            aria-label={unreadCount > 0 ? `Notificacoes (${unreadCount} nao lidas)` : 'Notificacoes'}
+            aria-label={unreadCount > 0 ? `Notificações (${unreadCount} não lidas)` : 'Notificações'}
             style={{
               width: '40px',
               height: '40px',
@@ -283,21 +283,23 @@ const DesktopHeader = () => {
             {unreadCount > 0 && (
               <div style={{
                 position: 'absolute',
-                top: '6px',
-                right: '6px',
-                width: '16px',
-                height: '16px',
-                borderRadius: '50%',
-                background: 'var(--primary)',
+                top: '-4px',
+                right: '-4px',
+                minWidth: '18px',
+                height: '18px',
+                padding: '0 5px',
+                borderRadius: '9px',
+                background: '#E74C3C',
                 color: '#fff',
-                fontSize: '10px',
+                fontSize: '11px',
                 fontWeight: '700',
+                fontFamily: 'Outfit, sans-serif',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                border: '2px solid var(--bg-card)'
+                boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
               }}>
-                {unreadCount > 9 ? '9+' : unreadCount}
+                {unreadCount > 99 ? '99+' : unreadCount}
               </div>
             )}
           </button>

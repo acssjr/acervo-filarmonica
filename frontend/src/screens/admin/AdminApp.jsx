@@ -85,10 +85,10 @@ const AdminApp = () => {
 
   const menuItems = [
     { id: 'dashboard', icon: 'dashboard', label: 'Dashboard' },
-    { id: 'musicos', icon: 'users', label: 'Musicos' },
+    { id: 'musicos', icon: 'users', label: 'Músicos' },
     { id: 'partituras', icon: 'music', label: 'Partituras' },
     { id: 'categorias', icon: 'folder', label: 'Categorias' },
-    { id: 'config', icon: 'settings', label: 'Configuracoes' },
+    { id: 'config', icon: 'settings', label: 'Configurações' },
   ];
 
   // Icones do menu como SVG
@@ -405,7 +405,7 @@ const AdminApp = () => {
               transition: 'background 0.2s',
               textAlign: 'left'
             }}
-            title="Ir para configuracoes"
+            title="Ir para configurações"
           >
             <div style={{
               display: 'flex',

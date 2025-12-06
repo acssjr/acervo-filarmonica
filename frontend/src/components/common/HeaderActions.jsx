@@ -67,21 +67,23 @@ const HeaderActions = ({ inDarkHeader = false }) => {
         {unreadCount > 0 && (
           <div style={{
             position: 'absolute',
-            top: '4px',
-            right: '4px',
-            width: '14px',
-            height: '14px',
-            borderRadius: '50%',
-            background: inDarkHeader ? '#D4AF37' : 'var(--primary)',
-            color: inDarkHeader ? '#3D1518' : '#fff',
-            fontSize: '9px',
+            top: '-4px',
+            right: '-4px',
+            minWidth: '16px',
+            height: '16px',
+            padding: '0 4px',
+            borderRadius: '8px',
+            background: '#E74C3C',
+            color: '#fff',
+            fontSize: '10px',
             fontWeight: '700',
+            fontFamily: 'Outfit, sans-serif',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            border: inDarkHeader ? '2px solid #722F37' : '2px solid var(--bg-card)'
+            boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
           }}>
-            {unreadCount > 9 ? '9+' : unreadCount}
+            {unreadCount > 99 ? '99+' : unreadCount}
           </div>
         )}
       </button>
