@@ -9,11 +9,12 @@ const SearchBar = ({ value, onChange, placeholder, onClear }) => (
         <path d="m21 21-4.35-4.35" />
       </svg>
       <input
-        type="search"
+        type="text"
         placeholder={placeholder || "Buscar partituras..."}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         aria-label={placeholder || "Buscar partituras"}
+        autoComplete="off"
       />
       {value && (
         <button className="clear-btn" onClick={() => onChange('')} aria-label="Limpar busca">

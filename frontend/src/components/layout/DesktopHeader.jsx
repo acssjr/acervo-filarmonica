@@ -13,6 +13,36 @@ import ThemeSelector from '@components/common/ThemeSelector';
 import { getNextRehearsal } from '@hooks/useNextRehearsal';
 import { levenshtein } from '@utils/search';
 
+// Normaliza texto removendo acentos
+const normalize = (str) => {
+  return str.toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim();
+};
+
+// Transliteracoes de grafias antigas/alternativas para modernas
+// Permite que "ninfas" encontre "nymphas", "filosofia" encontre "philosophia", etc.
+const transliterate = (str) => {
+  return str
+    // Grafias gregas/latinas antigas (ordem importa!)
+    .replace(/mph/g, 'nf')    // nymphas -> ninfas (nasal antes de ph)
+    .replace(/ph/g, 'f')      // philosophia -> filosofia
+    .replace(/th/g, 't')      // theatro -> teatro
+    .replace(/y/g, 'i')       // nymphas -> ninfas, lyra -> lira
+    .replace(/ch(?=[aeiou])/g, 'c')  // chronica -> cronica (antes de vogal)
+    .replace(/rh/g, 'r')      // rhetorica -> retorica
+    // Duplicacoes antigas
+    .replace(/ll/g, 'l')      // belleza -> beleza
+    .replace(/mm/g, 'm')      // commando -> comando
+    .replace(/nn/g, 'n')      // anno -> ano
+    .replace(/pp/g, 'p')      // appello -> apelo
+    .replace(/ss(?!$)/g, 's') // passo -> paso (exceto final)
+    .replace(/tt/g, 't')      // attender -> atender
+    .replace(/cc/g, 'c')      // accento -> acento
+    .replace(/ff/g, 'f');     // affecto -> afeto
+};
+
 const DesktopHeader = () => {
   const navigate = useNavigate();
   const { setShowNotifications } = useUI();
@@ -21,35 +51,42 @@ const DesktopHeader = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showResults, setShowResults] = useState(false);
 
-  // Busca fuzzy nos sheets
+  // Busca fuzzy nos sheets com transliteracao
   const searchResults = useMemo(() => {
     if (!searchQuery.trim()) return [];
 
-    const query = searchQuery.toLowerCase().trim();
+    const query = normalize(searchQuery);
+    const queryTranslit = transliterate(query);
 
     return sheets
       .map(sheet => {
-        const titleLower = sheet.title.toLowerCase();
-        const composerLower = sheet.composer.toLowerCase();
+        const titleNorm = normalize(sheet.title);
+        const titleTranslit = transliterate(titleNorm);
+        const composerNorm = normalize(sheet.composer);
+        const composerTranslit = transliterate(composerNorm);
         const category = CATEGORIES.find(c => c.id === sheet.category);
-        const categoryLower = category?.name.toLowerCase() || '';
+        const categoryNorm = normalize(category?.name || '');
 
         // Pontuação por diferentes critérios
         let score = 0;
 
-        // Match exato no início (maior peso)
-        if (titleLower.startsWith(query)) score += 100;
-        else if (titleLower.includes(query)) score += 50;
+        // Match exato no início (maior peso) - normal e transliterado
+        if (titleNorm.startsWith(query)) score += 100;
+        else if (titleNorm.includes(query)) score += 50;
+        else if (titleTranslit.startsWith(queryTranslit)) score += 95;
+        else if (titleTranslit.includes(queryTranslit)) score += 45;
 
-        if (composerLower.startsWith(query)) score += 80;
-        else if (composerLower.includes(query)) score += 40;
+        if (composerNorm.startsWith(query)) score += 80;
+        else if (composerNorm.includes(query)) score += 40;
+        else if (composerTranslit.startsWith(queryTranslit)) score += 75;
+        else if (composerTranslit.includes(queryTranslit)) score += 35;
 
-        if (categoryLower.startsWith(query)) score += 60;
-        else if (categoryLower.includes(query)) score += 30;
+        if (categoryNorm.startsWith(query)) score += 60;
+        else if (categoryNorm.includes(query)) score += 30;
 
         // Fuzzy match com Levenshtein
-        const titleDist = levenshtein(query, titleLower.slice(0, query.length));
-        const composerDist = levenshtein(query, composerLower.slice(0, query.length));
+        const titleDist = levenshtein(query, titleNorm.slice(0, query.length));
+        const composerDist = levenshtein(query, composerNorm.slice(0, query.length));
 
         if (titleDist <= 2) score += (20 - titleDist * 5);
         if (composerDist <= 2) score += (15 - composerDist * 5);
@@ -196,11 +233,12 @@ const DesktopHeader = () => {
               <path d="m21 21-4.35-4.35" />
             </svg>
             <input
-              type="search"
+              type="text"
               placeholder="Buscar partituras..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               aria-label="Buscar partituras"
+              autoComplete="off"
             />
             {searchQuery && (
               <button className="clear-btn" onClick={() => setSearchQuery('')} aria-label="Limpar busca">

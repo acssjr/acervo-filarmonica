@@ -19,33 +19,134 @@ const SearchScreen = () => {
   // Debounce de 300ms para evitar re-renders excessivos
   const debouncedQuery = useDebounce(searchQuery, 300);
 
-  // Busca fuzzy nos sheets (agora com debounce e Map O(1))
+  // Normaliza texto removendo acentos
+  const normalize = (str) => {
+    return str.toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .trim();
+  };
+
+  // Transliteracoes de grafias antigas/alternativas para modernas
+  // Permite que "ninfas" encontre "nymphas", "filosofia" encontre "philosophia", etc.
+  const transliterate = (str) => {
+    return str
+      // Grafias gregas/latinas antigas (ordem importa!)
+      .replace(/mph/g, 'nf')    // nymphas -> ninfas (nasal antes de ph)
+      .replace(/ph/g, 'f')      // philosophia -> filosofia
+      .replace(/th/g, 't')      // theatro -> teatro
+      .replace(/y/g, 'i')       // nymphas -> ninfas, lyra -> lira
+      .replace(/ch(?=[aeiou])/g, 'c')  // chronica -> cronica (antes de vogal)
+      .replace(/rh/g, 'r')      // rhetorica -> retorica
+      // Duplicacoes antigas
+      .replace(/ll/g, 'l')      // belleza -> beleza
+      .replace(/mm/g, 'm')      // commando -> comando
+      .replace(/nn/g, 'n')      // anno -> ano
+      .replace(/pp/g, 'p')      // appello -> apelo
+      .replace(/ss(?!$)/g, 's') // passo -> paso (exceto final)
+      .replace(/tt/g, 't')      // attender -> atender
+      .replace(/cc/g, 'c')      // accento -> acento
+      .replace(/ff/g, 'f')      // affecto -> afeto
+      // Outras variacoes
+      .replace(/ct/g, 't')      // facto -> fato
+      .replace(/pt/g, 't')      // optimo -> otimo
+      .replace(/mn/g, 'n')      // hymno -> hino
+      .replace(/gn/g, 'n')      // signal -> sinal
+      // Terminacoes
+      .replace(/ão$/g, 'am')    // coração pode ser buscado como coracam
+      .replace(/ção$/g, 'ssao');// nacao -> nassao (variante)
+  };
+
+  // Busca fuzzy nos sheets - agora com busca por palavras individuais e transliteracao
   const searchResults = useMemo(() => {
     if (!debouncedQuery.trim()) return [];
 
-    const query = debouncedQuery.toLowerCase().trim();
+    const query = normalize(debouncedQuery);
+    const queryTranslit = transliterate(query); // "ninfas" fica "ninfas"
+    const queryWords = query.split(/\s+/).filter(w => w.length > 0);
+    const queryWordsTranslit = queryWords.map(w => transliterate(w));
 
     return sheets
       .map(sheet => {
-        const titleLower = sheet.title.toLowerCase();
-        const composerLower = sheet.composer.toLowerCase();
-        // O(1) lookup via Map
+        const titleNorm = normalize(sheet.title);
+        const titleTranslit = transliterate(titleNorm); // "nymphas" -> "ninfas"
+        const composerNorm = normalize(sheet.composer);
+        const composerTranslit = transliterate(composerNorm);
         const category = CATEGORIES_MAP.get(sheet.category);
-        const categoryLower = category?.name.toLowerCase() || '';
+        const categoryNorm = normalize(category?.name || '');
 
         let score = 0;
 
-        if (titleLower.startsWith(query)) score += 100;
-        else if (titleLower.includes(query)) score += 50;
+        // Busca pela query completa (normal e transliterada)
+        if (titleNorm.startsWith(query)) score += 100;
+        else if (titleNorm.includes(query)) score += 50;
+        else if (titleTranslit.startsWith(queryTranslit)) score += 95; // Match transliterado
+        else if (titleTranslit.includes(queryTranslit)) score += 45;
 
-        if (composerLower.startsWith(query)) score += 80;
-        else if (composerLower.includes(query)) score += 40;
+        if (composerNorm.startsWith(query)) score += 80;
+        else if (composerNorm.includes(query)) score += 40;
+        else if (composerTranslit.startsWith(queryTranslit)) score += 75;
+        else if (composerTranslit.includes(queryTranslit)) score += 35;
 
-        if (categoryLower.startsWith(query)) score += 60;
-        else if (categoryLower.includes(query)) score += 30;
+        if (categoryNorm.startsWith(query)) score += 60;
+        else if (categoryNorm.includes(query)) score += 30;
 
-        const titleDist = levenshtein(query, titleLower.slice(0, query.length));
-        const composerDist = levenshtein(query, composerLower.slice(0, query.length));
+        // Busca por palavras individuais (para queries como "ninfas amor")
+        let matchedWords = 0;
+        queryWords.forEach((word, idx) => {
+          if (word.length < 2) return;
+          const wordTranslit = queryWordsTranslit[idx];
+
+          // Match normal
+          if (titleNorm.includes(word)) {
+            score += 25;
+            matchedWords++;
+          } else if (titleTranslit.includes(wordTranslit)) {
+            // Match transliterado (ninfas encontra nymphas)
+            score += 22;
+            matchedWords++;
+          }
+
+          if (composerNorm.includes(word)) {
+            score += 20;
+            matchedWords++;
+          } else if (composerTranslit.includes(wordTranslit)) {
+            score += 18;
+            matchedWords++;
+          }
+
+          if (categoryNorm.includes(word)) {
+            score += 15;
+            matchedWords++;
+          }
+
+          // Fuzzy match por palavra (normal e transliterado)
+          const titleWords = titleNorm.split(/\s+/);
+          const titleWordsTranslit = titleTranslit.split(/\s+/);
+
+          titleWords.forEach((tw, twIdx) => {
+            const dist = levenshtein(word, tw);
+            if (dist <= 2 && dist > 0) {
+              score += (10 - dist * 3);
+            }
+            // Fuzzy na versao transliterada
+            if (titleWordsTranslit[twIdx]) {
+              const distTranslit = levenshtein(wordTranslit, titleWordsTranslit[twIdx]);
+              if (distTranslit <= 2 && distTranslit > 0) {
+                score += (8 - distTranslit * 2);
+              }
+            }
+          });
+        });
+
+        // Bonus se todas as palavras foram encontradas
+        if (queryWords.length > 1 && matchedWords >= queryWords.length) {
+          score += 30;
+        }
+
+        // Fuzzy match para query completa
+        const titleDist = levenshtein(query, titleNorm.slice(0, query.length));
+        const composerDist = levenshtein(query, composerNorm.slice(0, query.length));
 
         if (titleDist <= 2) score += (20 - titleDist * 5);
         if (composerDist <= 2) score += (15 - composerDist * 5);
@@ -84,6 +185,7 @@ const SearchScreen = () => {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             autoFocus
+            autoComplete="off"
             style={{
               flex: 1,
               border: 'none',
@@ -91,7 +193,10 @@ const SearchScreen = () => {
               outline: 'none',
               fontFamily: 'Outfit, sans-serif',
               fontSize: '15px',
-              color: 'var(--text-primary)'
+              color: 'var(--text-primary)',
+              WebkitAppearance: 'none',
+              MozAppearance: 'none',
+              appearance: 'none'
             }}
           />
           {searchQuery && (

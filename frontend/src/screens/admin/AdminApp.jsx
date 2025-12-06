@@ -24,8 +24,14 @@ const AdminApp = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { themeMode, setThemeMode } = useUI();
+
+  // Funcao de logout
+  const handleLogout = () => {
+    logout();
+    navigate('/login', { replace: true });
+  };
 
   // Detecta mudanca de tamanho da tela
   useEffect(() => {
@@ -479,6 +485,40 @@ const AdminApp = () => {
               </button>
             ))}
           </nav>
+
+          {/* Botao Sair */}
+          <div style={{ padding: '12px 8px', borderTop: '1px solid var(--border)' }}>
+            <button
+              onClick={handleLogout}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                padding: sidebarCollapsed && !isMobile ? '12px' : '12px 16px',
+                borderRadius: 'var(--radius-sm)',
+                background: 'transparent',
+                border: '1px solid transparent',
+                color: 'rgba(239, 68, 68, 0.8)',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                width: '100%',
+                justifyContent: sidebarCollapsed && !isMobile ? 'center' : 'flex-start',
+                fontFamily: 'Outfit, sans-serif',
+                fontSize: '14px',
+                fontWeight: '500'
+              }}
+              title={sidebarCollapsed && !isMobile ? 'Sair' : ''}
+              onMouseEnter={(e) => e.currentTarget.style.color = 'rgba(239, 68, 68, 1)'}
+              onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(239, 68, 68, 0.8)'}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                <polyline points="16 17 21 12 16 7"/>
+                <line x1="21" y1="12" x2="9" y2="12"/>
+              </svg>
+              {(!sidebarCollapsed || isMobile) && <span>Sair</span>}
+            </button>
+          </div>
 
         </div>
 
