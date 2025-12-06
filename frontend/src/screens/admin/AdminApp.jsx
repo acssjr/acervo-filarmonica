@@ -232,7 +232,6 @@ const AdminApp = () => {
 
             {/* Acoes Mobile */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <AdminToggle />
               <button
                 onClick={cycleTheme}
                 style={{
@@ -250,6 +249,7 @@ const AdminApp = () => {
               >
                 <ThemeIcon mode={themeMode} />
               </button>
+              <AdminToggle />
             </div>
           </div>
         )}
@@ -571,8 +571,8 @@ const AdminApp = () => {
 
               {/* Acoes do header */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <AdminToggle />
                 <ThemeSelector inline />
+                <AdminToggle />
               </div>
             </header>
           )}

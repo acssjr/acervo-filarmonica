@@ -259,9 +259,6 @@ const DesktopHeader = () => {
           {/* Seletor de tema inline */}
           <ThemeSelector inline />
 
-          {/* Toggle Admin (só para admins) */}
-          <AdminToggle />
-
           {/* Sininho de notificações */}
           <button
             onClick={() => setShowNotifications(true)}
@@ -307,6 +304,9 @@ const DesktopHeader = () => {
               </div>
             )}
           </button>
+
+          {/* Toggle Admin (só para admins) - à direita das notificações */}
+          <AdminToggle />
         </div>
       </div>
 

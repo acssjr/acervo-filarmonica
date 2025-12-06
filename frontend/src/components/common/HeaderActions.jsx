@@ -43,9 +43,6 @@ const HeaderActions = ({ inDarkHeader = false }) => {
       {/* Seletor de tema */}
       <ThemeSelector inDarkHeader={inDarkHeader} compact />
 
-      {/* Toggle Admin (só para admins) */}
-      <AdminToggle />
-
       {/* Sininho de notificações */}
       <button
         className="btn-hover"
@@ -91,6 +88,9 @@ const HeaderActions = ({ inDarkHeader = false }) => {
           </div>
         )}
       </button>
+
+      {/* Toggle Admin (só para admins) - à direita das notificações */}
+      <AdminToggle />
     </div>
   );
 };

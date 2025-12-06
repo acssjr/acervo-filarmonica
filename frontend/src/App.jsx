@@ -81,7 +81,7 @@ const LoadingScreen = () => (
 );
 
 // Componente de protecao de rotas
-// Redireciona admins automaticamente para /admin
+// Permite admins acessarem area de musico (para usar AdminToggle)
 const ProtectedRoute = ({ children }) => {
   const { user } = useAuth();
   const { isLoading } = useData();
@@ -95,11 +95,7 @@ const ProtectedRoute = ({ children }) => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // Admin acessando area de musico -> redireciona para /admin
-  if (user.isAdmin) {
-    return <Navigate to="/admin" replace />;
-  }
-
+  // Admins podem acessar area de musico (toggle entre admin/musico)
   return children;
 };
 

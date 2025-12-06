@@ -109,7 +109,7 @@ const FeaturedSheets = ({ sheets, onToggleFavorite, favorites }) => {
         )}
       </div>
 
-      {/* Cards - Scroll fluido tanto no desktop quanto mobile */}
+      {/* Cards - Scroll fluido com fade nas bordas */}
       <div
         ref={scrollRef}
         onMouseDown={handleMouseDown}
@@ -128,7 +128,10 @@ const FeaturedSheets = ({ sheets, onToggleFavorite, favorites }) => {
           scrollbarWidth: 'none',
           msOverflowStyle: 'none',
           cursor: isDesktop ? 'grab' : 'default',
-          overscrollBehaviorX: 'contain'
+          overscrollBehaviorX: 'contain',
+          // Fade suave nas bordas usando mask-image (apenas durante animação)
+          maskImage: !hasInteracted ? 'linear-gradient(to right, transparent 0%, black 5%, black 95%, transparent 100%)' : 'none',
+          WebkitMaskImage: !hasInteracted ? 'linear-gradient(to right, transparent 0%, black 5%, black 95%, transparent 100%)' : 'none'
         }}
       >
         <div
