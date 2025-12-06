@@ -25,6 +25,9 @@ npm-debug.log*
 # Vite
 frontend/dist/
 
+# Jest
+coverage/
+
 # MCP / Playwright
 .playwright-mcp/
 
