@@ -1,11 +1,18 @@
 // ===== JEST POLYFILLS =====
 // Este arquivo roda ANTES do ambiente de teste ser configurado
 // Necessario para MSW funcionar com Jest + JSDOM
-// Ordem critica: streams -> messaging -> fetch
+// Ordem critica: timers -> streams -> messaging -> fetch
 
 import { TextEncoder, TextDecoder } from 'node:util';
 import { ReadableStream, TransformStream, WritableStream } from 'node:stream/web';
 import { BroadcastChannel, MessageChannel, MessagePort } from 'node:worker_threads';
+import { setImmediate, clearImmediate } from 'node:timers';
+
+// 0. setImmediate/clearImmediate (requerido por undici no JSDOM)
+Object.defineProperties(globalThis, {
+  setImmediate: { value: setImmediate, writable: true, configurable: true },
+  clearImmediate: { value: clearImmediate, writable: true, configurable: true },
+});
 
 // 1. TextEncoder/Decoder primeiro
 Object.defineProperties(globalThis, {

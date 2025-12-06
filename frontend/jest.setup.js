@@ -10,7 +10,8 @@ import { jest, beforeEach, afterEach, beforeAll, afterAll } from '@jest/globals'
 import { server } from './src/__tests__/mocks/server.js';
 
 // Inicia servidor antes de todos os testes
-beforeAll(() => server.listen({ onUnhandledRequest: 'bypass' }));
+// 'error' bloqueia requests nao interceptados (evita rede real)
+beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
 
 // Reseta handlers entre testes para garantir isolamento
 afterEach(() => server.resetHandlers());

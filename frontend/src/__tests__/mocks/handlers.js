@@ -4,7 +4,20 @@
 
 import { http, HttpResponse } from 'msw';
 
-const API_BASE = 'https://acervo-api.caiocss.workers.dev';
+// API_BASE pode ser vazio (localhost) ou a URL de producao
+// MSW precisa interceptar ambos
+const API_BASE_PROD = 'https://acervo-filarmonica-api.acssjr.workers.dev';
+
+// Helper para criar handler para ambas URLs (relativa e absoluta)
+const createHandler = (method, path, resolver) => {
+  return [
+    http[method](path, resolver),
+    http[method](`${API_BASE_PROD}${path}`, resolver)
+  ];
+};
+
+// Compat: manter API_BASE para handlers antigos
+const API_BASE = API_BASE_PROD;
 
 // ===== DADOS MOCK =====
 export const mockUser = {
@@ -47,7 +60,132 @@ export const mockPartes = [
 ];
 
 // ===== HANDLERS =====
+// Handlers para URLs relativas (localhost/testes) e absolutas (producao)
 export const handlers = [
+  // ----- HEALTH CHECK (URLs relativas primeiro) -----
+  http.get('/api/health', () => {
+    return HttpResponse.json({ status: 'ok', timestamp: Date.now() });
+  }),
+
+  // ----- PARTITURAS (URLs relativas) -----
+  http.get('/api/partituras', () => {
+    return HttpResponse.json(mockSheets);
+  }),
+
+  http.get('/api/partituras/:id', ({ params }) => {
+    const sheet = mockSheets.find(s => s.id === parseInt(params.id));
+    if (sheet) {
+      return HttpResponse.json(sheet);
+    }
+    return HttpResponse.json({ error: 'Não encontrado' }, { status: 404 });
+  }),
+
+  http.get('/api/partituras/:id/partes', ({ params }) => {
+    const partes = mockPartes.filter(p => p.partitura_id === parseInt(params.id));
+    return HttpResponse.json(partes);
+  }),
+
+  // ----- FAVORITOS (URLs relativas) -----
+  http.get('/api/favoritos', ({ request }) => {
+    const authHeader = request.headers.get('Authorization');
+    if (!authHeader) {
+      return HttpResponse.json({ error: 'Não autorizado' }, { status: 401 });
+    }
+    return HttpResponse.json([{ partitura_id: 1 }]);
+  }),
+
+  http.post('/api/favoritos/:id', ({ params, request }) => {
+    const authHeader = request.headers.get('Authorization');
+    if (!authHeader) {
+      return HttpResponse.json({ error: 'Não autorizado' }, { status: 401 });
+    }
+    return HttpResponse.json({ success: true, partitura_id: parseInt(params.id) });
+  }),
+
+  http.delete('/api/favoritos/:id', ({ request }) => {
+    const authHeader = request.headers.get('Authorization');
+    if (!authHeader) {
+      return HttpResponse.json({ error: 'Não autorizado' }, { status: 401 });
+    }
+    return HttpResponse.json({ success: true });
+  }),
+
+  // ----- AUTH (URLs relativas) -----
+  http.post('/api/check-user', async ({ request }) => {
+    const { username } = await request.json();
+    if (username === 'musico.teste') {
+      return HttpResponse.json({
+        exists: true,
+        user: { nome: mockUser.nome, instrumento: mockUser.instrumento }
+      });
+    }
+    if (username === 'admin') {
+      return HttpResponse.json({
+        exists: true,
+        user: { nome: mockAdminUser.nome, instrumento: null }
+      });
+    }
+    return HttpResponse.json({ exists: false });
+  }),
+
+  http.post('/api/login', async ({ request }) => {
+    const { username, pin } = await request.json();
+    if (username === 'musico.teste' && pin === '1234') {
+      return HttpResponse.json({
+        token: 'mock-jwt-token-user',
+        user: mockUser,
+        expiresIn: 86400
+      });
+    }
+    if (username === 'admin' && pin === '0000') {
+      return HttpResponse.json({
+        token: 'mock-jwt-token-admin',
+        user: mockAdminUser,
+        expiresIn: 86400
+      });
+    }
+    return HttpResponse.json({ error: 'Credenciais inválidas' }, { status: 401 });
+  }),
+
+  // ----- DOWNLOAD (URLs relativas) -----
+  http.get('/api/download/:id', ({ request }) => {
+    const authHeader = request.headers.get('Authorization');
+    if (!authHeader) {
+      return HttpResponse.json({ error: 'Não autorizado' }, { status: 401 });
+    }
+    const pdfContent = new Uint8Array([0x25, 0x50, 0x44, 0x46]);
+    return new HttpResponse(pdfContent, {
+      headers: {
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': 'attachment; filename="partitura.pdf"'
+      }
+    });
+  }),
+
+  http.get('/api/download/parte/:id', ({ request }) => {
+    const authHeader = request.headers.get('Authorization');
+    if (!authHeader) {
+      return HttpResponse.json({ error: 'Não autorizado' }, { status: 401 });
+    }
+    const pdfContent = new Uint8Array([0x25, 0x50, 0x44, 0x46]);
+    return new HttpResponse(pdfContent, {
+      headers: {
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': 'attachment; filename="parte.pdf"'
+      }
+    });
+  }),
+
+  // ----- ESTATISTICAS (URL relativa) -----
+  http.get('/api/estatisticas', () => {
+    return HttpResponse.json({
+      totalPartituras: 150,
+      totalUsuarios: 45,
+      downloadsHoje: 12
+    });
+  }),
+
+  // ===== HANDLERS PARA URLs ABSOLUTAS (producao) =====
   // ----- AUTH -----
   http.post(`${API_BASE}/api/check-user`, async ({ request }) => {
     const { username } = await request.json();
