@@ -13,6 +13,8 @@ const LoginScreen = ({ onClose, required = false }) => {
     isLoading,
     error,
     userFound,
+    userNotFound,
+    checkingUser,
     userInfo,
     pinRefs,
     cardRef,
@@ -22,6 +24,13 @@ const LoginScreen = ({ onClose, required = false }) => {
     toggleRememberMe,
     scrollToCard
   } = useLoginForm({ onClose });
+
+  // Determina a cor da borda do input
+  const getInputBorderColor = () => {
+    if (userFound) return 'rgba(34, 197, 94, 0.4)';
+    if (userNotFound) return 'rgba(239, 68, 68, 0.4)';
+    return 'rgba(255, 255, 255, 0.12)';
+  };
 
   return (
     <div style={{
@@ -109,7 +118,31 @@ const LoginScreen = ({ onClose, required = false }) => {
                   <circle cx="12" cy="7" r="4"/>
                 </svg>
                 Usuário
-                {userFound && (
+
+                {/* Loading de verificação */}
+                {checkingUser && (
+                  <span style={{
+                    marginLeft: 'auto',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    color: 'rgba(212, 175, 55, 0.8)',
+                    fontSize: '11px'
+                  }}>
+                    <div style={{
+                      width: '12px',
+                      height: '12px',
+                      border: '2px solid rgba(212, 175, 55, 0.3)',
+                      borderTopColor: '#D4AF37',
+                      borderRadius: '50%',
+                      animation: 'spin 0.8s linear infinite'
+                    }} />
+                    Verificando...
+                  </span>
+                )}
+
+                {/* Usuário encontrado */}
+                {!checkingUser && userFound && (
                   <span style={{
                     marginLeft: 'auto',
                     display: 'flex',
@@ -122,6 +155,25 @@ const LoginScreen = ({ onClose, required = false }) => {
                       <path d="M20 6L9 17l-5-5"/>
                     </svg>
                     {userInfo?.name}
+                  </span>
+                )}
+
+                {/* Usuário não encontrado */}
+                {!checkingUser && userNotFound && (
+                  <span style={{
+                    marginLeft: 'auto',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    color: '#EF4444',
+                    fontSize: '11px'
+                  }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="12" r="10"/>
+                      <line x1="15" y1="9" x2="9" y2="15"/>
+                      <line x1="9" y1="9" x2="15" y2="15"/>
+                    </svg>
+                    Não encontrado
                   </span>
                 )}
               </label>
@@ -138,7 +190,7 @@ const LoginScreen = ({ onClose, required = false }) => {
                   padding: '14px 16px',
                   borderRadius: '12px',
                   background: 'rgba(255, 255, 255, 0.06)',
-                  border: userFound ? '1px solid rgba(34, 197, 94, 0.4)' : '1px solid rgba(255, 255, 255, 0.12)',
+                  border: `1px solid ${getInputBorderColor()}`,
                   color: '#F4E4BC',
                   fontSize: '16px',
                   fontFamily: 'Outfit, sans-serif',
@@ -152,7 +204,7 @@ const LoginScreen = ({ onClose, required = false }) => {
                   scrollToCard();
                 }}
                 onBlur={e => {
-                  e.target.style.borderColor = userFound ? 'rgba(34, 197, 94, 0.4)' : 'rgba(255, 255, 255, 0.12)';
+                  e.target.style.borderColor = getInputBorderColor();
                   e.target.style.background = 'rgba(255, 255, 255, 0.06)';
                 }}
               />
@@ -317,7 +369,7 @@ const LoginScreen = ({ onClose, required = false }) => {
             fontFamily: 'Outfit, sans-serif',
             color: 'rgba(244, 228, 188, 0.3)'
           }}>
-            Sociedade Filarmonica 25 de Marco • Fundada em 1868
+            Sociedade Filarmônica 25 de Março • Fundada em 1868
           </p>
         </div>
       </div>

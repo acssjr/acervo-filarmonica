@@ -23,6 +23,8 @@ const useLoginForm = ({ onClose }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [userFound, setUserFound] = useState(false);
+  const [userNotFound, setUserNotFound] = useState(false);
+  const [checkingUser, setCheckingUser] = useState(false);
   const [userInfo, setUserInfo] = useState(null);
 
   // Refs
@@ -43,9 +45,12 @@ const useLoginForm = ({ onClose }) => {
   const checkUserExists = useCallback(async (usernameToCheck) => {
     if (!usernameToCheck || usernameToCheck.length < 2) {
       setUserFound(false);
+      setUserNotFound(false);
       setUserInfo(null);
       return;
     }
+
+    setCheckingUser(true);
 
     try {
       const response = await fetch(`${API_BASE_URL}/api/check-user`, {
@@ -57,16 +62,21 @@ const useLoginForm = ({ onClose }) => {
 
       if (data.exists) {
         setUserFound(true);
+        setUserNotFound(false);
         setUserInfo({ name: data.nome, instrument: data.instrumento });
         setTimeout(() => pinRefs[0].current?.focus(), 100);
       } else {
         setUserFound(false);
+        setUserNotFound(true);
         setUserInfo(null);
       }
     } catch (e) {
       console.error('Erro ao verificar usuario:', e);
       setUserFound(false);
+      setUserNotFound(false);
       setUserInfo(null);
+    } finally {
+      setCheckingUser(false);
     }
   }, []);
 
@@ -81,7 +91,7 @@ const useLoginForm = ({ onClose }) => {
     }
   }, []);
 
-  // Verifica se usuario existe quando digita (com debounce)
+  // Verifica se usuario existe quando digita (com debounce reduzido)
   const handleUsernameChange = useCallback((value) => {
     const normalized = value.toLowerCase().replace(/\s/g, '');
     setUsername(normalized);
@@ -93,13 +103,19 @@ const useLoginForm = ({ onClose }) => {
 
     if (!normalized || normalized.length < 2) {
       setUserFound(false);
+      setUserNotFound(false);
       setUserInfo(null);
+      setCheckingUser(false);
       return;
     }
 
+    // Inicia loading imediatamente ao digitar
+    setCheckingUser(true);
+
+    // Debounce reduzido para 150ms
     checkUserTimeout.current = setTimeout(() => {
       checkUserExists(normalized);
-    }, 300);
+    }, 150);
   }, [checkUserExists]);
 
   // Handler do PIN - autologin quando completo
@@ -121,7 +137,7 @@ const useLoginForm = ({ onClose }) => {
       const normalizedUsername = username.toLowerCase().replace(/\s/g, '');
 
       if (!normalizedUsername) {
-        setError('Digite seu usuario');
+        setError('Digite seu usuário');
         setPin(['', '', '', '']);
         return;
       }
@@ -145,7 +161,7 @@ const useLoginForm = ({ onClose }) => {
               username: result.user.username,
               name: result.user.nome,
               isAdmin: result.user.admin,
-              instrument: result.user.instrumento_nome || 'Musico',
+              instrument: result.user.instrumento_nome || 'Músico',
               instrumento_id: result.user.instrumento_id,
               foto_url: result.user.foto_url
             };
@@ -161,7 +177,7 @@ const useLoginForm = ({ onClose }) => {
                 Storage.set('favorites', favoritosStr);
               }
             } catch (e) {
-              console.log('Favoritos serao carregados depois');
+              console.log('Favoritos serão carregados depois');
             }
 
             showToast(`Bem-vindo, ${result.user.nome.split(' ')[0]}!`);
@@ -181,7 +197,7 @@ const useLoginForm = ({ onClose }) => {
           }
         }
 
-        setError('Usuario ou PIN incorreto');
+        setError('Usuário ou PIN incorreto');
         setPin(['', '', '', '']);
         pinRefs[0].current?.focus();
 
@@ -190,7 +206,7 @@ const useLoginForm = ({ onClose }) => {
         }
       } catch (err) {
         console.error('Erro no login:', err);
-        setError('Usuario ou PIN incorreto');
+        setError('Usuário ou PIN incorreto');
         setPin(['', '', '', '']);
         pinRefs[0].current?.focus();
 
@@ -223,6 +239,8 @@ const useLoginForm = ({ onClose }) => {
     isLoading,
     error,
     userFound,
+    userNotFound,
+    checkingUser,
     userInfo,
     // Refs
     pinRefs,
