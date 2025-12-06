@@ -1,7 +1,11 @@
 // ===== SIDEBAR NAV ITEM =====
 // Item de navegacao da sidebar
 
-const SidebarNavItem = ({ icon: Icon, label, isActive, collapsed, onClick }) => {
+const SidebarNavItem = ({ icon: Icon, label, isActive, collapsed, onClick, danger = false }) => {
+  // Cores para item de perigo (logout)
+  const dangerColor = 'rgba(239, 68, 68, 0.8)';
+  const dangerHoverColor = 'rgba(239, 68, 68, 1)';
+
   return (
     <button
       onClick={onClick}
@@ -18,13 +22,19 @@ const SidebarNavItem = ({ icon: Icon, label, isActive, collapsed, onClick }) => 
         background: isActive ? 'rgba(255,255,255,0.2)' : 'transparent',
         border: 'none',
         borderRadius: '10px',
-        color: isActive ? '#fff' : 'rgba(255,255,255,0.7)',
+        color: danger ? dangerColor : (isActive ? '#fff' : 'rgba(255,255,255,0.7)'),
         cursor: 'pointer',
         fontFamily: 'Outfit, sans-serif',
         fontSize: '14px',
         fontWeight: isActive ? '600' : '500',
         transition: 'all 0.2s ease',
         marginBottom: '2px'
+      }}
+      onMouseEnter={(e) => {
+        if (danger) e.currentTarget.style.color = dangerHoverColor;
+      }}
+      onMouseLeave={(e) => {
+        if (danger) e.currentTarget.style.color = dangerColor;
       }}
     >
       <div style={{ width: '18px', height: '18px', flexShrink: 0 }}>

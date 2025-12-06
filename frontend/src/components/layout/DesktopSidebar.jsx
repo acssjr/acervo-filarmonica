@@ -4,6 +4,7 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@contexts/AuthContext';
 import { useUI } from '@contexts/UIContext';
 import { useData } from '@contexts/DataContext';
 import { Icons } from '@constants/icons';
@@ -12,6 +13,7 @@ import { SidebarLogo, SidebarNavItem, SidebarSection } from './sidebar';
 
 const DesktopSidebar = ({ activeTab }) => {
   const navigate = useNavigate();
+  const { logout } = useAuth();
   const { sidebarCollapsed, setSidebarCollapsed } = useUI();
   const {
     selectedCategory, setSelectedCategory,
@@ -105,6 +107,11 @@ const DesktopSidebar = ({ activeTab }) => {
     setSelectedCategory(null);
     setSelectedComposer(null);
     handleNavigation('/compositores');
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login', { replace: true });
   };
 
   return (
@@ -204,11 +211,14 @@ const DesktopSidebar = ({ activeTab }) => {
         )}
       </div>
 
-      {/* Perfil - Fixo no final */}
+      {/* Perfil e Sair - Fixo no final */}
       <div style={{
         padding: '12px',
         borderTop: '1px solid rgba(255,255,255,0.1)',
-        marginTop: 'auto'
+        marginTop: 'auto',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '4px'
       }}>
         <SidebarNavItem
           icon={Icons.User}
@@ -216,6 +226,14 @@ const DesktopSidebar = ({ activeTab }) => {
           isActive={activeTab === 'profile'}
           collapsed={sidebarCollapsed}
           onClick={() => handleNavigation('/perfil')}
+        />
+        <SidebarNavItem
+          icon={Icons.Logout}
+          label="Sair"
+          isActive={false}
+          collapsed={sidebarCollapsed}
+          onClick={handleLogout}
+          danger
         />
       </div>
     </aside>
