@@ -204,6 +204,26 @@ export const handlers = [
     });
   }),
 
+  // ----- ATIVIDADES (URL relativa) -----
+  http.get('/api/atividades', () => {
+    return HttpResponse.json([
+      {
+        id: 1,
+        tipo: 'nova_partitura',
+        titulo: 'Dobrado Novo',
+        detalhes: 'Compositor X',
+        criado_em: '2024-12-01T10:00:00Z'
+      },
+      {
+        id: 2,
+        tipo: 'nova_partitura',
+        titulo: 'Marcha Nova',
+        detalhes: 'Compositor Y',
+        criado_em: '2024-12-02T10:00:00Z'
+      }
+    ]);
+  }),
+
   // ===== HANDLERS PARA URLs ABSOLUTAS (producao) =====
   // ----- AUTH -----
   http.post(`${API_BASE}/api/check-user`, async ({ request }) => {
@@ -350,6 +370,26 @@ export const handlers = [
       totalUsuarios: 45,
       downloadsHoje: 12
     });
+  }),
+
+  // ----- ATIVIDADES -----
+  http.get(`${API_BASE}/api/atividades`, () => {
+    return HttpResponse.json([
+      {
+        id: 1,
+        tipo: 'nova_partitura',
+        titulo: 'Dobrado Novo',
+        detalhes: 'Compositor X',
+        criado_em: '2024-12-01T10:00:00Z'
+      },
+      {
+        id: 2,
+        tipo: 'nova_partitura',
+        titulo: 'Marcha Nova',
+        detalhes: 'Compositor Y',
+        criado_em: '2024-12-02T10:00:00Z'
+      }
+    ]);
   })
 ];
 

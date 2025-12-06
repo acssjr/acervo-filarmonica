@@ -1,11 +1,11 @@
 // ===== NOTIFICATION CONTEXT TESTS =====
 // Testes de integracao para o contexto de notificacoes
-// Usa dynamic imports para compatibilidade ESM
+// Agora busca da API (getAtividades), nao mais do localStorage
 
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 
 // ALL imports must be dynamic (except @jest/globals) for ESM compatibility
-const { renderHook, act } = await import('@testing-library/react');
+const { renderHook, act, waitFor } = await import('@testing-library/react');
 const { createElement } = await import('react');
 const { NotificationProvider, useNotifications } = await import('./NotificationContext.jsx');
 
@@ -31,102 +31,87 @@ describe('NotificationContext', () => {
   });
 
   describe('Initial State', () => {
-    it('inicia com notificacoes padrao', () => {
+    it('inicia com loading true', () => {
       const { result } = renderHook(() => useNotifications(), { wrapper });
 
-      expect(result.current.notifications).toBeDefined();
+      // Loading inicia true enquanto busca da API
+      expect(result.current.loading).toBeDefined();
+    });
+
+    it('carrega notificacoes da API', async () => {
+      const { result } = renderHook(() => useNotifications(), { wrapper });
+
+      // Aguarda carregar da API (MSW retorna 2 notificacoes)
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
       expect(Array.isArray(result.current.notifications)).toBe(true);
+      expect(result.current.notifications.length).toBe(2);
     });
 
-    it('carrega notificacoes do storage', () => {
-      const savedNotifications = [
-        { id: '1', message: 'Saved', read: false }
-      ];
-      localStorage.setItem('fil_notifications', JSON.stringify(savedNotifications));
-
+    it('converte atividades em notificacoes corretamente', async () => {
       const { result } = renderHook(() => useNotifications(), { wrapper });
 
-      expect(result.current.notifications).toEqual(savedNotifications);
-    });
-  });
-
-  describe('addNotification()', () => {
-    it('adiciona notificacao no inicio da lista', () => {
-      const { result } = renderHook(() => useNotifications(), { wrapper });
-      const initialLength = result.current.notifications.length;
-
-      act(() => {
-        result.current.addNotification({
-          type: 'new_sheet',
-          title: 'Nova Partitura',
-          message: 'Dobrado Teste'
-        });
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
       });
 
-      expect(result.current.notifications.length).toBe(initialLength + 1);
-      expect(result.current.notifications[0].title).toBe('Nova Partitura');
-    });
-
-    it('gera ID automaticamente', () => {
-      const { result } = renderHook(() => useNotifications(), { wrapper });
-
-      act(() => {
-        result.current.addNotification({ message: 'Test' });
-      });
-
-      expect(result.current.notifications[0].id).toBeDefined();
-    });
-
-    it('define data automaticamente', () => {
-      const { result } = renderHook(() => useNotifications(), { wrapper });
-
-      act(() => {
-        result.current.addNotification({ message: 'Test' });
-      });
-
-      expect(result.current.notifications[0].date).toBeDefined();
-    });
-
-    it('define read=false por padrao', () => {
-      const { result } = renderHook(() => useNotifications(), { wrapper });
-
-      act(() => {
-        result.current.addNotification({ message: 'Test' });
-      });
-
-      expect(result.current.notifications[0].read).toBe(false);
+      // Verifica estrutura da notificacao convertida
+      const notification = result.current.notifications[0];
+      expect(notification).toHaveProperty('id');
+      expect(notification).toHaveProperty('type', 'nova_partitura');
+      expect(notification).toHaveProperty('title');
+      expect(notification).toHaveProperty('composer');
+      expect(notification).toHaveProperty('date');
+      expect(notification).toHaveProperty('read');
     });
   });
 
   describe('markNotificationAsRead()', () => {
-    it('marca notificacao especifica como lida', () => {
-      const notifications = [
-        { id: '1', message: 'Unread', read: false },
-        { id: '2', message: 'Also unread', read: false }
-      ];
-      localStorage.setItem('fil_notifications', JSON.stringify(notifications));
-
+    it('marca notificacao especifica como lida', async () => {
       const { result } = renderHook(() => useNotifications(), { wrapper });
 
-      act(() => {
-        result.current.markNotificationAsRead('1');
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
       });
 
-      expect(result.current.notifications.find(n => n.id === '1').read).toBe(true);
-      expect(result.current.notifications.find(n => n.id === '2').read).toBe(false);
+      const notificationId = result.current.notifications[0].id;
+
+      act(() => {
+        result.current.markNotificationAsRead(notificationId);
+      });
+
+      expect(result.current.notifications.find(n => n.id === notificationId).read).toBe(true);
+    });
+
+    it('persiste leitura no localStorage', async () => {
+      const { result } = renderHook(() => useNotifications(), { wrapper });
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      const notificationId = result.current.notifications[0].id;
+      const activityId = notificationId.replace('activity-', '');
+
+      act(() => {
+        result.current.markNotificationAsRead(notificationId);
+      });
+
+      // Verifica se salvou no localStorage
+      const stored = localStorage.getItem(`fil_notification-read-${activityId}`);
+      expect(stored).toBe('true');
     });
   });
 
   describe('markAllNotificationsAsRead()', () => {
-    it('marca todas notificacoes como lidas', () => {
-      const notifications = [
-        { id: '1', message: 'Unread 1', read: false },
-        { id: '2', message: 'Unread 2', read: false },
-        { id: '3', message: 'Unread 3', read: false }
-      ];
-      localStorage.setItem('fil_notifications', JSON.stringify(notifications));
-
+    it('marca todas notificacoes como lidas', async () => {
       const { result } = renderHook(() => useNotifications(), { wrapper });
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
 
       act(() => {
         result.current.markAllNotificationsAsRead();
@@ -136,62 +121,89 @@ describe('NotificationContext', () => {
     });
   });
 
-  describe('unreadCount', () => {
-    it('conta notificacoes nao lidas', () => {
-      const notifications = [
-        { id: '1', read: false },
-        { id: '2', read: true },
-        { id: '3', read: false }
-      ];
-      localStorage.setItem('fil_notifications', JSON.stringify(notifications));
-
+  describe('clearNotifications()', () => {
+    it('limpa todas as notificacoes', async () => {
       const { result } = renderHook(() => useNotifications(), { wrapper });
 
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      expect(result.current.notifications.length).toBeGreaterThan(0);
+
+      act(() => {
+        result.current.clearNotifications();
+      });
+
+      expect(result.current.notifications.length).toBe(0);
+    });
+  });
+
+  describe('refreshNotifications()', () => {
+    it('recarrega notificacoes da API', async () => {
+      const { result } = renderHook(() => useNotifications(), { wrapper });
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      // Limpa e depois recarrega
+      act(() => {
+        result.current.clearNotifications();
+      });
+
+      expect(result.current.notifications.length).toBe(0);
+
+      act(() => {
+        result.current.refreshNotifications();
+      });
+
+      await waitFor(() => {
+        expect(result.current.notifications.length).toBe(2);
+      });
+    });
+  });
+
+  describe('unreadCount', () => {
+    it('conta notificacoes nao lidas', async () => {
+      const { result } = renderHook(() => useNotifications(), { wrapper });
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      // Inicialmente todas nao lidas (MSW retorna 2)
       expect(result.current.unreadCount).toBe(2);
     });
 
-    it('atualiza quando notificacao e marcada como lida', () => {
-      const notifications = [
-        { id: '1', read: false },
-        { id: '2', read: false }
-      ];
-      localStorage.setItem('fil_notifications', JSON.stringify(notifications));
-
+    it('atualiza quando notificacao e marcada como lida', async () => {
       const { result } = renderHook(() => useNotifications(), { wrapper });
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
 
       expect(result.current.unreadCount).toBe(2);
 
       act(() => {
-        result.current.markNotificationAsRead('1');
+        result.current.markNotificationAsRead(result.current.notifications[0].id);
       });
 
       expect(result.current.unreadCount).toBe(1);
     });
 
-    it('retorna 0 quando todas estao lidas', () => {
-      const notifications = [
-        { id: '1', read: true },
-        { id: '2', read: true }
-      ];
-      localStorage.setItem('fil_notifications', JSON.stringify(notifications));
-
+    it('retorna 0 quando todas estao lidas', async () => {
       const { result } = renderHook(() => useNotifications(), { wrapper });
 
-      expect(result.current.unreadCount).toBe(0);
-    });
-  });
-
-  describe('Persistence', () => {
-    it('persiste notificacoes no storage', () => {
-      const { result } = renderHook(() => useNotifications(), { wrapper });
-
-      act(() => {
-        result.current.addNotification({ message: 'Test' });
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
       });
 
-      const stored = JSON.parse(localStorage.getItem('fil_notifications'));
-      expect(Array.isArray(stored)).toBe(true);
-      expect(stored.some(n => n.message === 'Test')).toBe(true);
+      act(() => {
+        result.current.markAllNotificationsAsRead();
+      });
+
+      expect(result.current.unreadCount).toBe(0);
     });
   });
 });

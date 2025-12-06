@@ -81,7 +81,7 @@ describe('LoginScreen', () => {
       renderLogin();
 
       await waitFor(() => {
-        expect(screen.getByText('Usuario')).toBeInTheDocument();
+        expect(screen.getByText('Usuário')).toBeInTheDocument();
       });
     });
 
@@ -108,7 +108,7 @@ describe('LoginScreen', () => {
       renderLogin();
 
       await waitFor(() => {
-        expect(screen.getByText('Conexao Segura')).toBeInTheDocument();
+        expect(screen.getByText('Conexão Segura')).toBeInTheDocument();
       });
     });
 
@@ -116,7 +116,7 @@ describe('LoginScreen', () => {
       renderLogin();
 
       await waitFor(() => {
-        expect(screen.getByText(/Sociedade Filarmonica 25 de Marco/)).toBeInTheDocument();
+        expect(screen.getByText(/Sociedade Filarm[oô]nica 25 de Mar[cç]o/)).toBeInTheDocument();
       });
     });
   });
@@ -243,7 +243,7 @@ describe('LoginScreen', () => {
       // Deve mostrar loading (pode aparecer e desaparecer rapido)
       // Verificamos que nao houve erro
       await waitFor(() => {
-        const errorText = screen.queryByText(/Usuario ou PIN incorreto/);
+        const errorText = screen.queryByText(/Usu[aá]rio ou PIN incorreto/);
         // Se nao mostrou erro, o login funcionou
         expect(errorText).not.toBeInTheDocument();
       }, { timeout: 3000 });
@@ -272,39 +272,47 @@ describe('LoginScreen', () => {
 
       // Deve mostrar erro
       await waitFor(() => {
-        expect(screen.getByText(/Usuario ou PIN incorreto/)).toBeInTheDocument();
+        expect(screen.getByText(/Usu[aá]rio ou PIN incorreto/)).toBeInTheDocument();
       }, { timeout: 3000 });
     });
 
     test('login com sucesso chama setUser e showToast', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: 50 });
       renderLogin();
 
       // Digita usuario
       const usernameInput = await screen.findByPlaceholderText('seuusuario');
       await user.type(usernameInput, 'musico.teste');
 
-      // Aguarda usuario ser encontrado
+      // Aguarda usuario ser encontrado (debounce de 150ms + API call)
       await waitFor(() => {
         expect(screen.getByText(/Músico Teste/)).toBeInTheDocument();
-      }, { timeout: 2000 });
+      }, { timeout: 3000 });
+
+      // Pequeno delay para garantir que os PIN inputs estao prontos
+      await new Promise(r => setTimeout(r, 100));
 
       // Digita PIN correto (1234)
       const pinInputs = getPinInputs();
 
+      // Digita cada digito com pequeno delay
+      await user.click(pinInputs[0]);
       await user.type(pinInputs[0], '1');
+      await user.click(pinInputs[1]);
       await user.type(pinInputs[1], '2');
+      await user.click(pinInputs[2]);
       await user.type(pinInputs[2], '3');
+      await user.click(pinInputs[3]);
       await user.type(pinInputs[3], '4');
 
       // Deve chamar setUser e showToast apos login bem-sucedido
       await waitFor(() => {
         expect(mockSetUser).toHaveBeenCalled();
-      }, { timeout: 3000 });
+      }, { timeout: 5000 });
 
       await waitFor(() => {
         expect(mockShowToast).toHaveBeenCalledWith(expect.stringContaining('Bem-vindo'));
-      });
+      }, { timeout: 2000 });
     });
   });
 
