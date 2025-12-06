@@ -1,20 +1,9 @@
-// ===== POLYFILLS PRIMEIRO =====
-// Devem ser definidos ANTES de qualquer import que os use
-import { TextEncoder, TextDecoder } from 'util';
-global.TextEncoder = TextEncoder;
-global.TextDecoder = TextDecoder;
+// ===== JEST SETUP =====
+// Este arquivo roda DEPOIS do ambiente de teste ser configurado
+// NOTA: Polyfills de TextEncoder, fetch, etc. estao em jest.polyfills.js
 
 import '@testing-library/jest-dom';
 import { jest, beforeEach, afterEach, beforeAll, afterAll } from '@jest/globals';
-
-// ===== FETCH API POLYFILLS PARA MSW =====
-// MSW requer estas APIs disponiveis globalmente
-import { fetch, Headers, Request, Response } from 'undici';
-
-global.fetch = fetch;
-global.Headers = Headers;
-global.Request = Request;
-global.Response = Response;
 
 // ===== MSW SERVER SETUP =====
 // Seguindo o guia: intercepta requisicoes no nivel de rede
@@ -29,7 +18,8 @@ afterEach(() => server.resetHandlers());
 // Fecha servidor ao final
 afterAll(() => server.close());
 
-// Mock do localStorage com suporte ao prefixo fil_
+// ===== MOCK DO localStorage =====
+// Mock com suporte ao prefixo fil_ usado pela app
 const createLocalStorageMock = () => {
   let store = {};
   return {
@@ -57,7 +47,8 @@ beforeEach(() => {
   jest.clearAllMocks();
 });
 
-// Mock do matchMedia para testes de hooks responsivos
+// ===== MOCK DO matchMedia =====
+// Para testes de hooks responsivos
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
   value: jest.fn().mockImplementation(query => ({
@@ -72,7 +63,7 @@ Object.defineProperty(window, 'matchMedia', {
   })),
 });
 
-// Mock do visualViewport
+// ===== MOCK DO visualViewport =====
 Object.defineProperty(window, 'visualViewport', {
   writable: true,
   value: {
@@ -93,7 +84,7 @@ window.URL.createObjectURL = jest.fn((blob) => {
 window.URL.revokeObjectURL = jest.fn();
 
 // ===== MOCK DO ResizeObserver =====
-// Seguindo o guia: JSDOM nao tem API de layout
+// JSDOM nao tem API de layout
 class ResizeObserverMock {
   constructor(callback) {
     this.callback = callback;

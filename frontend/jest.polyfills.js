@@ -1,11 +1,11 @@
 // ===== JEST POLYFILLS =====
 // Este arquivo roda ANTES do ambiente de teste ser configurado
 // Necessario para MSW funcionar com Jest + JSDOM
-// Ordem critica: streams -> fetch (undici precisa de streams)
+// Ordem critica: streams -> messaging -> fetch
 
 import { TextEncoder, TextDecoder } from 'node:util';
 import { ReadableStream, TransformStream, WritableStream } from 'node:stream/web';
-import { BroadcastChannel } from 'node:worker_threads';
+import { BroadcastChannel, MessageChannel, MessagePort } from 'node:worker_threads';
 
 // 1. TextEncoder/Decoder primeiro
 Object.defineProperties(globalThis, {
@@ -20,16 +20,20 @@ Object.defineProperties(globalThis, {
   WritableStream: { value: WritableStream },
 });
 
-// 3. BroadcastChannel para MSW
+// 3. MessageChannel e MessagePort (requerido por undici)
 Object.defineProperties(globalThis, {
+  MessageChannel: { value: MessageChannel },
+  MessagePort: { value: MessagePort },
   BroadcastChannel: { value: BroadcastChannel },
 });
 
-// 4. Fetch API via undici (DEPOIS de streams estarem definidos)
-const { fetch, Headers, Request, Response } = await import('undici');
+// 4. Fetch API via undici (DEPOIS de streams e messaging estarem definidos)
+// IMPORTANTE: configurable: true e writable: true para MSW poder interceptar
+const { fetch, Headers, Request, Response, FormData } = await import('undici');
 Object.defineProperties(globalThis, {
-  fetch: { value: fetch, writable: true },
-  Headers: { value: Headers },
-  Request: { value: Request, configurable: true },
-  Response: { value: Response },
+  fetch: { value: fetch, writable: true, configurable: true },
+  Headers: { value: Headers, writable: true, configurable: true },
+  Request: { value: Request, writable: true, configurable: true },
+  Response: { value: Response, writable: true, configurable: true },
+  FormData: { value: FormData, writable: true, configurable: true },
 });

@@ -27,7 +27,8 @@ export default {
   ],
   testPathIgnorePatterns: [
     '/node_modules/',
-    'test-utils'
+    'test-utils',
+    '__tests__/mocks/'
   ],
   collectCoverageFrom: [
     'src/**/*.{js,jsx}',
