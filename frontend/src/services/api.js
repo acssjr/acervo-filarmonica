@@ -125,6 +125,28 @@ export const API = {
     });
   },
 
+  async uploadPastaPartitura(formData) {
+    const token = Storage.get('authToken', null);
+    const response = await fetch(`${API_BASE_URL}/api/partituras/pasta`, {
+      method: 'POST',
+      headers: {
+        ...(token && { 'Authorization': `Bearer ${token}` })
+      },
+      body: formData
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'Erro no upload' }));
+      throw new Error(error.error);
+    }
+
+    return response.json();
+  },
+
+  async getPartesPartitura(partituraId) {
+    return this.request(`/api/partituras/${partituraId}/partes`);
+  },
+
   // ============ DOWNLOAD ============
 
   getDownloadUrl(id, instrumento = null) {
