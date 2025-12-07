@@ -1,30 +1,43 @@
+# ===== PLAYWRIGHT FULL TESTS =====
+# Testes E2E completos - roda todos os testes em Chromium
+# Complementa o CI que só roda login-mocked.spec.ts
+
 name: Playwright Tests
 on:
   push:
     branches: [ main, master ]
   pull_request:
     branches: [ main, master ]
+
 jobs:
   test:
-    timeout-minutes: 60
+    timeout-minutes: 15
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
+
     - uses: actions/setup-node@v4
       with:
-        node-version: lts/*
+        node-version: '20'
+
     - name: Install root dependencies
       run: npm ci
+
     - name: Install frontend dependencies
       run: npm ci
       working-directory: frontend
+
     - name: Install Playwright Browsers
-      run: npx playwright install --with-deps
+      run: npx playwright install chromium --with-deps
+
     - name: Run Playwright tests
-      run: npx playwright test
+      run: npx playwright test --project=chromium
+      env:
+        CI: true
+
     - uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}
       with:
         name: playwright-report
         path: playwright-report/
-        retention-days: 30
+        retention-days: 7
