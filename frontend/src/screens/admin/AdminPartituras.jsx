@@ -792,25 +792,38 @@ const AdminPartituras = () => {
                                         {parte.instrumento}
                                       </span>
                                     </div>
-                                    <div style={{ display: 'flex', gap: '2px', marginLeft: '4px' }} onClick={(e) => e.stopPropagation()}>
+                                    <div
+                                      style={{
+                                        display: 'flex',
+                                        gap: '4px',
+                                        marginLeft: '8px',
+                                        padding: '2px',
+                                        borderRadius: '6px',
+                                        background: 'var(--bg-primary)'
+                                      }}
+                                      onClick={(e) => e.stopPropagation()}
+                                      onMouseEnter={(e) => {
+                                        // Impede que o hover do item pai seja ativado
+                                        e.currentTarget.parentElement.style.background = isViewing ? 'rgba(52, 152, 219, 0.15)' : 'var(--bg-secondary)';
+                                        e.currentTarget.parentElement.style.borderColor = isViewing ? 'rgba(52, 152, 219, 0.4)' : 'var(--border)';
+                                      }}
+                                    >
                                       <label
                                         title="Substituir arquivo"
+                                        className="action-btn action-btn-replace"
                                         style={{
-                                          width: '22px',
-                                          height: '22px',
+                                          width: '24px',
+                                          height: '24px',
                                           borderRadius: '4px',
-                                          background: 'transparent',
-                                          border: 'none',
+                                          background: 'rgba(212, 175, 55, 0.1)',
+                                          border: '1px solid rgba(212, 175, 55, 0.2)',
                                           color: '#D4AF37',
                                           cursor: uploading === parte.id ? 'wait' : 'pointer',
                                           display: 'flex',
                                           alignItems: 'center',
                                           justifyContent: 'center',
-                                          opacity: 0.7,
-                                          transition: 'opacity 0.15s'
+                                          transition: 'all 0.15s ease'
                                         }}
-                                        onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
-                                        onMouseLeave={(e) => e.currentTarget.style.opacity = '0.7'}
                                       >
                                         {uploading === parte.id ? (
                                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: 'spin 1s linear infinite' }}>
@@ -841,22 +854,20 @@ const AdminPartituras = () => {
                                         onClick={() => handleDeletePart(p.id, parte.id)}
                                         disabled={deleting === parte.id}
                                         title="Remover parte"
+                                        className="action-btn action-btn-delete"
                                         style={{
-                                          width: '22px',
-                                          height: '22px',
+                                          width: '24px',
+                                          height: '24px',
                                           borderRadius: '4px',
-                                          background: 'transparent',
-                                          border: 'none',
+                                          background: 'rgba(231, 76, 60, 0.1)',
+                                          border: '1px solid rgba(231, 76, 60, 0.2)',
                                           color: '#e74c3c',
                                           cursor: deleting === parte.id ? 'wait' : 'pointer',
                                           display: 'flex',
                                           alignItems: 'center',
                                           justifyContent: 'center',
-                                          opacity: 0.7,
-                                          transition: 'opacity 0.15s'
+                                          transition: 'all 0.15s ease'
                                         }}
-                                        onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
-                                        onMouseLeave={(e) => e.currentTarget.style.opacity = '0.7'}
                                       >
                                         {deleting === parte.id ? (
                                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: 'spin 1s linear infinite' }}>
@@ -965,6 +976,24 @@ const AdminPartituras = () => {
         .parte-item:hover {
           background: rgba(212, 175, 55, 0.08) !important;
           border-color: rgba(212, 175, 55, 0.3) !important;
+        }
+
+        /* Hover individual para botao de substituir */
+        .action-btn-replace:hover {
+          background: rgba(212, 175, 55, 0.25) !important;
+          border-color: rgba(212, 175, 55, 0.5) !important;
+          transform: scale(1.05);
+        }
+
+        /* Hover individual para botao de deletar */
+        .action-btn-delete:hover {
+          background: rgba(231, 76, 60, 0.25) !important;
+          border-color: rgba(231, 76, 60, 0.5) !important;
+          transform: scale(1.05);
+        }
+
+        .action-btn:active {
+          transform: scale(0.95);
         }
 
         .parte-item:active {
