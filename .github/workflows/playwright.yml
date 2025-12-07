@@ -1,6 +1,7 @@
-# ===== PLAYWRIGHT FULL TESTS =====
-# Testes E2E completos - roda todos os testes em Chromium
-# Complementa o CI que só roda login-mocked.spec.ts
+# ===== PLAYWRIGHT E2E TESTS =====
+# Testes E2E com mocks - não requer backend
+# NOTA: Testes com backend real devem ser rodados via:
+#   ci.yml -> workflow_dispatch -> run_e2e_real: true
 
 name: Playwright Tests
 on:
@@ -11,7 +12,7 @@ on:
 
 jobs:
   test:
-    timeout-minutes: 15
+    timeout-minutes: 10
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
@@ -30,8 +31,10 @@ jobs:
     - name: Install Playwright Browsers
       run: npx playwright install chromium --with-deps
 
-    - name: Run Playwright tests
-      run: npx playwright test --project=chromium
+    # Roda apenas testes mocked (não requer backend)
+    # Para testes com backend real, use ci.yml via workflow_dispatch
+    - name: Run Playwright tests (mocked only)
+      run: npx playwright test login-mocked.spec.ts --project=chromium
       env:
         CI: true
 
