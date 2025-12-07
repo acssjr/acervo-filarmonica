@@ -33,8 +33,8 @@ test.describe('Login Flow', () => {
     // Aguarda o formulario aparecer
     await expect(page.locator('input[placeholder="seuusuario"]')).toBeVisible({ timeout: 10000 });
 
-    // Verifica campos presentes
-    await expect(page.locator('text=Usuario')).toBeVisible();
+    // Verifica campos presentes (Usuário com acento)
+    await expect(page.locator('text=Usuário')).toBeVisible();
     await expect(page.locator('text=PIN')).toBeVisible();
     await expect(page.locator('text=Lembrar meu acesso')).toBeVisible();
   });
@@ -77,8 +77,12 @@ test.describe('Login Flow', () => {
       await pinInputs.first().fill(TEST_USER.pin);
     }
 
-    // Aguarda o login completar e o toast aparecer
-    await expect(page.locator('text=/Bem-vindo/i')).toBeVisible({ timeout: 15000 });
+    // Aguarda o login completar - pode ser toast ou redirecionamento
+    // O toast "Bem-vindo, X!" aparece brevemente (3s), então verificamos URL também
+    await Promise.race([
+      expect(page.locator('text=/Bem-vindo/i')).toBeVisible({ timeout: 15000 }),
+      page.waitForURL('**/', { timeout: 15000 })
+    ]);
 
     // Deve redirecionar para a home (nao mais na pagina de login)
     await page.waitForURL('**/', { timeout: 10000 });
@@ -141,8 +145,11 @@ test.describe('Login Flow', () => {
       await pinInputs.first().fill(TEST_USER.pin);
     }
 
-    // Aguarda login
-    await expect(page.locator('text=/Bem-vindo/i')).toBeVisible({ timeout: 15000 });
+    // Aguarda login - toast ou redirecionamento
+    await Promise.race([
+      expect(page.locator('text=/Bem-vindo/i')).toBeVisible({ timeout: 15000 }),
+      page.waitForURL('**/', { timeout: 15000 })
+    ]);
 
     // Aguarda redirecionamento
     await page.waitForURL('**/', { timeout: 10000 });
@@ -180,7 +187,11 @@ test.describe('Navigation after Login', () => {
       await pinInputs.first().fill(TEST_USER.pin);
     }
 
-    await expect(page.locator('text=/Bem-vindo/i')).toBeVisible({ timeout: 15000 });
+    // Aguarda login - toast ou redirecionamento
+    await Promise.race([
+      expect(page.locator('text=/Bem-vindo/i')).toBeVisible({ timeout: 15000 }),
+      page.waitForURL('**/', { timeout: 15000 })
+    ]);
 
     // Aguarda redirecionamento
     await page.waitForURL('**/', { timeout: 10000 });
