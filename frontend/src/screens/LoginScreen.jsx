@@ -246,7 +246,7 @@ const LoginScreen = ({ onClose, required = false }) => {
               </div>
             )}
 
-            {/* Loading */}
+            {/* Loading - Barras de áudio animadas */}
             {isLoading && (
               <div style={{
                 display: 'flex',
@@ -260,35 +260,26 @@ const LoginScreen = ({ onClose, required = false }) => {
                 marginBottom: '20px',
                 border: '1px solid rgba(212, 175, 55, 0.2)'
               }}>
+                {/* Barras de equalizer musical */}
                 <div style={{
-                  width: '56px',
-                  height: '56px',
-                  borderRadius: '50%',
-                  background: 'linear-gradient(145deg, #D4AF37 0%, #B8860B 100%)',
-                  padding: '3px',
-                  boxShadow: '0 4px 16px rgba(212, 175, 55, 0.3)',
-                  animation: 'pulse 1.5s ease-in-out infinite'
+                  display: 'flex',
+                  alignItems: 'flex-end',
+                  justifyContent: 'center',
+                  gap: '4px',
+                  height: '40px'
                 }}>
-                  <div style={{
-                    width: '100%',
-                    height: '100%',
-                    borderRadius: '50%',
-                    overflow: 'hidden',
-                    background: 'linear-gradient(145deg, #722F37 0%, #5C1A1B 100%)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}>
-                    <img
-                      src="/assets/images/ui/brasao-256x256.png"
-                      alt=""
+                  {[0, 1, 2, 3, 4].map((i) => (
+                    <div
+                      key={i}
                       style={{
-                        width: '70%',
-                        height: '70%',
-                        objectFit: 'contain'
+                        width: '6px',
+                        borderRadius: '3px',
+                        background: 'linear-gradient(to top, #D4AF37, #F4E4BC)',
+                        animation: `equalizer 1s ease-in-out infinite`,
+                        animationDelay: `${i * 0.1}s`
                       }}
                     />
-                  </div>
+                  ))}
                 </div>
                 <span style={{
                   fontFamily: 'Outfit, sans-serif',

@@ -1172,9 +1172,12 @@ async function checkUser(request, env) {
     instrumentoNome = instrumento?.nome;
   }
 
+  // Super admin sempre mostra nome generico
+  const nomeExibido = user.username === 'admin' ? 'Administrador' : user.nome;
+
   return jsonResponse({
     exists: true,
-    nome: user.nome,
+    nome: nomeExibido,
     instrumento: instrumentoNome || 'Músico'
   }, 200, request);
 }
@@ -1257,12 +1260,15 @@ async function login(request, env) {
     isAdmin: user.admin === 1
   }, getJwtSecret(env));
 
+  // Super admin sempre mostra nome generico
+  const nomeExibido = user.username === 'admin' ? 'Administrador' : user.nome;
+
   return jsonResponse({
     success: true,
     user: {
       id: user.id,
       username: user.username,
-      nome: user.nome,
+      nome: nomeExibido,
       admin: user.admin === 1,
       instrumento_id: user.instrumento_id,
       instrumento_nome: instrumentoNome,
@@ -1430,6 +1436,18 @@ async function updateUsuario(id, request, env) {
     return errorResponse('Não autorizado', 401, request);
   }
 
+  // Verifica se está tentando alterar o super admin (@admin)
+  const targetUser = await env.DB.prepare(
+    'SELECT username FROM usuarios WHERE id = ?'
+  ).bind(id).first();
+
+  if (targetUser && targetUser.username === 'admin') {
+    // Apenas o próprio super admin pode se alterar
+    if (admin.username !== 'admin') {
+      return errorResponse('Não é permitido alterar o super admin', 403, request);
+    }
+  }
+
   const { nome, pin, instrumento_id, admin: isAdmin, ativo } = await request.json();
 
   const updates = [];
@@ -1478,6 +1496,66 @@ async function updateUsuario(id, request, env) {
   return jsonResponse({ success: true, message: 'Usuário atualizado!' }, 200, request);
 }
 
+// ============ MANUTENÇÃO (ADMIN) ============
+
+async function cleanUserNames(request, env) {
+  const admin = await verifyAdmin(request, env);
+  if (!admin) {
+    return errorResponse('Não autorizado', 401, request);
+  }
+
+  // Remove zeros e números do final dos nomes
+  // Também corrige nomes que terminam com "0" literal
+  const result = await env.DB.prepare(`
+    UPDATE usuarios
+    SET nome = CASE
+      WHEN nome LIKE '%0' THEN SUBSTR(nome, 1, LENGTH(nome) - 1)
+      WHEN nome LIKE '%1' THEN SUBSTR(nome, 1, LENGTH(nome) - 1)
+      WHEN nome LIKE '%2' THEN SUBSTR(nome, 1, LENGTH(nome) - 1)
+      WHEN nome LIKE '%3' THEN SUBSTR(nome, 1, LENGTH(nome) - 1)
+      WHEN nome LIKE '%4' THEN SUBSTR(nome, 1, LENGTH(nome) - 1)
+      WHEN nome LIKE '%5' THEN SUBSTR(nome, 1, LENGTH(nome) - 1)
+      WHEN nome LIKE '%6' THEN SUBSTR(nome, 1, LENGTH(nome) - 1)
+      WHEN nome LIKE '%7' THEN SUBSTR(nome, 1, LENGTH(nome) - 1)
+      WHEN nome LIKE '%8' THEN SUBSTR(nome, 1, LENGTH(nome) - 1)
+      WHEN nome LIKE '%9' THEN SUBSTR(nome, 1, LENGTH(nome) - 1)
+      ELSE nome
+    END
+    WHERE nome GLOB '*[0-9]'
+  `).run();
+
+  return jsonResponse({
+    success: true,
+    message: `${result.meta.changes} nomes corrigidos!`,
+    changes: result.meta.changes
+  }, 200, request);
+}
+
+async function configurarSuperAdmin(request, env) {
+  const admin = await verifyAdmin(request, env);
+  if (!admin) {
+    return errorResponse('Não autorizado', 401, request);
+  }
+
+  // Apenas o próprio super admin pode configurar-se
+  if (admin.username !== 'admin') {
+    return errorResponse('Apenas o super admin pode usar esta função', 403, request);
+  }
+
+  const { nome } = await request.json();
+
+  if (nome) {
+    await env.DB.prepare(
+      "UPDATE usuarios SET nome = ? WHERE username = 'admin'"
+    ).bind(nome).run();
+  }
+
+  return jsonResponse({
+    success: true,
+    message: 'Super admin configurado!'
+  }, 200, request);
+}
+
 async function deleteUsuario(id, request, env) {
   const admin = await verifyAdmin(request, env);
   if (!admin) {
@@ -1486,6 +1564,15 @@ async function deleteUsuario(id, request, env) {
 
   if (admin.id === parseInt(id)) {
     return errorResponse('Você não pode desativar sua própria conta', 400, request);
+  }
+
+  // Verifica se está tentando desativar o super admin (@admin)
+  const targetUser = await env.DB.prepare(
+    'SELECT username FROM usuarios WHERE id = ?'
+  ).bind(id).first();
+
+  if (targetUser && targetUser.username === 'admin') {
+    return errorResponse('Não é permitido desativar o super admin', 403, request);
   }
 
   await env.DB.prepare(
@@ -1882,6 +1969,14 @@ export default {
 
       if (path === '/api/admin/estatisticas' && method === 'GET') {
         return await getEstatisticasAdmin(request, env);
+      }
+
+      if (path === '/api/admin/manutencao/limpar-nomes' && method === 'POST') {
+        return await cleanUserNames(request, env);
+      }
+
+      if (path === '/api/admin/manutencao/super-admin' && method === 'POST') {
+        return await configurarSuperAdmin(request, env);
       }
 
       // ============ HEALTH CHECK ============

@@ -7,11 +7,11 @@ import { useUI } from '@contexts/UIContext';
 import { useNotifications } from '@contexts/NotificationContext';
 import { API } from '@services/api';
 import { Storage } from '@services/storage';
-import { ChangePinModal, AboutModal, ADMIN_CHANGELOG, ADMIN_ABOUT_CONFIG } from '@components/modals';
+import { ChangePinModal, AboutModal, PROFILE_CHANGELOG, PROFILE_LEGACY_VERSIONS, PROFILE_ABOUT_CONFIG } from '@components/modals';
 
 const AdminConfig = () => {
   const { user, setUser } = useAuth();
-  const { showToast, themeMode, setThemeMode } = useUI();
+  const { showToast } = useUI();
   const { clearNotifications } = useNotifications();
   const [showChangePin, setShowChangePin] = useState(false);
   const [showAboutModal, setShowAboutModal] = useState(false);
@@ -55,19 +55,6 @@ const AdminConfig = () => {
     } catch (err) {
       showToast('Erro ao remover foto', 'error');
     }
-  };
-
-  const cycleTheme = () => {
-    const modes = ['system', 'light', 'dark'];
-    const currentIndex = modes.indexOf(themeMode);
-    const nextIndex = (currentIndex + 1) % modes.length;
-    setThemeMode(modes[nextIndex]);
-  };
-
-  const getThemeLabel = () => {
-    if (themeMode === 'light') return 'Claro';
-    if (themeMode === 'dark') return 'Escuro';
-    return 'Sistema';
   };
 
   return (
@@ -247,54 +234,6 @@ const AdminConfig = () => {
         </div>
       </div>
 
-      {/* Tema */}
-      <div style={{
-        background: 'var(--bg-secondary)',
-        borderRadius: 'var(--radius-md)',
-        padding: '20px',
-        marginBottom: '20px',
-        border: '1px solid var(--border)'
-      }}>
-        <h3 style={{
-          fontSize: '16px',
-          fontWeight: '600',
-          marginBottom: '16px',
-          color: 'var(--text-primary)',
-          fontFamily: 'Outfit, sans-serif',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px'
-        }}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="12" cy="12" r="5"/>
-            <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
-          </svg>
-          Aparencia
-        </h3>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <div style={{ color: 'var(--text-primary)', marginBottom: '4px', fontFamily: 'Outfit, sans-serif' }}>
-              Tema: <strong>{getThemeLabel()}</strong>
-            </div>
-            <div style={{ fontSize: '13px', color: 'var(--text-secondary)', fontFamily: 'Outfit, sans-serif' }}>
-              Alterna entre claro, escuro e sistema
-            </div>
-          </div>
-          <button onClick={cycleTheme} style={{
-            padding: '10px 20px',
-            borderRadius: 'var(--radius-sm)',
-            background: 'var(--bg-primary)',
-            border: '1px solid var(--border)',
-            color: 'var(--text-primary)',
-            fontSize: '14px',
-            cursor: 'pointer',
-            fontFamily: 'Outfit, sans-serif'
-          }}>
-            Alterar
-          </button>
-        </div>
-      </div>
-
       {/* Sobre */}
       <button
         onClick={() => setShowAboutModal(true)}
@@ -331,13 +270,12 @@ const AdminConfig = () => {
           </svg>
         </h3>
         <div style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: '1.6', fontFamily: 'Outfit, sans-serif' }}>
-          <p><strong>Acervo Digital</strong> v2.1.0</p>
+          <p><strong>Acervo Digital</strong> v{PROFILE_ABOUT_CONFIG.infoCards[0].value}</p>
           <p>Sociedade Filarmonica 25 de Marco</p>
           <p>Fundada em 1868 - Feira de Santana, BA</p>
         </div>
       </button>
 
-      {/* Sair */}
       <button onClick={handleLogout} style={{
         width: '100%',
         padding: '14px',
@@ -364,15 +302,16 @@ const AdminConfig = () => {
 
       {showChangePin && <ChangePinModal onClose={() => setShowChangePin(false)} />}
 
-      {/* Modal Sobre */}
+      {/* Modal Sobre - usa mesmo conteudo do ProfileScreen */}
       <AboutModal
         isOpen={showAboutModal}
         onClose={() => setShowAboutModal(false)}
-        subtitle={ADMIN_ABOUT_CONFIG.subtitle}
-        maxWidth={ADMIN_ABOUT_CONFIG.maxWidth}
-        infoCards={ADMIN_ABOUT_CONFIG.infoCards}
-        changelog={ADMIN_CHANGELOG}
-        footerText={ADMIN_ABOUT_CONFIG.footerText}
+        subtitle={PROFILE_ABOUT_CONFIG.subtitle}
+        maxWidth={PROFILE_ABOUT_CONFIG.maxWidth}
+        infoCards={PROFILE_ABOUT_CONFIG.infoCards}
+        changelog={PROFILE_CHANGELOG}
+        legacyVersions={PROFILE_LEGACY_VERSIONS}
+        footerText={PROFILE_ABOUT_CONFIG.footerText}
       />
     </div>
   );

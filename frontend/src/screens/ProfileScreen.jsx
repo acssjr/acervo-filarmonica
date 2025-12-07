@@ -330,7 +330,7 @@ const ProfileScreen = () => {
             <line x1="12" y1="8" x2="12.01" y2="8" />
           </svg>}
           label="Acervo Digital"
-          value="Versão 2.3.0 - Dezembro 2025"
+          value="Versão 2.3.3 - Dezembro 2025"
           onClick={() => setShowAboutModal(true)}
         />
 

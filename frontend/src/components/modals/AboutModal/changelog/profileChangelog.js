@@ -1,8 +1,18 @@
 // Changelog completo para o app do usuario (ProfileScreen)
 export const PROFILE_CHANGELOG = [
   {
-    version: '2.3.0',
+    version: '2.3.3',
     isCurrent: true,
+    items: [
+      { bold: 'Admin Toggle:', text: 'Botão para alternar entre modo usuário e admin' },
+      { bold: 'Maestro:', text: 'Detecção correta de maestro/regente para download de grade' },
+      { bold: 'Download:', text: 'Botão desabilitado quando grade não disponível' },
+      { bold: 'Testes:', text: '214 testes automatizados passando' },
+      { bold: 'CI/CD:', text: 'Pipeline GitHub Actions para testes e build' }
+    ]
+  },
+  {
+    version: '2.3.0',
     items: [
       { bold: 'Notificações:', text: 'Sistema real de notificações de novas partituras' },
       { bold: 'Compositores:', text: 'Carrossel de compositores em destaque na home' },
@@ -113,9 +123,9 @@ export const PROFILE_ABOUT_CONFIG = {
   subtitle: 'Sociedade Filarmônica 25 de Março',
   maxWidth: 420,
   infoCards: [
-    { label: 'Versão', value: '2.3.0' },
+    { label: 'Versão', value: '2.3.3' },
     { label: 'Tecnologias', value: 'React • JS • CSS' },
-    { label: 'Dev', value: 'Antonio Jr.', isHighlighted: true }
+    { label: 'Por', value: 'Antonio Jr.', isHighlighted: true }
   ],
   footerText: 'Feira de Santana - BA • Fundada em 1868',
   showLegacyVersions: true

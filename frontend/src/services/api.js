@@ -335,6 +335,21 @@ export const API = {
 
   async getEstatisticasAdmin() {
     return this.request('/api/admin/estatisticas');
+  },
+
+  // ============ MANUTENÇÃO ADMIN ============
+
+  async limparNomesUsuarios() {
+    return this.request('/api/admin/manutencao/limpar-nomes', {
+      method: 'POST'
+    });
+  },
+
+  async configurarSuperAdmin(data) {
+    return this.request('/api/admin/manutencao/super-admin', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
   }
 };
 

@@ -44,7 +44,8 @@ const AdminMusicos = () => {
   }, []);
 
   const filtered = usuarios.filter(u =>
-    !u.admin && (
+    // Esconde o super admin (@admin) da lista
+    u.username !== 'admin' && (
       u.nome?.toLowerCase().includes(search.toLowerCase()) ||
       u.username?.toLowerCase().includes(search.toLowerCase())
     )
@@ -226,9 +227,24 @@ const AdminMusicos = () => {
                   </div>
                 </div>
                 <div>
-                  <div style={{ fontWeight: '600', color: 'var(--text-primary)', marginBottom: '2px' }}>
+                  <div style={{ fontWeight: '600', color: 'var(--text-primary)', marginBottom: '2px', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                     {user.nome}
-                    {!user.ativo && <span style={{ marginLeft: '8px', fontSize: '12px', color: '#e74c3c' }}>(inativo)</span>}
+                    {!!user.admin && (
+                      <span style={{
+                        fontSize: '10px',
+                        fontWeight: '700',
+                        color: '#D4AF37',
+                        background: 'rgba(212, 175, 55, 0.15)',
+                        padding: '2px 8px',
+                        borderRadius: '4px',
+                        border: '1px solid rgba(212, 175, 55, 0.3)',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.5px'
+                      }}>
+                        Admin
+                      </span>
+                    )}
+                    {!user.ativo && <span style={{ fontSize: '12px', color: '#e74c3c' }}>(inativo)</span>}
                   </div>
                   <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
                     @{user.username} • {user.instrumento_nome || 'Sem instrumento'}
@@ -258,46 +274,52 @@ const AdminMusicos = () => {
                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                   </svg>
                 </button>
-                <button onClick={() => setShowResetPin(user)} title="Redefinir PIN" style={{
-                  width: '40px',
-                  height: '40px',
-                  borderRadius: 'var(--radius-sm)',
-                  background: 'var(--bg-primary)',
-                  border: '1px solid var(--border)',
-                  color: 'var(--text-secondary)',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                  </svg>
-                </button>
-                <button onClick={() => handleToggleAtivo(user)} title={user.ativo ? 'Desativar' : 'Ativar'} style={{
-                  width: '40px',
-                  height: '40px',
-                  borderRadius: 'var(--radius-sm)',
-                  background: user.ativo ? 'rgba(231, 76, 60, 0.1)' : 'rgba(39, 174, 96, 0.1)',
-                  border: '1px solid ' + (user.ativo ? 'rgba(231, 76, 60, 0.3)' : 'rgba(39, 174, 96, 0.3)'),
-                  color: user.ativo ? '#e74c3c' : '#27ae60',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  {user.ativo ? (
+                {/* Botão de resetar PIN - oculto para super admin (@admin) */}
+                {user.username !== 'admin' && (
+                  <button onClick={() => setShowResetPin(user)} title="Redefinir PIN" style={{
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: 'var(--radius-sm)',
+                    background: 'var(--bg-primary)',
+                    border: '1px solid var(--border)',
+                    color: 'var(--text-secondary)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <circle cx="12" cy="12" r="10"/>
-                      <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
                     </svg>
-                  ) : (
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="20 6 9 17 4 12"/>
-                    </svg>
-                  )}
-                </button>
+                  </button>
+                )}
+                {/* Botão de ativar/desativar - oculto para super admin (@admin) */}
+                {user.username !== 'admin' && (
+                  <button onClick={() => handleToggleAtivo(user)} title={user.ativo ? 'Desativar' : 'Ativar'} style={{
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: 'var(--radius-sm)',
+                    background: user.ativo ? 'rgba(231, 76, 60, 0.1)' : 'rgba(39, 174, 96, 0.1)',
+                    border: '1px solid ' + (user.ativo ? 'rgba(231, 76, 60, 0.3)' : 'rgba(39, 174, 96, 0.3)'),
+                    color: user.ativo ? '#e74c3c' : '#27ae60',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
+                    {user.ativo ? (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+                      </svg>
+                    ) : (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12"/>
+                      </svg>
+                    )}
+                  </button>
+                )}
               </div>
             </div>
           ))}
