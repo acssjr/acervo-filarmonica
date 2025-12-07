@@ -23,13 +23,26 @@ export const Z_INDEX = {
 
 // Tempos de animacao e delays (em ms)
 export const TIMING = {
+  // Toast durations
   toastDefault: 3000,
   toastDownload: 4000,
   toastError: 5000,
+
+  // Debounce
   debounceSearch: 300,
+  debounceInput: 150,
+
+  // Transitions
   transitionFast: 150,
   transitionNormal: 300,
-  transitionSlow: 500
+  transitionSlow: 500,
+
+  // Focus delays
+  focusDelay: 100,
+
+  // Marquee animation (em segundos)
+  marqueeDesktop: 80,
+  marqueeMobile: 60,
 };
 
 // Tamanhos da sidebar
@@ -43,5 +56,52 @@ export const LIMITS = {
   maxImageSize: 2 * 1024 * 1024,  // 2MB
   maxPdfSize: 50 * 1024 * 1024,   // 50MB
   searchMinLength: 2,
-  pinLength: 4
+  pinLength: 4,
+  featuredMax: 8,
+};
+
+// Espacamento padrao (em px)
+export const SPACING = {
+  xs: 4,
+  sm: 8,
+  md: 12,
+  base: 16,
+  lg: 20,
+  xl: 24,
+  xxl: 32,
+  xxxl: 40,
+};
+
+// Tamanhos de componentes
+export const SIZES = {
+  // Botoes
+  buttonSm: 32,
+  buttonMd: 40,
+  buttonLg: 48,
+
+  // Cards
+  featuredCardWidth: 200,
+  featuredCardWidthDesktop: 280,
+  featuredCardHeight: 120,
+
+  // Avatar
+  avatarSm: 32,
+  avatarMd: 40,
+  avatarLg: 48,
+
+  // Icons
+  iconSm: 16,
+  iconMd: 20,
+  iconLg: 24,
+
+  // Logo
+  logoBadge: 38,
+};
+
+// Gap entre elementos (em px)
+export const GAP = {
+  cards: 14,
+  cardsDesktop: 20,
+  items: 8,
+  sections: 24,
 };

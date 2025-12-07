@@ -5,6 +5,9 @@ import { useState, useEffect, useRef, createRef } from 'react';
 import { useUI } from '@contexts/UIContext';
 import { API } from '@services/api';
 import { Storage } from '@services/storage';
+import { MESSAGES } from '@constants/messages';
+import { COLORS, COLORS_RGBA } from '@constants/colors';
+import { TIMING } from '@constants/config';
 
 const ChangePinModal = ({ onClose }) => {
   const { showToast } = useUI();
@@ -62,18 +65,18 @@ const ChangePinModal = ({ onClose }) => {
   const handleNewPinComplete = (pin) => {
     // Verifica se é igual ao atual (validação básica local)
     if (pin === currentPin.join('')) {
-      setError('O novo PIN não pode ser igual ao atual');
+      setError(MESSAGES.error.samePinError);
       setNewPin(['', '', '', '']);
-      setTimeout(() => newPinRefs[0].current?.focus(), 100);
+      setTimeout(() => newPinRefs[0].current?.focus(), TIMING.focusDelay);
       return;
     }
     setStep(3);
-    setTimeout(() => confirmPinRefs[0].current?.focus(), 100);
+    setTimeout(() => confirmPinRefs[0].current?.focus(), TIMING.focusDelay);
   };
 
   const confirmNewPin = async (pin) => {
     if (pin !== newPin.join('')) {
-      setError('Os PINs não conferem');
+      setError(MESSAGES.error.pinMismatch);
       setConfirmPin(['', '', '', '']);
       confirmPinRefs[0].current?.focus();
       return;
@@ -88,23 +91,23 @@ const ChangePinModal = ({ onClose }) => {
       if (result.success) {
         // Atualiza o token local com o novo PIN
         Storage.set('authToken', result.token);
-        showToast('PIN alterado com sucesso!');
+        showToast(MESSAGES.success.pinChanged);
         onClose();
       } else {
-        setError(result.error || 'Erro ao alterar PIN');
+        setError(result.error || MESSAGES.error.generic);
         setConfirmPin(['', '', '', '']);
         confirmPinRefs[0].current?.focus();
       }
     } catch (err) {
       // Se o erro é "PIN atual incorreto", volta para step 1
-      const errorMsg = err.message || 'Erro ao conectar com o servidor';
-      if (errorMsg.includes('PIN atual incorreto')) {
+      const errorMsg = err.message || MESSAGES.error.connectionFailed;
+      if (errorMsg.includes(MESSAGES.error.invalidPin)) {
         setStep(1);
         setCurrentPin(['', '', '', '']);
         setNewPin(['', '', '', '']);
         setConfirmPin(['', '', '', '']);
-        setError('PIN atual incorreto. Tente novamente.');
-        setTimeout(() => currentPinRefs[0].current?.focus(), 100);
+        setError(MESSAGES.pin.incorrectRetry);
+        setTimeout(() => currentPinRefs[0].current?.focus(), TIMING.focusDelay);
       } else {
         setError(errorMsg);
         setConfirmPin(['', '', '', '']);
@@ -142,7 +145,7 @@ const ChangePinModal = ({ onClose }) => {
               width: '50px',
               height: '50px',
               borderRadius: '12px',
-              background: digit ? 'rgba(212, 175, 55, 0.15)' : 'var(--bg-card)',
+              background: digit ? COLORS_RGBA.gold.bg15 : 'var(--bg-card)',
               border: digit ? '2px solid var(--primary)' : '1px solid var(--border)',
               color: 'var(--text-primary)',
               fontSize: '20px',
@@ -212,7 +215,7 @@ const ChangePinModal = ({ onClose }) => {
             setPin={setCurrentPin}
             refs={currentPinRefs}
             onComplete={handleCurrentPinComplete}
-            label="Digite seu PIN atual"
+            label={MESSAGES.pin.currentLabel}
           />
         )}
 
@@ -222,7 +225,7 @@ const ChangePinModal = ({ onClose }) => {
             setPin={setNewPin}
             refs={newPinRefs}
             onComplete={handleNewPinComplete}
-            label="Digite o novo PIN"
+            label={MESSAGES.pin.newLabel}
           />
         )}
 
@@ -232,7 +235,7 @@ const ChangePinModal = ({ onClose }) => {
             setPin={setConfirmPin}
             refs={confirmPinRefs}
             onComplete={confirmNewPin}
-            label="Confirme o novo PIN"
+            label={MESSAGES.pin.confirmLabel}
           />
         )}
 
@@ -243,7 +246,7 @@ const ChangePinModal = ({ onClose }) => {
             textAlign: 'center'
           }}>
             <p style={{ fontFamily: 'Outfit, sans-serif', fontSize: '13px', color: 'var(--text-muted)' }}>
-              Alterando PIN...
+              {MESSAGES.loading.changingPin}
             </p>
           </div>
         )}
@@ -253,11 +256,11 @@ const ChangePinModal = ({ onClose }) => {
           <div style={{
             marginTop: '16px',
             padding: '12px',
-            background: 'rgba(214, 69, 69, 0.1)',
+            background: COLORS_RGBA.error.bg10,
             borderRadius: '8px',
             textAlign: 'center'
           }}>
-            <p style={{ fontFamily: 'Outfit, sans-serif', fontSize: '13px', color: '#D64545' }}>{error}</p>
+            <p style={{ fontFamily: 'Outfit, sans-serif', fontSize: '13px', color: COLORS.error.light }}>{error}</p>
           </div>
         )}
 
