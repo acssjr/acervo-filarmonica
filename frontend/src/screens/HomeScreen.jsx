@@ -15,6 +15,7 @@ import FeaturedSheets from '@components/music/FeaturedSheets';
 import CategoryCard from '@components/music/CategoryCard';
 import FileCard from '@components/music/FileCard';
 import ComposerCarousel from '@components/music/ComposerCarousel';
+import { PROFILE_ABOUT_CONFIG } from '@components/modals/AboutModal/changelog/profileChangelog';
 
 const HomeScreen = () => {
   const navigate = useNavigate();
@@ -254,7 +255,7 @@ const HomeScreen = () => {
           Filarmônica 25 de Março
         </p>
         <p style={{ fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'Outfit, sans-serif', opacity: 0.7 }}>
-          Acervo Digital de Partituras • Versão 2.0
+          Acervo Digital de Partituras • Versão {PROFILE_ABOUT_CONFIG.infoCards[0].value}
         </p>
       </div>
     </div>

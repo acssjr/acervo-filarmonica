@@ -129,9 +129,9 @@ const FeaturedSheets = ({ sheets, onToggleFavorite, favorites }) => {
           msOverflowStyle: 'none',
           cursor: isDesktop ? 'grab' : 'default',
           overscrollBehaviorX: 'contain',
-          // Fade suave nas bordas usando mask-image (apenas durante animação)
-          maskImage: !hasInteracted ? 'linear-gradient(to right, transparent 0%, black 5%, black 95%, transparent 100%)' : 'none',
-          WebkitMaskImage: !hasInteracted ? 'linear-gradient(to right, transparent 0%, black 5%, black 95%, transparent 100%)' : 'none'
+          // Fade suave nas bordas usando mask-image (apenas durante animação e no modo escuro)
+          maskImage: (!hasInteracted && theme === 'dark') ? 'linear-gradient(to right, transparent 0%, black 5%, black 95%, transparent 100%)' : 'none',
+          WebkitMaskImage: (!hasInteracted && theme === 'dark') ? 'linear-gradient(to right, transparent 0%, black 5%, black 95%, transparent 100%)' : 'none'
         }}
       >
         <div
