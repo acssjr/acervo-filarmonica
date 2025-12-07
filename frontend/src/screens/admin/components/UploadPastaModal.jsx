@@ -216,7 +216,8 @@ const normalizarTexto = (texto) => {
 const extrairInstrumento = (nomeArquivo) => {
   let nome = nomeArquivo.replace(/\.pdf$/i, '');
   nome = nome.replace(/^\d+[\s\-_\.]*/, '');
-  nome = nome.replace(/^.+\s*-\s*/, '');
+  // Usar \s+ (1+ espaços) para não quebrar nomes com hífen como "Caixa-clara"
+  nome = nome.replace(/^.+\s+-\s+/, '');
 
   const matchNumero = nome.match(/\s+(\d+)$/);
   const numeroFinal = matchNumero ? matchNumero[1] : null;
