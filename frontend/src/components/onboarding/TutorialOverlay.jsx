@@ -1,64 +1,105 @@
 // ===== TUTORIAL OVERLAY =====
-// Componente de onboarding com spotlight para guiar usuarios
+// Componente de onboarding com spotlight para guiar usuários
 
 import { useState, useEffect, useCallback } from 'react';
 import Storage from '@services/storage';
 
 const STORAGE_KEY = 'tutorial_admin_partituras_completed';
 
-// Definicao dos passos do tutorial
+// Definição dos passos do tutorial
 const TUTORIAL_STEPS = [
   {
     targetSelector: '[data-tutorial="upload-pasta"]',
-    title: 'Upload de Pasta - Funcao Principal',
-    description: 'Esta e a forma mais rapida de adicionar partituras! Selecione uma pasta inteira e o sistema detecta automaticamente os instrumentos pelos nomes dos arquivos (Grade, Clarinetes, Saxes, Trompetes, etc.)',
+    title: 'Upload de Pasta',
+    subtitle: 'Função Principal',
+    description: 'Esta é a forma mais rápida de <strong>adicionar partituras</strong>! Selecione uma pasta inteira e o sistema <strong>detecta automaticamente</strong> os instrumentos pelos nomes dos arquivos.',
     position: 'bottom',
-    highlightPadding: 8
+    highlightPadding: 12
   },
   {
     targetSelector: '[data-tutorial="expand-button"]',
     title: 'Visualizar Todas as Partes',
-    description: 'Clique aqui para expandir e ver todas as partes de instrumentos desta partitura. Voce pode visualizar, substituir ou adicionar novas partes individualmente.',
+    subtitle: 'Expandir Partitura',
+    description: 'Clique aqui para <strong>expandir</strong> e ver todas as partes de instrumentos desta partitura. Você pode visualizar, substituir ou adicionar novas partes.',
     position: 'right',
-    highlightPadding: 4,
-    beforeStep: 'expandFirst'
+    highlightPadding: 20,
+    beforeStep: 'collapseFirst'
   },
   {
     targetSelector: '[data-tutorial="add-parte"]',
-    title: 'Adicionar Parte de Instrumento',
-    description: 'Use este botao para adicionar uma nova parte de instrumento que nao foi detectada automaticamente no upload.',
-    position: 'top',
-    highlightPadding: 6
+    title: 'Adicionar Parte',
+    subtitle: 'Novo Instrumento',
+    description: 'Use este botão para <strong>adicionar uma nova parte</strong> de instrumento que não foi detectada automaticamente no upload.',
+    position: 'left',
+    highlightPadding: 10,
+    beforeStep: 'expandFirst'
   },
   {
-    targetSelector: '[data-tutorial="action-buttons"]',
-    title: 'Gerenciar Partes Individuais',
-    description: 'Aqui voce pode substituir o arquivo de uma parte especifica ou deleta-la. Os botoes aparecem ao passar o mouse sobre cada parte.',
+    targetSelector: '[data-tutorial="btn-replace"]',
+    title: 'Substituir Arquivo',
+    subtitle: 'Atualizar Parte',
+    description: 'Clique aqui para <strong>substituir o arquivo</strong> de uma parte específica por uma versão atualizada.',
     position: 'left',
-    highlightPadding: 4
+    highlightPadding: 8
+  },
+  {
+    targetSelector: '[data-tutorial="btn-delete"]',
+    title: 'Remover Parte',
+    subtitle: 'Deletar Arquivo',
+    description: 'Use este botão para <strong>remover permanentemente</strong> uma parte da partitura.',
+    position: 'left',
+    highlightPadding: 8
   }
 ];
 
-const TutorialOverlay = ({ isOpen, onClose, onExpandFirst }) => {
+const TutorialOverlay = ({ isOpen, onClose, onExpandFirst, onCollapseFirst }) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [dontShowAgain, setDontShowAgain] = useState(false);
   const [targetRect, setTargetRect] = useState(null);
   const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
   const [isAnimating, setIsAnimating] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [highlightNextButton, setHighlightNextButton] = useState(false);
 
   const step = TUTORIAL_STEPS[currentStep];
 
-  // Calcula posicao do tooltip baseado no elemento alvo
+  // Detecta se é mobile
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Calcula posição do tooltip baseado no elemento alvo
   const calculateTooltipPosition = useCallback((rect, preferredPosition) => {
     if (!rect) return { top: 0, left: 0 };
 
     const SPACING = 20;
-    const TOOLTIP_WIDTH = 340;
-    const TOOLTIP_HEIGHT_ESTIMATE = 220;
+    const TOOLTIP_WIDTH = 360;
+    const TOOLTIP_HEIGHT_ESTIMATE = 320; // Aumentado para incluir checkbox
 
     let top, left;
+    let actualPosition = preferredPosition;
 
-    switch (preferredPosition) {
+    // Verifica se há espaço suficiente na posição preferida
+    const spaceBottom = window.innerHeight - rect.bottom;
+    const spaceTop = rect.top;
+    const spaceRight = window.innerWidth - rect.right;
+    const spaceLeft = rect.left;
+
+    // Se não houver espaço na posição preferida, encontra melhor alternativa
+    if (preferredPosition === 'bottom' && spaceBottom < TOOLTIP_HEIGHT_ESTIMATE + SPACING) {
+      actualPosition = spaceTop > spaceBottom ? 'top' : 'left';
+    } else if (preferredPosition === 'top' && spaceTop < TOOLTIP_HEIGHT_ESTIMATE + SPACING) {
+      actualPosition = spaceBottom > spaceTop ? 'bottom' : 'left';
+    } else if (preferredPosition === 'right' && spaceRight < TOOLTIP_WIDTH + SPACING) {
+      actualPosition = spaceLeft > spaceRight ? 'left' : 'bottom';
+    } else if (preferredPosition === 'left' && spaceLeft < TOOLTIP_WIDTH + SPACING) {
+      actualPosition = spaceRight > spaceLeft ? 'right' : 'bottom';
+    }
+
+    switch (actualPosition) {
       case 'bottom':
         top = rect.bottom + SPACING;
         left = rect.left + (rect.width / 2) - (TOOLTIP_WIDTH / 2);
@@ -80,7 +121,7 @@ const TutorialOverlay = ({ isOpen, onClose, onExpandFirst }) => {
         left = rect.left;
     }
 
-    // Ajusta para nao sair da viewport
+    // Ajusta para não sair da viewport
     const padding = 20;
     if (left < padding) left = padding;
     if (left + TOOLTIP_WIDTH > window.innerWidth - padding) {
@@ -94,7 +135,7 @@ const TutorialOverlay = ({ isOpen, onClose, onExpandFirst }) => {
     return { top, left };
   }, []);
 
-  // Atualiza posicao do elemento alvo
+  // Atualiza posição do elemento alvo
   const updateTargetPosition = useCallback(() => {
     if (!step) return;
 
@@ -106,43 +147,73 @@ const TutorialOverlay = ({ isOpen, onClose, onExpandFirst }) => {
     }
   }, [step, calculateTooltipPosition]);
 
-  // Efeito para atualizar posicao quando muda o passo
+  // Efeito para atualizar posição quando muda o passo
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen || isMobile) return;
 
     setIsAnimating(true);
 
-    // Executa acao antes do passo se necessario
+    // Executa ação antes do passo se necessário
     if (step?.beforeStep === 'expandFirst' && onExpandFirst) {
       onExpandFirst();
-      // Aguarda expansao carregar
-      setTimeout(updateTargetPosition, 500);
+      // Aguarda expansão carregar
+      setTimeout(updateTargetPosition, 600);
+    } else if (step?.beforeStep === 'collapseFirst' && onCollapseFirst) {
+      onCollapseFirst();
+      setTimeout(updateTargetPosition, 300);
     } else {
-      updateTargetPosition();
+      // Pequeno delay para garantir que o DOM está pronto
+      setTimeout(updateTargetPosition, 100);
     }
 
-    const timer = setTimeout(() => setIsAnimating(false), 300);
+    const timer = setTimeout(() => setIsAnimating(false), 400);
     return () => clearTimeout(timer);
-  }, [isOpen, currentStep, step, updateTargetPosition, onExpandFirst]);
+  }, [isOpen, currentStep, step, updateTargetPosition, onExpandFirst, onCollapseFirst, isMobile]);
 
   // Listener para resize
   useEffect(() => {
     if (!isOpen) return;
 
-    const handleResize = () => updateTargetPosition();
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+      updateTargetPosition();
+    };
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, [isOpen, updateTargetPosition]);
 
-  // Bloqueia scroll durante tutorial
+  // Bloqueia scroll durante tutorial (em todos os elementos)
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && !isMobile) {
+      // Bloqueia scroll no body
       document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
+
+      // Bloqueia scroll em qualquer container scrollável
+      const mainContent = document.querySelector('main');
+      if (mainContent) {
+        mainContent.style.overflow = 'hidden';
+      }
+
+      // Previne scroll com touch/wheel
+      const preventScroll = (e) => {
+        e.preventDefault();
+      };
+
+      window.addEventListener('wheel', preventScroll, { passive: false });
+      window.addEventListener('touchmove', preventScroll, { passive: false });
+
+      return () => {
+        document.body.style.overflow = '';
+        document.documentElement.style.overflow = '';
+        if (mainContent) {
+          mainContent.style.overflow = '';
+        }
+        window.removeEventListener('wheel', preventScroll);
+        window.removeEventListener('touchmove', preventScroll);
+      };
     }
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [isOpen]);
+  }, [isOpen, isMobile]);
 
   const handleNext = () => {
     if (currentStep === TUTORIAL_STEPS.length - 1) {
@@ -171,9 +242,10 @@ const TutorialOverlay = ({ isOpen, onClose, onExpandFirst }) => {
     onClose();
   };
 
-  if (!isOpen || !step) return null;
+  // Não renderiza em mobile ou se não estiver aberto
+  if (!isOpen || !step || isMobile) return null;
 
-  const padding = step.highlightPadding || 8;
+  const padding = step.highlightPadding || 12;
 
   return (
     <div style={{
@@ -182,13 +254,17 @@ const TutorialOverlay = ({ isOpen, onClose, onExpandFirst }) => {
       zIndex: 10000,
       pointerEvents: 'auto'
     }}>
-      {/* Overlay escuro */}
+      {/* Overlay escuro - destaca botão próximo ao clicar */}
       <div
-        onClick={handleSkip}
+        onClick={() => {
+          setHighlightNextButton(true);
+          setTimeout(() => setHighlightNextButton(false), 1200);
+        }}
         style={{
           position: 'absolute',
           inset: 0,
-          background: 'rgba(0, 0, 0, 0.85)',
+          background: 'rgba(0, 0, 0, 0.5)',
+          transition: 'background 0.3s ease',
           cursor: 'pointer'
         }}
       />
@@ -203,19 +279,20 @@ const TutorialOverlay = ({ isOpen, onClose, onExpandFirst }) => {
             width: targetRect.width + (padding * 2),
             height: targetRect.height + (padding * 2),
             borderRadius: '12px',
-            boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.85)',
+            boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.5)',
             pointerEvents: 'none',
-            transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-            animation: 'pulse-spotlight 2s infinite'
+            transition: 'all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)',
+            willChange: 'top, left, width, height'
           }}
         >
-          {/* Borda destacada */}
+          {/* Borda destacada animada */}
           <div style={{
             position: 'absolute',
-            inset: -2,
+            inset: -3,
             borderRadius: '14px',
-            border: '2px solid rgba(212, 175, 55, 0.6)',
-            animation: 'pulse-border 2s infinite'
+            border: '2px solid rgba(212, 175, 55, 0.8)',
+            animation: 'pulse-border 1.5s ease-in-out infinite',
+            transition: 'all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)'
           }} />
         </div>
       )}
@@ -226,16 +303,17 @@ const TutorialOverlay = ({ isOpen, onClose, onExpandFirst }) => {
           position: 'absolute',
           top: tooltipPosition.top,
           left: tooltipPosition.left,
-          width: '340px',
-          background: 'var(--bg-primary, #1a1a2e)',
+          width: '360px',
+          background: '#fff',
           borderRadius: '16px',
-          padding: '24px',
-          boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(212, 175, 55, 0.2)',
+          padding: '28px',
+          boxShadow: '0 25px 50px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.05)',
           zIndex: 10001,
           opacity: isAnimating ? 0 : 1,
-          transform: isAnimating ? 'translateY(10px)' : 'translateY(0)',
-          transition: 'opacity 0.3s ease, transform 0.3s ease',
-          fontFamily: 'Outfit, sans-serif'
+          transform: isAnimating ? 'translateY(12px) scale(0.98)' : 'translateY(0) scale(1)',
+          transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
+          fontFamily: 'Outfit, sans-serif',
+          willChange: 'transform, opacity, top, left'
         }}
       >
         {/* Indicador de progresso */}
@@ -249,12 +327,12 @@ const TutorialOverlay = ({ isOpen, onClose, onExpandFirst }) => {
               key={i}
               style={{
                 flex: 1,
-                height: '3px',
+                height: '4px',
                 background: i <= currentStep
                   ? 'linear-gradient(90deg, #D4AF37, #B8860B)'
-                  : 'rgba(255, 255, 255, 0.1)',
+                  : '#e5e5e5',
                 borderRadius: '999px',
-                transition: 'background 0.3s'
+                transition: 'background 0.4s ease'
               }}
             />
           ))}
@@ -262,38 +340,51 @@ const TutorialOverlay = ({ isOpen, onClose, onExpandFirst }) => {
 
         {/* Contador de passos */}
         <div style={{
-          fontSize: '11px',
-          fontWeight: '600',
-          color: 'rgba(212, 175, 55, 0.8)',
-          marginBottom: '12px',
-          letterSpacing: '0.5px',
+          fontSize: '12px',
+          fontWeight: '700',
+          color: '#D4AF37',
+          marginBottom: '8px',
+          letterSpacing: '1px',
           textTransform: 'uppercase'
         }}>
           Passo {currentStep + 1} de {TUTORIAL_STEPS.length}
         </div>
 
-        {/* Titulo */}
+        {/* Título */}
         <h3 style={{
-          fontSize: '18px',
+          fontSize: '20px',
           fontWeight: '700',
-          color: 'var(--text-primary, #fff)',
-          marginBottom: '12px',
+          color: '#1a1a2e',
+          marginBottom: '4px',
           lineHeight: '1.3'
         }}>
           {step.title}
         </h3>
 
-        {/* Descricao */}
-        <p style={{
-          fontSize: '14px',
-          lineHeight: '1.7',
-          color: 'var(--text-secondary, rgba(255,255,255,0.7))',
-          marginBottom: '24px'
-        }}>
-          {step.description}
-        </p>
+        {/* Subtítulo */}
+        {step.subtitle && (
+          <div style={{
+            fontSize: '13px',
+            fontWeight: '500',
+            color: '#888',
+            marginBottom: '12px'
+          }}>
+            {step.subtitle}
+          </div>
+        )}
 
-        {/* Botoes de navegacao */}
+        {/* Descrição com HTML */}
+        <p
+          style={{
+            fontSize: '14px',
+            lineHeight: '1.7',
+            color: '#555',
+            marginBottom: '24px'
+          }}
+          dangerouslySetInnerHTML={{ __html: step.description }}
+        />
+
+        {/* Botões de navegação */}
         <div style={{
           display: 'flex',
           gap: '10px'
@@ -303,31 +394,29 @@ const TutorialOverlay = ({ isOpen, onClose, onExpandFirst }) => {
               onClick={handlePrevious}
               style={{
                 flex: 1,
-                padding: '12px 16px',
+                padding: '14px 16px',
                 borderRadius: '10px',
-                background: 'transparent',
-                border: '1px solid rgba(255, 255, 255, 0.2)',
-                color: 'var(--text-secondary, rgba(255,255,255,0.7))',
+                background: '#f5f5f5',
+                border: 'none',
+                color: '#666',
                 fontSize: '14px',
-                fontWeight: '500',
+                fontWeight: '600',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '6px',
-                transition: 'all 0.2s',
+                transition: 'all 0.2s ease',
                 fontFamily: 'Outfit, sans-serif'
               }}
               onMouseEnter={e => {
-                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+                e.currentTarget.style.background = '#eee';
               }}
               onMouseLeave={e => {
-                e.currentTarget.style.background = 'transparent';
-                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+                e.currentTarget.style.background = '#f5f5f5';
               }}
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <polyline points="15 18 9 12 15 6"/>
               </svg>
               Anterior
@@ -338,42 +427,50 @@ const TutorialOverlay = ({ isOpen, onClose, onExpandFirst }) => {
             style={{
               flex: currentStep > 0 ? 1 : 'auto',
               minWidth: currentStep > 0 ? 'auto' : '100%',
-              padding: '12px 20px',
+              padding: '14px 24px',
               borderRadius: '10px',
               background: 'linear-gradient(135deg, #D4AF37 0%, #B8860B 100%)',
               border: 'none',
               color: '#fff',
               fontSize: '14px',
-              fontWeight: '600',
+              fontWeight: '700',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               gap: '8px',
-              transition: 'all 0.2s',
-              boxShadow: '0 4px 12px rgba(212, 175, 55, 0.3)',
-              fontFamily: 'Outfit, sans-serif'
+              transition: 'all 0.2s ease',
+              boxShadow: highlightNextButton
+                ? '0 0 0 4px rgba(212, 175, 55, 0.4), 0 8px 25px rgba(212, 175, 55, 0.6)'
+                : '0 4px 15px rgba(212, 175, 55, 0.4)',
+              fontFamily: 'Outfit, sans-serif',
+              transform: highlightNextButton ? 'scale(1.05)' : 'scale(1)',
+              animation: highlightNextButton ? 'pulse-next 0.6s ease-in-out 2' : 'none'
             }}
             onMouseEnter={e => {
-              e.currentTarget.style.transform = 'translateY(-1px)';
-              e.currentTarget.style.boxShadow = '0 6px 16px rgba(212, 175, 55, 0.4)';
+              if (!highlightNextButton) {
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = '0 6px 20px rgba(212, 175, 55, 0.5)';
+              }
             }}
             onMouseLeave={e => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 4px 12px rgba(212, 175, 55, 0.3)';
+              if (!highlightNextButton) {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 4px 15px rgba(212, 175, 55, 0.4)';
+              }
             }}
           >
             {currentStep === TUTORIAL_STEPS.length - 1 ? (
               <>
                 Finalizar
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <polyline points="20 6 9 17 4 12"/>
                 </svg>
               </>
             ) : (
               <>
-                Proximo
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                Próximo
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <polyline points="9 18 15 12 9 6"/>
                 </svg>
               </>
@@ -381,38 +478,69 @@ const TutorialOverlay = ({ isOpen, onClose, onExpandFirst }) => {
           </button>
         </div>
 
-        {/* Checkbox "Nao mostrar novamente" - apenas no primeiro passo */}
+        {/* Botão de pular tutorial - discreto */}
+        <button
+          onClick={handleSkip}
+          style={{
+            marginTop: '16px',
+            padding: '6px 12px',
+            borderRadius: '6px',
+            background: 'transparent',
+            border: 'none',
+            color: '#bbb',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '6px',
+            fontSize: '12px',
+            fontWeight: '400',
+            fontFamily: 'Outfit, sans-serif',
+            transition: 'all 0.2s ease',
+            alignSelf: 'center'
+          }}
+          onMouseEnter={e => {
+            e.currentTarget.style.color = '#888';
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.color = '#bbb';
+          }}
+        >
+          Pular tutorial
+        </button>
+
+        {/* Checkbox "Não mostrar novamente" - apenas no primeiro passo */}
         {currentStep === 0 && (
           <label
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '10px',
-              marginTop: '20px',
-              paddingTop: '20px',
-              borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+              gap: '12px',
+              marginTop: '16px',
+              paddingTop: '16px',
+              borderTop: '1px solid #eee',
               cursor: 'pointer',
               userSelect: 'none'
             }}
+            onClick={() => setDontShowAgain(!dontShowAgain)}
           >
             <div
               style={{
-                width: '18px',
-                height: '18px',
-                borderRadius: '4px',
+                width: '20px',
+                height: '20px',
+                borderRadius: '6px',
                 border: dontShowAgain
                   ? '2px solid #D4AF37'
-                  : '2px solid rgba(255, 255, 255, 0.3)',
+                  : '2px solid #ccc',
                 background: dontShowAgain
                   ? 'linear-gradient(135deg, #D4AF37 0%, #B8860B 100%)'
-                  : 'transparent',
+                  : '#fff',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                transition: 'all 0.2s',
+                transition: 'all 0.2s ease',
                 flexShrink: 0
               }}
-              onClick={() => setDontShowAgain(!dontShowAgain)}
             >
               {dontShowAgain && (
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3">
@@ -422,68 +550,33 @@ const TutorialOverlay = ({ isOpen, onClose, onExpandFirst }) => {
             </div>
             <span style={{
               fontSize: '13px',
-              color: 'var(--text-muted, rgba(255,255,255,0.5))'
+              color: '#888',
+              fontWeight: '500'
             }}>
-              Nao mostrar este tutorial novamente
+              Não mostrar este tutorial novamente
             </span>
           </label>
         )}
-
-        {/* Botao de pular */}
-        <button
-          onClick={handleSkip}
-          style={{
-            position: 'absolute',
-            top: '12px',
-            right: '12px',
-            width: '28px',
-            height: '28px',
-            borderRadius: '8px',
-            background: 'rgba(255, 255, 255, 0.05)',
-            border: 'none',
-            color: 'rgba(255, 255, 255, 0.4)',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transition: 'all 0.2s'
-          }}
-          onMouseEnter={e => {
-            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-            e.currentTarget.style.color = 'rgba(255, 255, 255, 0.7)';
-          }}
-          onMouseLeave={e => {
-            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-            e.currentTarget.style.color = 'rgba(255, 255, 255, 0.4)';
-          }}
-          title="Fechar tutorial"
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <line x1="18" y1="6" x2="6" y2="18"/>
-            <line x1="6" y1="6" x2="18" y2="18"/>
-          </svg>
-        </button>
       </div>
 
-      {/* Estilos de animacao */}
+      {/* Estilos de animação */}
       <style>{`
-        @keyframes pulse-spotlight {
-          0%, 100% {
-            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.85);
-          }
-          50% {
-            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.82);
-          }
-        }
-
         @keyframes pulse-border {
           0%, 100% {
-            border-color: rgba(212, 175, 55, 0.6);
+            opacity: 1;
             transform: scale(1);
           }
           50% {
-            border-color: rgba(212, 175, 55, 0.9);
+            opacity: 0.7;
             transform: scale(1.02);
+          }
+        }
+        @keyframes pulse-next {
+          0%, 100% {
+            transform: scale(1.05);
+          }
+          50% {
+            transform: scale(1.1);
           }
         }
       `}</style>
@@ -492,23 +585,39 @@ const TutorialOverlay = ({ isOpen, onClose, onExpandFirst }) => {
 };
 
 // Hook para verificar se deve mostrar o tutorial
+// Retorna [showTutorial, setShowTutorial, tutorialPending]
+// tutorialPending = true durante o delay antes do tutorial aparecer (bloqueia interações)
 export const useTutorial = (partituras, loading) => {
   const [showTutorial, setShowTutorial] = useState(false);
+  const [tutorialPending, setTutorialPending] = useState(false);
 
   useEffect(() => {
+    // Não mostra em mobile
+    if (window.innerWidth < 768) return;
+
     // Verifica se:
-    // 1. Nao foi completado antes
+    // 1. Não foi completado antes
     // 2. Existem partituras carregadas
-    // 3. Nao esta em loading
+    // 3. Não está em loading
     const tutorialCompleted = Storage.get(STORAGE_KEY, false);
     if (!tutorialCompleted && !loading && partituras && partituras.length > 0) {
-      // Pequeno delay para garantir que a UI esta pronta
-      const timer = setTimeout(() => setShowTutorial(true), 800);
-      return () => clearTimeout(timer);
+      // Marca como pendente imediatamente (bloqueia interações)
+      setTutorialPending(true);
+
+      // Pequeno delay para garantir que a UI está pronta
+      const timer = setTimeout(() => {
+        setShowTutorial(true);
+        setTutorialPending(false); // Não está mais pendente, agora está ativo
+      }, 1000);
+
+      return () => {
+        clearTimeout(timer);
+        setTutorialPending(false);
+      };
     }
   }, [loading, partituras]);
 
-  return [showTutorial, setShowTutorial];
+  return [showTutorial, setShowTutorial, tutorialPending];
 };
 
 export default TutorialOverlay;

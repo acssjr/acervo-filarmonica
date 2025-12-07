@@ -1,5 +1,6 @@
 // ===== UPLOAD PASTA MODAL =====
 // Modal para upload de pasta com múltiplas partes de partitura
+// Suporte a drag & drop e clique para selecionar pasta
 
 import { useState, useEffect } from 'react';
 import { useUI } from '@contexts/UIContext';
@@ -332,6 +333,7 @@ const UploadPastaModal = ({ isOpen, onClose, onSuccess }) => {
   const [parsedData, setParsedData] = useState([]);
   const [categorias, setCategorias] = useState([]);
   const [uploading, setUploading] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   // Estados de progresso do upload
   const [uploadPhase, setUploadPhase] = useState('idle'); // idle | preparing | uploading | processing | complete | error
@@ -382,13 +384,8 @@ const UploadPastaModal = ({ isOpen, onClose, onSuccess }) => {
     }
   }, [isOpen]);
 
-  // Processa os arquivos quando selecionados
-  const handleFolderSelect = (e) => {
-    const fileList = Array.from(e.target.files);
-    if (fileList.length === 0) return;
-
-    const pdfFiles = fileList.filter(f => f.name.toLowerCase().endsWith('.pdf'));
-
+  // Processa os arquivos (comum para input e drag & drop)
+  const processFiles = (pdfFiles, folderPath) => {
     if (pdfFiles.length === 0) {
       showToast('Nenhum arquivo PDF encontrado na pasta', 'error');
       return;
@@ -396,9 +393,8 @@ const UploadPastaModal = ({ isOpen, onClose, onSuccess }) => {
 
     setFiles(pdfFiles);
 
-    const firstPath = pdfFiles[0].webkitRelativePath || pdfFiles[0].name;
-    const pathParts = firstPath.split('/');
-    const pastaName = pathParts.length > 1 ? pathParts[0] : 'Pasta sem nome';
+    const pathParts = folderPath.split('/');
+    const pastaName = pathParts.length > 0 ? pathParts[0] : 'Pasta sem nome';
     setFolderName(pastaName);
 
     const { titulo: tit, categoriaDetectada, compositor: comp, arranjador: arr } = parsearNomePasta(pastaName);
@@ -425,6 +421,132 @@ const UploadPastaModal = ({ isOpen, onClose, onSuccess }) => {
     });
 
     setParsedData(parsed);
+  };
+
+  // Processa os arquivos quando selecionados via input
+  const handleFolderSelect = (e) => {
+    const fileList = Array.from(e.target.files);
+    if (fileList.length === 0) return;
+
+    const pdfFiles = fileList.filter(f => f.name.toLowerCase().endsWith('.pdf'));
+    const firstPath = pdfFiles[0]?.webkitRelativePath || pdfFiles[0]?.name || '';
+
+    processFiles(pdfFiles, firstPath);
+  };
+
+  // Função recursiva para ler todos os arquivos de uma pasta (drag & drop)
+  const readAllEntriesRecursively = async (entry, path = '') => {
+    const files = [];
+
+    if (entry.isFile) {
+      const file = await new Promise((resolve) => entry.file(resolve));
+      // Adiciona o path relativo ao arquivo
+      Object.defineProperty(file, 'webkitRelativePath', {
+        value: path + file.name,
+        writable: false
+      });
+      files.push(file);
+    } else if (entry.isDirectory) {
+      const reader = entry.createReader();
+      const entries = await new Promise((resolve) => {
+        const allEntries = [];
+        const readEntries = () => {
+          reader.readEntries((results) => {
+            if (results.length === 0) {
+              resolve(allEntries);
+            } else {
+              allEntries.push(...results);
+              readEntries();
+            }
+          });
+        };
+        readEntries();
+      });
+
+      for (const childEntry of entries) {
+        const childFiles = await readAllEntriesRecursively(
+          childEntry,
+          path + entry.name + '/'
+        );
+        files.push(...childFiles);
+      }
+    }
+
+    return files;
+  };
+
+  // Handlers de Drag & Drop
+  const handleDragEnter = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Só remove o estado se realmente saiu da área
+    if (!e.currentTarget.contains(e.relatedTarget)) {
+      setIsDragging(false);
+    }
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const items = e.dataTransfer.items;
+    if (!items || items.length === 0) return;
+
+    // Procura por uma pasta nos itens
+    let folderEntry = null;
+    let folderName = '';
+
+    for (const item of items) {
+      const entry = item.webkitGetAsEntry?.();
+      if (entry?.isDirectory) {
+        folderEntry = entry;
+        folderName = entry.name;
+        break;
+      }
+    }
+
+    if (!folderEntry) {
+      // Se não encontrou pasta, tenta usar arquivos soltos
+      const droppedFiles = Array.from(e.dataTransfer.files);
+      const pdfFiles = droppedFiles.filter(f => f.name.toLowerCase().endsWith('.pdf'));
+
+      if (pdfFiles.length === 0) {
+        showToast('Arraste uma pasta contendo arquivos PDF', 'error');
+        return;
+      }
+
+      // Usa os arquivos soltos
+      processFiles(pdfFiles, pdfFiles[0].name);
+      return;
+    }
+
+    // Lê todos os arquivos da pasta recursivamente
+    try {
+      const allFiles = await readAllEntriesRecursively(folderEntry, '');
+      const pdfFiles = allFiles.filter(f => f.name.toLowerCase().endsWith('.pdf'));
+
+      if (pdfFiles.length === 0) {
+        showToast('Nenhum arquivo PDF encontrado na pasta', 'error');
+        return;
+      }
+
+      processFiles(pdfFiles, folderName + '/');
+    } catch (err) {
+      console.error('Erro ao ler pasta:', err);
+      showToast('Erro ao ler a pasta arrastada', 'error');
+    }
   };
 
   // Simula progresso visual dos arquivos durante upload
@@ -542,7 +664,8 @@ const UploadPastaModal = ({ isOpen, onClose, onSuccess }) => {
         maxWidth: '600px',
         maxHeight: '90vh',
         padding: '24px',
-        overflow: uploading ? 'hidden' : 'auto',
+        overflowX: 'hidden',
+        overflowY: uploading ? 'hidden' : 'auto',
         fontFamily: 'Outfit, sans-serif'
       }}>
         <h2 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '8px', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -557,31 +680,44 @@ const UploadPastaModal = ({ isOpen, onClose, onSuccess }) => {
           Selecione uma pasta contendo os PDFs das partes da partitura
         </p>
 
-        {/* Seletor de pasta - Dropzone elegante */}
+        {/* Seletor de pasta - Dropzone elegante com Drag & Drop */}
         <div
           className="upload-dropzone"
+          onClick={() => document.getElementById('folder-input')?.click()}
           style={{
-            border: files.length > 0 ? '2px solid rgba(212, 175, 55, 0.4)' : '2px dashed var(--border)',
+            border: isDragging
+              ? '2px dashed #D4AF37'
+              : files.length > 0
+                ? '2px solid rgba(212, 175, 55, 0.4)'
+                : '2px dashed var(--border)',
             borderRadius: 'var(--radius-md)',
             padding: '40px 30px',
             textAlign: 'center',
             marginBottom: '20px',
-            background: files.length > 0
-              ? 'linear-gradient(145deg, rgba(212, 175, 55, 0.05) 0%, rgba(184, 134, 11, 0.02) 100%)'
-              : 'var(--bg-primary)',
+            background: isDragging
+              ? 'linear-gradient(145deg, rgba(212, 175, 55, 0.15) 0%, rgba(184, 134, 11, 0.08) 100%)'
+              : files.length > 0
+                ? 'linear-gradient(145deg, rgba(212, 175, 55, 0.05) 0%, rgba(184, 134, 11, 0.02) 100%)'
+                : 'var(--bg-primary)',
             cursor: 'pointer',
             transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
             position: 'relative',
-            overflow: 'hidden'
+            overflow: 'hidden',
+            transform: isDragging ? 'scale(1.02)' : 'scale(1)',
+            boxShadow: isDragging ? '0 8px 32px rgba(212, 175, 55, 0.2)' : 'none'
           }}
+          onDragEnter={handleDragEnter}
+          onDragLeave={handleDragLeave}
+          onDragOver={handleDragOver}
+          onDrop={handleDrop}
           onMouseEnter={e => {
-            if (!files.length) {
+            if (!files.length && !isDragging) {
               e.currentTarget.style.borderColor = 'rgba(212, 175, 55, 0.5)';
               e.currentTarget.style.background = 'linear-gradient(145deg, rgba(212, 175, 55, 0.08) 0%, rgba(184, 134, 11, 0.03) 100%)';
             }
           }}
           onMouseLeave={e => {
-            if (!files.length) {
+            if (!files.length && !isDragging) {
               e.currentTarget.style.borderColor = 'var(--border)';
               e.currentTarget.style.background = 'var(--bg-primary)';
             }
@@ -596,28 +732,43 @@ const UploadPastaModal = ({ isOpen, onClose, onSuccess }) => {
             style={{ display: 'none' }}
             id="folder-input"
           />
-          <label htmlFor="folder-input" style={{ cursor: 'pointer', display: 'block' }}>
+          <div style={{ cursor: 'pointer', display: 'block' }}>
             {/* Ícone de pasta SVG animado */}
             <div style={{
               marginBottom: '16px',
               display: 'flex',
               justifyContent: 'center',
-              animation: files.length > 0 ? 'none' : 'floatUpDown 3s ease-in-out infinite'
+              animation: isDragging
+                ? 'pulse 0.8s ease-in-out infinite'
+                : files.length > 0
+                  ? 'none'
+                  : 'floatUpDown 3s ease-in-out infinite'
             }}>
               <div style={{
                 width: '80px',
                 height: '80px',
                 borderRadius: '20px',
-                background: files.length > 0
-                  ? 'linear-gradient(145deg, rgba(39, 174, 96, 0.15) 0%, rgba(39, 174, 96, 0.05) 100%)'
-                  : 'linear-gradient(145deg, rgba(212, 175, 55, 0.15) 0%, rgba(212, 175, 55, 0.05) 100%)',
+                background: isDragging
+                  ? 'linear-gradient(145deg, rgba(212, 175, 55, 0.25) 0%, rgba(212, 175, 55, 0.1) 100%)'
+                  : files.length > 0
+                    ? 'linear-gradient(145deg, rgba(39, 174, 96, 0.15) 0%, rgba(39, 174, 96, 0.05) 100%)'
+                    : 'linear-gradient(145deg, rgba(212, 175, 55, 0.15) 0%, rgba(212, 175, 55, 0.05) 100%)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                boxShadow: '0 8px 32px rgba(212, 175, 55, 0.1)',
+                boxShadow: isDragging
+                  ? '0 8px 32px rgba(212, 175, 55, 0.3)'
+                  : '0 8px 32px rgba(212, 175, 55, 0.1)',
                 transition: 'all 0.3s ease'
               }}>
-                {files.length > 0 ? (
+                {isDragging ? (
+                  // Ícone de drop (seta para baixo)
+                  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="7 10 12 15 17 10"/>
+                    <line x1="12" y1="15" x2="12" y2="3"/>
+                  </svg>
+                ) : files.length > 0 ? (
                   // Ícone de sucesso
                   <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#27ae60" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
@@ -637,22 +788,34 @@ const UploadPastaModal = ({ isOpen, onClose, onSuccess }) => {
             <div style={{
               fontSize: '16px',
               fontWeight: '600',
-              color: files.length > 0 ? '#27ae60' : 'var(--text-primary)',
+              color: isDragging ? '#D4AF37' : files.length > 0 ? '#27ae60' : 'var(--text-primary)',
               marginBottom: '8px',
               transition: 'color 0.3s ease'
             }}>
-              {folderName || 'Clique para selecionar uma pasta'}
+              {isDragging
+                ? 'Solte a pasta aqui!'
+                : folderName || 'Arraste uma pasta ou clique para selecionar'}
             </div>
 
             <div style={{
               fontSize: '13px',
-              color: 'var(--text-secondary)',
+              color: isDragging ? '#D4AF37' : 'var(--text-secondary)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '6px'
+              gap: '6px',
+              transition: 'color 0.3s ease'
             }}>
-              {files.length > 0 ? (
+              {isDragging ? (
+                <>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="7 10 12 15 17 10"/>
+                    <line x1="12" y1="15" x2="12" y2="3"/>
+                  </svg>
+                  Pasta contendo arquivos PDF
+                </>
+              ) : files.length > 0 ? (
                 <>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
@@ -664,7 +827,7 @@ const UploadPastaModal = ({ isOpen, onClose, onSuccess }) => {
                 'Padrão: "Título - Categoria - Compositor"'
               )}
             </div>
-          </label>
+          </div>
 
           {/* Efeito de brilho decorativo */}
           <div style={{
