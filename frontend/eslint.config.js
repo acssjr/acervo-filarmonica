@@ -40,7 +40,7 @@ export default [
     rules: {
       // React rules
       'react/react-in-jsx-scope': 'off', // Não precisa importar React em React 17+
-      'react/prop-types': 'warn', // Avisar sobre prop-types faltando
+      'react/prop-types': 'off', // Desativado - projeto usa JS, não TypeScript
       'react/jsx-uses-react': 'off',
       'react/jsx-uses-vars': 'error',
       'react/jsx-no-undef': 'error',

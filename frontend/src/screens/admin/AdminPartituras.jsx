@@ -5,6 +5,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useUI } from '@contexts/UIContext';
 import { API } from '@services/api';
 import CategoryIcon from '@components/common/CategoryIcon';
+import UploadPastaModal from './components/UploadPastaModal';
 
 const AdminPartituras = () => {
   const { showToast } = useUI();
@@ -14,6 +15,7 @@ const AdminPartituras = () => {
   const [search, setSearch] = useState('');
   const [filterCategoria, setFilterCategoria] = useState('');
   const [showCatDropdown, setShowCatDropdown] = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState(false);
 
   // Normaliza texto removendo acentos
   const normalizeText = (text) => {
@@ -47,7 +49,7 @@ const AdminPartituras = () => {
         showToast('Funcao de criar partitura em desenvolvimento');
       }
       if (e.detail === 'pasta') {
-        showToast('Funcao de upload de pasta em desenvolvimento');
+        setShowUploadModal(true);
       }
     };
     window.addEventListener('admin-partituras-action', handler);
@@ -490,6 +492,17 @@ const AdminPartituras = () => {
           ))}
         </div>
       )}
+
+      {/* Modal de Upload de Pasta */}
+      <UploadPastaModal
+        isOpen={showUploadModal}
+        onClose={() => setShowUploadModal(false)}
+        onSuccess={() => {
+          loadData();
+          setShowUploadModal(false);
+        }}
+        categorias={categorias}
+      />
     </div>
   );
 };
