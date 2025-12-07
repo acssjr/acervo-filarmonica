@@ -333,6 +333,12 @@ const UploadPastaModal = ({ isOpen, onClose, onSuccess }) => {
   const [categorias, setCategorias] = useState([]);
   const [uploading, setUploading] = useState(false);
 
+  // Estados de progresso do upload
+  const [uploadPhase, setUploadPhase] = useState('idle'); // idle | preparing | uploading | processing | complete | error
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [completedFiles, setCompletedFiles] = useState([]);
+  const [errorMessage, setErrorMessage] = useState('');
+
   // Campos editáveis
   const [titulo, setTitulo] = useState('');
   const [categoria, setCategoria] = useState('');
@@ -369,6 +375,10 @@ const UploadPastaModal = ({ isOpen, onClose, onSuccess }) => {
       setCompositor('');
       setArranjador('');
       setAno('');
+      setUploadPhase('idle');
+      setUploadProgress(0);
+      setCompletedFiles([]);
+      setErrorMessage('');
     }
   }, [isOpen]);
 
@@ -417,7 +427,24 @@ const UploadPastaModal = ({ isOpen, onClose, onSuccess }) => {
     setParsedData(parsed);
   };
 
-  // Upload
+  // Simula progresso visual dos arquivos durante upload
+  const simulateFileProgress = (totalFiles) => {
+    return new Promise((resolve) => {
+      let completed = 0;
+      const interval = setInterval(() => {
+        if (completed < totalFiles) {
+          completed++;
+          setCompletedFiles(prev => [...prev, completed - 1]);
+          setUploadProgress(Math.round((completed / totalFiles) * 100));
+        } else {
+          clearInterval(interval);
+          resolve();
+        }
+      }, 150); // Simula ~150ms por arquivo para feedback visual
+    });
+  };
+
+  // Upload com fases visuais
   const handleUpload = async () => {
     if (!titulo.trim()) {
       showToast('Título é obrigatório', 'error');
@@ -433,8 +460,15 @@ const UploadPastaModal = ({ isOpen, onClose, onSuccess }) => {
     }
 
     setUploading(true);
+    setCompletedFiles([]);
+    setUploadProgress(0);
+    setErrorMessage('');
 
     try {
+      // Fase 1: Preparando arquivos
+      setUploadPhase('preparing');
+      await new Promise(r => setTimeout(r, 500)); // Pequeno delay para mostrar a fase
+
       const formData = new FormData();
       formData.append('titulo', titulo.trim());
       formData.append('compositor', compositor.trim());
@@ -448,12 +482,33 @@ const UploadPastaModal = ({ isOpen, onClose, onSuccess }) => {
         formData.append(`instrumento_${index}`, item.instrumento);
       });
 
-      const result = await API.uploadPastaPartitura(formData);
+      // Fase 2: Enviando arquivos
+      setUploadPhase('uploading');
+
+      // Inicia simulação de progresso visual em paralelo com o upload real
+      const progressPromise = simulateFileProgress(parsedData.length);
+      const uploadPromise = API.uploadPastaPartitura(formData);
+
+      // Aguarda ambos: progresso visual e upload real
+      const [result] = await Promise.all([uploadPromise, progressPromise]);
+
+      // Fase 3: Processando no servidor
+      setUploadPhase('processing');
+      await new Promise(r => setTimeout(r, 800)); // Simula processamento
+
+      // Fase 4: Completo
+      setUploadPhase('complete');
+      setUploadProgress(100);
+
+      // Aguarda animação de sucesso antes de fechar
+      await new Promise(r => setTimeout(r, 1500));
 
       showToast(result.message || 'Partitura criada com sucesso!');
       onSuccess?.();
       onClose();
     } catch (err) {
+      setUploadPhase('error');
+      setErrorMessage(err.message || 'Erro no upload');
       showToast(err.message || 'Erro no upload', 'error');
     } finally {
       setUploading(false);
@@ -480,13 +535,14 @@ const UploadPastaModal = ({ isOpen, onClose, onSuccess }) => {
       padding: '20px'
     }}>
       <div onClick={e => e.stopPropagation()} style={{
+        position: 'relative',
         background: 'var(--bg-card)',
         borderRadius: 'var(--radius-lg)',
         width: '100%',
         maxWidth: '600px',
         maxHeight: '90vh',
         padding: '24px',
-        overflow: 'auto',
+        overflow: uploading ? 'hidden' : 'auto',
         fontFamily: 'Outfit, sans-serif'
       }}>
         <h2 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '8px', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -638,10 +694,245 @@ const UploadPastaModal = ({ isOpen, onClose, onSuccess }) => {
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
           }
+          @keyframes progressBar {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 200% 0%; }
+          }
+          @keyframes checkmarkPop {
+            0% { transform: scale(0); opacity: 0; }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); opacity: 1; }
+          }
+          @keyframes fadeInUp {
+            0% { opacity: 0; transform: translateY(10px); }
+            100% { opacity: 1; transform: translateY(0); }
+          }
+          @keyframes successPulse {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(39, 174, 96, 0.4); }
+            50% { transform: scale(1.05); box-shadow: 0 0 0 15px rgba(39, 174, 96, 0); }
+          }
         `}</style>
 
+        {/* Overlay de Progresso do Upload */}
+        {uploading && (
+          <div style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(var(--bg-card-rgb, 26, 26, 36), 0.97)',
+            backdropFilter: 'blur(8px)',
+            borderRadius: 'var(--radius-lg)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '40px',
+            zIndex: 10
+          }}>
+            {/* Ícone animado baseado na fase */}
+            <div style={{
+              width: '100px',
+              height: '100px',
+              borderRadius: '50%',
+              background: uploadPhase === 'error'
+                ? 'linear-gradient(145deg, rgba(231, 76, 60, 0.15) 0%, rgba(231, 76, 60, 0.05) 100%)'
+                : uploadPhase === 'complete'
+                  ? 'linear-gradient(145deg, rgba(39, 174, 96, 0.15) 0%, rgba(39, 174, 96, 0.05) 100%)'
+                  : 'linear-gradient(145deg, rgba(212, 175, 55, 0.15) 0%, rgba(212, 175, 55, 0.05) 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: '24px',
+              animation: uploadPhase === 'complete' ? 'successPulse 1s ease-in-out infinite' : 'none'
+            }}>
+              {uploadPhase === 'preparing' && (
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="1.5" style={{ animation: 'pulse 1.5s ease-in-out infinite' }}>
+                  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                </svg>
+              )}
+              {uploadPhase === 'uploading' && (
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="1.5">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="17 8 12 3 7 8" style={{ animation: 'floatUpDown 1s ease-in-out infinite' }}/>
+                  <line x1="12" y1="3" x2="12" y2="15" style={{ animation: 'floatUpDown 1s ease-in-out infinite' }}/>
+                </svg>
+              )}
+              {uploadPhase === 'processing' && (
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2" style={{ animation: 'spin 1s linear infinite' }}>
+                  <circle cx="12" cy="12" r="10" strokeOpacity="0.25"/>
+                  <path d="M12 2a10 10 0 0 1 10 10" strokeLinecap="round"/>
+                </svg>
+              )}
+              {uploadPhase === 'complete' && (
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#27ae60" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ animation: 'checkmarkPop 0.5s ease-out' }}>
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                  <polyline points="22 4 12 14.01 9 11.01"/>
+                </svg>
+              )}
+              {uploadPhase === 'error' && (
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#e74c3c" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="15" y1="9" x2="9" y2="15"/>
+                  <line x1="9" y1="9" x2="15" y2="15"/>
+                </svg>
+              )}
+            </div>
+
+            {/* Título da fase */}
+            <div style={{
+              fontSize: '18px',
+              fontWeight: '600',
+              color: uploadPhase === 'error' ? '#e74c3c' : uploadPhase === 'complete' ? '#27ae60' : 'var(--text-primary)',
+              marginBottom: '8px',
+              animation: 'fadeInUp 0.3s ease-out'
+            }}>
+              {uploadPhase === 'preparing' && 'Preparando arquivos...'}
+              {uploadPhase === 'uploading' && 'Enviando arquivos...'}
+              {uploadPhase === 'processing' && 'Processando no servidor...'}
+              {uploadPhase === 'complete' && 'Upload concluído!'}
+              {uploadPhase === 'error' && 'Erro no upload'}
+            </div>
+
+            {/* Subtítulo/descrição */}
+            <div style={{
+              fontSize: '14px',
+              color: 'var(--text-secondary)',
+              marginBottom: '24px',
+              textAlign: 'center'
+            }}>
+              {uploadPhase === 'preparing' && `Organizando ${parsedData.length} arquivo(s)...`}
+              {uploadPhase === 'uploading' && `${completedFiles.length} de ${parsedData.length} arquivos`}
+              {uploadPhase === 'processing' && 'Salvando partitura no acervo...'}
+              {uploadPhase === 'complete' && `${parsedData.length} arquivo(s) enviado(s) com sucesso!`}
+              {uploadPhase === 'error' && errorMessage}
+            </div>
+
+            {/* Barra de progresso */}
+            {(uploadPhase === 'uploading' || uploadPhase === 'processing') && (
+              <div style={{
+                width: '100%',
+                maxWidth: '300px',
+                height: '8px',
+                background: 'var(--bg-primary)',
+                borderRadius: '4px',
+                overflow: 'hidden',
+                marginBottom: '24px'
+              }}>
+                <div style={{
+                  width: uploadPhase === 'processing' ? '100%' : `${uploadProgress}%`,
+                  height: '100%',
+                  background: uploadPhase === 'processing'
+                    ? 'linear-gradient(90deg, #D4AF37, #B8860B, #D4AF37)'
+                    : 'linear-gradient(90deg, #D4AF37, #B8860B)',
+                  backgroundSize: uploadPhase === 'processing' ? '200% 100%' : '100% 100%',
+                  animation: uploadPhase === 'processing' ? 'progressBar 1.5s linear infinite' : 'none',
+                  borderRadius: '4px',
+                  transition: 'width 0.15s ease-out'
+                }} />
+              </div>
+            )}
+
+            {/* Lista de arquivos com status */}
+            {uploadPhase === 'uploading' && (
+              <div style={{
+                width: '100%',
+                maxWidth: '350px',
+                maxHeight: '200px',
+                overflowY: 'auto',
+                background: 'var(--bg-primary)',
+                borderRadius: 'var(--radius-sm)',
+                padding: '12px',
+                border: '1px solid var(--border)'
+              }}>
+                {parsedData.map((item, idx) => {
+                  const isCompleted = completedFiles.includes(idx);
+                  const isCurrent = completedFiles.length === idx;
+                  return (
+                    <div key={idx} style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      padding: '8px',
+                      borderRadius: '6px',
+                      background: isCurrent ? 'rgba(212, 175, 55, 0.1)' : 'transparent',
+                      marginBottom: '4px',
+                      transition: 'all 0.2s ease'
+                    }}>
+                      <span style={{
+                        width: '20px',
+                        height: '20px',
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        background: isCompleted ? '#27ae60' : isCurrent ? '#D4AF37' : 'var(--border)',
+                        transition: 'all 0.2s ease'
+                      }}>
+                        {isCompleted ? (
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ animation: 'checkmarkPop 0.3s ease-out' }}>
+                            <polyline points="20 6 9 17 4 12"/>
+                          </svg>
+                        ) : isCurrent ? (
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" style={{ animation: 'spin 0.8s linear infinite' }}>
+                            <circle cx="12" cy="12" r="10" strokeOpacity="0.3"/>
+                            <path d="M12 2a10 10 0 0 1 10 10" strokeLinecap="round"/>
+                          </svg>
+                        ) : (
+                          <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--text-muted)' }} />
+                        )}
+                      </span>
+                      <span style={{
+                        fontSize: '12px',
+                        color: isCompleted ? '#27ae60' : isCurrent ? '#D4AF37' : 'var(--text-muted)',
+                        fontWeight: isCurrent ? '500' : '400',
+                        flex: 1,
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis'
+                      }}>
+                        {item.instrumento}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Botão de tentar novamente em caso de erro */}
+            {uploadPhase === 'error' && (
+              <button
+                onClick={() => {
+                  setUploadPhase('idle');
+                  setUploading(false);
+                }}
+                style={{
+                  padding: '12px 24px',
+                  borderRadius: 'var(--radius-sm)',
+                  background: 'var(--bg-primary)',
+                  border: '1px solid var(--border)',
+                  color: 'var(--text-primary)',
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                  fontFamily: 'Outfit, sans-serif',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="1 4 1 10 7 10"/>
+                  <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+                </svg>
+                Tentar novamente
+              </button>
+            )}
+          </div>
+        )}
+
         {/* Preview dos dados detectados */}
-        {parsedData && parsedData.length > 0 && (
+        {parsedData && parsedData.length > 0 && !uploading && (
           <>
             {/* Campos editáveis */}
             <div style={{
