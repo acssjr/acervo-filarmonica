@@ -7,6 +7,67 @@ e este projeto adere ao [Versionamento Semantico](https://semver.org/lang/pt-BR/
 
 ---
 
+## [2.4.0] - 2025-12-06
+
+### Proteção do Super Admin e Melhorias na Gestão de Músicos
+
+**Objetivo:** Proteger o administrador master e melhorar a experiência de gerenciamento de músicos no painel admin.
+
+### Adicionado
+
+- **Proteção Total do Super Admin (@admin)**
+  - Super admin não aparece na lista de músicos (invisível para outros admins)
+  - Outros admins não podem resetar PIN do super admin
+  - Outros admins não podem desativar o super admin
+  - Backend protege alterações via API (403 Forbidden)
+  - Nome genérico "Administrador" exibido no login em vez do nome real
+
+- **Badge "Admin" na Lista de Músicos**
+  - Administradores agora têm badge dourado "ADMIN" ao lado do nome
+  - Estilo consistente com a identidade visual (dourado sobre fundo transparente)
+
+- **Animação de Loading no Login**
+  - Barras de equalizer musical animadas durante autenticação
+  - Gradiente dourado para combinar com tema da filarmônica
+  - Texto "Entrando..." abaixo das barras
+
+- **Animação CSS `@keyframes equalizer`**
+  - Animação de 5 barras simulando equalizer de áudio
+  - Delay escalonado para efeito de onda
+
+### Corrigido
+
+- **Bug de Zeros Aparecendo nos Nomes**
+  - Problema: `{user.admin && <Badge />}` quando `user.admin = 0` (SQLite integer)
+  - JavaScript: `0 && <Component>` retorna `0`, React renderiza "0" como texto
+  - Solução: `{!!user.admin && <Badge />}` - double negation converte para boolean
+
+### Removido
+
+- **Seção de Manutenção Temporária**
+  - Removidos botões "Limpar números dos nomes" e "Renomear Super Admin"
+  - Funções `handleLimparNomes` e `limpandoNomes` state removidos
+  - Endpoint de manutenção mantido no backend para uso futuro
+
+### Arquivos Modificados
+
+| Arquivo | Alteração |
+|---------|-----------|
+| `worker/index.js` | Proteção do super admin em `checkUser`, `login`, `updateUsuario` |
+| `screens/admin/AdminMusicos.jsx` | Filtro para ocultar super admin, badge Admin, fix `!!user.admin` |
+| `screens/admin/AdminConfig.jsx` | Removida seção de manutenção |
+| `screens/LoginScreen.jsx` | Animação de equalizer no loading |
+| `styles/animations.css` | `@keyframes equalizer` |
+| `services/api.js` | Endpoints de manutenção (mantidos) |
+
+### Segurança
+
+- Super admin (`@admin`) é a única conta que pode se auto-editar
+- Tentativas de outros admins editarem o super admin retornam erro 403
+- Nome real do super admin nunca é exposto via API
+
+---
+
 ## [2.3.3] - 2025-12-06
 
 ### Admin Toggle e Melhorias de Login

@@ -1,8 +1,18 @@
 // Changelog completo para o app do usuario (ProfileScreen)
 export const PROFILE_CHANGELOG = [
   {
-    version: '2.3.3',
+    version: '2.4.0',
     isCurrent: true,
+    items: [
+      { bold: 'Super Admin:', text: 'Proteção total do administrador master' },
+      { bold: 'Músicos:', text: 'Badge "Admin" para identificar administradores' },
+      { bold: 'Login:', text: 'Animação de equalizer musical no carregamento' },
+      { bold: 'Segurança:', text: 'Super admin oculto da lista de músicos' },
+      { bold: 'Fix:', text: 'Corrigido bug de zeros aparecendo nos nomes' }
+    ]
+  },
+  {
+    version: '2.3.3',
     items: [
       { bold: 'Admin Toggle:', text: 'Botão para alternar entre modo usuário e admin' },
       { bold: 'Maestro:', text: 'Detecção correta de maestro/regente para download de grade' },
@@ -123,7 +133,7 @@ export const PROFILE_ABOUT_CONFIG = {
   subtitle: 'Sociedade Filarmônica 25 de Março',
   maxWidth: 420,
   infoCards: [
-    { label: 'Versão', value: '2.3.3' },
+    { label: 'Versão', value: '2.4.0' },
     { label: 'Tecnologias', value: 'React • JS • CSS' },
     { label: 'Por', value: 'Antonio Jr.', isHighlighted: true }
   ],
