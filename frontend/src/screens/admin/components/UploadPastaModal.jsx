@@ -500,17 +500,36 @@ const UploadPastaModal = ({ isOpen, onClose, onSuccess }) => {
           Selecione uma pasta contendo os PDFs das partes da partitura
         </p>
 
-        {/* Seletor de pasta */}
-        <div style={{
-          border: '2px dashed var(--border)',
-          borderRadius: 'var(--radius-md)',
-          padding: '30px',
-          textAlign: 'center',
-          marginBottom: '20px',
-          background: 'var(--bg-primary)',
-          cursor: 'pointer',
-          transition: 'all 0.2s'
-        }}>
+        {/* Seletor de pasta - Dropzone elegante */}
+        <div
+          className="upload-dropzone"
+          style={{
+            border: files.length > 0 ? '2px solid rgba(212, 175, 55, 0.4)' : '2px dashed var(--border)',
+            borderRadius: 'var(--radius-md)',
+            padding: '40px 30px',
+            textAlign: 'center',
+            marginBottom: '20px',
+            background: files.length > 0
+              ? 'linear-gradient(145deg, rgba(212, 175, 55, 0.05) 0%, rgba(184, 134, 11, 0.02) 100%)'
+              : 'var(--bg-primary)',
+            cursor: 'pointer',
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            position: 'relative',
+            overflow: 'hidden'
+          }}
+          onMouseEnter={e => {
+            if (!files.length) {
+              e.currentTarget.style.borderColor = 'rgba(212, 175, 55, 0.5)';
+              e.currentTarget.style.background = 'linear-gradient(145deg, rgba(212, 175, 55, 0.08) 0%, rgba(184, 134, 11, 0.03) 100%)';
+            }
+          }}
+          onMouseLeave={e => {
+            if (!files.length) {
+              e.currentTarget.style.borderColor = 'var(--border)';
+              e.currentTarget.style.background = 'var(--bg-primary)';
+            }
+          }}
+        >
           <input
             type="file"
             webkitdirectory=""
@@ -521,15 +540,104 @@ const UploadPastaModal = ({ isOpen, onClose, onSuccess }) => {
             id="folder-input"
           />
           <label htmlFor="folder-input" style={{ cursor: 'pointer', display: 'block' }}>
-            <div style={{ fontSize: '48px', marginBottom: '12px' }}>📂</div>
-            <div style={{ fontSize: '16px', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '8px' }}>
+            {/* Ícone de pasta SVG animado */}
+            <div style={{
+              marginBottom: '16px',
+              display: 'flex',
+              justifyContent: 'center',
+              animation: files.length > 0 ? 'none' : 'floatUpDown 3s ease-in-out infinite'
+            }}>
+              <div style={{
+                width: '80px',
+                height: '80px',
+                borderRadius: '20px',
+                background: files.length > 0
+                  ? 'linear-gradient(145deg, rgba(39, 174, 96, 0.15) 0%, rgba(39, 174, 96, 0.05) 100%)'
+                  : 'linear-gradient(145deg, rgba(212, 175, 55, 0.15) 0%, rgba(212, 175, 55, 0.05) 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 8px 32px rgba(212, 175, 55, 0.1)',
+                transition: 'all 0.3s ease'
+              }}>
+                {files.length > 0 ? (
+                  // Ícone de sucesso
+                  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#27ae60" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                    <polyline points="22 4 12 14.01 9 11.01"/>
+                  </svg>
+                ) : (
+                  // Ícone de pasta
+                  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                    <line x1="12" y1="11" x2="12" y2="17" style={{ opacity: 0.6 }}/>
+                    <line x1="9" y1="14" x2="15" y2="14" style={{ opacity: 0.6 }}/>
+                  </svg>
+                )}
+              </div>
+            </div>
+
+            <div style={{
+              fontSize: '16px',
+              fontWeight: '600',
+              color: files.length > 0 ? '#27ae60' : 'var(--text-primary)',
+              marginBottom: '8px',
+              transition: 'color 0.3s ease'
+            }}>
               {folderName || 'Clique para selecionar uma pasta'}
             </div>
-            <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
-              {files.length > 0 ? `${files.length} arquivo(s) PDF encontrado(s)` : 'Padrão: "Título - Categoria - Compositor"'}
+
+            <div style={{
+              fontSize: '13px',
+              color: 'var(--text-secondary)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px'
+            }}>
+              {files.length > 0 ? (
+                <>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                  </svg>
+                  {files.length} arquivo(s) PDF encontrado(s)
+                </>
+              ) : (
+                'Padrão: "Título - Categoria - Compositor"'
+              )}
             </div>
           </label>
+
+          {/* Efeito de brilho decorativo */}
+          <div style={{
+            position: 'absolute',
+            top: '-50%',
+            left: '-50%',
+            width: '200%',
+            height: '200%',
+            background: 'radial-gradient(circle, rgba(212, 175, 55, 0.03) 0%, transparent 60%)',
+            pointerEvents: 'none',
+            opacity: files.length > 0 ? 0 : 1,
+            transition: 'opacity 0.3s ease'
+          }} />
         </div>
+
+        {/* Estilos de animação */}
+        <style>{`
+          @keyframes floatUpDown {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+          }
+          @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+          }
+          @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+          }
+        `}</style>
 
         {/* Preview dos dados detectados */}
         {parsedData && parsedData.length > 0 && (
@@ -744,27 +852,95 @@ const UploadPastaModal = ({ isOpen, onClose, onSuccess }) => {
 
         {/* Botões */}
         <div style={{ display: 'flex', gap: '12px' }}>
-          <button onClick={onClose} style={{
-            flex: 1, padding: '14px', borderRadius: 'var(--radius-sm)',
-            background: 'var(--bg-primary)', border: '1px solid var(--border)',
-            color: 'var(--text-primary)', fontSize: '14px', cursor: 'pointer',
-            fontFamily: 'Outfit, sans-serif'
-          }}>
+          <button
+            onClick={onClose}
+            style={{
+              flex: 1,
+              padding: '14px 20px',
+              borderRadius: 'var(--radius-sm)',
+              background: 'var(--bg-primary)',
+              border: '1px solid var(--border)',
+              color: 'var(--text-primary)',
+              fontSize: '14px',
+              cursor: 'pointer',
+              fontFamily: 'Outfit, sans-serif',
+              transition: 'all 0.2s ease',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px'
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.background = 'var(--bg-secondary)';
+              e.currentTarget.style.borderColor = 'var(--text-secondary)';
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.background = 'var(--bg-primary)';
+              e.currentTarget.style.borderColor = 'var(--border)';
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
             Cancelar
           </button>
           <button
             onClick={handleUpload}
             disabled={uploading || !parsedData || parsedData.length === 0}
             style={{
-              flex: 1, padding: '14px', borderRadius: 'var(--radius-sm)',
-              background: 'linear-gradient(135deg, #D4AF37 0%, #B8860B 100%)',
+              flex: 1,
+              padding: '14px 20px',
+              borderRadius: 'var(--radius-sm)',
+              background: (uploading || !parsedData || parsedData.length === 0)
+                ? 'linear-gradient(135deg, rgba(212, 175, 55, 0.5) 0%, rgba(184, 134, 11, 0.5) 100%)'
+                : 'linear-gradient(135deg, #D4AF37 0%, #B8860B 100%)',
               border: 'none',
-              color: '#fff', fontSize: '14px', fontWeight: '600', cursor: 'pointer',
+              color: '#fff',
+              fontSize: '14px',
+              fontWeight: '600',
+              cursor: (uploading || !parsedData || parsedData.length === 0) ? 'not-allowed' : 'pointer',
               fontFamily: 'Outfit, sans-serif',
-              opacity: (uploading || !parsedData || parsedData.length === 0) ? 0.6 : 1
+              transition: 'all 0.2s ease',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              boxShadow: (uploading || !parsedData || parsedData.length === 0)
+                ? 'none'
+                : '0 4px 14px rgba(212, 175, 55, 0.3)'
+            }}
+            onMouseEnter={e => {
+              if (!uploading && parsedData?.length > 0) {
+                e.currentTarget.style.transform = 'translateY(-1px)';
+                e.currentTarget.style.boxShadow = '0 6px 20px rgba(212, 175, 55, 0.4)';
+              }
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = (uploading || !parsedData || parsedData.length === 0)
+                ? 'none'
+                : '0 4px 14px rgba(212, 175, 55, 0.3)';
             }}
           >
-            {uploading ? 'Enviando...' : `📤 Fazer Upload (${parsedData?.length || 0} arquivos)`}
+            {uploading ? (
+              <>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: 'spin 1s linear infinite' }}>
+                  <circle cx="12" cy="12" r="10" strokeOpacity="0.25"/>
+                  <path d="M12 2a10 10 0 0 1 10 10" strokeLinecap="round"/>
+                </svg>
+                Enviando...
+              </>
+            ) : (
+              <>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="17 8 12 3 7 8"/>
+                  <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+                Fazer Upload ({parsedData?.length || 0} arquivos)
+              </>
+            )}
           </button>
         </div>
       </div>
