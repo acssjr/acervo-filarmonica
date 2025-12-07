@@ -151,6 +151,7 @@ const AdminPartituras = () => {
   }, [previewParte]);
 
   // Visualizar PDF no modal com autenticacao (usando ID da parte)
+  // Usa XMLHttpRequest com headers especiais para evitar interceptacao por gerenciadores de download (IDM, etc)
   const handleViewPart = useCallback(async (parte) => {
     // Se ja esta visualizando esta parte, fecha
     if (previewParte?.parteId === parte.id && showPDFModal) {
@@ -169,19 +170,49 @@ const AdminPartituras = () => {
       // Endpoint correto: /api/download/parte/:parteId
       const url = `${API_BASE_URL}/api/download/parte/${parte.id}`;
 
-      const response = await fetch(url, {
-        headers: {
-          ...(token && { 'Authorization': `Bearer ${token}` })
+      // Usa XMLHttpRequest em vez de fetch para evitar interceptacao por IDM e outros gerenciadores
+      // Os headers X-Requested-With e Accept fazem o IDM ignorar a requisicao
+      const blobUrl = await new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', url, true);
+        xhr.responseType = 'arraybuffer'; // arraybuffer eh menos interceptado que blob
+
+        // Headers que fazem gerenciadores de download ignorarem a requisicao
+        xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+        xhr.setRequestHeader('Accept', 'application/pdf, application/octet-stream');
+        if (token) {
+          xhr.setRequestHeader('Authorization', `Bearer ${token}`);
         }
+
+        xhr.onload = function() {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            // Converte arraybuffer para blob e cria URL
+            const blob = new Blob([xhr.response], { type: 'application/pdf' });
+            resolve(URL.createObjectURL(blob));
+          } else {
+            // Tenta extrair mensagem de erro
+            try {
+              const decoder = new TextDecoder('utf-8');
+              const text = decoder.decode(xhr.response);
+              const errorData = JSON.parse(text);
+              reject(new Error(errorData.error || `HTTP ${xhr.status}`));
+            } catch {
+              reject(new Error(`Erro ao carregar PDF (${xhr.status})`));
+            }
+          }
+        };
+
+        xhr.onerror = function() {
+          reject(new Error('Erro de conexao ao carregar PDF'));
+        };
+
+        xhr.ontimeout = function() {
+          reject(new Error('Timeout ao carregar PDF'));
+        };
+
+        xhr.send();
       });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Erro ao carregar PDF');
-      }
-
-      const blob = await response.blob();
-      const blobUrl = URL.createObjectURL(blob);
       setPreviewParte({ parteId: parte.id, blobUrl, instrumento: parte.instrumento });
       setShowPDFModal(true);
     } catch (err) {
@@ -690,168 +721,181 @@ const AdminPartituras = () => {
                         <div style={{
                           borderTop: '1px solid var(--border)',
                           background: 'var(--bg-primary)',
-                          padding: '16px'
+                          padding: '12px'
                         }}>
                           {loadingPartes ? (
-                            <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)' }}>
-                              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: 'spin 1s linear infinite' }}>
+                            <div style={{ textAlign: 'center', padding: '16px', color: 'var(--text-muted)' }}>
+                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: 'spin 1s linear infinite' }}>
                                 <circle cx="12" cy="12" r="10" strokeOpacity="0.25"/>
                                 <path d="M12 2a10 10 0 0 1 10 10" strokeLinecap="round"/>
                               </svg>
                             </div>
                           ) : partes.length === 0 ? (
-                            <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)', fontSize: '13px' }}>
+                            <div style={{ textAlign: 'center', padding: '16px', color: 'var(--text-muted)', fontSize: '12px' }}>
                               Nenhuma parte encontrada
                             </div>
                           ) : (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '12px' }}>
-                              {partes.map((parte) => (
-                                <div
-                                  key={parte.id}
-                                  style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'space-between',
-                                    padding: '10px 12px',
-                                    background: 'var(--bg-secondary)',
-                                    borderRadius: '8px',
-                                    border: '1px solid var(--border)'
-                                  }}
-                                >
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="1.5">
-                                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                                      <polyline points="14 2 14 8 20 8"/>
-                                    </svg>
-                                    <span style={{ fontSize: '13px', color: 'var(--text-primary)' }}>
-                                      {parte.instrumento}
-                                    </span>
-                                  </div>
-                                  <div style={{ display: 'flex', gap: '4px' }}>
-                                    <button
-                                      onClick={() => handleViewPart(parte)}
-                                      disabled={loadingPreview}
-                                      title={previewParte?.parteId === parte.id ? 'Fechar visualização' : 'Visualizar'}
-                                      style={{
-                                        width: '28px',
-                                        height: '28px',
-                                        borderRadius: '6px',
-                                        background: previewParte?.parteId === parte.id ? 'rgba(52, 152, 219, 0.2)' : 'var(--bg-primary)',
-                                        border: previewParte?.parteId === parte.id ? '1px solid rgba(52, 152, 219, 0.5)' : '1px solid var(--border)',
-                                        color: previewParte?.parteId === parte.id ? '#3498db' : 'var(--text-secondary)',
-                                        cursor: loadingPreview ? 'wait' : 'pointer',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center'
-                                      }}
-                                    >
-                                      {loadingPreview && previewParte?.parteId !== parte.id ? (
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: 'spin 1s linear infinite' }}>
+                            <div style={{
+                              display: 'grid',
+                              gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
+                              gap: '6px',
+                              marginBottom: '8px'
+                            }}>
+                              {partes.map((parte) => {
+                                const isViewing = previewParte?.parteId === parte.id;
+                                const isLoading = loadingPreview && !isViewing;
+
+                                return (
+                                  <div
+                                    key={parte.id}
+                                    onClick={() => !loadingPreview && handleViewPart(parte)}
+                                    className="parte-item"
+                                    style={{
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'space-between',
+                                      padding: '6px 8px',
+                                      background: isViewing ? 'rgba(52, 152, 219, 0.15)' : 'var(--bg-secondary)',
+                                      borderRadius: '6px',
+                                      border: isViewing ? '1px solid rgba(52, 152, 219, 0.4)' : '1px solid var(--border)',
+                                      cursor: loadingPreview ? 'wait' : 'pointer',
+                                      transition: 'all 0.15s ease',
+                                      minHeight: '32px'
+                                    }}
+                                  >
+                                    <div style={{
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: '6px',
+                                      flex: 1,
+                                      minWidth: 0
+                                    }}>
+                                      {isLoading ? (
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2" style={{ animation: 'spin 1s linear infinite', flexShrink: 0 }}>
                                           <circle cx="12" cy="12" r="10" strokeOpacity="0.25"/>
                                           <path d="M12 2a10 10 0 0 1 10 10" strokeLinecap="round"/>
                                         </svg>
                                       ) : (
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                                          <circle cx="12" cy="12" r="3"/>
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={isViewing ? '#3498db' : '#D4AF37'} strokeWidth="1.5" style={{ flexShrink: 0 }}>
+                                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                          <polyline points="14 2 14 8 20 8"/>
                                         </svg>
                                       )}
-                                    </button>
-                                    <label
-                                      title="Substituir"
-                                      style={{
-                                        width: '28px',
-                                        height: '28px',
-                                        borderRadius: '6px',
-                                        background: 'rgba(212, 175, 55, 0.1)',
-                                        border: '1px solid rgba(212, 175, 55, 0.3)',
-                                        color: '#D4AF37',
-                                        cursor: uploading === parte.id ? 'wait' : 'pointer',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center'
-                                      }}
-                                    >
-                                      {uploading === parte.id ? (
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: 'spin 1s linear infinite' }}>
-                                          <circle cx="12" cy="12" r="10" strokeOpacity="0.25"/>
-                                          <path d="M12 2a10 10 0 0 1 10 10" strokeLinecap="round"/>
-                                        </svg>
-                                      ) : (
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                                          <polyline points="17 8 12 3 7 8"/>
-                                          <line x1="12" y1="3" x2="12" y2="15"/>
-                                        </svg>
-                                      )}
-                                      <input
-                                        type="file"
-                                        accept=".pdf"
-                                        style={{ display: 'none' }}
-                                        onChange={(e) => {
-                                          if (e.target.files[0]) {
-                                            handleReplacePart(p.id, parte.id, e.target.files[0]);
-                                          }
-                                          e.target.value = '';
+                                      <span style={{
+                                        fontSize: '12px',
+                                        color: isViewing ? '#3498db' : 'var(--text-primary)',
+                                        fontWeight: isViewing ? '500' : '400',
+                                        whiteSpace: 'nowrap',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis'
+                                      }}>
+                                        {parte.instrumento}
+                                      </span>
+                                    </div>
+                                    <div style={{ display: 'flex', gap: '2px', marginLeft: '4px' }} onClick={(e) => e.stopPropagation()}>
+                                      <label
+                                        title="Substituir arquivo"
+                                        style={{
+                                          width: '22px',
+                                          height: '22px',
+                                          borderRadius: '4px',
+                                          background: 'transparent',
+                                          border: 'none',
+                                          color: '#D4AF37',
+                                          cursor: uploading === parte.id ? 'wait' : 'pointer',
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          justifyContent: 'center',
+                                          opacity: 0.7,
+                                          transition: 'opacity 0.15s'
                                         }}
-                                        disabled={uploading === parte.id}
-                                      />
-                                    </label>
-                                    <button
-                                      onClick={() => handleDeletePart(p.id, parte.id)}
-                                      disabled={deleting === parte.id}
-                                      title="Remover"
-                                      style={{
-                                        width: '28px',
-                                        height: '28px',
-                                        borderRadius: '6px',
-                                        background: 'rgba(231, 76, 60, 0.1)',
-                                        border: '1px solid rgba(231, 76, 60, 0.3)',
-                                        color: '#e74c3c',
-                                        cursor: deleting === parte.id ? 'wait' : 'pointer',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center'
-                                      }}
-                                    >
-                                      {deleting === parte.id ? (
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: 'spin 1s linear infinite' }}>
-                                          <circle cx="12" cy="12" r="10" strokeOpacity="0.25"/>
-                                          <path d="M12 2a10 10 0 0 1 10 10" strokeLinecap="round"/>
-                                        </svg>
-                                      ) : (
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                          <polyline points="3 6 5 6 21 6"/>
-                                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                                        </svg>
-                                      )}
-                                    </button>
+                                        onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
+                                        onMouseLeave={(e) => e.currentTarget.style.opacity = '0.7'}
+                                      >
+                                        {uploading === parte.id ? (
+                                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: 'spin 1s linear infinite' }}>
+                                            <circle cx="12" cy="12" r="10" strokeOpacity="0.25"/>
+                                            <path d="M12 2a10 10 0 0 1 10 10" strokeLinecap="round"/>
+                                          </svg>
+                                        ) : (
+                                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                            <polyline points="17 8 12 3 7 8"/>
+                                            <line x1="12" y1="3" x2="12" y2="15"/>
+                                          </svg>
+                                        )}
+                                        <input
+                                          type="file"
+                                          accept=".pdf"
+                                          style={{ display: 'none' }}
+                                          onChange={(e) => {
+                                            if (e.target.files[0]) {
+                                              handleReplacePart(p.id, parte.id, e.target.files[0]);
+                                            }
+                                            e.target.value = '';
+                                          }}
+                                          disabled={uploading === parte.id}
+                                        />
+                                      </label>
+                                      <button
+                                        onClick={() => handleDeletePart(p.id, parte.id)}
+                                        disabled={deleting === parte.id}
+                                        title="Remover parte"
+                                        style={{
+                                          width: '22px',
+                                          height: '22px',
+                                          borderRadius: '4px',
+                                          background: 'transparent',
+                                          border: 'none',
+                                          color: '#e74c3c',
+                                          cursor: deleting === parte.id ? 'wait' : 'pointer',
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          justifyContent: 'center',
+                                          opacity: 0.7,
+                                          transition: 'opacity 0.15s'
+                                        }}
+                                        onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
+                                        onMouseLeave={(e) => e.currentTarget.style.opacity = '0.7'}
+                                      >
+                                        {deleting === parte.id ? (
+                                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: 'spin 1s linear infinite' }}>
+                                            <circle cx="12" cy="12" r="10" strokeOpacity="0.25"/>
+                                            <path d="M12 2a10 10 0 0 1 10 10" strokeLinecap="round"/>
+                                          </svg>
+                                        ) : (
+                                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <polyline points="3 6 5 6 21 6"/>
+                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                          </svg>
+                                        )}
+                                      </button>
+                                    </div>
                                   </div>
-                                </div>
-                              ))}
+                                );
+                              })}
                             </div>
                           )}
 
-                          {/* Botao adicionar parte */}
+                          {/* Botao adicionar parte - mais compacto */}
                           <label
                             style={{
-                              display: 'flex',
+                              display: 'inline-flex',
                               alignItems: 'center',
-                              justifyContent: 'center',
-                              gap: '8px',
-                              padding: '10px',
-                              borderRadius: '8px',
-                              background: 'var(--bg-secondary)',
-                              border: '1.5px dashed var(--border)',
-                              color: 'var(--text-secondary)',
-                              fontSize: '13px',
+                              gap: '6px',
+                              padding: '6px 12px',
+                              borderRadius: '6px',
+                              background: 'transparent',
+                              border: '1px dashed var(--border)',
+                              color: 'var(--text-muted)',
+                              fontSize: '12px',
                               cursor: addingPart ? 'wait' : 'pointer',
-                              transition: 'all 0.2s'
+                              transition: 'all 0.15s'
                             }}
                           >
                             {addingPart ? (
                               <>
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: 'spin 1s linear infinite' }}>
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: 'spin 1s linear infinite' }}>
                                   <circle cx="12" cy="12" r="10" strokeOpacity="0.25"/>
                                   <path d="M12 2a10 10 0 0 1 10 10" strokeLinecap="round"/>
                                 </svg>
@@ -859,11 +903,11 @@ const AdminPartituras = () => {
                               </>
                             ) : (
                               <>
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                   <line x1="12" y1="5" x2="12" y2="19"/>
                                   <line x1="5" y1="12" x2="19" y2="12"/>
                                 </svg>
-                                Adicionar parte (deteccao automatica)
+                                Adicionar parte
                               </>
                             )}
                             <input
@@ -916,6 +960,15 @@ const AdminPartituras = () => {
         @keyframes spin {
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
+        }
+
+        .parte-item:hover {
+          background: rgba(212, 175, 55, 0.08) !important;
+          border-color: rgba(212, 175, 55, 0.3) !important;
+        }
+
+        .parte-item:active {
+          transform: scale(0.98);
         }
       `}</style>
     </div>

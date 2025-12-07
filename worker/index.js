@@ -542,10 +542,17 @@ async function downloadParte(parteId, request, env) {
 
     const nomeArquivo = `${parte.partitura_titulo} - ${parte.instrumento}.pdf`;
 
+    // Usa Content-Disposition: inline quando requisicao eh AJAX (X-Requested-With)
+    // Isso evita que gerenciadores de download (IDM, etc) interceptem a requisicao
+    const isAjaxRequest = request.headers.get('X-Requested-With') === 'XMLHttpRequest';
+    const disposition = isAjaxRequest ? 'inline' : 'attachment';
+
     return new Response(arquivo.body, {
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="${nomeArquivo}"`,
+        'Content-Disposition': `${disposition}; filename="${nomeArquivo}"`,
+        // Cache-Control para evitar re-downloads desnecessarios
+        'Cache-Control': 'private, max-age=300',
         ...getCorsHeaders(request),
       },
     });
