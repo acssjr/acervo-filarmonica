@@ -1,7 +1,7 @@
 // ===== PDF VIEWER MODAL =====
 // Visualizador de PDF elegante usando react-pdf
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
@@ -21,6 +21,7 @@ const PDFViewerModal = ({
   const [scale, setScale] = useState(1.0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const pdfContainerRef = useRef(null);
 
   const onDocumentLoadSuccess = useCallback(({ numPages }) => {
     setNumPages(numPages);
@@ -76,6 +77,46 @@ const PDFViewerModal = ({
       setScale(prev => Math.max(prev - 0.25, 0.5));
     }
   }, [numPages, onClose]);
+
+  // Handler para Ctrl+Scroll fazer zoom no PDF
+  const handleWheel = useCallback((e) => {
+    if (e.ctrlKey) {
+      e.preventDefault();
+      const delta = e.deltaY > 0 ? -0.1 : 0.1;
+      setScale(prev => Math.min(Math.max(prev + delta, 0.5), 3.0));
+    }
+  }, []);
+
+  // Previne zoom da pagina inteira quando Ctrl+Scroll no modal
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const preventBrowserZoom = (e) => {
+      if (e.ctrlKey) {
+        e.preventDefault();
+      }
+    };
+
+    // Adiciona listener no container do PDF
+    const container = pdfContainerRef.current;
+    if (container) {
+      container.addEventListener('wheel', preventBrowserZoom, { passive: false });
+    }
+
+    return () => {
+      if (container) {
+        container.removeEventListener('wheel', preventBrowserZoom);
+      }
+    };
+  }, [isOpen]);
+
+  // Handler para fechar ao clicar no backdrop (area escura)
+  const handleBackdropClick = useCallback((e) => {
+    // Fecha apenas se clicou diretamente no backdrop (nao em filhos)
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  }, [onClose]);
 
   if (!isOpen) return null;
 
@@ -350,16 +391,22 @@ const PDFViewerModal = ({
         </div>
       </div>
 
-      {/* Area do PDF */}
-      <div style={{
-        flex: 1,
-        overflow: 'auto',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'flex-start',
-        padding: '20px',
-        background: 'rgba(40, 40, 50, 0.5)'
-      }}>
+      {/* Area do PDF - clicavel para fechar */}
+      <div
+        ref={pdfContainerRef}
+        onClick={handleBackdropClick}
+        onWheel={handleWheel}
+        style={{
+          flex: 1,
+          overflow: 'auto',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'flex-start',
+          padding: '20px',
+          background: 'rgba(40, 40, 50, 0.5)',
+          cursor: 'pointer'
+        }}
+      >
         {loading && (
           <div style={{
             display: 'flex',
@@ -443,12 +490,14 @@ const PDFViewerModal = ({
         .react-pdf__Document {
           display: flex;
           justify-content: center;
+          cursor: default;
         }
 
         .react-pdf__Page {
           box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
           border-radius: 4px;
           overflow: hidden;
+          cursor: default;
         }
 
         .react-pdf__Page__canvas {

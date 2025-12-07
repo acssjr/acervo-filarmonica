@@ -1,4 +1,4 @@
-Agora# Guia Técnico: Git, GitHub, CI/CD e Qualidade Automatizada
+# Guia Tecnico: Git, GitHub, CI/CD e Qualidade Automatizada
 
 > **Propósito**: Este documento serve como referência técnica para orientar sistemas inteligentes (IA) e desenvolvedores na priorização de tarefas de engenharia de software, desde o controle de versão até o deploy automatizado.
 
@@ -775,15 +775,36 @@ npx wrangler dev --local
 2. **SEMPRE teste localmente antes de commit** - Mesmo que parcialmente
 3. **SEMPRE rode os testes automatizados** - `npm test && npm run lint && npm run build`
 4. **NUNCA faça merge sem CI verde** - Branch protection existe por isso
-5. **CONFIE no processo** - Mudanças simples de SQL podem ir direto (após testes)
+5. **CONFIE no processo** - Mudancas simples de SQL podem ir direto (apos testes)
 
-### 11.5 Checklist Pré-Commit
+### 11.5 Regras para IA (Claude)
+
+> **IMPORTANTE:** Estas regras sao obrigatorias para a IA durante o desenvolvimento.
+
+1. **"Testar localmente" = USUARIO testar visualmente no browser**
+   - Testes automatizados (`npm test`) NAO substituem teste visual do usuario
+   - SEMPRE aguardar confirmacao do usuario antes de prosseguir para commit/PR
+
+2. **Ordem obrigatoria antes de commit:**
+   ```
+   1. Fazer as mudancas
+   2. Rodar testes automatizados (npm test, lint, build)
+   3. AGUARDAR usuario testar visualmente no localhost
+   4. Usuario confirma que testou e aprovou
+   5. So entao fazer commit + push + PR
+   ```
+
+3. **NUNCA pular a etapa de teste visual do usuario**
+   - Mesmo que testes automatizados passem
+   - Mesmo que o build funcione
+   - O usuario PRECISA ver a mudanca funcionando
+
+### 11.6 Checklist Pre-Commit
 
 ```
-[ ] Testei visualmente no localhost?
-[ ] npm test passou?
-[ ] npm run lint passou?
-[ ] npm run build passou?
+[ ] Testes automatizados passaram? (npm test, lint, build)
+[ ] USUARIO testou visualmente no localhost?
+[ ] USUARIO aprovou as mudancas?
 [ ] Mensagem de commit segue Conventional Commits?
 ```
 
