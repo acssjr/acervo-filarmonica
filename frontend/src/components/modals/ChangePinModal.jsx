@@ -15,21 +15,11 @@ const ChangePinModal = ({ onClose }) => {
   const [confirmPin, setConfirmPin] = useState(['', '', '', '']);
   const [step, setStep] = useState(1); // 1: PIN atual, 2: Novo PIN, 3: Confirmar
   const [error, setError] = useState('');
-  const [storedPin, setStoredPin] = useState('');
 
   // Refs estaveis usando useRef
   const currentPinRefs = useRef([createRef(), createRef(), createRef(), createRef()]).current;
   const newPinRefs = useRef([createRef(), createRef(), createRef(), createRef()]).current;
   const confirmPinRefs = useRef([createRef(), createRef(), createRef(), createRef()]).current;
-
-  // Carrega PIN atual do storage (ou usa o token salvo)
-  useEffect(() => {
-    const authToken = Storage.get('authToken', '');
-    if (authToken) {
-      const [, pin] = authToken.split(':');
-      setStoredPin(pin || '');
-    }
-  }, []);
 
   // Foca no primeiro input ao abrir
   useEffect(() => {
@@ -61,20 +51,17 @@ const ChangePinModal = ({ onClose }) => {
     }
   };
 
-  const verifyCurrentPin = (pin) => {
-    if (pin === storedPin) {
-      setStep(2);
-      setTimeout(() => newPinRefs[0].current?.focus(), 100);
-    } else {
-      setError('PIN atual incorreto');
-      setCurrentPin(['', '', '', '']);
-      currentPinRefs[0].current?.focus();
-    }
+  // Avança para próximo step quando PIN atual é digitado
+  const handleCurrentPinComplete = (pin) => {
+    // Não valida localmente - a API vai verificar
+    setStep(2);
+    setTimeout(() => newPinRefs[0].current?.focus(), 100);
   };
 
-  const setNewPinValue = (pin) => {
-    // Verifica se o novo PIN e igual ao atual
-    if (pin === storedPin) {
+  // Avança para confirmação quando novo PIN é digitado
+  const handleNewPinComplete = (pin) => {
+    // Verifica se é igual ao atual (validação básica local)
+    if (pin === currentPin.join('')) {
       setError('O novo PIN não pode ser igual ao atual');
       setNewPin(['', '', '', '']);
       setTimeout(() => newPinRefs[0].current?.focus(), 100);
@@ -109,9 +96,20 @@ const ChangePinModal = ({ onClose }) => {
         confirmPinRefs[0].current?.focus();
       }
     } catch (err) {
-      setError('Erro ao conectar com o servidor');
-      setConfirmPin(['', '', '', '']);
-      confirmPinRefs[0].current?.focus();
+      // Se o erro é "PIN atual incorreto", volta para step 1
+      const errorMsg = err.message || 'Erro ao conectar com o servidor';
+      if (errorMsg.includes('PIN atual incorreto')) {
+        setStep(1);
+        setCurrentPin(['', '', '', '']);
+        setNewPin(['', '', '', '']);
+        setConfirmPin(['', '', '', '']);
+        setError('PIN atual incorreto. Tente novamente.');
+        setTimeout(() => currentPinRefs[0].current?.focus(), 100);
+      } else {
+        setError(errorMsg);
+        setConfirmPin(['', '', '', '']);
+        confirmPinRefs[0].current?.focus();
+      }
     } finally {
       setIsLoading(false);
     }
@@ -213,7 +211,7 @@ const ChangePinModal = ({ onClose }) => {
             pin={currentPin}
             setPin={setCurrentPin}
             refs={currentPinRefs}
-            onComplete={verifyCurrentPin}
+            onComplete={handleCurrentPinComplete}
             label="Digite seu PIN atual"
           />
         )}
@@ -223,7 +221,7 @@ const ChangePinModal = ({ onClose }) => {
             pin={newPin}
             setPin={setNewPin}
             refs={newPinRefs}
-            onComplete={setNewPinValue}
+            onComplete={handleNewPinComplete}
             label="Digite o novo PIN"
           />
         )}
