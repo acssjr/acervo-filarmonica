@@ -77,7 +77,8 @@ const AdminPartituras = () => {
   const [partesCount, setPartesCount] = useState({});
 
   // Tutorial de onboarding
-  const [showTutorial, setShowTutorial] = useTutorial(partituras, loading);
+  // tutorialPending = true durante o delay antes do tutorial aparecer (bloqueia interações)
+  const [showTutorial, setShowTutorial, tutorialPending] = useTutorial(partituras, loading);
 
   const normalizeText = (text) => {
     if (!text) return '';
@@ -144,14 +145,6 @@ const AdminPartituras = () => {
       loadPartes(partitura.id);
     }
   };
-
-  // Expande primeira partitura (para tutorial)
-  const expandFirstPartitura = useCallback(() => {
-    if (filtered.length > 0 && expandedId !== filtered[0].id) {
-      setExpandedId(filtered[0].id);
-      loadPartes(filtered[0].id);
-    }
-  }, [filtered, expandedId, loadPartes]);
 
   // Fechar preview
   const closePreview = useCallback(() => {
@@ -306,6 +299,22 @@ const AdminPartituras = () => {
     return results.sort((a, b) => a.titulo?.localeCompare(b.titulo, 'pt-BR'));
   }, [partituras, search, filterCategoria]);
 
+  // Expande primeira partitura (para tutorial)
+  const expandFirstPartitura = useCallback(() => {
+    if (filtered.length > 0 && expandedId !== filtered[0].id) {
+      setExpandedId(filtered[0].id);
+      loadPartes(filtered[0].id);
+    }
+  }, [filtered, expandedId, loadPartes]);
+
+  // Colapsa primeira partitura (para tutorial - mostrar que está fechada)
+  const collapseFirstPartitura = useCallback(() => {
+    if (expandedId !== null) {
+      setExpandedId(null);
+      setPartes([]);
+    }
+  }, [expandedId]);
+
   // Agrupar por letra inicial
   const groupedByLetter = filtered.reduce((acc, p) => {
     const letter = p.titulo?.charAt(0)?.toUpperCase() || '#';
@@ -370,19 +379,24 @@ const AdminPartituras = () => {
           <button
             data-tutorial="upload-pasta"
             onClick={() => window.adminNav?.('partituras', 'pasta')}
+            disabled={tutorialPending || showTutorial}
             style={{
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
               padding: '10px 20px',
               borderRadius: 'var(--radius-sm)',
-              background: 'linear-gradient(135deg, #D4AF37 0%, #B8860B 100%)',
+              background: (tutorialPending || showTutorial)
+                ? 'linear-gradient(135deg, rgba(212, 175, 55, 0.5) 0%, rgba(184, 134, 11, 0.5) 100%)'
+                : 'linear-gradient(135deg, #D4AF37 0%, #B8860B 100%)',
               color: '#fff',
               border: 'none',
               fontSize: '14px',
               fontWeight: '500',
-              cursor: 'pointer',
-              fontFamily: 'Outfit, sans-serif'
+              cursor: (tutorialPending || showTutorial) ? 'not-allowed' : 'pointer',
+              fontFamily: 'Outfit, sans-serif',
+              opacity: (tutorialPending || showTutorial) ? 0.7 : 1,
+              transition: 'all 0.2s ease'
             }}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -827,6 +841,7 @@ const AdminPartituras = () => {
                                       }}
                                     >
                                       <label
+                                        data-tutorial={partes.indexOf(parte) === 0 ? 'btn-replace' : undefined}
                                         title="Substituir arquivo"
                                         className="action-btn action-btn-replace"
                                         style={{
@@ -849,10 +864,11 @@ const AdminPartituras = () => {
                                             <path d="M12 2a10 10 0 0 1 10 10" strokeLinecap="round"/>
                                           </svg>
                                         ) : (
-                                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                                            <polyline points="17 8 12 3 7 8"/>
-                                            <line x1="12" y1="3" x2="12" y2="15"/>
+                                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M17 1l4 4-4 4"/>
+                                            <path d="M3 11V9a4 4 0 0 1 4-4h14"/>
+                                            <path d="M7 23l-4-4 4-4"/>
+                                            <path d="M21 13v2a4 4 0 0 1-4 4H3"/>
                                           </svg>
                                         )}
                                         <input
@@ -869,6 +885,7 @@ const AdminPartituras = () => {
                                         />
                                       </label>
                                       <button
+                                        data-tutorial={partes.indexOf(parte) === 0 ? 'btn-delete' : undefined}
                                         onClick={() => handleDeletePart(p.id, parte.id)}
                                         disabled={deleting === parte.id}
                                         title="Remover parte"
@@ -990,6 +1007,7 @@ const AdminPartituras = () => {
         isOpen={showTutorial}
         onClose={() => setShowTutorial(false)}
         onExpandFirst={expandFirstPartitura}
+        onCollapseFirst={collapseFirstPartitura}
       />
 
       {/* Estilos */}
