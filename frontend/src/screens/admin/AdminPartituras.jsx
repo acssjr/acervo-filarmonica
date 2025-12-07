@@ -7,6 +7,7 @@ import { API } from '@services/api';
 import CategoryIcon from '@components/common/CategoryIcon';
 import UploadPastaModal from './components/UploadPastaModal';
 import PDFViewerModal from '@components/modals/PDFViewerModal';
+import TutorialOverlay, { useTutorial } from '@components/onboarding/TutorialOverlay';
 import Storage from '@services/storage';
 import { API_BASE_URL } from '@constants/api';
 
@@ -75,6 +76,9 @@ const AdminPartituras = () => {
   // Cache de contagem de partes por partitura
   const [partesCount, setPartesCount] = useState({});
 
+  // Tutorial de onboarding
+  const [showTutorial, setShowTutorial] = useTutorial(partituras, loading);
+
   const normalizeText = (text) => {
     if (!text) return '';
     return text.toLowerCase()
@@ -140,6 +144,14 @@ const AdminPartituras = () => {
       loadPartes(partitura.id);
     }
   };
+
+  // Expande primeira partitura (para tutorial)
+  const expandFirstPartitura = useCallback(() => {
+    if (filtered.length > 0 && expandedId !== filtered[0].id) {
+      setExpandedId(filtered[0].id);
+      loadPartes(filtered[0].id);
+    }
+  }, [filtered, expandedId, loadPartes]);
 
   // Fechar preview
   const closePreview = useCallback(() => {
@@ -355,20 +367,24 @@ const AdminPartituras = () => {
           Partituras
         </h1>
         <div style={{ display: 'flex', gap: '10px' }}>
-          <button onClick={() => window.adminNav?.('partituras', 'pasta')} style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '10px 20px',
-            borderRadius: 'var(--radius-sm)',
-            background: 'linear-gradient(135deg, #D4AF37 0%, #B8860B 100%)',
-            color: '#fff',
-            border: 'none',
-            fontSize: '14px',
-            fontWeight: '500',
-            cursor: 'pointer',
-            fontFamily: 'Outfit, sans-serif'
-          }}>
+          <button
+            data-tutorial="upload-pasta"
+            onClick={() => window.adminNav?.('partituras', 'pasta')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '10px 20px',
+              borderRadius: 'var(--radius-sm)',
+              background: 'linear-gradient(135deg, #D4AF37 0%, #B8860B 100%)',
+              color: '#fff',
+              border: 'none',
+              fontSize: '14px',
+              fontWeight: '500',
+              cursor: 'pointer',
+              fontFamily: 'Outfit, sans-serif'
+            }}
+          >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
               <polyline points="17 8 12 3 7 8"/>
@@ -610,6 +626,7 @@ const AdminPartituras = () => {
                         >
                           {/* Seta de expansao */}
                           <svg
+                            data-tutorial={filtered.indexOf(p) === 0 ? 'expand-button' : undefined}
                             width="16"
                             height="16"
                             viewBox="0 0 24 24"
@@ -793,6 +810,7 @@ const AdminPartituras = () => {
                                       </span>
                                     </div>
                                     <div
+                                      data-tutorial={partes.indexOf(parte) === 0 ? 'action-buttons' : undefined}
                                       style={{
                                         display: 'flex',
                                         gap: '4px',
@@ -890,6 +908,7 @@ const AdminPartituras = () => {
 
                           {/* Botao adicionar parte - mais compacto */}
                           <label
+                            data-tutorial="add-parte"
                             style={{
                               display: 'inline-flex',
                               alignItems: 'center',
@@ -964,6 +983,13 @@ const AdminPartituras = () => {
         pdfUrl={previewParte?.blobUrl}
         title={previewParte?.instrumento || 'Visualizador de PDF'}
         onDownload={() => previewParte?.blobUrl && window.open(previewParte.blobUrl, '_blank')}
+      />
+
+      {/* Tutorial de Onboarding */}
+      <TutorialOverlay
+        isOpen={showTutorial}
+        onClose={() => setShowTutorial(false)}
+        onExpandFirst={expandFirstPartitura}
       />
 
       {/* Estilos */}

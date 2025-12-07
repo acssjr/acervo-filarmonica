@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🎼 Acervo Digital da Filarmonica 25 de Marco
+# Acervo Digital da Filarmonica 25 de Marco
 
 ### Sistema de gerenciamento e distribuicao de partituras digitais
 
@@ -8,15 +8,13 @@
 
 <br/>
 
-[![Versao](https://img.shields.io/badge/versao-2.4.0-722F37?style=for-the-badge&labelColor=D4AF37)](https://github.com/acssjr/acervo-filarmonica)
+[![Versao](https://img.shields.io/badge/versao-2.5.0-722F37?style=for-the-badge&labelColor=D4AF37)](https://github.com/acssjr/acervo-filarmonica)
 [![Status](https://img.shields.io/badge/status-em%20producao-success?style=for-the-badge)](https://acervo-filarmonica.pages.dev)
 [![CI](https://img.shields.io/github/actions/workflow/status/acssjr/acervo-filarmonica/ci.yml?style=for-the-badge&label=CI&logo=github)](https://github.com/acssjr/acervo-filarmonica/actions)
-[![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react&logoColor=white)](https://react.dev)
-[![Cloudflare](https://img.shields.io/badge/Cloudflare-Workers-F38020?style=for-the-badge&logo=cloudflare&logoColor=white)](https://workers.cloudflare.com)
 
 <br/>
 
-[**🌐 Acessar Sistema**](https://acervo-filarmonica.pages.dev) &nbsp;&nbsp;•&nbsp;&nbsp; [**📡 API**](https://acervo-filarmonica-api.acssjr.workers.dev)
+[**Acessar Sistema**](https://acervo-filarmonica.pages.dev)
 
 <br/>
 
@@ -24,56 +22,51 @@
 
 ---
 
-## 📋 Indice
+## Sobre o Projeto
 
-- [Funcionalidades](#-funcionalidades)
-- [Stack Tecnologica](#-stack-tecnologica)
-- [Arquitetura](#-arquitetura)
-- [Seguranca](#-seguranca)
-- [Testes](#-testes)
-- [Instalacao](#-instalacao)
-- [Deploy](#-deploy)
-- [Banco de Dados](#-banco-de-dados)
-- [Changelog](#-changelog)
+O Acervo Digital da Filarmonica 25 de Marco e um sistema web desenvolvido para digitalizar e facilitar o acesso ao extenso acervo de partituras da banda mais antiga da Bahia, fundada em 1868.
+
+O sistema permite que musicos acessem suas partituras de qualquer lugar, baixem arquivos no formato correto para seu instrumento e acompanhem novidades do repertorio.
 
 ---
 
-## ✨ Funcionalidades
+## Funcionalidades
 
 <table>
 <tr>
 <td width="33%" valign="top">
 
-### 🎵 Para Musicos
+### Para Musicos
 - Interface responsiva (mobile/desktop)
 - Download de partituras por instrumento
-- Busca com transliteracao (grafias antigas)
+- Busca inteligente com transliteracao (grafias antigas)
 - Sistema de favoritos
 - Perfil com foto e alteracao de PIN
-- Temas claro/escuro/auto
+- Temas claro/escuro/automatico
 - Notificacoes de novidades
-- Carrossel de compositores
+- Carrossel de compositores em destaque
 
 </td>
 <td width="33%" valign="top">
 
-### 🎼 Para Maestro
-- Acesso a Grade completa
-- Download de todas as partes
+### Para Maestro
+- Acesso a Grade completa de cada obra
+- Download de todas as partes de uma partitura
 - Visualizacao do acervo total
-- Destaque automatico de partituras
+- Destaque automatico de partituras recentes
 
 </td>
 <td width="33%" valign="top">
 
-### ⚙️ Para Admins
-- Upload de pasta (multiplas partes)
-- Deteccao automatica de instrumentos
-- Gerenciamento de partes
-- Gestao de musicos com badges
+### Para Administradores
+- Upload de pasta completa (multiplas partes de uma vez)
+- Deteccao automatica de instrumentos pelo nome do arquivo
+- Gerenciamento individual de partes (substituir/deletar)
+- Visualizacao de PDF inline
+- Gestao de musicos com badges visuais
 - Estatisticas de downloads
-- Reset de PIN
-- Toggle admin/usuario
+- Reset de PIN de usuarios
+- Toggle admin/usuario para testes
 - Protecao do super admin
 
 </td>
@@ -82,7 +75,47 @@
 
 ---
 
-## 🛠 Stack Tecnologica
+## Detalhes das Funcionalidades
+
+### Upload de Pasta
+
+O sistema permite fazer upload de uma pasta inteira contendo todas as partes de uma partitura. Os instrumentos sao detectados automaticamente pelo nome dos arquivos:
+
+| Nome do Arquivo | Instrumento Detectado |
+|-----------------|----------------------|
+| `Grade.pdf` | Grade |
+| `Clarinetes.pdf` | Clarinetes |
+| `Saxes Alto.pdf` | Saxes Alto |
+| `Trompetes.pdf` | Trompetes |
+| `Trombones.pdf` | Trombones |
+| `Bombardinos.pdf` | Bombardinos |
+| `Tubas.pdf` | Tubas |
+| `Percussao.pdf` | Percussao |
+
+### Busca com Transliteracao
+
+O sistema entende grafias antigas e modernas:
+
+- `nymphas` encontra `ninfas`
+- `philarmonica` encontra `filarmonica`
+- `symphonia` encontra `sinfonia`
+
+### Sistema de Notificacoes
+
+Usuarios recebem notificacoes sobre:
+- Novas partituras adicionadas
+- Partituras em destaque
+- Atualizacoes do sistema
+
+### Temas Visuais
+
+- **Claro**: Fundo claro, ideal para ambientes iluminados
+- **Escuro**: Fundo escuro, ideal para leitura noturna
+- **Automatico**: Segue a preferencia do sistema operacional
+
+---
+
+## Stack Tecnologica
 
 <div align="center">
 
@@ -98,258 +131,108 @@
 
 ---
 
-## 🏗 Arquitetura
-
-<details>
-<summary><b>📁 Frontend (React)</b></summary>
-
-```
-frontend/src/
-├── 📂 components/
-│   ├── common/          # Toast, Header, ThemeSelector, AdminToggle
-│   ├── layout/          # BottomNav, Sidebar, DesktopHeader
-│   ├── modals/          # SheetDetail, Notifications, ChangePin, About
-│   └── music/           # FileCard, FeaturedCard, CategoryCard, Carousel
-│
-├── 📂 constants/        # Valores centralizados
-│   ├── api.js           # URLs e config de API
-│   ├── categories.js    # Categorias musicais
-│   ├── colors.js        # Paleta de cores institucionais
-│   ├── config.js        # Breakpoints, z-index, timing, sizes
-│   ├── messages.js      # Mensagens do sistema
-│   └── organization.js  # Dados institucionais
-│
-├── 📂 contexts/         # Estado global (separado por dominio)
-│   ├── AuthContext      # user, logout, isAuthenticated
-│   ├── UIContext        # theme, toast, modals
-│   ├── DataContext      # sheets, favorites, categories
-│   └── NotificationContext
-│
-├── 📂 screens/          # Telas da aplicacao
-│   ├── HomeScreen
-│   ├── LibraryScreen
-│   ├── SearchScreen
-│   ├── ComposersScreen
-│   ├── ProfileScreen
-│   └── admin/           # Painel administrativo
-│
-├── 📂 hooks/            # Hooks customizados
-├── 📂 services/         # API client
-├── 📂 styles/           # CSS modular + animacoes
-└── 📂 utils/            # Helpers (formatters, transliterate)
-```
-
-</details>
-
-<details>
-<summary><b>⚡ Backend (Worker)</b></summary>
-
-```
-worker/
-└── index.js             # API completa (~1800 linhas)
-    ├── Auth             # JWT + PBKDF2
-    ├── Sheets           # CRUD partituras
-    ├── Files            # Upload/Download R2
-    ├── Users            # Gestao usuarios
-    └── Protection       # Super admin guards
-```
-
-</details>
-
-<details>
-<summary><b>🗄 Database (D1)</b></summary>
-
-```
-database/
-├── schema.sql           # Schema principal
-└── migrations/          # Migracoes
-```
-
-**Tabelas:** `usuarios` • `partituras` • `partes` • `instrumentos` • `categorias` • `favoritos` • `logs_download`
-
-</details>
-
----
-
-## 🔒 Seguranca
+## Seguranca
 
 | Recurso | Implementacao |
 |---------|---------------|
-| 🔐 **Autenticacao** | JWT com expiracao de 24h |
-| 🔑 **Senhas** | PBKDF2 (100k iteracoes) |
-| 🛡 **Rate Limiting** | Protecao contra brute-force |
-| 🌐 **CORS** | Whitelist de dominios |
-| ⏰ **Sessao** | Logout automatico ao expirar |
-| 👑 **Super Admin** | Protecao total (@admin) - invisivel, imutavel |
+| **Autenticacao** | JWT com expiracao de 24h |
+| **Senhas** | PBKDF2 (100k iteracoes) |
+| **Rate Limiting** | Protecao contra brute-force |
+| **CORS** | Whitelist de dominios |
+| **Sessao** | Logout automatico ao expirar |
+| **Super Admin** | Protecao total - invisivel e imutavel |
 
 ---
 
-## 🧪 Testes
+## Qualidade de Codigo
 
 O projeto possui infraestrutura completa de testes automatizados:
 
-<table>
-<tr>
-<td width="50%" valign="top">
-
-### Unitarios (Jest)
-- **215 testes** passando
-- Testing Library para componentes React
-- MSW para mock de API
-- Cobertura em componentes criticos
-
-```bash
-cd frontend
-npm test                    # Todos
-npm test -- LoginScreen     # Especifico
-npm run test:coverage       # Com cobertura
-```
-
-</td>
-<td width="50%" valign="top">
-
-### E2E (Playwright)
-- **8 testes** com mocks (CI)
-- **8 testes** com backend real (local)
-- Simula fluxos reais do usuario
-
-```bash
-npm run test:e2e            # Headless
-npm run test:e2e:headed     # Visual
-npm run test:e2e:ui         # Interface
-```
-
-</td>
-</tr>
-</table>
-
-### CI/CD (GitHub Actions)
+- **215+ testes unitarios** com Jest e Testing Library
+- **16 testes E2E** com Playwright (8 mocked + 8 com backend real)
+- **CI/CD automatizado** via GitHub Actions
+- **ESLint** para padronizacao de codigo
+- **Husky + lint-staged** para validacao pre-commit
 
 Pipeline automatico em cada push:
-
 ```
-Push/PR → Jest (215) + E2E Mocked (8) → Build → Deploy
-```
-
-[![CI Status](https://github.com/acssjr/acervo-filarmonica/actions/workflows/ci.yml/badge.svg)](https://github.com/acssjr/acervo-filarmonica/actions)
-
----
-
-## 💻 Instalacao
-
-```bash
-# Clonar repositorio
-git clone https://github.com/acssjr/acervo-filarmonica.git
-
-# Instalar dependencias
-cd acervo-filarmonica/frontend
-npm install
-
-# Rodar em desenvolvimento
-npm run dev
-
-# Build de producao
-npm run build
-
-# Preview local
-npm run preview
+Push/PR -> Lint -> Jest (215+) -> E2E Mocked (8) -> Build -> Deploy
 ```
 
 ---
 
-## 🚀 Deploy
+## Changelog
 
-**Pre-requisitos:** Node.js 18+ • Conta Cloudflare • Wrangler CLI
+<details open>
+<summary><b>v2.5.0</b> - Dezembro 2025</summary>
 
-```bash
-# Login Cloudflare
-npx wrangler login
+**Melhorias de UX no Painel Admin**
+- Visualizacao de PDF inline com zoom (Ctrl+Scroll)
+- Contador de partes por partitura
+- Hover individual nos botoes de acao (substituir/deletar)
+- Efeito visual de scale nos botoes
+- Fechamento do PDF ao clicar no backdrop
+- Melhor feedback visual para parte sendo visualizada
 
-# Deploy API (Worker)
-npx wrangler deploy
-
-# Deploy Frontend (Pages)
-cd frontend && npm run build
-npx wrangler pages deploy dist --project-name=acervo-filarmonica
-```
-
----
-
-## 🗃 Banco de Dados
-
-<details>
-<summary><b>Comandos uteis D1</b></summary>
-
-```bash
-# Listar partituras
-npx wrangler d1 execute acervo-db --remote \
-  --command="SELECT * FROM partituras"
-
-# Listar usuarios
-npx wrangler d1 execute acervo-db --remote \
-  --command="SELECT id, username, nome, instrumento_id, admin FROM usuarios"
-```
+**Qualidade**
+- Correcao de bugs no carregamento de PDF
+- Prevencao de interceptacao por gerenciadores de download (IDM)
 
 </details>
 
----
-
-## 📝 Changelog
-
-<details open>
+<details>
 <summary><b>v2.4.0</b> - Dezembro 2025</summary>
 
-- 👑 **Super Admin:** Protecao total do @admin (invisivel, imutavel)
-- 🏷️ **Badges:** Identificacao visual de admins na lista
-- 🎵 **Equalizer:** Animacao de loading no login
-- 🔧 **Constants:** Centralizacao de cores, mensagens e configs
-- 🐛 **Fix:** Bug de zeros nos nomes (`!!user.admin`)
+- **Super Admin:** Protecao total do @admin (invisivel, imutavel)
+- **Badges:** Identificacao visual de admins na lista
+- **Equalizer:** Animacao de loading no login
+- **Constants:** Centralizacao de cores, mensagens e configs
 
 </details>
 
 <details>
 <summary><b>v2.3.3</b> - Dezembro 2025</summary>
 
-- 🔄 **Admin Toggle:** Alternar entre modo usuario/admin sem logout
-- 🎼 **Maestro:** Deteccao correta para download de grade
-- ⬇️ **Download:** Botao desabilitado quando grade indisponivel
-- ✅ **Testes:** 214 testes automatizados passando
+- **Admin Toggle:** Alternar entre modo usuario/admin sem logout
+- **Maestro:** Deteccao correta para download de grade
+- **Download:** Botao desabilitado quando grade indisponivel
+- **Testes:** 214 testes automatizados passando
 
 </details>
 
 <details>
 <summary><b>v2.3.2</b> - Dezembro 2025</summary>
 
-- 🎠 **Carrossel:** Compositores em destaque na home (mobile)
-- 🎨 **Glassmorphism:** Design hero cards com backdrop-filter
-- 🔄 **Scroll:** Correcao de scroll ao navegar para compositores
+- **Carrossel:** Compositores em destaque na home (mobile)
+- **Glassmorphism:** Design hero cards com backdrop-filter
+- **Scroll:** Correcao de scroll ao navegar para compositores
 
 </details>
 
 <details>
 <summary><b>v2.3.1</b> - Dezembro 2025</summary>
 
-- 🔤 **Busca:** Transliteracao de grafias antigas (nymphas → ninfas)
-- 👥 **Compositores:** Secao na home com top 6 populares
-- 🚪 **Logout:** Botao na sidebar do admin
+- **Busca:** Transliteracao de grafias antigas (nymphas -> ninfas)
+- **Compositores:** Secao na home com top 6 populares
+- **Logout:** Botao na sidebar do admin
 
 </details>
 
 <details>
 <summary><b>v2.3.0</b> - Dezembro 2025</summary>
 
-- 🧪 **Testes:** 215 testes unitarios (Jest) + 16 testes E2E (Playwright)
-- 🔄 **CI/CD:** Pipeline automatico com GitHub Actions
-- 📊 **Cobertura:** LoginScreen 100%, AdminDashboard 82%
+- **Testes:** 215 testes unitarios (Jest) + 16 testes E2E (Playwright)
+- **CI/CD:** Pipeline automatico com GitHub Actions
+- **Cobertura:** LoginScreen 100%, AdminDashboard 82%
 
 </details>
 
 <details>
 <summary><b>v2.2.0</b> - Dezembro 2025</summary>
 
-- 🏗 **Arquitetura:** Contexts separados (Auth, UI, Data, Notifications)
-- ⚡ **Performance:** Re-renders isolados por dominio
-- 📦 30+ componentes migrados para nova arquitetura
+- **Arquitetura:** Contexts separados (Auth, UI, Data, Notifications)
+- **Performance:** Re-renders isolados por dominio
+- 30+ componentes migrados para nova arquitetura
 
 </details>
 
@@ -372,7 +255,7 @@ npx wrangler d1 execute acervo-db --remote \
 
 <div align="center">
 
-### 👨‍💻 Desenvolvido por
+### Desenvolvido por
 
 **Antonio Junior**
 
@@ -388,6 +271,6 @@ npx wrangler d1 execute acervo-db --remote \
 
 <br/>
 
-**🎺 Sociedade Filarmonica 25 de Marco - Desde 1868 🎺**
+**Sociedade Filarmonica 25 de Marco - Desde 1868**
 
 </div>
