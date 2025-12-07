@@ -127,7 +127,7 @@ export const API = {
 
   async uploadPastaPartitura(formData) {
     const token = Storage.get('authToken', null);
-    const response = await fetch(`${API_BASE_URL}/api/partituras/pasta`, {
+    const response = await fetch(`${API_BASE_URL}/api/partituras/upload-pasta`, {
       method: 'POST',
       headers: {
         ...(token && { 'Authorization': `Bearer ${token}` })
