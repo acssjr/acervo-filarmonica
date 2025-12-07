@@ -147,6 +147,48 @@ export const API = {
     return this.request(`/api/partituras/${partituraId}/partes`);
   },
 
+  async addPartePartitura(partituraId, formData) {
+    const token = Storage.get('authToken', null);
+    const response = await fetch(`${API_BASE_URL}/api/partituras/${partituraId}/partes`, {
+      method: 'POST',
+      headers: {
+        ...(token && { 'Authorization': `Bearer ${token}` })
+      },
+      body: formData
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'Erro ao adicionar parte' }));
+      throw new Error(error.error);
+    }
+
+    return response.json();
+  },
+
+  async replacePartePartitura(partituraId, parteId, formData) {
+    const token = Storage.get('authToken', null);
+    const response = await fetch(`${API_BASE_URL}/api/partituras/${partituraId}/partes/${parteId}`, {
+      method: 'PUT',
+      headers: {
+        ...(token && { 'Authorization': `Bearer ${token}` })
+      },
+      body: formData
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'Erro ao substituir parte' }));
+      throw new Error(error.error);
+    }
+
+    return response.json();
+  },
+
+  async deletePartePartitura(partituraId, parteId) {
+    return this.request(`/api/partituras/${partituraId}/partes/${parteId}`, {
+      method: 'DELETE'
+    });
+  },
+
   // ============ DOWNLOAD ============
 
   getDownloadUrl(id, instrumento = null) {

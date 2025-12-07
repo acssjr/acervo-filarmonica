@@ -6,6 +6,7 @@ import { useUI } from '@contexts/UIContext';
 import { API } from '@services/api';
 import CategoryIcon from '@components/common/CategoryIcon';
 import UploadPastaModal from './components/UploadPastaModal';
+import PartesDrawer from './components/PartesDrawer';
 
 const AdminPartituras = () => {
   const { showToast } = useUI();
@@ -16,6 +17,8 @@ const AdminPartituras = () => {
   const [filterCategoria, setFilterCategoria] = useState('');
   const [showCatDropdown, setShowCatDropdown] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [selectedPartitura, setSelectedPartitura] = useState(null);
+  const [showPartesDrawer, setShowPartesDrawer] = useState(false);
 
   // Normaliza texto removendo acentos
   const normalizeText = (text) => {
@@ -446,6 +449,34 @@ const AdminPartituras = () => {
                         </div>
                       </div>
                       <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        {/* Botao Gerenciar Partes */}
+                        <button
+                          onClick={() => {
+                            setSelectedPartitura(p);
+                            setShowPartesDrawer(true);
+                          }}
+                          title="Gerenciar partes"
+                          style={{
+                            width: '40px',
+                            height: '40px',
+                            borderRadius: 'var(--radius-sm)',
+                            background: 'rgba(52, 152, 219, 0.1)',
+                            border: '1px solid rgba(52, 152, 219, 0.3)',
+                            color: '#3498db',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}
+                        >
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                            <line x1="16" y1="13" x2="8" y2="13"/>
+                            <line x1="16" y1="17" x2="8" y2="17"/>
+                            <polyline points="10 9 9 9 8 9"/>
+                          </svg>
+                        </button>
                         {/* Botao Destaque */}
                         <button onClick={() => toggleDestaque(p)} title={p.destaque === 1 ? 'Remover destaque' : 'Destacar'} style={{
                           width: '40px',
@@ -502,6 +533,18 @@ const AdminPartituras = () => {
           setShowUploadModal(false);
         }}
         categorias={categorias}
+      />
+
+      {/* Drawer de Gerenciamento de Partes */}
+      <PartesDrawer
+        isOpen={showPartesDrawer}
+        onClose={() => {
+          setShowPartesDrawer(false);
+          setSelectedPartitura(null);
+        }}
+        partitura={selectedPartitura}
+        categorias={categorias}
+        onUpdate={loadData}
       />
     </div>
   );
