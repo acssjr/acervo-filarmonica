@@ -8,7 +8,7 @@
 
 <br/>
 
-[![Versao](https://img.shields.io/badge/versao-2.3.0-722F37?style=for-the-badge&labelColor=D4AF37)](https://github.com/acssjr/acervo-filarmonica-refatorado)
+[![Versao](https://img.shields.io/badge/versao-2.4.0-722F37?style=for-the-badge&labelColor=D4AF37)](https://github.com/acssjr/acervo-filarmonica)
 [![Status](https://img.shields.io/badge/status-em%20producao-success?style=for-the-badge)](https://acervo-filarmonica.pages.dev)
 [![CI](https://img.shields.io/github/actions/workflow/status/acssjr/acervo-filarmonica/ci.yml?style=for-the-badge&label=CI&logo=github)](https://github.com/acssjr/acervo-filarmonica/actions)
 [![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react&logoColor=white)](https://react.dev)
@@ -47,11 +47,12 @@
 ### 🎵 Para Musicos
 - Interface responsiva (mobile/desktop)
 - Download de partituras por instrumento
-- Busca e filtros por categoria
+- Busca com transliteracao (grafias antigas)
 - Sistema de favoritos
-- Perfil com foto
+- Perfil com foto e alteracao de PIN
 - Temas claro/escuro/auto
 - Notificacoes de novidades
+- Carrossel de compositores
 
 </td>
 <td width="33%" valign="top">
@@ -60,6 +61,7 @@
 - Acesso a Grade completa
 - Download de todas as partes
 - Visualizacao do acervo total
+- Destaque automatico de partituras
 
 </td>
 <td width="33%" valign="top">
@@ -68,9 +70,11 @@
 - Upload de pasta (multiplas partes)
 - Deteccao automatica de instrumentos
 - Gerenciamento de partes
-- Gestao de musicos
+- Gestao de musicos com badges
 - Estatisticas de downloads
 - Reset de PIN
+- Toggle admin/usuario
+- Protecao do super admin
 
 </td>
 </tr>
@@ -102,10 +106,18 @@
 ```
 frontend/src/
 ├── 📂 components/
-│   ├── common/          # Toast, Header, ThemeSelector
+│   ├── common/          # Toast, Header, ThemeSelector, AdminToggle
 │   ├── layout/          # BottomNav, Sidebar, DesktopHeader
-│   ├── modals/          # SheetDetail, Notifications, ChangePin
-│   └── music/           # FileCard, FeaturedCard, CategoryCard
+│   ├── modals/          # SheetDetail, Notifications, ChangePin, About
+│   └── music/           # FileCard, FeaturedCard, CategoryCard, Carousel
+│
+├── 📂 constants/        # Valores centralizados
+│   ├── api.js           # URLs e config de API
+│   ├── categories.js    # Categorias musicais
+│   ├── colors.js        # Paleta de cores institucionais
+│   ├── config.js        # Breakpoints, z-index, timing, sizes
+│   ├── messages.js      # Mensagens do sistema
+│   └── organization.js  # Dados institucionais
 │
 ├── 📂 contexts/         # Estado global (separado por dominio)
 │   ├── AuthContext      # user, logout, isAuthenticated
@@ -117,13 +129,14 @@ frontend/src/
 │   ├── HomeScreen
 │   ├── LibraryScreen
 │   ├── SearchScreen
+│   ├── ComposersScreen
 │   ├── ProfileScreen
 │   └── admin/           # Painel administrativo
 │
 ├── 📂 hooks/            # Hooks customizados
 ├── 📂 services/         # API client
-├── 📂 styles/           # CSS modular
-└── 📂 utils/            # Helpers
+├── 📂 styles/           # CSS modular + animacoes
+└── 📂 utils/            # Helpers (formatters, transliterate)
 ```
 
 </details>
@@ -133,11 +146,12 @@ frontend/src/
 
 ```
 worker/
-└── index.js             # API completa
+└── index.js             # API completa (~1800 linhas)
     ├── Auth             # JWT + PBKDF2
     ├── Sheets           # CRUD partituras
     ├── Files            # Upload/Download R2
-    └── Users            # Gestao usuarios
+    ├── Users            # Gestao usuarios
+    └── Protection       # Super admin guards
 ```
 
 </details>
@@ -166,6 +180,7 @@ database/
 | 🛡 **Rate Limiting** | Protecao contra brute-force |
 | 🌐 **CORS** | Whitelist de dominios |
 | ⏰ **Sessao** | Logout automatico ao expirar |
+| 👑 **Super Admin** | Protecao total (@admin) - invisivel, imutavel |
 
 ---
 
@@ -224,10 +239,10 @@ Push/PR → Jest (215) + E2E Mocked (8) → Build → Deploy
 
 ```bash
 # Clonar repositorio
-git clone https://github.com/acssjr/acervo-filarmonica-refatorado.git
+git clone https://github.com/acssjr/acervo-filarmonica.git
 
 # Instalar dependencias
-cd acervo-filarmonica-refatorado/frontend
+cd acervo-filarmonica/frontend
 npm install
 
 # Rodar em desenvolvimento
@@ -282,6 +297,45 @@ npx wrangler d1 execute acervo-db --remote \
 ## 📝 Changelog
 
 <details open>
+<summary><b>v2.4.0</b> - Dezembro 2025</summary>
+
+- 👑 **Super Admin:** Protecao total do @admin (invisivel, imutavel)
+- 🏷️ **Badges:** Identificacao visual de admins na lista
+- 🎵 **Equalizer:** Animacao de loading no login
+- 🔧 **Constants:** Centralizacao de cores, mensagens e configs
+- 🐛 **Fix:** Bug de zeros nos nomes (`!!user.admin`)
+
+</details>
+
+<details>
+<summary><b>v2.3.3</b> - Dezembro 2025</summary>
+
+- 🔄 **Admin Toggle:** Alternar entre modo usuario/admin sem logout
+- 🎼 **Maestro:** Deteccao correta para download de grade
+- ⬇️ **Download:** Botao desabilitado quando grade indisponivel
+- ✅ **Testes:** 214 testes automatizados passando
+
+</details>
+
+<details>
+<summary><b>v2.3.2</b> - Dezembro 2025</summary>
+
+- 🎠 **Carrossel:** Compositores em destaque na home (mobile)
+- 🎨 **Glassmorphism:** Design hero cards com backdrop-filter
+- 🔄 **Scroll:** Correcao de scroll ao navegar para compositores
+
+</details>
+
+<details>
+<summary><b>v2.3.1</b> - Dezembro 2025</summary>
+
+- 🔤 **Busca:** Transliteracao de grafias antigas (nymphas → ninfas)
+- 👥 **Compositores:** Secao na home com top 6 populares
+- 🚪 **Logout:** Botao na sidebar do admin
+
+</details>
+
+<details>
 <summary><b>v2.3.0</b> - Dezembro 2025</summary>
 
 - 🧪 **Testes:** 215 testes unitarios (Jest) + 16 testes E2E (Playwright)
@@ -300,26 +354,11 @@ npx wrangler d1 execute acervo-db --remote \
 </details>
 
 <details>
-<summary><b>v2.1.0</b> - Dezembro 2025</summary>
-
-- 🔐 JWT com expiracao de 24h
-- 🔑 Senhas criptografadas com PBKDF2
-- 🛡 Rate limiting contra ataques
-- 🔄 Redirecionamento automatico admin
-
-</details>
-
-<details>
-<summary><b>v2.0.0</b> - Dezembro 2025</summary>
-
-- 📁 Upload de pasta com multiplas partes
-- 🎯 Deteccao automatica de instrumentos
-- ⚙️ Gerenciamento de partes no admin
-
-</details>
-
-<details>
 <summary><b>Versoes anteriores</b></summary>
+
+**v2.1.0** - JWT 24h, PBKDF2, Rate limiting, Redirect admin
+
+**v2.0.0** - Upload pasta, deteccao instrumentos, gerenciamento partes
 
 **v1.5.0** - Modal "Sobre", validacao PIN, melhorias mobile
 
