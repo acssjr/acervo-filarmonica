@@ -16,7 +16,8 @@ Agora# Guia Técnico: Git, GitHub, CI/CD e Qualidade Automatizada
 8. [Feature Flags](#8-feature-flags)
 9. [Roteiro de Implementação para IA](#9-roteiro-de-implementação-para-ia)
 10. [Métricas DORA](#10-métricas-dora)
-11. [Referências](#11-referências)
+11. [Workflow de Desenvolvimento Local](#11-workflow-de-desenvolvimento-local) ⭐ **IMPORTANTE**
+12. [Referências](#12-referências)
 
 ---
 
@@ -681,7 +682,114 @@ O [State of DevOps Report](https://cloud.google.com/devops/state-of-devops) iden
 
 ---
 
-## 11. Referências
+## 11. Workflow de Desenvolvimento Local
+
+### 11.1 Ordem Obrigatória de Operações
+
+**NUNCA pule etapas. NUNCA faça deploy manual.**
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  1. DESENVOLVER                                             │
+│     - Criar branch: git checkout -b feat/nome-feature       │
+│     - Fazer mudanças no código                              │
+└────────────────────────────┬────────────────────────────────┘
+                             │
+                             ▼
+┌─────────────────────────────────────────────────────────────┐
+│  2. TESTAR LOCALMENTE                                       │
+│     - Frontend: npm run dev (localhost:5173)                │
+│     - Verificar visualmente as mudanças                     │
+│     - Testar fluxos afetados                                │
+└────────────────────────────┬────────────────────────────────┘
+                             │
+                             ▼
+┌─────────────────────────────────────────────────────────────┐
+│  3. RODAR TESTES AUTOMATIZADOS                              │
+│     - npm test (testes unitários)                           │
+│     - npm run lint (verificar código)                       │
+│     - npm run build (verificar build)                       │
+│     - npx playwright test (E2E mocked)                      │
+└────────────────────────────┬────────────────────────────────┘
+                             │
+                             ▼
+┌─────────────────────────────────────────────────────────────┐
+│  4. COMMIT + PUSH                                           │
+│     - git add .                                             │
+│     - git commit -m "tipo(escopo): descrição"               │
+│     - git push origin feat/nome-feature                     │
+└────────────────────────────┬────────────────────────────────┘
+                             │
+                             ▼
+┌─────────────────────────────────────────────────────────────┐
+│  5. CRIAR PR                                                │
+│     - gh pr create --title "..." --body "..."               │
+│     - Aguardar CI passar                                    │
+│     - Revisar mudanças                                      │
+└────────────────────────────┬────────────────────────────────┘
+                             │
+                             ▼
+┌─────────────────────────────────────────────────────────────┐
+│  6. MERGE → DEPLOY AUTOMÁTICO                               │
+│     - Merge no GitHub                                       │
+│     - CI/CD faz deploy automaticamente                      │
+│     - Frontend → Cloudflare Pages                           │
+│     - Worker → Cloudflare Workers                           │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 11.2 Testando Localmente
+
+#### Frontend (sempre possível)
+```bash
+cd frontend
+npm run dev
+# Acesse http://localhost:5173
+# Frontend aponta para API de produção por padrão
+```
+
+#### Worker/Backend (limitações)
+```bash
+# Worker local NÃO conecta ao banco de produção
+# Use apenas para testar lógica que não depende do banco
+npx wrangler dev --local
+```
+
+**Importante:** Mudanças no worker que envolvem banco de dados (D1) só podem ser testadas após deploy via CI/CD.
+
+### 11.3 O Que Pode Ser Testado Localmente
+
+| Tipo de Mudança | Testável Local? | Como Testar |
+|-----------------|-----------------|-------------|
+| UI/Componentes React | ✅ Sim | `npm run dev` |
+| Estilos CSS | ✅ Sim | `npm run dev` |
+| Lógica frontend (hooks, utils) | ✅ Sim | `npm test` |
+| Chamadas de API (existentes) | ✅ Sim | Frontend → API produção |
+| Novos endpoints no worker | ⚠️ Parcial | Lógica sim, banco não |
+| Queries SQL (D1) | ❌ Não | Só via deploy |
+| Storage (R2) | ❌ Não | Só via deploy |
+
+### 11.4 Regras de Ouro
+
+1. **NUNCA execute `wrangler deploy` manualmente** - O CI/CD faz isso
+2. **SEMPRE teste localmente antes de commit** - Mesmo que parcialmente
+3. **SEMPRE rode os testes automatizados** - `npm test && npm run lint && npm run build`
+4. **NUNCA faça merge sem CI verde** - Branch protection existe por isso
+5. **CONFIE no processo** - Mudanças simples de SQL podem ir direto (após testes)
+
+### 11.5 Checklist Pré-Commit
+
+```
+[ ] Testei visualmente no localhost?
+[ ] npm test passou?
+[ ] npm run lint passou?
+[ ] npm run build passou?
+[ ] Mensagem de commit segue Conventional Commits?
+```
+
+---
+
+## 12. Referências
 
 ### Estratégias de Branching
 - [Trunk-Based Development | Atlassian](https://www.atlassian.com/continuous-delivery/continuous-integration/trunk-based-development)

@@ -904,17 +904,26 @@ const AdminPartituras = () => {
                                   </button>
                                 </div>
                               </div>
-                              {/* Iframe do PDF */}
-                              <iframe
-                                src={previewParte.blobUrl}
-                                title={`Preview - ${previewParte.instrumento}`}
+                              {/* PDF Viewer */}
+                              <object
+                                data={previewParte.blobUrl}
+                                type="application/pdf"
                                 style={{
                                   width: '100%',
                                   height: '500px',
                                   border: 'none',
                                   background: '#fff'
                                 }}
-                              />
+                              >
+                                <embed
+                                  src={previewParte.blobUrl}
+                                  type="application/pdf"
+                                  style={{
+                                    width: '100%',
+                                    height: '500px'
+                                  }}
+                                />
+                              </object>
                             </div>
                           )}
 
