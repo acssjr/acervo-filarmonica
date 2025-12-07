@@ -220,7 +220,7 @@ describe('LoginScreen', () => {
     };
 
     test('mostra loading durante autenticacao', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: 50 });
       renderLogin();
 
       // Digita usuario
@@ -232,13 +232,21 @@ describe('LoginScreen', () => {
         expect(screen.getByText(/Músico Teste/)).toBeInTheDocument();
       }, { timeout: 2000 });
 
-      // Digita PIN nos inputs
+      // Pequeno delay para garantir que os PIN inputs estao prontos
+      await new Promise(r => setTimeout(r, 100));
+
+      // Digita PIN nos inputs (clicando antes, como no teste que funciona)
       const pinInputs = getPinInputs();
 
-      // Digita cada digito do PIN
-      for (let i = 0; i < 4; i++) {
-        await user.type(pinInputs[i], String(i + 1));
-      }
+      // Digita cada digito do PIN correto (1234)
+      await user.click(pinInputs[0]);
+      await user.type(pinInputs[0], '1');
+      await user.click(pinInputs[1]);
+      await user.type(pinInputs[1], '2');
+      await user.click(pinInputs[2]);
+      await user.type(pinInputs[2], '3');
+      await user.click(pinInputs[3]);
+      await user.type(pinInputs[3], '4');
 
       // Deve mostrar loading (pode aparecer e desaparecer rapido)
       // Verificamos que nao houve erro
