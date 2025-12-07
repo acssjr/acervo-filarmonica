@@ -1,12 +1,51 @@
 // ===== ADMIN PARTITURAS =====
-// Gerenciamento de partituras
+// Gerenciamento de partituras com expansao inline
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useUI } from '@contexts/UIContext';
 import { API } from '@services/api';
 import CategoryIcon from '@components/common/CategoryIcon';
 import UploadPastaModal from './components/UploadPastaModal';
-import PartesDrawer from './components/PartesDrawer';
+import Storage from '@services/storage';
+import { API_BASE_URL } from '@constants/api';
+
+// Helper para detectar instrumento pelo nome do arquivo
+const detectInstrumento = (filename) => {
+  const name = filename.toLowerCase().replace(/\.pdf$/i, '');
+
+  const patterns = [
+    { pattern: /grade|regente|maestro|partitura.*geral/i, name: 'Grade' },
+    { pattern: /flauta|flaut/i, name: 'Flauta' },
+    { pattern: /requinta/i, name: 'Requinta' },
+    { pattern: /clarinete?\s*(bb|si\s*b)?\s*[123]|clar.*[123]/i, name: (m) => `Clarinete Bb ${m[0].match(/[123]/)?.[0] || '1'}` },
+    { pattern: /clarinete|clar/i, name: 'Clarinete' },
+    { pattern: /sax.*alto|alto.*sax/i, name: 'Sax Alto' },
+    { pattern: /sax.*tenor|tenor.*sax/i, name: 'Sax Tenor' },
+    { pattern: /sax.*bar[ií]tono|bar[ií]tono.*sax/i, name: 'Sax Barítono' },
+    { pattern: /sax.*soprano|soprano.*sax/i, name: 'Sax Soprano' },
+    { pattern: /trompete?\s*[123]|trump.*[123]/i, name: (m) => `Trompete ${m[0].match(/[123]/)?.[0] || '1'}` },
+    { pattern: /trompete|trump/i, name: 'Trompete' },
+    { pattern: /trombone\s*[123]/i, name: (m) => `Trombone ${m[0].match(/[123]/)?.[0] || '1'}` },
+    { pattern: /trombone/i, name: 'Trombone' },
+    { pattern: /bombardino|euph|flicorne/i, name: 'Bombardino' },
+    { pattern: /tuba|sousafone|bass/i, name: 'Tuba' },
+    { pattern: /caixa.*clara|snare/i, name: 'Caixa Clara' },
+    { pattern: /bumbo|bass.*drum/i, name: 'Bumbo' },
+    { pattern: /prato/i, name: 'Pratos' },
+    { pattern: /percuss/i, name: 'Percussão' },
+    { pattern: /horn|trompa/i, name: 'Trompa' },
+  ];
+
+  for (const { pattern, name: instrName } of patterns) {
+    const match = name.match(pattern);
+    if (match) {
+      return typeof instrName === 'function' ? instrName(match) : instrName;
+    }
+  }
+
+  // Se nao detectou, usa o nome do arquivo limpo
+  return name.replace(/[-_]/g, ' ').replace(/\s+/g, ' ').trim() || 'Parte';
+};
 
 const AdminPartituras = () => {
   const { showToast } = useUI();
@@ -17,10 +56,16 @@ const AdminPartituras = () => {
   const [filterCategoria, setFilterCategoria] = useState('');
   const [showCatDropdown, setShowCatDropdown] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
-  const [selectedPartitura, setSelectedPartitura] = useState(null);
-  const [showPartesDrawer, setShowPartesDrawer] = useState(false);
 
-  // Normaliza texto removendo acentos
+  // Estado para expansao inline
+  const [expandedId, setExpandedId] = useState(null);
+  const [partes, setPartes] = useState([]);
+  const [loadingPartes, setLoadingPartes] = useState(false);
+  const [uploading, setUploading] = useState(null);
+  const [deleting, setDeleting] = useState(null);
+  const [addingPart, setAddingPart] = useState(false);
+  const addFileInputRef = useRef(null);
+
   const normalizeText = (text) => {
     if (!text) return '';
     return text.toLowerCase()
@@ -38,7 +83,7 @@ const AdminPartituras = () => {
       ]);
       setPartituras(parts || []);
       setCategorias(cats || []);
-    } catch (e) {
+    } catch (_e) {
       showToast('Erro ao carregar dados', 'error');
     }
     setLoading(false);
@@ -59,16 +104,118 @@ const AdminPartituras = () => {
     return () => window.removeEventListener('admin-partituras-action', handler);
   }, [showToast]);
 
+  // Carregar partes quando expandir
+  const loadPartes = async (partituraId) => {
+    setLoadingPartes(true);
+    try {
+      const data = await API.getPartesPartitura(partituraId);
+      setPartes(data || []);
+    } catch (_err) {
+      showToast('Erro ao carregar partes', 'error');
+    } finally {
+      setLoadingPartes(false);
+    }
+  };
+
+  // Toggle expansao
+  const toggleExpand = (partitura) => {
+    if (expandedId === partitura.id) {
+      setExpandedId(null);
+      setPartes([]);
+    } else {
+      setExpandedId(partitura.id);
+      loadPartes(partitura.id);
+    }
+  };
+
+  // Visualizar PDF com autenticacao
+  const handleViewPart = async (partituraId, instrumento) => {
+    try {
+      const token = Storage.get('authToken', null);
+      let url = `${API_BASE_URL}/api/download/${partituraId}`;
+      if (instrumento) url += `?instrumento=${encodeURIComponent(instrumento)}`;
+
+      const response = await fetch(url, {
+        headers: {
+          ...(token && { 'Authorization': `Bearer ${token}` })
+        }
+      });
+
+      if (!response.ok) throw new Error('Erro ao carregar PDF');
+
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      window.open(blobUrl, '_blank');
+
+      // Limpa o blob URL apos um tempo
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+    } catch (_err) {
+      showToast('Erro ao abrir PDF', 'error');
+    }
+  };
+
+  // Substituir parte
+  const handleReplacePart = async (partituraId, parteId, file) => {
+    if (!file) return;
+    setUploading(parteId);
+    try {
+      const formData = new FormData();
+      formData.append('arquivo', file);
+      await API.replacePartePartitura(partituraId, parteId, formData);
+      showToast('Parte substituida com sucesso!');
+      loadPartes(partituraId);
+    } catch (err) {
+      showToast(err.message || 'Erro ao substituir parte', 'error');
+    } finally {
+      setUploading(null);
+    }
+  };
+
+  // Deletar parte
+  const handleDeletePart = async (partituraId, parteId) => {
+    if (!confirm('Remover esta parte da partitura?')) return;
+    setDeleting(parteId);
+    try {
+      await API.deletePartePartitura(partituraId, parteId);
+      showToast('Parte removida com sucesso!');
+      loadPartes(partituraId);
+      loadData();
+    } catch (err) {
+      showToast(err.message || 'Erro ao remover parte', 'error');
+    } finally {
+      setDeleting(null);
+    }
+  };
+
+  // Adicionar nova parte (deteccao automatica do instrumento)
+  const handleAddPart = async (partituraId, file) => {
+    if (!file) return;
+
+    const instrumento = detectInstrumento(file.name);
+
+    setAddingPart(true);
+    try {
+      const formData = new FormData();
+      formData.append('arquivo', file);
+      formData.append('instrumento', instrumento);
+      await API.addPartePartitura(partituraId, formData);
+      showToast(`Parte "${instrumento}" adicionada!`);
+      loadPartes(partituraId);
+      loadData();
+    } catch (err) {
+      showToast(err.message || 'Erro ao adicionar parte', 'error');
+    } finally {
+      setAddingPart(false);
+    }
+  };
+
   // Filtragem
   const filtered = useMemo(() => {
     const query = normalizeText(search);
-
     let results = partituras;
-
     if (filterCategoria) {
       results = results.filter(p => p.categoria_id === filterCategoria);
     }
-
     if (query) {
       results = results.filter(p => {
         const tituloNorm = normalizeText(p.titulo);
@@ -76,7 +223,6 @@ const AdminPartituras = () => {
         return tituloNorm.includes(query) || compositorNorm.includes(query);
       });
     }
-
     return results.sort((a, b) => a.titulo?.localeCompare(b.titulo, 'pt-BR'));
   }, [partituras, search, filterCategoria]);
 
@@ -95,6 +241,7 @@ const AdminPartituras = () => {
     try {
       await API.deletePartitura(id);
       showToast('Partitura removida!');
+      if (expandedId === id) setExpandedId(null);
       loadData();
     } catch (e) {
       showToast(e.message, 'error');
@@ -103,11 +250,9 @@ const AdminPartituras = () => {
 
   const toggleDestaque = async (partitura) => {
     const novoDestaque = partitura.destaque === 1 ? 0 : 1;
-
     setPartituras(prev => prev.map(p =>
       p.id === partitura.id ? { ...p, destaque: novoDestaque } : p
     ));
-
     try {
       await API.updatePartitura(partitura.id, { ...partitura, destaque: novoDestaque });
       showToast(novoDestaque ? 'Adicionado aos destaques!' : 'Removido dos destaques');
@@ -163,33 +308,11 @@ const AdminPartituras = () => {
             </svg>
             Upload de Pasta
           </button>
-          <button onClick={() => window.adminNav?.('partituras', 'novo')} style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '10px 20px',
-            borderRadius: 'var(--radius-sm)',
-            background: 'linear-gradient(135deg, #2C3E50 0%, #1a252f 100%)',
-            color: '#fff',
-            border: '2px solid #34495e',
-            fontSize: '14px',
-            fontWeight: '500',
-            cursor: 'pointer',
-            fontFamily: 'Outfit, sans-serif',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
-          }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="12" y1="5" x2="12" y2="19"/>
-              <line x1="5" y1="12" x2="19" y2="12"/>
-            </svg>
-            Nova Partitura
-          </button>
         </div>
       </div>
 
       {/* Filtros */}
       <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
-        {/* Barra de busca */}
         <div style={{ flex: 1, minWidth: '250px' }}>
           <div className="search-bar">
             <svg className="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -393,128 +516,327 @@ const AdminPartituras = () => {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {groupedByLetter[letter].map((p) => {
                   const cat = getCategoriaInfo(p.categoria_id);
+                  const isExpanded = expandedId === p.id;
+
                   return (
                     <div key={p.id} style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      padding: '14px 16px',
                       background: 'var(--bg-secondary)',
                       borderRadius: 'var(--radius-md)',
-                      border: '1px solid var(--border)',
+                      border: isExpanded ? '1px solid rgba(52, 152, 219, 0.4)' : '1px solid var(--border)',
+                      overflow: 'hidden',
                       transition: 'all 0.2s ease'
                     }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                        <div style={{
-                          width: '44px',
-                          height: '44px',
-                          borderRadius: 'var(--radius-sm)',
-                          background: 'linear-gradient(145deg, #3a3a4a 0%, #2a2a38 100%)',
+                      {/* Linha principal - clicavel para expandir */}
+                      <div
+                        style={{
                           display: 'flex',
                           alignItems: 'center',
-                          justifyContent: 'center',
-                          transition: 'transform 0.2s',
-                          border: '1px solid rgba(212, 175, 55, 0.2)'
-                        }}>
-                          <CategoryIcon categoryId={cat.id || p.categoria_id} size={22} color="#D4AF37" />
-                        </div>
-                        <div>
+                          justifyContent: 'space-between',
+                          padding: '14px 16px',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        <div
+                          onClick={() => toggleExpand(p)}
+                          style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: 1 }}
+                        >
+                          {/* Seta de expansao */}
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="var(--text-muted)"
+                            strokeWidth="2"
+                            style={{
+                              transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
+                              transition: 'transform 0.2s',
+                              flexShrink: 0
+                            }}
+                          >
+                            <polyline points="9 18 15 12 9 6"/>
+                          </svg>
+
                           <div style={{
-                            fontWeight: '600',
-                            color: 'var(--text-primary)',
-                            marginBottom: '2px',
+                            width: '44px',
+                            height: '44px',
+                            borderRadius: 'var(--radius-sm)',
+                            background: 'linear-gradient(145deg, #3a3a4a 0%, #2a2a38 100%)',
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '8px',
-                            fontSize: '15px'
+                            justifyContent: 'center',
+                            border: '1px solid rgba(212, 175, 55, 0.2)',
+                            flexShrink: 0
                           }}>
-                            {p.titulo}
-                            {p.destaque === 1 && (
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="#D4AF37" stroke="#D4AF37" strokeWidth="1">
-                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-                              </svg>
-                            )}
+                            <CategoryIcon categoryId={cat.id || p.categoria_id} size={22} color="#D4AF37" />
                           </div>
-                          <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
-                            {p.compositor} • {cat.nome || p.categoria_id} {p.ano && `• ${p.ano}`}
-                          </div>
-                          <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                              <polyline points="7 10 12 15 17 10"/>
-                              <line x1="12" y1="15" x2="12" y2="3"/>
-                            </svg>
-                            {p.downloads || 0} downloads
+                          <div style={{ minWidth: 0 }}>
+                            <div style={{
+                              fontWeight: '600',
+                              color: 'var(--text-primary)',
+                              marginBottom: '2px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '8px',
+                              fontSize: '15px'
+                            }}>
+                              {p.titulo}
+                              {p.destaque === 1 && (
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="#D4AF37" stroke="#D4AF37" strokeWidth="1">
+                                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                                </svg>
+                              )}
+                            </div>
+                            <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+                              {p.compositor} • {cat.nome || p.categoria_id} {p.ano && `• ${p.ano}`}
+                            </div>
+                            <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                  <polyline points="7 10 12 15 17 10"/>
+                                  <line x1="12" y1="15" x2="12" y2="3"/>
+                                </svg>
+                                {p.downloads || 0}
+                              </span>
+                              <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                  <polyline points="14 2 14 8 20 8"/>
+                                </svg>
+                                {p.total_partes || 0} partes
+                              </span>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                        {/* Botao Gerenciar Partes */}
-                        <button
-                          onClick={() => {
-                            setSelectedPartitura(p);
-                            setShowPartesDrawer(true);
-                          }}
-                          title="Gerenciar partes"
-                          style={{
-                            width: '40px',
-                            height: '40px',
+
+                        {/* Botoes de acao */}
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                          <button onClick={() => toggleDestaque(p)} title={p.destaque === 1 ? 'Remover destaque' : 'Destacar'} style={{
+                            width: '36px',
+                            height: '36px',
                             borderRadius: 'var(--radius-sm)',
-                            background: 'rgba(52, 152, 219, 0.1)',
-                            border: '1px solid rgba(52, 152, 219, 0.3)',
-                            color: '#3498db',
+                            background: p.destaque === 1 ? 'linear-gradient(135deg, #D4AF37 0%, #B8860B 100%)' : 'var(--bg-primary)',
+                            border: p.destaque === 1 ? 'none' : '1px solid var(--border)',
+                            color: p.destaque === 1 ? '#fff' : 'var(--text-muted)',
                             cursor: 'pointer',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center'
-                          }}
-                        >
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                            <polyline points="14 2 14 8 20 8"/>
-                            <line x1="16" y1="13" x2="8" y2="13"/>
-                            <line x1="16" y1="17" x2="8" y2="17"/>
-                            <polyline points="10 9 9 9 8 9"/>
-                          </svg>
-                        </button>
-                        {/* Botao Destaque */}
-                        <button onClick={() => toggleDestaque(p)} title={p.destaque === 1 ? 'Remover destaque' : 'Destacar'} style={{
-                          width: '40px',
-                          height: '40px',
-                          borderRadius: 'var(--radius-sm)',
-                          background: p.destaque === 1 ? 'linear-gradient(135deg, #D4AF37 0%, #B8860B 100%)' : 'var(--bg-primary)',
-                          border: p.destaque === 1 ? 'none' : '1px solid var(--border)',
-                          color: p.destaque === 1 ? '#fff' : 'var(--text-muted)',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center'
-                        }}>
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill={p.destaque === 1 ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2">
-                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-                          </svg>
-                        </button>
-                        {/* Botao Excluir */}
-                        <button onClick={() => handleDelete(p.id)} title="Excluir" style={{
-                          width: '40px',
-                          height: '40px',
-                          borderRadius: 'var(--radius-sm)',
-                          background: 'rgba(231, 76, 60, 0.1)',
-                          border: '1px solid rgba(231, 76, 60, 0.3)',
-                          color: '#e74c3c',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center'
-                        }}>
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <polyline points="3 6 5 6 21 6"/>
-                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                            <line x1="10" y1="11" x2="10" y2="17"/>
-                            <line x1="14" y1="11" x2="14" y2="17"/>
-                          </svg>
-                        </button>
+                          }}>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill={p.destaque === 1 ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2">
+                              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                            </svg>
+                          </button>
+                          <button onClick={() => handleDelete(p.id)} title="Excluir" style={{
+                            width: '36px',
+                            height: '36px',
+                            borderRadius: 'var(--radius-sm)',
+                            background: 'rgba(231, 76, 60, 0.1)',
+                            border: '1px solid rgba(231, 76, 60, 0.3)',
+                            color: '#e74c3c',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="3 6 5 6 21 6"/>
+                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                            </svg>
+                          </button>
+                        </div>
                       </div>
+
+                      {/* Area expandida - partes */}
+                      {isExpanded && (
+                        <div style={{
+                          borderTop: '1px solid var(--border)',
+                          background: 'var(--bg-primary)',
+                          padding: '16px'
+                        }}>
+                          {loadingPartes ? (
+                            <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)' }}>
+                              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: 'spin 1s linear infinite' }}>
+                                <circle cx="12" cy="12" r="10" strokeOpacity="0.25"/>
+                                <path d="M12 2a10 10 0 0 1 10 10" strokeLinecap="round"/>
+                              </svg>
+                            </div>
+                          ) : partes.length === 0 ? (
+                            <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)', fontSize: '13px' }}>
+                              Nenhuma parte encontrada
+                            </div>
+                          ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '12px' }}>
+                              {partes.map((parte) => (
+                                <div
+                                  key={parte.id}
+                                  style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    padding: '10px 12px',
+                                    background: 'var(--bg-secondary)',
+                                    borderRadius: '8px',
+                                    border: '1px solid var(--border)'
+                                  }}
+                                >
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="1.5">
+                                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                      <polyline points="14 2 14 8 20 8"/>
+                                    </svg>
+                                    <span style={{ fontSize: '13px', color: 'var(--text-primary)' }}>
+                                      {parte.instrumento}
+                                    </span>
+                                  </div>
+                                  <div style={{ display: 'flex', gap: '4px' }}>
+                                    <button
+                                      onClick={() => handleViewPart(p.id, parte.instrumento)}
+                                      title="Visualizar"
+                                      style={{
+                                        width: '28px',
+                                        height: '28px',
+                                        borderRadius: '6px',
+                                        background: 'var(--bg-primary)',
+                                        border: '1px solid var(--border)',
+                                        color: 'var(--text-secondary)',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center'
+                                      }}
+                                    >
+                                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                        <circle cx="12" cy="12" r="3"/>
+                                      </svg>
+                                    </button>
+                                    <label
+                                      title="Substituir"
+                                      style={{
+                                        width: '28px',
+                                        height: '28px',
+                                        borderRadius: '6px',
+                                        background: 'rgba(212, 175, 55, 0.1)',
+                                        border: '1px solid rgba(212, 175, 55, 0.3)',
+                                        color: '#D4AF37',
+                                        cursor: uploading === parte.id ? 'wait' : 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center'
+                                      }}
+                                    >
+                                      {uploading === parte.id ? (
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: 'spin 1s linear infinite' }}>
+                                          <circle cx="12" cy="12" r="10" strokeOpacity="0.25"/>
+                                          <path d="M12 2a10 10 0 0 1 10 10" strokeLinecap="round"/>
+                                        </svg>
+                                      ) : (
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                          <polyline points="17 8 12 3 7 8"/>
+                                          <line x1="12" y1="3" x2="12" y2="15"/>
+                                        </svg>
+                                      )}
+                                      <input
+                                        type="file"
+                                        accept=".pdf"
+                                        style={{ display: 'none' }}
+                                        onChange={(e) => {
+                                          if (e.target.files[0]) {
+                                            handleReplacePart(p.id, parte.id, e.target.files[0]);
+                                          }
+                                          e.target.value = '';
+                                        }}
+                                        disabled={uploading === parte.id}
+                                      />
+                                    </label>
+                                    <button
+                                      onClick={() => handleDeletePart(p.id, parte.id)}
+                                      disabled={deleting === parte.id}
+                                      title="Remover"
+                                      style={{
+                                        width: '28px',
+                                        height: '28px',
+                                        borderRadius: '6px',
+                                        background: 'rgba(231, 76, 60, 0.1)',
+                                        border: '1px solid rgba(231, 76, 60, 0.3)',
+                                        color: '#e74c3c',
+                                        cursor: deleting === parte.id ? 'wait' : 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center'
+                                      }}
+                                    >
+                                      {deleting === parte.id ? (
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: 'spin 1s linear infinite' }}>
+                                          <circle cx="12" cy="12" r="10" strokeOpacity="0.25"/>
+                                          <path d="M12 2a10 10 0 0 1 10 10" strokeLinecap="round"/>
+                                        </svg>
+                                      ) : (
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                          <polyline points="3 6 5 6 21 6"/>
+                                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                        </svg>
+                                      )}
+                                    </button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Botao adicionar parte */}
+                          <label
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '8px',
+                              padding: '10px',
+                              borderRadius: '8px',
+                              background: 'var(--bg-secondary)',
+                              border: '1.5px dashed var(--border)',
+                              color: 'var(--text-secondary)',
+                              fontSize: '13px',
+                              cursor: addingPart ? 'wait' : 'pointer',
+                              transition: 'all 0.2s'
+                            }}
+                          >
+                            {addingPart ? (
+                              <>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: 'spin 1s linear infinite' }}>
+                                  <circle cx="12" cy="12" r="10" strokeOpacity="0.25"/>
+                                  <path d="M12 2a10 10 0 0 1 10 10" strokeLinecap="round"/>
+                                </svg>
+                                Adicionando...
+                              </>
+                            ) : (
+                              <>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <line x1="12" y1="5" x2="12" y2="19"/>
+                                  <line x1="5" y1="12" x2="19" y2="12"/>
+                                </svg>
+                                Adicionar parte (deteccao automatica)
+                              </>
+                            )}
+                            <input
+                              ref={addFileInputRef}
+                              type="file"
+                              accept=".pdf"
+                              style={{ display: 'none' }}
+                              onChange={(e) => {
+                                if (e.target.files[0]) {
+                                  handleAddPart(p.id, e.target.files[0]);
+                                }
+                                e.target.value = '';
+                              }}
+                              disabled={addingPart}
+                            />
+                          </label>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -535,17 +857,13 @@ const AdminPartituras = () => {
         categorias={categorias}
       />
 
-      {/* Drawer de Gerenciamento de Partes */}
-      <PartesDrawer
-        isOpen={showPartesDrawer}
-        onClose={() => {
-          setShowPartesDrawer(false);
-          setSelectedPartitura(null);
-        }}
-        partitura={selectedPartitura}
-        categorias={categorias}
-        onUpdate={loadData}
-      />
+      {/* Estilos */}
+      <style>{`
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 };
