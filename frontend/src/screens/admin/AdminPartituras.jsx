@@ -2,6 +2,9 @@
 // Gerenciamento de partituras com expansao inline e preview de PDF
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+
+// Flag para debug - remover em produção
+const DEBUG_TUTORIAL = false;
 import { useUI } from '@contexts/UIContext';
 import { API } from '@services/api';
 import CategoryIcon from '@components/common/CategoryIcon';
@@ -76,9 +79,23 @@ const AdminPartituras = () => {
   // Cache de contagem de partes por partitura
   const [partesCount, setPartesCount] = useState({});
 
+  // Ação pendente após tutorial (ex: abrir modal de upload quando veio pelo atalho)
+  const [pendingAction, setPendingAction] = useState(null);
+
+  // Ref para rastrear se o tutorial já foi mostrado (distingue "nunca apareceu" de "foi fechado")
+  const tutorialWasShown = useRef(false);
+
   // Tutorial de onboarding
   // tutorialPending = true durante o delay antes do tutorial aparecer (bloqueia interações)
   const [showTutorial, setShowTutorial, tutorialPending] = useTutorial(partituras, loading);
+
+  // Rastrear quando o tutorial aparece
+  useEffect(() => {
+    if (showTutorial) {
+      tutorialWasShown.current = true;
+      if (DEBUG_TUTORIAL) console.log('[Tutorial] Marcado como mostrado');
+    }
+  }, [showTutorial]);
 
   const normalizeText = (text) => {
     if (!text) return '';
@@ -111,12 +128,58 @@ const AdminPartituras = () => {
         showToast('Funcao de criar partitura em desenvolvimento');
       }
       if (e.detail === 'pasta') {
-        setShowUploadModal(true);
+        // Verifica se tutorial foi completado diretamente no Storage
+        const tutorialCompleted = Storage.get('tutorial_admin_partituras_completed', false);
+        const isMobile = window.innerWidth < 768;
+
+        // Se tutorial não foi completado e não é mobile, SEMPRE guarda a ação
+        // O modal só abre após o tutorial ser fechado
+        if (!tutorialCompleted && !isMobile) {
+          setPendingAction('openUploadModal');
+        } else {
+          setShowUploadModal(true);
+        }
       }
     };
     window.addEventListener('admin-partituras-action', handler);
     return () => window.removeEventListener('admin-partituras-action', handler);
   }, [showToast]);
+
+  // Executar ação pendente após tutorial ser fechado
+  // Só executa quando o tutorial foi realmente mostrado e fechado (não apenas "ainda não apareceu")
+  useEffect(() => {
+    if (!pendingAction) return;
+
+    const tutorialCompleted = Storage.get('tutorial_admin_partituras_completed', false);
+
+    // Debug
+    if (DEBUG_TUTORIAL) {
+      console.log('[Tutorial] Check pendingAction:', {
+        loading,
+        tutorialCompleted,
+        showTutorial,
+        tutorialPending,
+        tutorialWasShown: tutorialWasShown.current,
+        pendingAction
+      });
+    }
+
+    // Condições para executar a ação pendente:
+    // 1. Loading terminou
+    // 2. Uma dessas:
+    //    a) Tutorial foi completado no passado (já está no Storage)
+    //    b) Tutorial foi mostrado NESTA sessão e agora está fechado
+    const tutorialClosedThisSession = tutorialWasShown.current && !showTutorial && !tutorialPending;
+    const canExecute = !loading && (tutorialCompleted || tutorialClosedThisSession);
+
+    if (canExecute) {
+      if (DEBUG_TUTORIAL) console.log('[Tutorial] Executando ação pendente:', pendingAction);
+      if (pendingAction === 'openUploadModal') {
+        setShowUploadModal(true);
+      }
+      setPendingAction(null);
+    }
+  }, [showTutorial, tutorialPending, pendingAction, loading]);
 
   // Carregar partes quando expandir
   const loadPartes = useCallback(async (partituraId) => {
