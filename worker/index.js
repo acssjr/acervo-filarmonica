@@ -400,7 +400,8 @@ async function getPartituras(request, env) {
   const destaque = url.searchParams.get('destaque');
 
   let query = `
-    SELECT p.*, c.nome as categoria_nome, c.emoji as categoria_emoji, c.cor as categoria_cor
+    SELECT p.*, c.nome as categoria_nome, c.emoji as categoria_emoji, c.cor as categoria_cor,
+           (SELECT COUNT(*) FROM partes WHERE partitura_id = p.id) as total_partes
     FROM partituras p
     JOIN categorias c ON p.categoria_id = c.id
     WHERE p.ativo = 1
