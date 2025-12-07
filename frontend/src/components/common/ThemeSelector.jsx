@@ -6,7 +6,7 @@ import { useUI } from '@contexts/UIContext';
 import { Icons } from '@constants/icons';
 
 const ThemeSelector = ({ inDarkHeader = false, compact = false, inline = false }) => {
-  const { theme, themeMode, setThemeMode } = useUI();
+  const { themeMode, setThemeMode } = useUI();
   const [isOpen, setIsOpen] = useState(false);
   const selectorRef = useRef(null);
   const isMobile = typeof window !== 'undefined' ? window.innerWidth < 768 : false;
@@ -24,6 +24,23 @@ const ThemeSelector = ({ inDarkHeader = false, compact = false, inline = false }
     const nextIndex = (currentIndex + 1) % order.length;
     setThemeMode(order[nextIndex]);
   };
+
+  // Fecha ao clicar fora - DEVE vir antes de qualquer return condicional
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (selectorRef.current && !selectorRef.current.contains(e.target)) {
+        setIsOpen(false);
+      }
+    };
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [isOpen]);
 
   // Versão inline (3 botões lado a lado) para header desktop
   if (inline) {
@@ -69,23 +86,6 @@ const ThemeSelector = ({ inDarkHeader = false, compact = false, inline = false }
       </div>
     );
   }
-
-  // Fecha ao clicar fora
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (selectorRef.current && !selectorRef.current.contains(e.target)) {
-        setIsOpen(false);
-      }
-    };
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-      document.addEventListener('touchstart', handleClickOutside);
-    }
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('touchstart', handleClickOutside);
-    };
-  }, [isOpen]);
 
   const currentOption = options.find(o => o.id === themeMode);
   const CurrentIcon = currentOption?.icon || Icons.Sun;
