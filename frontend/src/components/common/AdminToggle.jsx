@@ -13,9 +13,6 @@ const AdminToggle = () => {
   const { user } = useAuth();
   const [isTransitioning, setIsTransitioning] = useState(false);
 
-  // So mostra para admins
-  if (!user?.isAdmin) return null;
-
   // Verifica se esta no admin
   const isInAdmin = location.pathname.startsWith('/admin');
 
@@ -42,6 +39,9 @@ const AdminToggle = () => {
       }, 200);
     }, 150);
   }, [isInAdmin, isTransitioning, navigate]);
+
+  // So mostra para admins
+  if (!user?.isAdmin) return null;
 
   return (
     <button

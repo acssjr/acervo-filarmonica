@@ -22,6 +22,7 @@ const FeaturedSheets = ({ sheets, onToggleFavorite, favorites }) => {
   const { theme } = useUI();
   const [isDesktop, setIsDesktop] = useState(typeof window !== 'undefined' ? window.innerWidth >= 1024 : false);
   const scrollRef = useRef(null);
+  const innerRef = useRef(null);
   const [hasInteracted, setHasInteracted] = useState(false);
 
   useEffect(() => {
@@ -35,17 +36,6 @@ const FeaturedSheets = ({ sheets, onToggleFavorite, favorites }) => {
     const featured = sheets.filter(s => s.featured);
     return featured.slice(0, 8);
   }, [sheets]);
-
-  // Não mostra a seção se não houver destaques
-  if (featuredSheets.length === 0) return null;
-
-  // Refs para scroll e animação
-  const innerRef = useRef(null);
-
-  // Só duplica os cards se tiver mais de 2 (para animação fluida)
-  const duplicatedSheets = featuredSheets.length > 2
-    ? [...featuredSheets, ...featuredSheets]
-    : featuredSheets;
 
   // Para a animação quando o usuário interage
   const stopAnimation = useCallback(() => {
@@ -85,6 +75,14 @@ const FeaturedSheets = ({ sheets, onToggleFavorite, favorites }) => {
   const handleMouseUp = useCallback(() => {
     if (scrollRef.current) scrollRef.current.dataset.isDragging = 'false';
   }, []);
+
+  // Não mostra a seção se não houver destaques (DEPOIS de todos os hooks)
+  if (featuredSheets.length === 0) return null;
+
+  // Só duplica os cards se tiver mais de 2 (para animação fluida)
+  const duplicatedSheets = featuredSheets.length > 2
+    ? [...featuredSheets, ...featuredSheets]
+    : featuredSheets;
 
   return (
     <div style={{ marginBottom: '32px', width: '100%', overflow: 'visible' }}>
