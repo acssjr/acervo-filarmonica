@@ -6,6 +6,7 @@ import { useUI } from '@contexts/UIContext';
 import { API } from '@services/api';
 import CategoryIcon from '@components/common/CategoryIcon';
 import UploadPastaModal from './components/UploadPastaModal';
+import PDFViewerModal from '@components/modals/PDFViewerModal';
 import Storage from '@services/storage';
 import { API_BASE_URL } from '@constants/api';
 
@@ -66,9 +67,10 @@ const AdminPartituras = () => {
   const [addingPart, setAddingPart] = useState(false);
   const addFileInputRef = useRef(null);
 
-  // Estado para pre-visualizacao inline do PDF
-  const [previewParte, setPreviewParte] = useState(null); // { parteId, blobUrl }
+  // Estado para pre-visualizacao do PDF (modal)
+  const [previewParte, setPreviewParte] = useState(null); // { parteId, blobUrl, instrumento }
   const [loadingPreview, setLoadingPreview] = useState(false);
+  const [showPDFModal, setShowPDFModal] = useState(false);
 
   // Cache de contagem de partes por partitura
   const [partesCount, setPartesCount] = useState({});
@@ -145,18 +147,22 @@ const AdminPartituras = () => {
       URL.revokeObjectURL(previewParte.blobUrl);
     }
     setPreviewParte(null);
+    setShowPDFModal(false);
   }, [previewParte]);
 
-  // Visualizar PDF inline com autenticacao (usando ID da parte)
+  // Visualizar PDF no modal com autenticacao (usando ID da parte)
   const handleViewPart = useCallback(async (parte) => {
     // Se ja esta visualizando esta parte, fecha
-    if (previewParte?.parteId === parte.id) {
+    if (previewParte?.parteId === parte.id && showPDFModal) {
       closePreview();
       return;
     }
 
     setLoadingPreview(true);
-    closePreview(); // Fecha preview anterior
+    // Limpa preview anterior se houver
+    if (previewParte?.blobUrl) {
+      URL.revokeObjectURL(previewParte.blobUrl);
+    }
 
     try {
       const token = Storage.get('authToken', null);
@@ -177,12 +183,13 @@ const AdminPartituras = () => {
       const blob = await response.blob();
       const blobUrl = URL.createObjectURL(blob);
       setPreviewParte({ parteId: parte.id, blobUrl, instrumento: parte.instrumento });
+      setShowPDFModal(true);
     } catch (err) {
       showToast(err.message || 'Erro ao abrir PDF', 'error');
     } finally {
       setLoadingPreview(false);
     }
-  }, [previewParte, closePreview, showToast]);
+  }, [previewParte, showPDFModal, closePreview, showToast]);
 
   // Substituir parte
   const handleReplacePart = async (partituraId, parteId, file) => {
@@ -825,108 +832,6 @@ const AdminPartituras = () => {
                             </div>
                           )}
 
-                          {/* Preview inline do PDF */}
-                          {previewParte && expandedId === p.id && (
-                            <div style={{
-                              marginBottom: '12px',
-                              borderRadius: '8px',
-                              overflow: 'hidden',
-                              border: '1px solid rgba(52, 152, 219, 0.3)',
-                              background: '#1a1a2e'
-                            }}>
-                              {/* Header do preview */}
-                              <div style={{
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center',
-                                padding: '10px 14px',
-                                background: 'rgba(52, 152, 219, 0.1)',
-                                borderBottom: '1px solid rgba(52, 152, 219, 0.2)'
-                              }}>
-                                <span style={{
-                                  fontSize: '13px',
-                                  fontWeight: '600',
-                                  color: '#3498db',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: '8px'
-                                }}>
-                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                                    <polyline points="14 2 14 8 20 8"/>
-                                  </svg>
-                                  {previewParte.instrumento}
-                                </span>
-                                <div style={{ display: 'flex', gap: '8px' }}>
-                                  <button
-                                    onClick={() => window.open(previewParte.blobUrl, '_blank')}
-                                    title="Abrir em nova aba"
-                                    style={{
-                                      padding: '6px 10px',
-                                      borderRadius: '6px',
-                                      background: 'rgba(52, 152, 219, 0.2)',
-                                      border: '1px solid rgba(52, 152, 219, 0.3)',
-                                      color: '#3498db',
-                                      fontSize: '12px',
-                                      cursor: 'pointer',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      gap: '6px'
-                                    }}
-                                  >
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-                                      <polyline points="15 3 21 3 21 9"/>
-                                      <line x1="10" y1="14" x2="21" y2="3"/>
-                                    </svg>
-                                    Abrir
-                                  </button>
-                                  <button
-                                    onClick={closePreview}
-                                    title="Fechar"
-                                    style={{
-                                      width: '28px',
-                                      height: '28px',
-                                      borderRadius: '6px',
-                                      background: 'rgba(231, 76, 60, 0.1)',
-                                      border: '1px solid rgba(231, 76, 60, 0.3)',
-                                      color: '#e74c3c',
-                                      cursor: 'pointer',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center'
-                                    }}
-                                  >
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                      <line x1="18" y1="6" x2="6" y2="18"/>
-                                      <line x1="6" y1="6" x2="18" y2="18"/>
-                                    </svg>
-                                  </button>
-                                </div>
-                              </div>
-                              {/* PDF Viewer */}
-                              <object
-                                data={previewParte.blobUrl}
-                                type="application/pdf"
-                                style={{
-                                  width: '100%',
-                                  height: '500px',
-                                  border: 'none',
-                                  background: '#fff'
-                                }}
-                              >
-                                <embed
-                                  src={previewParte.blobUrl}
-                                  type="application/pdf"
-                                  style={{
-                                    width: '100%',
-                                    height: '500px'
-                                  }}
-                                />
-                              </object>
-                            </div>
-                          )}
-
                           {/* Botao adicionar parte */}
                           <label
                             style={{
@@ -995,6 +900,15 @@ const AdminPartituras = () => {
           setShowUploadModal(false);
         }}
         categorias={categorias}
+      />
+
+      {/* Modal de Visualizacao de PDF */}
+      <PDFViewerModal
+        isOpen={showPDFModal}
+        onClose={closePreview}
+        pdfUrl={previewParte?.blobUrl}
+        title={previewParte?.instrumento || 'Visualizador de PDF'}
+        onDownload={() => previewParte?.blobUrl && window.open(previewParte.blobUrl, '_blank')}
       />
 
       {/* Estilos */}
