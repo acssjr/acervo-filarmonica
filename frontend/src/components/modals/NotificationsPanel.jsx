@@ -55,6 +55,8 @@ const NotificationsPanel = () => {
     const diffMs = now - date;
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
+    // Se data for do futuro (problema de timezone), mostra como "Hoje"
+    if (diffDays < 0) return 'Hoje';
     if (diffDays === 0) return 'Hoje';
     if (diffDays === 1) return 'Ontem';
     if (diffDays < 7) return `${diffDays} dias atras`;
