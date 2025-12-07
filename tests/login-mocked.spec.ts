@@ -37,7 +37,7 @@ test.describe('Login Flow (Mocked)', () => {
     await expect(page.locator('input[placeholder="seuusuario"]')).toBeVisible({ timeout: 10000 });
 
     // Verifica campos presentes
-    await expect(page.locator('text=Usuario')).toBeVisible();
+    await expect(page.locator('text=Usuário')).toBeVisible();
     await expect(page.locator('text=PIN')).toBeVisible();
     await expect(page.locator('text=Lembrar meu acesso')).toBeVisible();
   });
