@@ -6,6 +6,7 @@ import { useUI } from '@contexts/UIContext';
 import { API } from '@services/api';
 import { COLORS, COLORS_RGBA } from '@constants/colors';
 import { LABELS } from '@constants/organization';
+import { UserListSkeleton } from '@components/common/Skeleton';
 import UsuarioFormModal from './modals/UsuarioFormModal';
 import ResetPinModal from './modals/ResetPinModal';
 
@@ -57,10 +58,10 @@ const AdminMusicos = () => {
     try {
       if (editingUser) {
         await API.updateUsuario(editingUser.id, data);
-        showToast('Musico atualizado!');
+        showToast('Músico atualizado!');
       } else {
         await API.createUsuario(data);
-        showToast('Musico cadastrado!');
+        showToast('Músico cadastrado!');
       }
       setShowModal(false);
       setEditingUser(null);
@@ -83,7 +84,7 @@ const AdminMusicos = () => {
   const handleToggleAtivo = async (user) => {
     try {
       await API.updateUsuario(user.id, { ativo: !user.ativo });
-      showToast(user.ativo ? 'Musico desativado' : 'Musico reativado');
+      showToast(user.ativo ? 'Músico desativado' : 'Músico reativado');
       loadData();
     } catch (e) {
       showToast(e.message, 'error');
@@ -91,7 +92,7 @@ const AdminMusicos = () => {
   };
 
   return (
-    <div style={{ padding: '32px', maxWidth: '1000px', margin: '0 auto', fontFamily: 'Outfit, sans-serif' }}>
+    <div className="page-transition" style={{ padding: '32px', maxWidth: '1000px', margin: '0 auto', fontFamily: 'Outfit, sans-serif' }}>
       {/* Header */}
       <div style={{ marginBottom: '32px', textAlign: 'center' }}>
         <h1 style={{
@@ -111,10 +112,10 @@ const AdminMusicos = () => {
             <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
             <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
           </svg>
-          Musicos
+          Músicos
         </h1>
         <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>
-          Gerencie os membros da filarmonica
+          Gerencie os membros da filarmônica
         </p>
       </div>
 
@@ -142,7 +143,7 @@ const AdminMusicos = () => {
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
             <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
           </svg>
-          Novo Musico
+          Novo Músico
         </button>
       </div>
 
@@ -155,7 +156,7 @@ const AdminMusicos = () => {
           </svg>
           <input
             type="text"
-            placeholder="Buscar musico pelo nome ou instrumento..."
+            placeholder="Buscar músico pelo nome ou instrumento..."
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
@@ -183,22 +184,34 @@ const AdminMusicos = () => {
 
       {/* Lista */}
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>
-          Carregando...
-        </div>
+        <UserListSkeleton count={6} />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {filtered.map(user => (
-            <div key={user.id} style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '16px 20px',
-              background: 'var(--bg-secondary)',
-              borderRadius: 'var(--radius-md)',
-              border: '1px solid var(--border)',
-              opacity: user.ativo ? 1 : 0.6
-            }}>
+          {filtered.map((user, index) => (
+            <div
+              key={user.id}
+              className="list-item-animate"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '16px 20px',
+                background: 'var(--bg-secondary)',
+                borderRadius: '16px',
+                border: '1px solid var(--border)',
+                opacity: user.ativo ? 1 : 0.6,
+                animationDelay: `${index * 0.03}s`,
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
+            >
               <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                 {/* Avatar com circulo dourado */}
                 <div style={{
@@ -253,7 +266,7 @@ const AdminMusicos = () => {
                   </div>
                   {user.ultimo_acesso && (
                     <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                      Ultimo acesso: {new Date(user.ultimo_acesso).toLocaleDateString('pt-BR')}
+                      Último acesso: {new Date(user.ultimo_acesso).toLocaleDateString('pt-BR')}
                     </div>
                   )}
                 </div>
@@ -262,14 +275,15 @@ const AdminMusicos = () => {
                 <button onClick={() => { setEditingUser(user); setShowModal(true); }} title="Editar" style={{
                   width: '40px',
                   height: '40px',
-                  borderRadius: 'var(--radius-sm)',
+                  borderRadius: '10px',
                   background: 'var(--bg-primary)',
                   border: '1px solid var(--border)',
                   color: 'var(--text-secondary)',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center'
+                  justifyContent: 'center',
+                  transition: 'all 0.2s ease'
                 }}>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
@@ -281,14 +295,15 @@ const AdminMusicos = () => {
                   <button onClick={() => setShowResetPin(user)} title="Redefinir PIN" style={{
                     width: '40px',
                     height: '40px',
-                    borderRadius: 'var(--radius-sm)',
+                    borderRadius: '10px',
                     background: 'var(--bg-primary)',
                     border: '1px solid var(--border)',
                     color: 'var(--text-secondary)',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center'
+                    justifyContent: 'center',
+                    transition: 'all 0.2s ease'
                   }}>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
@@ -301,14 +316,15 @@ const AdminMusicos = () => {
                   <button onClick={() => handleToggleAtivo(user)} title={user.ativo ? 'Desativar' : 'Ativar'} style={{
                     width: '40px',
                     height: '40px',
-                    borderRadius: 'var(--radius-sm)',
+                    borderRadius: '10px',
                     background: user.ativo ? COLORS_RGBA.error.bg10 : COLORS_RGBA.success.bg10,
                     border: `1px solid ${user.ativo ? COLORS_RGBA.error.border30 : COLORS_RGBA.success.border30}`,
                     color: user.ativo ? COLORS.error.primary : COLORS.success.primary,
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center'
+                    justifyContent: 'center',
+                    transition: 'all 0.2s ease'
                   }}>
                     {user.ativo ? (
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

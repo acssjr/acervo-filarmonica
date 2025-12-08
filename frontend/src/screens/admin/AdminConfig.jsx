@@ -30,7 +30,7 @@ const AdminConfig = () => {
     if (!file) return;
 
     if (file.size > 2 * 1024 * 1024) {
-      showToast('A foto deve ter no maximo 2MB', 'error');
+      showToast('A foto deve ter no máximo 2MB', 'error');
       return;
     }
 
@@ -58,7 +58,7 @@ const AdminConfig = () => {
   };
 
   return (
-    <div style={{ padding: '32px', maxWidth: '600px', margin: '0 auto', fontFamily: 'Outfit, sans-serif' }}>
+    <div className="page-transition" style={{ padding: '32px', maxWidth: '600px', margin: '0 auto', fontFamily: 'Outfit, sans-serif' }}>
       <h1 style={{
         fontSize: '24px',
         fontWeight: '700',
@@ -79,7 +79,7 @@ const AdminConfig = () => {
       {/* Foto de Perfil */}
       <div style={{
         background: 'var(--bg-secondary)',
-        borderRadius: 'var(--radius-md)',
+        borderRadius: '16px',
         padding: '20px',
         marginBottom: '20px',
         border: '1px solid var(--border)'
@@ -129,7 +129,7 @@ const AdminConfig = () => {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <label style={{
               padding: '8px 16px',
-              borderRadius: 'var(--radius-sm)',
+              borderRadius: '10px',
               background: 'var(--accent)',
               color: '#fff',
               fontSize: '13px',
@@ -160,7 +160,7 @@ const AdminConfig = () => {
                 onClick={handleRemovePhoto}
                 style={{
                   padding: '8px 16px',
-                  borderRadius: 'var(--radius-sm)',
+                  borderRadius: '10px',
                   background: 'transparent',
                   border: '1px solid var(--border)',
                   color: 'var(--text-secondary)',
@@ -175,14 +175,14 @@ const AdminConfig = () => {
           </div>
         </div>
         <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '12px', fontFamily: 'Outfit, sans-serif' }}>
-          Formatos aceitos: JPG, PNG, GIF. Tamanho maximo: 2MB
+          Formatos aceitos: JPG, PNG, GIF. Tamanho máximo: 2MB
         </p>
       </div>
 
       {/* Conta Admin */}
       <div style={{
         background: 'var(--bg-secondary)',
-        borderRadius: 'var(--radius-md)',
+        borderRadius: '16px',
         padding: '20px',
         marginBottom: '20px',
         border: '1px solid var(--border)'
@@ -214,7 +214,7 @@ const AdminConfig = () => {
           </div>
           <button onClick={() => setShowChangePin(true)} style={{
             padding: '10px 20px',
-            borderRadius: 'var(--radius-sm)',
+            borderRadius: '10px',
             background: 'var(--bg-primary)',
             border: '1px solid var(--border)',
             color: 'var(--text-primary)',
@@ -240,7 +240,7 @@ const AdminConfig = () => {
         style={{
           width: '100%',
           background: 'var(--bg-secondary)',
-          borderRadius: 'var(--radius-md)',
+          borderRadius: '16px',
           padding: '20px',
           marginBottom: '20px',
           border: '1px solid var(--border)',
@@ -279,7 +279,7 @@ const AdminConfig = () => {
       <button onClick={handleLogout} style={{
         width: '100%',
         padding: '14px',
-        borderRadius: 'var(--radius-sm)',
+        borderRadius: '12px',
         background: '#e74c3c',
         border: 'none',
         color: '#fff',

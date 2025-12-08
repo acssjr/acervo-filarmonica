@@ -187,7 +187,7 @@ const PDFViewerModal = ({
             <button
               onClick={goToPrevPage}
               disabled={pageNumber <= 1}
-              title="Pagina anterior (←)"
+              title="Página anterior (←)"
               style={{
                 width: '32px',
                 height: '32px',
@@ -221,7 +221,7 @@ const PDFViewerModal = ({
             <button
               onClick={goToNextPage}
               disabled={pageNumber >= numPages}
-              title="Proxima pagina (→)"
+              title="Próxima página (→)"
               style={{
                 width: '32px',
                 height: '32px',

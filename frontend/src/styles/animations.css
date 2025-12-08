@@ -72,8 +72,81 @@
 }
 
 @keyframes shimmer {
-  0% { left: -100%; }
-  50%, 100% { left: 100%; }
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ===== SKELETON LOADING ===== */
+/* Variaveis para skeleton - ajusta automaticamente ao tema */
+:root {
+  --skeleton-base: rgba(255, 255, 255, 0.05);
+  --skeleton-shine: rgba(255, 255, 255, 0.12);
+}
+
+[data-theme="light"] {
+  --skeleton-base: rgba(0, 0, 0, 0.06);
+  --skeleton-shine: rgba(0, 0, 0, 0.12);
+}
+
+/* ===== PAGE TRANSITIONS ===== */
+/* Transicoes modernas entre telas */
+
+@keyframes pageSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes pageSlideOut {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+}
+
+@keyframes pageFadeScale {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Classe para conteudo de pagina com transicao */
+.page-transition {
+  animation: pageFadeScale 0.25s ease-out;
+}
+
+.page-transition-slide {
+  animation: pageSlideIn 0.3s ease-out;
+}
+
+/* Stagger animation para listas */
+@keyframes listItemIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.list-item-animate {
+  animation: listItemIn 0.3s ease-out backwards;
 }
 
 /* Equalizer / Audio bars animation */

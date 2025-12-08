@@ -20,7 +20,7 @@ const GenresScreen = () => {
 
   return (
     <div>
-      <Header title="Generos" subtitle={`${CATEGORIES.length} generos musicais`} />
+      <Header title="Gêneros" subtitle={`${CATEGORIES.length} gêneros musicais`} />
 
       <div style={{ padding: '0 20px' }}>
         <div className="categories-grid" style={{

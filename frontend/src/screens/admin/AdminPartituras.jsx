@@ -8,6 +8,7 @@ const DEBUG_TUTORIAL = false;
 import { useUI } from '@contexts/UIContext';
 import { API } from '@services/api';
 import CategoryIcon from '@components/common/CategoryIcon';
+import { PartesGridSkeleton } from '@components/common/Skeleton';
 import UploadPastaModal from './components/UploadPastaModal';
 import PDFViewerModal from '@components/modals/PDFViewerModal';
 import ImportacaoLoteModal from '@components/modals/ImportacaoLoteModal';
@@ -422,7 +423,7 @@ const AdminPartituras = () => {
   const selectedCategoria = categorias.find(c => c.id === filterCategoria);
 
   return (
-    <div style={{ padding: '32px', maxWidth: '1000px', margin: '0 auto', fontFamily: 'Outfit, sans-serif' }}>
+    <div className="page-transition" style={{ padding: '32px', maxWidth: '1000px', margin: '0 auto', fontFamily: 'Outfit, sans-serif' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
         <h1 style={{
           fontSize: '24px',
@@ -450,7 +451,7 @@ const AdminPartituras = () => {
               alignItems: 'center',
               gap: '8px',
               padding: '10px 20px',
-              borderRadius: 'var(--radius-sm)',
+              borderRadius: '12px',
               background: (tutorialPending || showTutorial)
                 ? 'linear-gradient(135deg, rgba(212, 175, 55, 0.5) 0%, rgba(184, 134, 11, 0.5) 100%)'
                 : 'linear-gradient(135deg, #D4AF37 0%, #B8860B 100%)',
@@ -479,7 +480,7 @@ const AdminPartituras = () => {
               alignItems: 'center',
               gap: '8px',
               padding: '10px 20px',
-              borderRadius: 'var(--radius-sm)',
+              borderRadius: '12px',
               background: (tutorialPending || showTutorial)
                 ? 'rgba(212, 175, 55, 0.3)'
                 : 'rgba(212, 175, 55, 0.15)',
@@ -712,7 +713,7 @@ const AdminPartituras = () => {
                   return (
                     <div key={p.id} style={{
                       background: 'var(--bg-secondary)',
-                      borderRadius: 'var(--radius-md)',
+                      borderRadius: '16px',
                       border: isExpanded ? '1px solid rgba(52, 152, 219, 0.4)' : '1px solid var(--border)',
                       overflow: 'hidden',
                       transition: 'all 0.2s ease'
@@ -752,7 +753,7 @@ const AdminPartituras = () => {
                           <div style={{
                             width: '44px',
                             height: '44px',
-                            borderRadius: 'var(--radius-sm)',
+                            borderRadius: '12px',
                             background: 'linear-gradient(145deg, #3a3a4a 0%, #2a2a38 100%)',
                             display: 'flex',
                             alignItems: 'center',
@@ -807,7 +808,7 @@ const AdminPartituras = () => {
                           <button onClick={() => toggleDestaque(p)} title={p.destaque === 1 ? 'Remover destaque' : 'Destacar'} style={{
                             width: '36px',
                             height: '36px',
-                            borderRadius: 'var(--radius-sm)',
+                            borderRadius: '10px',
                             background: p.destaque === 1 ? 'linear-gradient(135deg, #D4AF37 0%, #B8860B 100%)' : 'var(--bg-primary)',
                             border: p.destaque === 1 ? 'none' : '1px solid var(--border)',
                             color: p.destaque === 1 ? '#fff' : 'var(--text-muted)',
@@ -823,7 +824,7 @@ const AdminPartituras = () => {
                           <button onClick={() => handleDelete(p.id)} title="Excluir" style={{
                             width: '36px',
                             height: '36px',
-                            borderRadius: 'var(--radius-sm)',
+                            borderRadius: '10px',
                             background: 'rgba(231, 76, 60, 0.1)',
                             border: '1px solid rgba(231, 76, 60, 0.3)',
                             color: '#e74c3c',
@@ -848,12 +849,7 @@ const AdminPartituras = () => {
                           padding: '12px'
                         }}>
                           {loadingPartes ? (
-                            <div style={{ textAlign: 'center', padding: '16px', color: 'var(--text-muted)' }}>
-                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: 'spin 1s linear infinite' }}>
-                                <circle cx="12" cy="12" r="10" strokeOpacity="0.25"/>
-                                <path d="M12 2a10 10 0 0 1 10 10" strokeLinecap="round"/>
-                              </svg>
-                            </div>
+                            <PartesGridSkeleton count={8} />
                           ) : partes.length === 0 ? (
                             <div style={{ textAlign: 'center', padding: '16px', color: 'var(--text-muted)', fontSize: '12px' }}>
                               Nenhuma parte encontrada
@@ -865,7 +861,7 @@ const AdminPartituras = () => {
                               gap: '6px',
                               marginBottom: '8px'
                             }}>
-                              {partes.map((parte) => {
+                              {partes.map((parte, parteIndex) => {
                                 const isViewing = previewParte?.parteId === parte.id;
                                 const isLoading = loadingPreview && !isViewing;
 
@@ -873,7 +869,7 @@ const AdminPartituras = () => {
                                   <div
                                     key={parte.id}
                                     onClick={() => !loadingPreview && handleViewPart(parte)}
-                                    className="parte-item"
+                                    className="parte-item list-item-animate"
                                     style={{
                                       display: 'flex',
                                       alignItems: 'center',
@@ -884,7 +880,8 @@ const AdminPartituras = () => {
                                       border: isViewing ? '1px solid rgba(52, 152, 219, 0.4)' : '1px solid var(--border)',
                                       cursor: loadingPreview ? 'wait' : 'pointer',
                                       transition: 'all 0.15s ease',
-                                      minHeight: '32px'
+                                      minHeight: '32px',
+                                      animationDelay: `${parteIndex * 0.02}s`
                                     }}
                                   >
                                     <div style={{
