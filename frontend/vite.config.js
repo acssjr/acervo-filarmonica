@@ -46,7 +46,7 @@ export default defineConfig({
     open: true,
     proxy: {
       '/api': {
-        target: 'https://acervo-filarmonica-api.acssjr.workers.dev',
+        target: 'https://api.partituras25.com',
         changeOrigin: true,
         secure: true
       }
@@ -56,7 +56,7 @@ export default defineConfig({
     port: 4173,
     proxy: {
       '/api': {
-        target: 'https://acervo-filarmonica-api.acssjr.workers.dev',
+        target: 'https://api.partituras25.com',
         changeOrigin: true,
         secure: true
       }
