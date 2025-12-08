@@ -39,6 +39,7 @@ const ImportacaoLoteModal = ({ isOpen, onClose, onSuccess, onOpenUploadPasta }) 
   const [pastas, setPastas] = useState([]);
   const [estatisticas, setEstatisticas] = useState(null);
   const [analyzeProgress, setAnalyzeProgress] = useState({ processadas: 0, total: 0, percentual: 0 });
+  const [partiturasExistentes, setPartiturasExistentes] = useState([]);
 
   // Revisão
   const [activeTab, setActiveTab] = useState(TABS.ALL);
@@ -52,17 +53,21 @@ const ImportacaoLoteModal = ({ isOpen, onClose, onSuccess, onOpenUploadPasta }) 
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
 
-  // Carrega categorias
+  // Carrega categorias e partituras existentes
   useEffect(() => {
-    const loadCategorias = async () => {
+    const loadData = async () => {
       try {
-        const cats = await API.getCategorias();
+        const [cats, partituras] = await Promise.all([
+          API.getCategorias(),
+          API.getPartituras()
+        ]);
         setCategorias(cats || []);
+        setPartiturasExistentes(partituras || []);
       } catch (_e) {
-        console.error('Erro ao carregar categorias');
+        console.error('Erro ao carregar dados');
       }
     };
-    if (isOpen) loadCategorias();
+    if (isOpen) loadData();
   }, [isOpen]);
 
   // Reset ao fechar
@@ -114,6 +119,7 @@ const ImportacaoLoteModal = ({ isOpen, onClose, onSuccess, onOpenUploadPasta }) 
       const { pastas: pastasAnalisadas, estatisticas: stats } = await processarLote(
         items,
         categorias,
+        partiturasExistentes,
         setAnalyzeProgress
       );
 
@@ -150,6 +156,7 @@ const ImportacaoLoteModal = ({ isOpen, onClose, onSuccess, onOpenUploadPasta }) 
       const { pastas: pastasAnalisadas, estatisticas: stats } = await processarFileList(
         fileList,
         categorias,
+        partiturasExistentes,
         setAnalyzeProgress
       );
 

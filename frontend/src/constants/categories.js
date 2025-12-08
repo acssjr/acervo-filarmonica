@@ -1,17 +1,19 @@
 // ===== CATEGORIES DATA =====
-// 11 generos musicais da Filarmonica
+// 13 generos musicais da Filarmonica
 // Icons sao renderizados via CategoryIcon.jsx com SVGs customizados
 
 export const CATEGORIES = [
   { id: 'dobrado', name: 'Dobrados' },
   { id: 'marcha', name: 'Marchas' },
   { id: 'marcha-funebre', name: 'Marchas Funebres' },
+  { id: 'marcha-religiosa', name: 'Marchas Religiosas' },
   { id: 'fantasia', name: 'Fantasias' },
   { id: 'polaca', name: 'Polacas' },
   { id: 'bolero', name: 'Boleros' },
   { id: 'valsa', name: 'Valsas' },
   { id: 'arranjo', name: 'Arranjos' },
   { id: 'hino', name: 'Hinos' },
+  { id: 'hino-civico', name: 'Hinos Civicos' },
   { id: 'hino-religioso', name: 'Hinos Religiosos' },
   { id: 'preludio', name: 'Preludios' }
 ];
