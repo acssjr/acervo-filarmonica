@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { useUI } from '@contexts/UIContext';
 import { API } from '@services/api';
 import CategoryIcon from '@components/common/CategoryIcon';
+import { CategoryListSkeleton } from '@components/common/Skeleton';
 
 const AdminCategorias = () => {
   const { showToast } = useUI();
@@ -83,7 +84,7 @@ const AdminCategorias = () => {
   };
 
   return (
-    <div style={{ padding: '32px', maxWidth: '800px', margin: '0 auto', fontFamily: 'Outfit, sans-serif' }}>
+    <div className="page-transition" style={{ padding: '32px', maxWidth: '800px', margin: '0 auto', fontFamily: 'Outfit, sans-serif' }}>
       {/* Header */}
       <div style={{ marginBottom: '32px', textAlign: 'center' }}>
         <h1 style={{
@@ -103,7 +104,7 @@ const AdminCategorias = () => {
           Categorias
         </h1>
         <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>
-          Gerencie os generos musicais
+          Gerencie os gêneros musicais
         </p>
       </div>
 
@@ -137,21 +138,33 @@ const AdminCategorias = () => {
 
       {/* Lista */}
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>
-          Carregando...
-        </div>
+        <CategoryListSkeleton count={5} />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {categorias.map((cat, index) => (
-            <div key={cat.id} style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '16px 20px',
-              background: 'var(--bg-secondary)',
-              borderRadius: 'var(--radius-md)',
-              border: '1px solid var(--border)'
-            }}>
+            <div
+              key={cat.id}
+              className="list-item-animate"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '16px 20px',
+                background: 'var(--bg-secondary)',
+                borderRadius: '16px',
+                border: '1px solid var(--border)',
+                animationDelay: `${index * 0.03}s`,
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
+            >
               <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                 <div style={{
                   width: '48px',
@@ -178,7 +191,7 @@ const AdminCategorias = () => {
                 <button onClick={() => openEdit(cat)} title="Editar" style={{
                   width: '40px',
                   height: '40px',
-                  borderRadius: 'var(--radius-sm)',
+                  borderRadius: '10px',
                   background: 'var(--bg-primary)',
                   border: '1px solid var(--border)',
                   color: 'var(--text-secondary)',
@@ -195,7 +208,7 @@ const AdminCategorias = () => {
                 <button onClick={() => handleDelete(cat.id)} title="Excluir" style={{
                   width: '40px',
                   height: '40px',
-                  borderRadius: 'var(--radius-sm)',
+                  borderRadius: '10px',
                   background: 'rgba(231, 76, 60, 0.1)',
                   border: '1px solid rgba(231, 76, 60, 0.3)',
                   color: '#e74c3c',

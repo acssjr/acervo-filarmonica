@@ -184,7 +184,7 @@ export const useSheetDownload = ({ showToast, selectedSheet, partes = [] }) => {
       setConfirmInstrument(instrumento);
       setSelectedParte(parte);
     } else {
-      showToast('Parte nao encontrada', 'error');
+      showToast('Parte não encontrada', 'error');
     }
   }, [partes, showToast]);
 

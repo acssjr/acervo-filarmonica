@@ -37,11 +37,11 @@ const AdminDashboard = () => {
   }, []);
 
   return (
-    <div style={{ padding: isMobile ? '16px' : '32px', maxWidth: '1200px', margin: '0 auto', fontFamily: 'Outfit, sans-serif' }}>
+    <div className="page-transition" style={{ padding: isMobile ? '16px' : '32px', maxWidth: '1200px', margin: '0 auto', fontFamily: 'Outfit, sans-serif' }}>
       {/* Header com saudacao */}
       <div style={{ marginBottom: isMobile ? '20px' : '32px' }}>
         <div style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '4px', fontFamily: 'Outfit, sans-serif' }}>
-          Ola,
+          Olá,
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px', flexWrap: 'wrap' }}>
           <h1 style={{
@@ -83,7 +83,7 @@ const AdminDashboard = () => {
         gap: isMobile ? '12px' : '16px',
         marginBottom: isMobile ? '20px' : '32px'
       }}>
-        <StatCard icon="users" label="Musicos Ativos" value={stats.musicos_ativos || 0} color="#D4AF37" loading={loading} />
+        <StatCard icon="users" label="Músicos Ativos" value={stats.musicos_ativos || 0} color="#D4AF37" loading={loading} />
         <StatCard icon="music" label="Partituras" value={stats.total_partituras || 0} color="#3498db" loading={loading} />
         <StatCard icon="download" label="Downloads" value={stats.total_downloads || 0} color="#27ae60" loading={loading} />
         <StatCard icon="folder" label="Categorias" value={stats.total_categorias || 0} color="#9b59b6" loading={loading} />
@@ -92,7 +92,7 @@ const AdminDashboard = () => {
       {/* Acoes Rapidas */}
       <div style={{
         background: 'var(--bg-secondary)',
-        borderRadius: 'var(--radius-md)',
+        borderRadius: '16px',
         padding: '24px',
         marginBottom: '32px',
         border: '1px solid var(--border)'
@@ -110,10 +110,10 @@ const AdminDashboard = () => {
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
           </svg>
-          Acoes Rapidas
+          Ações Rápidas
         </h2>
         <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-          <QuickActionButton icon="users" label="Novo Musico" onClick={() => window.adminNav?.('musicos', 'novo')} />
+          <QuickActionButton icon="users" label="Novo Músico" onClick={() => window.adminNav?.('musicos', 'novo')} />
           <QuickActionButton icon="upload" label="Nova Pasta" onClick={() => window.adminNav?.('partituras', 'pasta')} />
           <QuickActionButton icon="folder" label="Nova Categoria" onClick={() => window.adminNav?.('categorias', 'novo')} />
         </div>
@@ -123,7 +123,7 @@ const AdminDashboard = () => {
       {stats.top_partituras && stats.top_partituras.length > 0 && (
         <div style={{
           background: 'var(--bg-secondary)',
-          borderRadius: 'var(--radius-md)',
+          borderRadius: '16px',
           padding: '24px',
           border: '1px solid var(--border)'
         }}>
@@ -151,7 +151,7 @@ const AdminDashboard = () => {
                 justifyContent: 'space-between',
                 padding: '12px 16px',
                 background: 'var(--bg-primary)',
-                borderRadius: 'var(--radius-sm)',
+                borderRadius: '12px',
                 border: '1px solid var(--border)'
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -183,7 +183,7 @@ const AdminDashboard = () => {
       {/* Atividades Recentes */}
       <div style={{
         background: 'var(--bg-secondary)',
-        borderRadius: 'var(--radius-md)',
+        borderRadius: '16px',
         padding: '24px',
         border: '1px solid var(--border)',
         marginTop: '24px'
@@ -219,7 +219,7 @@ const AdminDashboard = () => {
                   gap: '12px',
                   padding: '10px 14px',
                   background: 'var(--bg-primary)',
-                  borderRadius: 'var(--radius-sm)',
+                  borderRadius: '12px',
                   border: '1px solid var(--border)'
                 }}>
                   <div style={{

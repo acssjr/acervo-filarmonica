@@ -41,7 +41,7 @@ const QuickActionButton = ({ icon, label, onClick }) => {
       alignItems: 'center',
       gap: '8px',
       padding: '12px 20px',
-      borderRadius: 'var(--radius-sm)',
+      borderRadius: '12px',
       background: 'linear-gradient(135deg, #722F37 0%, #5C1A1B 100%)',
       color: '#F4E4BC',
       border: '1px solid rgba(212, 175, 55, 0.3)',
