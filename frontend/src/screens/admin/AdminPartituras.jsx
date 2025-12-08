@@ -10,6 +10,7 @@ import { API } from '@services/api';
 import CategoryIcon from '@components/common/CategoryIcon';
 import UploadPastaModal from './components/UploadPastaModal';
 import PDFViewerModal from '@components/modals/PDFViewerModal';
+import ImportacaoLoteModal from '@components/modals/ImportacaoLoteModal';
 import TutorialOverlay, { useTutorial } from '@components/onboarding/TutorialOverlay';
 import Storage from '@services/storage';
 import { API_BASE_URL } from '@constants/api';
@@ -61,6 +62,7 @@ const AdminPartituras = () => {
   const [filterCategoria, setFilterCategoria] = useState('');
   const [showCatDropdown, setShowCatDropdown] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [showImportacaoLote, setShowImportacaoLote] = useState(false);
 
   // Estado para expansao inline
   const [expandedId, setExpandedId] = useState(null);
@@ -468,6 +470,34 @@ const AdminPartituras = () => {
               <line x1="12" y1="3" x2="12" y2="15"/>
             </svg>
             Upload de Pasta
+          </button>
+          <button
+            onClick={() => setShowImportacaoLote(true)}
+            disabled={tutorialPending || showTutorial}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '10px 20px',
+              borderRadius: 'var(--radius-sm)',
+              background: (tutorialPending || showTutorial)
+                ? 'rgba(212, 175, 55, 0.3)'
+                : 'rgba(212, 175, 55, 0.15)',
+              color: (tutorialPending || showTutorial) ? 'var(--text-muted)' : '#D4AF37',
+              border: '1px solid rgba(212, 175, 55, 0.3)',
+              fontSize: '14px',
+              fontWeight: '500',
+              cursor: (tutorialPending || showTutorial) ? 'not-allowed' : 'pointer',
+              fontFamily: 'Outfit, sans-serif',
+              opacity: (tutorialPending || showTutorial) ? 0.7 : 1,
+              transition: 'all 0.2s ease'
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+              <path d="M12 11v6M9 14h6"/>
+            </svg>
+            Importar Lote
           </button>
         </div>
       </div>
@@ -1054,6 +1084,20 @@ const AdminPartituras = () => {
           setShowUploadModal(false);
         }}
         categorias={categorias}
+      />
+
+      {/* Modal de Importação em Lote */}
+      <ImportacaoLoteModal
+        isOpen={showImportacaoLote}
+        onClose={() => setShowImportacaoLote(false)}
+        onSuccess={() => {
+          loadData();
+        }}
+        onOpenUploadPasta={(pastaData) => {
+          setShowImportacaoLote(false);
+          // TODO: Abrir UploadPastaModal com dados pré-preenchidos
+          setShowUploadModal(true);
+        }}
       />
 
       {/* Modal de Visualizacao de PDF */}

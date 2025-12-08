@@ -1,0 +1,1079 @@
+// ===== IMPORTACAO LOTE MODAL =====
+// Modal fullscreen para importação massiva de partituras
+// Estados: SELECTION -> ANALYZING -> FEEDBACK -> REVIEW -> UPLOADING -> COMPLETE
+
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { useUI } from '@contexts/UIContext';
+import { API } from '@services/api';
+import CategoryIcon from '@components/common/CategoryIcon';
+import LottieAnimation from '@components/animations/LottieAnimation';
+import { processarLote, processarFileList, filtrarPorStatus, calcularResultado } from '@utils/batchParser';
+import { uploadLote, estimarTempo, gerarResumo } from '@utils/uploadBatch';
+
+// Estados do modal
+const STATES = {
+  SELECTION: 'selection',
+  ANALYZING: 'analyzing',
+  FEEDBACK: 'feedback',
+  REVIEW: 'review',
+  UPLOADING: 'uploading',
+  COMPLETE: 'complete'
+};
+
+// Tabs de revisão
+const TABS = {
+  ALL: 'all',
+  READY: 'ready',
+  ATTENTION: 'attention',
+  PROBLEM: 'problem'
+};
+
+const ImportacaoLoteModal = ({ isOpen, onClose, onSuccess, onOpenUploadPasta }) => {
+  const { showToast } = useUI();
+
+  // Estado principal
+  const [modalState, setModalState] = useState(STATES.SELECTION);
+  const [categorias, setCategorias] = useState([]);
+
+  // Dados de análise
+  const [pastas, setPastas] = useState([]);
+  const [estatisticas, setEstatisticas] = useState(null);
+  const [analyzeProgress, setAnalyzeProgress] = useState({ processadas: 0, total: 0, percentual: 0 });
+
+  // Revisão
+  const [activeTab, setActiveTab] = useState(TABS.ALL);
+  const [pastaExpandida, setPastaExpandida] = useState(null);
+
+  // Upload
+  const [uploadProgress, setUploadProgress] = useState({ processadas: 0, total: 0, percentual: 0, pastaAtual: '' });
+  const [uploadResultados, setUploadResultados] = useState(null);
+
+  // UI
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef(null);
+
+  // Carrega categorias
+  useEffect(() => {
+    const loadCategorias = async () => {
+      try {
+        const cats = await API.getCategorias();
+        setCategorias(cats || []);
+      } catch (_e) {
+        console.error('Erro ao carregar categorias');
+      }
+    };
+    if (isOpen) loadCategorias();
+  }, [isOpen]);
+
+  // Reset ao fechar
+  useEffect(() => {
+    if (!isOpen) {
+      setModalState(STATES.SELECTION);
+      setPastas([]);
+      setEstatisticas(null);
+      setAnalyzeProgress({ processadas: 0, total: 0, percentual: 0 });
+      setActiveTab(TABS.ALL);
+      setPastaExpandida(null);
+      setUploadProgress({ processadas: 0, total: 0, percentual: 0, pastaAtual: '' });
+      setUploadResultados(null);
+    }
+  }, [isOpen]);
+
+  // Handlers de Drag & Drop
+  const handleDragEnter = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!e.currentTarget.contains(e.relatedTarget)) {
+      setIsDragging(false);
+    }
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const items = e.dataTransfer.items;
+    if (!items || items.length === 0) return;
+
+    // Inicia análise
+    setModalState(STATES.ANALYZING);
+
+    try {
+      const { pastas: pastasAnalisadas, estatisticas: stats } = await processarLote(
+        items,
+        categorias,
+        setAnalyzeProgress
+      );
+
+      if (pastasAnalisadas.length === 0) {
+        showToast('Nenhuma pasta com PDFs encontrada', 'error');
+        setModalState(STATES.SELECTION);
+        return;
+      }
+
+      setPastas(pastasAnalisadas);
+      setEstatisticas(stats);
+
+      // Mostra feedback por 2 segundos
+      setModalState(STATES.FEEDBACK);
+      setTimeout(() => {
+        setModalState(STATES.REVIEW);
+      }, 2500);
+
+    } catch (err) {
+      console.error('Erro na análise:', err);
+      showToast('Erro ao analisar pastas', 'error');
+      setModalState(STATES.SELECTION);
+    }
+  };
+
+  // Handler de input file (fallback)
+  const handleFileSelect = async (e) => {
+    const fileList = e.target.files;
+    if (!fileList || fileList.length === 0) return;
+
+    setModalState(STATES.ANALYZING);
+
+    try {
+      const { pastas: pastasAnalisadas, estatisticas: stats } = await processarFileList(
+        fileList,
+        categorias,
+        setAnalyzeProgress
+      );
+
+      if (pastasAnalisadas.length === 0) {
+        showToast('Nenhuma pasta com PDFs encontrada', 'error');
+        setModalState(STATES.SELECTION);
+        return;
+      }
+
+      setPastas(pastasAnalisadas);
+      setEstatisticas(stats);
+
+      setModalState(STATES.FEEDBACK);
+      setTimeout(() => {
+        setModalState(STATES.REVIEW);
+      }, 2500);
+
+    } catch (err) {
+      console.error('Erro na análise:', err);
+      showToast('Erro ao analisar pastas', 'error');
+      setModalState(STATES.SELECTION);
+    }
+  };
+
+  // Toggle seleção de pasta
+  const togglePastaSelecionada = useCallback((pastaId) => {
+    setPastas(prev => prev.map(p =>
+      p.id === pastaId ? { ...p, selecionada: !p.selecionada } : p
+    ));
+  }, []);
+
+  // Selecionar/deselecionar todas
+  const toggleTodas = useCallback((selecionar) => {
+    setPastas(prev => prev.map(p => ({ ...p, selecionada: selecionar })));
+  }, []);
+
+  // Editar categoria de uma pasta
+  const editarCategoria = useCallback((pastaId, novaCategoria) => {
+    setPastas(prev => prev.map(p => {
+      if (p.id !== pastaId) return p;
+
+      const atualizada = { ...p, categoria: novaCategoria };
+
+      // Recalcula status
+      if (novaCategoria && p.status === 'attention' && p.statusMotivo === 'Categoria não detectada') {
+        atualizada.status = 'ready';
+        atualizada.statusMotivo = null;
+      }
+
+      return atualizada;
+    }));
+  }, []);
+
+  // Iniciar upload
+  const iniciarUpload = async () => {
+    const pastasParaUpload = pastas.filter(p => p.selecionada && p.status !== 'problem');
+
+    if (pastasParaUpload.length === 0) {
+      showToast('Nenhuma partitura selecionada para upload', 'error');
+      return;
+    }
+
+    setModalState(STATES.UPLOADING);
+    setUploadProgress({ processadas: 0, total: pastasParaUpload.length, percentual: 0, pastaAtual: '' });
+
+    try {
+      const { resultados, estatisticas: stats } = await uploadLote(
+        pastasParaUpload,
+        {
+          onProgress: setUploadProgress,
+          onPastaError: ({ pasta, error }) => {
+            console.error(`Erro no upload de ${pasta.titulo}:`, error);
+          }
+        }
+      );
+
+      setUploadResultados({ resultados, estatisticas: stats });
+      setModalState(STATES.COMPLETE);
+
+      if (stats.sucesso > 0) {
+        onSuccess?.();
+      }
+
+    } catch (err) {
+      console.error('Erro no upload:', err);
+      showToast('Erro durante o upload', 'error');
+      setModalState(STATES.REVIEW);
+    }
+  };
+
+  // Abrir pasta com problema no modal individual
+  const abrirPastaNoModalIndividual = (pasta) => {
+    if (onOpenUploadPasta) {
+      onOpenUploadPasta(pasta);
+      // Remove a pasta da lista atual
+      setPastas(prev => prev.filter(p => p.id !== pasta.id));
+    }
+  };
+
+  // Filtra pastas para exibição
+  const pastasFiltradas = filtrarPorStatus(pastas, activeTab);
+
+  // Contadores por status
+  const contadores = {
+    all: pastas.length,
+    ready: pastas.filter(p => p.status === 'ready').length,
+    attention: pastas.filter(p => p.status === 'attention').length,
+    problem: pastas.filter(p => p.status === 'problem').length
+  };
+
+  // Pastas selecionadas para upload (exclui problemas)
+  const pastasSelecionadas = pastas.filter(p => p.selecionada && p.status !== 'problem');
+
+  if (!isOpen) return null;
+
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: 'rgba(0,0,0,0.9)',
+        backdropFilter: 'blur(8px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 1000,
+        padding: '20px'
+      }}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          background: 'var(--bg-card)',
+          borderRadius: 'var(--radius-lg)',
+          width: '100%',
+          maxWidth: modalState === STATES.REVIEW ? '900px' : '600px',
+          maxHeight: '90vh',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+          fontFamily: 'Outfit, sans-serif',
+          transition: 'max-width 0.3s ease'
+        }}
+      >
+        {/* Header */}
+        <div style={{
+          padding: '24px',
+          borderBottom: '1px solid var(--border)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between'
+        }}>
+          <div>
+            <h2 style={{
+              fontSize: '20px',
+              fontWeight: '700',
+              color: 'var(--text-primary)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              marginBottom: '4px'
+            }}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                <path d="M12 11v6M9 14h6"/>
+              </svg>
+              Importação em Lote
+            </h2>
+            <p style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>
+              {modalState === STATES.SELECTION && 'Arraste uma pasta contendo várias partituras'}
+              {modalState === STATES.ANALYZING && 'Analisando estrutura das pastas...'}
+              {modalState === STATES.FEEDBACK && 'Análise concluída!'}
+              {modalState === STATES.REVIEW && `${contadores.all} partitura${contadores.all !== 1 ? 's' : ''} detectada${contadores.all !== 1 ? 's' : ''}`}
+              {modalState === STATES.UPLOADING && 'Enviando partituras...'}
+              {modalState === STATES.COMPLETE && 'Upload finalizado!'}
+            </p>
+          </div>
+
+          {/* Botão fechar */}
+          <button
+            onClick={onClose}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: 'var(--text-secondary)',
+              cursor: 'pointer',
+              padding: '8px',
+              borderRadius: '8px',
+              transition: 'all 0.2s'
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-primary)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'none'}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+
+        {/* Content */}
+        <div style={{
+          flex: 1,
+          overflow: 'auto',
+          padding: '24px'
+        }}>
+          {/* SELECTION STATE */}
+          {modalState === STATES.SELECTION && (
+            <label
+              onDragEnter={handleDragEnter}
+              onDragLeave={handleDragLeave}
+              onDragOver={handleDragOver}
+              onDrop={handleDrop}
+              htmlFor="batch-folder-input"
+              style={{
+                display: 'block',
+                border: isDragging ? '2px dashed #D4AF37' : '2px dashed var(--border)',
+                borderRadius: 'var(--radius-sm)',
+                padding: '60px 40px',
+                textAlign: 'center',
+                background: isDragging
+                  ? 'linear-gradient(145deg, rgba(212, 175, 55, 0.15) 0%, rgba(184, 134, 11, 0.08) 100%)'
+                  : 'var(--bg-primary)',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                transform: isDragging ? 'scale(1.02)' : 'scale(1)'
+              }}
+            >
+              <input
+                ref={fileInputRef}
+                id="batch-folder-input"
+                type="file"
+                webkitdirectory=""
+                directory=""
+                multiple
+                onChange={handleFileSelect}
+                style={{ display: 'none' }}
+              />
+
+              <div style={{
+                width: '100px',
+                height: '100px',
+                margin: '0 auto 24px',
+                borderRadius: '24px',
+                background: 'linear-gradient(145deg, rgba(212, 175, 55, 0.15) 0%, rgba(212, 175, 55, 0.05) 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="1.5">
+                  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                  <path d="M12 11v6M9 14h6" opacity="0.6"/>
+                </svg>
+              </div>
+
+              <div style={{
+                fontSize: '18px',
+                fontWeight: '600',
+                color: isDragging ? '#D4AF37' : 'var(--text-primary)',
+                marginBottom: '8px'
+              }}>
+                {isDragging ? 'Solte as pastas aqui!' : 'Arraste uma pasta ou clique para selecionar'}
+              </div>
+
+              <div style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '24px' }}>
+                Selecione uma pasta contendo subpastas de partituras
+              </div>
+
+              <div style={{
+                display: 'flex',
+                gap: '16px',
+                justifyContent: 'center',
+                fontSize: '12px',
+                color: 'var(--text-muted)'
+              }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                  </svg>
+                  Múltiplas pastas
+                </span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  </svg>
+                  Arquivos PDF
+                </span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <polyline points="12 6 12 12 16 14"/>
+                  </svg>
+                  Detecção automática
+                </span>
+              </div>
+            </label>
+          )}
+
+          {/* ANALYZING STATE */}
+          {modalState === STATES.ANALYZING && (
+            <div style={{ textAlign: 'center', padding: '40px' }}>
+              <LottieAnimation name="scan" size={120} />
+
+              <div style={{
+                fontSize: '16px',
+                fontWeight: '600',
+                color: 'var(--text-primary)',
+                marginTop: '24px',
+                marginBottom: '8px'
+              }}>
+                Analisando pastas...
+              </div>
+
+              <div style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '24px' }}>
+                {analyzeProgress.total > 0
+                  ? `${analyzeProgress.processadas} de ${analyzeProgress.total} pastas`
+                  : 'Lendo estrutura de diretórios...'}
+              </div>
+
+              {analyzeProgress.total > 0 && (
+                <div style={{
+                  width: '100%',
+                  maxWidth: '300px',
+                  height: '8px',
+                  background: 'var(--bg-primary)',
+                  borderRadius: '4px',
+                  overflow: 'hidden',
+                  margin: '0 auto'
+                }}>
+                  <div style={{
+                    width: `${analyzeProgress.percentual}%`,
+                    height: '100%',
+                    background: 'linear-gradient(90deg, #D4AF37, #B8860B)',
+                    borderRadius: '4px',
+                    transition: 'width 0.2s ease-out'
+                  }} />
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* FEEDBACK STATE */}
+          {modalState === STATES.FEEDBACK && estatisticas && (
+            <div style={{ textAlign: 'center', padding: '40px' }}>
+              {(() => {
+                const resultado = calcularResultado(estatisticas);
+                return (
+                  <>
+                    <LottieAnimation
+                      name={resultado.tipo === 'success' ? 'success' : resultado.tipo === 'partial' ? 'attention' : 'error'}
+                      size={140}
+                      loop={false}
+                    />
+
+                    <div style={{
+                      fontSize: '24px',
+                      fontWeight: '700',
+                      color: resultado.tipo === 'success' ? '#27ae60' : resultado.tipo === 'partial' ? '#e67e22' : '#e74c3c',
+                      marginTop: '24px',
+                      marginBottom: '8px'
+                    }}>
+                      {resultado.tipo === 'success' && 'Tudo pronto!'}
+                      {resultado.tipo === 'partial' && 'Quase lá!'}
+                      {resultado.tipo === 'failure' && 'Precisa de atenção'}
+                    </div>
+
+                    <div style={{ fontSize: '16px', color: 'var(--text-secondary)' }}>
+                      {estatisticas.prontas} de {estatisticas.total} partitura{estatisticas.total !== 1 ? 's' : ''} pronta{estatisticas.prontas !== 1 ? 's' : ''} para upload
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+          )}
+
+          {/* REVIEW STATE */}
+          {modalState === STATES.REVIEW && (
+            <>
+              {/* Tabs */}
+              <div style={{
+                display: 'flex',
+                gap: '8px',
+                marginBottom: '20px',
+                borderBottom: '1px solid var(--border)',
+                paddingBottom: '12px'
+              }}>
+                {[
+                  { key: TABS.ALL, label: 'Todas', count: contadores.all },
+                  { key: TABS.READY, label: 'Prontas', count: contadores.ready, color: '#27ae60' },
+                  { key: TABS.ATTENTION, label: 'Atenção', count: contadores.attention, color: '#e67e22' },
+                  { key: TABS.PROBLEM, label: 'Problemas', count: contadores.problem, color: '#e74c3c' }
+                ].map(tab => (
+                  <button
+                    key={tab.key}
+                    onClick={() => setActiveTab(tab.key)}
+                    style={{
+                      padding: '8px 16px',
+                      borderRadius: '20px',
+                      border: 'none',
+                      background: activeTab === tab.key
+                        ? (tab.color ? `${tab.color}20` : 'rgba(212, 175, 55, 0.15)')
+                        : 'transparent',
+                      color: activeTab === tab.key
+                        ? (tab.color || '#D4AF37')
+                        : 'var(--text-secondary)',
+                      fontSize: '13px',
+                      fontWeight: '500',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    {tab.label}
+                    <span style={{
+                      background: tab.color ? `${tab.color}30` : 'var(--bg-primary)',
+                      padding: '2px 8px',
+                      borderRadius: '10px',
+                      fontSize: '11px'
+                    }}>
+                      {tab.count}
+                    </span>
+                  </button>
+                ))}
+              </div>
+
+              {/* Ações em massa */}
+              <div style={{
+                display: 'flex',
+                gap: '12px',
+                marginBottom: '16px',
+                fontSize: '13px'
+              }}>
+                <button
+                  onClick={() => toggleTodas(true)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#D4AF37',
+                    cursor: 'pointer',
+                    padding: '4px 8px'
+                  }}
+                >
+                  Selecionar todas
+                </button>
+                <button
+                  onClick={() => toggleTodas(false)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: 'var(--text-secondary)',
+                    cursor: 'pointer',
+                    padding: '4px 8px'
+                  }}
+                >
+                  Limpar seleção
+                </button>
+              </div>
+
+              {/* Lista de pastas */}
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px',
+                maxHeight: '400px',
+                overflowY: 'auto'
+              }}>
+                {pastasFiltradas.map(pasta => (
+                  <div
+                    key={pasta.id}
+                    style={{
+                      background: 'var(--bg-primary)',
+                      borderRadius: 'var(--radius-sm)',
+                      border: `1px solid ${pasta.status === 'ready' ? 'var(--border)' : pasta.status === 'attention' ? '#e67e22' : '#e74c3c'}`
+                    }}
+                  >
+                    {/* Cabeçalho da pasta */}
+                    <div
+                      onClick={() => setPastaExpandida(pastaExpandida === pasta.id ? null : pasta.id)}
+                      style={{
+                        padding: '12px 16px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {/* Checkbox */}
+                      <input
+                        type="checkbox"
+                        checked={pasta.selecionada}
+                        onChange={(e) => {
+                          e.stopPropagation();
+                          togglePastaSelecionada(pasta.id);
+                        }}
+                        disabled={pasta.status === 'problem'}
+                        style={{ cursor: pasta.status === 'problem' ? 'not-allowed' : 'pointer' }}
+                      />
+
+                      {/* Ícone de status */}
+                      <span style={{
+                        width: '24px',
+                        height: '24px',
+                        borderRadius: '50%',
+                        background: pasta.status === 'ready' ? 'rgba(39, 174, 96, 0.15)' : pasta.status === 'attention' ? 'rgba(230, 126, 34, 0.15)' : 'rgba(231, 76, 60, 0.15)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        {pasta.status === 'ready' && (
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#27ae60" strokeWidth="2.5">
+                            <polyline points="20 6 9 17 4 12"/>
+                          </svg>
+                        )}
+                        {pasta.status === 'attention' && (
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#e67e22" strokeWidth="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="12" y1="8" x2="12" y2="12"/>
+                            <line x1="12" y1="16" x2="12.01" y2="16"/>
+                          </svg>
+                        )}
+                        {pasta.status === 'problem' && (
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#e74c3c" strokeWidth="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="15" y1="9" x2="9" y2="15"/>
+                            <line x1="9" y1="9" x2="15" y2="15"/>
+                          </svg>
+                        )}
+                      </span>
+
+                      {/* Título e info */}
+                      <div style={{ flex: 1, minWidth: '100px', overflow: 'hidden' }}>
+                        <div style={{
+                          fontSize: '14px',
+                          fontWeight: '600',
+                          color: 'var(--text-primary)',
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          lineHeight: '1.4'
+                        }}>
+                          {pasta.titulo || pasta.nomePasta || 'Sem título'}
+                        </div>
+                        <div style={{
+                          fontSize: '12px',
+                          color: 'var(--text-secondary)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          flexWrap: 'wrap'
+                        }}>
+                          <span>{pasta.arquivos.length} arquivo{pasta.arquivos.length !== 1 ? 's' : ''}</span>
+                          {pasta.categoria && (
+                            <>
+                              <span>•</span>
+                              <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <CategoryIcon categoryId={pasta.categoria} size={10} />
+                                {categorias.find(c => c.id === pasta.categoria)?.nome || pasta.categoria}
+                              </span>
+                            </>
+                          )}
+                          {pasta.statusMotivo && (
+                            <>
+                              <span>•</span>
+                              <span style={{ color: pasta.status === 'attention' ? '#e67e22' : '#e74c3c' }}>
+                                {pasta.statusMotivo}
+                              </span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Botão resolver (para pastas com problema) */}
+                      {pasta.status === 'problem' && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            abrirPastaNoModalIndividual(pasta);
+                          }}
+                          style={{
+                            padding: '6px 12px',
+                            borderRadius: '6px',
+                            border: '1px solid #e74c3c',
+                            background: 'rgba(231, 76, 60, 0.1)',
+                            color: '#e74c3c',
+                            fontSize: '12px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}
+                        >
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                          </svg>
+                          Resolver
+                        </button>
+                      )}
+
+                      {/* Seta expandir */}
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="var(--text-muted)"
+                        strokeWidth="2"
+                        style={{
+                          transform: pastaExpandida === pasta.id ? 'rotate(180deg)' : 'rotate(0deg)',
+                          transition: 'transform 0.2s'
+                        }}
+                      >
+                        <polyline points="6 9 12 15 18 9"/>
+                      </svg>
+                    </div>
+
+                    {/* Detalhes expandidos */}
+                    {pastaExpandida === pasta.id && (
+                      <div style={{
+                        padding: '12px 16px',
+                        background: 'var(--bg-secondary)',
+                        borderTop: '1px solid var(--border)'
+                      }}>
+                        {/* Seletor de categoria (se não tiver) */}
+                        {!pasta.categoria && (
+                          <div style={{ marginBottom: '12px' }}>
+                            <label style={{
+                              display: 'block',
+                              fontSize: '12px',
+                              color: 'var(--text-secondary)',
+                              marginBottom: '4px'
+                            }}>
+                              Selecione uma categoria:
+                            </label>
+                            <select
+                              value={pasta.categoria || ''}
+                              onChange={(e) => editarCategoria(pasta.id, e.target.value)}
+                              style={{
+                                width: '100%',
+                                padding: '8px 12px',
+                                borderRadius: '6px',
+                                border: '1px solid var(--border)',
+                                background: 'var(--bg-primary)',
+                                color: 'var(--text-primary)',
+                                fontSize: '13px'
+                              }}
+                            >
+                              <option value="">Selecione...</option>
+                              {categorias.map(cat => (
+                                <option key={cat.id} value={cat.id}>{cat.nome}</option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
+
+                        {/* Lista de arquivos */}
+                        <div style={{ fontSize: '12px' }}>
+                          <div style={{
+                            color: 'var(--text-secondary)',
+                            marginBottom: '8px'
+                          }}>
+                            Arquivos detectados:
+                          </div>
+                          <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
+                            gap: '6px'
+                          }}>
+                            {pasta.arquivos.map((arq, idx) => (
+                              <div
+                                key={idx}
+                                style={{
+                                  padding: '6px 10px',
+                                  borderRadius: '4px',
+                                  background: arq.reconhecido ? 'rgba(39, 174, 96, 0.1)' : 'rgba(230, 126, 34, 0.1)',
+                                  color: arq.reconhecido ? '#27ae60' : '#e67e22',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '6px'
+                                }}
+                              >
+                                {arq.reconhecido ? (
+                                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                                    <polyline points="20 6 9 17 4 12"/>
+                                  </svg>
+                                ) : (
+                                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <line x1="12" y1="8" x2="12" y2="12"/>
+                                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                                  </svg>
+                                )}
+                                {arq.instrumento}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {/* UPLOADING STATE */}
+          {modalState === STATES.UPLOADING && (
+            <div style={{ textAlign: 'center', padding: '40px' }}>
+              <LottieAnimation name="upload" size={120} />
+
+              <div style={{
+                fontSize: '16px',
+                fontWeight: '600',
+                color: 'var(--text-primary)',
+                marginTop: '24px',
+                marginBottom: '8px'
+              }}>
+                Enviando partituras...
+              </div>
+
+              <div style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '8px' }}>
+                {uploadProgress.processadas} de {uploadProgress.total}
+              </div>
+
+              {uploadProgress.pastaAtual && (
+                <div style={{
+                  fontSize: '12px',
+                  color: 'var(--text-muted)',
+                  marginBottom: '24px'
+                }}>
+                  {uploadProgress.pastaAtual}
+                </div>
+              )}
+
+              <div style={{
+                width: '100%',
+                maxWidth: '300px',
+                height: '8px',
+                background: 'var(--bg-primary)',
+                borderRadius: '4px',
+                overflow: 'hidden',
+                margin: '0 auto'
+              }}>
+                <div style={{
+                  width: `${uploadProgress.percentual}%`,
+                  height: '100%',
+                  background: 'linear-gradient(90deg, #D4AF37, #B8860B)',
+                  borderRadius: '4px',
+                  transition: 'width 0.2s ease-out'
+                }} />
+              </div>
+            </div>
+          )}
+
+          {/* COMPLETE STATE */}
+          {modalState === STATES.COMPLETE && uploadResultados && (
+            <div style={{ textAlign: 'center', padding: '40px' }}>
+              {(() => {
+                const resumo = gerarResumo(uploadResultados.estatisticas);
+                return (
+                  <>
+                    <LottieAnimation
+                      name={resumo.tipo === 'success' ? 'success' : resumo.tipo === 'partial' ? 'attention' : 'error'}
+                      size={140}
+                      loop={false}
+                    />
+
+                    <div style={{
+                      fontSize: '20px',
+                      fontWeight: '700',
+                      color: resumo.tipo === 'success' ? '#27ae60' : resumo.tipo === 'partial' ? '#e67e22' : '#e74c3c',
+                      marginTop: '24px',
+                      marginBottom: '8px'
+                    }}>
+                      {resumo.tipo === 'success' && 'Upload concluído!'}
+                      {resumo.tipo === 'partial' && 'Upload parcial'}
+                      {resumo.tipo === 'error' && 'Falha no upload'}
+                    </div>
+
+                    <div style={{ fontSize: '16px', color: 'var(--text-secondary)', marginBottom: '8px' }}>
+                      {resumo.mensagem}
+                    </div>
+
+                    <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+                      Tempo total: {resumo.duracao}
+                    </div>
+
+                    {/* Lista de erros (se houver) */}
+                    {uploadResultados.estatisticas.erro > 0 && (
+                      <div style={{
+                        marginTop: '24px',
+                        padding: '16px',
+                        background: 'rgba(231, 76, 60, 0.1)',
+                        borderRadius: '8px',
+                        textAlign: 'left'
+                      }}>
+                        <div style={{
+                          fontSize: '13px',
+                          fontWeight: '600',
+                          color: '#e74c3c',
+                          marginBottom: '8px'
+                        }}>
+                          Erros encontrados:
+                        </div>
+                        {uploadResultados.resultados
+                          .filter(r => !r.success)
+                          .map((r, idx) => (
+                            <div key={idx} style={{
+                              fontSize: '12px',
+                              color: 'var(--text-secondary)',
+                              marginBottom: '4px'
+                            }}>
+                              • {r.titulo}: {r.error}
+                            </div>
+                          ))}
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        {(modalState === STATES.REVIEW || modalState === STATES.COMPLETE) && (
+          <div style={{
+            padding: '16px 24px',
+            borderTop: '1px solid var(--border)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '12px'
+          }}>
+            {modalState === STATES.REVIEW && (
+              <>
+                <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+                  {pastasSelecionadas.length} de {pastas.filter(p => p.status !== 'problem').length} selecionada{pastasSelecionadas.length !== 1 ? 's' : ''}
+                  {pastasSelecionadas.length > 0 && (
+                    <span style={{ marginLeft: '8px' }}>
+                      ({estimarTempo(
+                        pastasSelecionadas.length,
+                        pastasSelecionadas.reduce((acc, p) => acc + p.arquivos.length, 0)
+                      ).tempoFormatado})
+                    </span>
+                  )}
+                </div>
+
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <button
+                    onClick={onClose}
+                    style={{
+                      padding: '12px 24px',
+                      borderRadius: 'var(--radius-sm)',
+                      background: 'var(--bg-primary)',
+                      border: '1px solid var(--border)',
+                      color: 'var(--text-primary)',
+                      fontSize: '14px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Cancelar
+                  </button>
+
+                  <button
+                    onClick={iniciarUpload}
+                    disabled={pastasSelecionadas.length === 0}
+                    style={{
+                      padding: '12px 24px',
+                      borderRadius: 'var(--radius-sm)',
+                      background: pastasSelecionadas.length === 0
+                        ? 'linear-gradient(135deg, rgba(212, 175, 55, 0.5) 0%, rgba(184, 134, 11, 0.5) 100%)'
+                        : 'linear-gradient(135deg, #D4AF37 0%, #B8860B 100%)',
+                      border: 'none',
+                      color: '#fff',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      cursor: pastasSelecionadas.length === 0 ? 'not-allowed' : 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                      <polyline points="17 8 12 3 7 8"/>
+                      <line x1="12" y1="3" x2="12" y2="15"/>
+                    </svg>
+                    Enviar {pastasSelecionadas.length} partitura{pastasSelecionadas.length !== 1 ? 's' : ''}
+                  </button>
+                </div>
+              </>
+            )}
+
+            {modalState === STATES.COMPLETE && (
+              <div style={{ width: '100%', textAlign: 'center' }}>
+                <button
+                  onClick={onClose}
+                  style={{
+                    padding: '12px 32px',
+                    borderRadius: 'var(--radius-sm)',
+                    background: 'linear-gradient(135deg, #D4AF37 0%, #B8860B 100%)',
+                    border: 'none',
+                    color: '#fff',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Fechar
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default ImportacaoLoteModal;
