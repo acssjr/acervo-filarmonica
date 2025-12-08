@@ -7,6 +7,7 @@ import Storage from '@services/storage';
 const STORAGE_KEY = 'tutorial_admin_partituras_completed';
 
 // Definição dos passos do tutorial
+// Ordem: Upload → Expandir → Substituir → Remover → Adicionar
 const TUTORIAL_STEPS = [
   {
     targetSelector: '[data-tutorial="upload-pasta"]',
@@ -26,21 +27,13 @@ const TUTORIAL_STEPS = [
     beforeStep: 'collapseFirst'
   },
   {
-    targetSelector: '[data-tutorial="add-parte"]',
-    title: 'Adicionar Parte',
-    subtitle: 'Novo Instrumento',
-    description: 'Use este botão para <strong>adicionar uma nova parte</strong> de instrumento que não foi detectada automaticamente no upload.',
-    position: 'left',
-    highlightPadding: 10,
-    beforeStep: 'expandFirst'
-  },
-  {
     targetSelector: '[data-tutorial="btn-replace"]',
     title: 'Substituir Arquivo',
     subtitle: 'Atualizar Parte',
     description: 'Clique aqui para <strong>substituir o arquivo</strong> de uma parte específica por uma versão atualizada.',
     position: 'left',
-    highlightPadding: 8
+    highlightPadding: 8,
+    beforeStep: 'expandFirst'
   },
   {
     targetSelector: '[data-tutorial="btn-delete"]',
@@ -49,12 +42,19 @@ const TUTORIAL_STEPS = [
     description: 'Use este botão para <strong>remover permanentemente</strong> uma parte da partitura.',
     position: 'left',
     highlightPadding: 8
+  },
+  {
+    targetSelector: '[data-tutorial="add-parte"]',
+    title: 'Adicionar Parte',
+    subtitle: 'Novo Instrumento',
+    description: 'Use este botão para <strong>adicionar uma nova parte</strong> de instrumento que não foi detectada automaticamente no upload.',
+    position: 'left',
+    highlightPadding: 10
   }
 ];
 
 const TutorialOverlay = ({ isOpen, onClose, onExpandFirst, onCollapseFirst }) => {
   const [currentStep, setCurrentStep] = useState(0);
-  const [dontShowAgain, setDontShowAgain] = useState(false);
   const [targetRect, setTargetRect] = useState(null);
   const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
   const [isAnimating, setIsAnimating] = useState(false);
@@ -135,15 +135,60 @@ const TutorialOverlay = ({ isOpen, onClose, onExpandFirst, onCollapseFirst }) =>
     return { top, left };
   }, []);
 
-  // Atualiza posição do elemento alvo
+  // Atualiza posição do elemento alvo (com scroll automático se necessário)
   const updateTargetPosition = useCallback(() => {
     if (!step) return;
 
     const targetElement = document.querySelector(step.targetSelector);
     if (targetElement) {
+      // Verifica se o elemento está visível na viewport
       const rect = targetElement.getBoundingClientRect();
-      setTargetRect(rect);
-      setTooltipPosition(calculateTooltipPosition(rect, step.position));
+      const TOOLTIP_HEIGHT = 400; // Altura estimada do tooltip + margem
+      const MARGIN = 100; // Margem extra para garantir que o tooltip também caiba
+
+      const isElementVisible = (
+        rect.top >= MARGIN &&
+        rect.bottom <= window.innerHeight - MARGIN &&
+        rect.left >= 0 &&
+        rect.right <= window.innerWidth
+      );
+
+      // Se o elemento não está totalmente visível, faz scroll
+      if (!isElementVisible) {
+        // Temporariamente permite scroll para fazer o scrollIntoView
+        document.body.style.overflow = '';
+        document.documentElement.style.overflow = '';
+        const mainContent = document.querySelector('main');
+        if (mainContent) {
+          mainContent.style.overflow = '';
+        }
+
+        // Scroll suave até o elemento, centralizando-o na tela
+        targetElement.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+          inline: 'center'
+        });
+
+        // Aguarda o scroll terminar e então atualiza a posição
+        setTimeout(() => {
+          // Rebloqueia scroll após o scrollIntoView
+          document.body.style.overflow = 'hidden';
+          document.documentElement.style.overflow = 'hidden';
+          if (mainContent) {
+            mainContent.style.overflow = 'hidden';
+          }
+
+          // Atualiza o rect após o scroll
+          const newRect = targetElement.getBoundingClientRect();
+          setTargetRect(newRect);
+          setTooltipPosition(calculateTooltipPosition(newRect, step.position));
+        }, 500);
+      } else {
+        // Elemento já visível, apenas atualiza posição
+        setTargetRect(rect);
+        setTooltipPosition(calculateTooltipPosition(rect, step.position));
+      }
     }
   }, [step, calculateTooltipPosition]);
 
@@ -230,14 +275,15 @@ const TutorialOverlay = ({ isOpen, onClose, onExpandFirst, onCollapseFirst }) =>
   };
 
   const handleFinish = () => {
-    if (dontShowAgain) {
-      Storage.set(STORAGE_KEY, true);
-    }
+    // Sempre salva preferência ao finalizar - não mostra novamente
+    Storage.set(STORAGE_KEY, true);
     setCurrentStep(0);
     onClose();
   };
 
   const handleSkip = () => {
+    // Também salva preferência ao pular - não mostra novamente
+    Storage.set(STORAGE_KEY, true);
     setCurrentStep(0);
     onClose();
   };
@@ -509,54 +555,6 @@ const TutorialOverlay = ({ isOpen, onClose, onExpandFirst, onCollapseFirst }) =>
           Pular tutorial
         </button>
 
-        {/* Checkbox "Não mostrar novamente" - apenas no primeiro passo */}
-        {currentStep === 0 && (
-          <label
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              marginTop: '16px',
-              paddingTop: '16px',
-              borderTop: '1px solid #eee',
-              cursor: 'pointer',
-              userSelect: 'none'
-            }}
-            onClick={() => setDontShowAgain(!dontShowAgain)}
-          >
-            <div
-              style={{
-                width: '20px',
-                height: '20px',
-                borderRadius: '6px',
-                border: dontShowAgain
-                  ? '2px solid #D4AF37'
-                  : '2px solid #ccc',
-                background: dontShowAgain
-                  ? 'linear-gradient(135deg, #D4AF37 0%, #B8860B 100%)'
-                  : '#fff',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                transition: 'all 0.2s ease',
-                flexShrink: 0
-              }}
-            >
-              {dontShowAgain && (
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3">
-                  <polyline points="20 6 9 17 4 12"/>
-                </svg>
-              )}
-            </div>
-            <span style={{
-              fontSize: '13px',
-              color: '#888',
-              fontWeight: '500'
-            }}>
-              Não mostrar este tutorial novamente
-            </span>
-          </label>
-        )}
       </div>
 
       {/* Estilos de animação */}

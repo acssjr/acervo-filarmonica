@@ -199,7 +199,10 @@ const useLoginForm = ({ onClose }) => {
 
         setError('Usuário ou PIN incorreto');
         setPin(['', '', '', '']);
-        pinRefs[0].current?.focus();
+        // Delay para garantir que o PIN foi limpo antes de focar
+        setTimeout(() => {
+          pinRefs[0].current?.focus();
+        }, 100);
 
         if (navigator.vibrate) {
           navigator.vibrate([100, 50, 100]);
@@ -208,7 +211,10 @@ const useLoginForm = ({ onClose }) => {
         console.error('Erro no login:', err);
         setError('Usuário ou PIN incorreto');
         setPin(['', '', '', '']);
-        pinRefs[0].current?.focus();
+        // Delay para garantir que o PIN foi limpo antes de focar
+        setTimeout(() => {
+          pinRefs[0].current?.focus();
+        }, 100);
 
         if (navigator.vibrate) {
           navigator.vibrate([100, 50, 100]);
