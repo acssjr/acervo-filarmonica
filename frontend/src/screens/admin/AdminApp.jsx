@@ -94,7 +94,7 @@ const AdminApp = () => {
 
   // Icones do menu como SVG
   const MenuIcon = ({ type, active }) => {
-    const color = active ? '#D4AF37' : 'var(--text-secondary)';
+    const color = active ? '#fff' : 'rgba(255,255,255,0.7)';
     const icons = {
       dashboard: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -273,22 +273,24 @@ const AdminApp = () => {
         {/* Sidebar */}
         <div style={{
           width: isMobile ? '280px' : (sidebarCollapsed ? '72px' : '260px'),
-          background: 'var(--bg-secondary)',
-          borderRight: '1px solid var(--border)',
+          minWidth: isMobile ? '280px' : (sidebarCollapsed ? '72px' : '260px'),
+          background: 'linear-gradient(180deg, #5C1A1B 0%, #3D1518 100%)',
+          borderRight: 'none',
           display: 'flex',
           flexDirection: 'column',
+          height: '100vh',
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          zIndex: 100,
           transition: isMobile ? 'transform 0.3s ease' : 'width 0.3s ease',
           ...(isMobile ? {
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            bottom: 0,
             zIndex: 1002,
             transform: mobileMenuOpen ? 'translateX(0)' : 'translateX(-100%)'
           } : {})
         }}>
           {/* Header com Logo e botao recolher/fechar */}
-          <div style={{ padding: sidebarCollapsed && !isMobile ? '16px 12px' : '16px 20px', borderBottom: '1px solid var(--border)' }}>
+          <div style={{ padding: sidebarCollapsed && !isMobile ? '16px 12px' : '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', justifyContent: sidebarCollapsed && !isMobile ? 'center' : 'flex-start', flex: 1 }}>
                 {/* Icone com circulo dourado */}
@@ -319,8 +321,8 @@ const AdminApp = () => {
                 </div>
                 {(!sidebarCollapsed || isMobile) && (
                   <div>
-                    <div style={{ fontWeight: '700', color: 'var(--text-primary)', fontSize: '14px', fontFamily: 'Outfit, sans-serif' }}>Acervo Digital</div>
-                    <div style={{ fontSize: '11px', color: 'var(--accent)', fontFamily: 'Outfit, sans-serif' }}>Painel Admin</div>
+                    <div style={{ fontWeight: '700', color: '#F4E4BC', fontSize: '14px', fontFamily: 'Outfit, sans-serif' }}>S.F. 25 de Marco</div>
+                    <div style={{ fontSize: '11px', color: '#D4AF37', fontFamily: 'Outfit, sans-serif' }}>PAINEL ADMIN</div>
                   </div>
                 )}
               </div>
@@ -331,17 +333,18 @@ const AdminApp = () => {
                   style={{
                     width: '32px',
                     height: '32px',
-                    borderRadius: 'var(--radius-sm)',
-                    border: 'none',
-                    background: 'transparent',
-                    color: 'var(--text-secondary)',
+                    borderRadius: '50%',
+                    border: '1px solid rgba(212,175,55,0.3)',
+                    background: 'rgba(255,255,255,0.1)',
+                    color: '#F4E4BC',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center'
+                    justifyContent: 'center',
+                    transition: 'all 0.2s'
                   }}
                 >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <line x1="18" y1="6" x2="6" y2="18"/>
                     <line x1="6" y1="6" x2="18" y2="18"/>
                   </svg>
@@ -351,21 +354,27 @@ const AdminApp = () => {
                   onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
                   title="Recolher menu"
                   style={{
-                    width: '32px',
-                    height: '32px',
-                    borderRadius: 'var(--radius-sm)',
-                    border: '1px solid var(--border)',
-                    background: 'var(--bg-primary)',
-                    color: 'var(--text-secondary)',
+                    width: '28px',
+                    height: '28px',
+                    borderRadius: '50%',
+                    border: '1px solid rgba(212,175,55,0.3)',
+                    background: 'rgba(255,255,255,0.1)',
+                    color: '#F4E4BC',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     transition: 'all 0.2s'
                   }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.2)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
+                  }}
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M11 19l-7-7 7-7M18 19l-7-7 7-7"/>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M15 18l-6-6 6-6"/>
                   </svg>
                 </button>
               )}
@@ -379,88 +388,55 @@ const AdminApp = () => {
                   width: '100%',
                   marginTop: '12px',
                   padding: '8px',
-                  borderRadius: 'var(--radius-sm)',
-                  border: '1px solid var(--border)',
-                  background: 'var(--bg-primary)',
-                  color: 'var(--text-secondary)',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(212,175,55,0.3)',
+                  background: 'rgba(255,255,255,0.1)',
+                  color: '#F4E4BC',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center'
+                  justifyContent: 'center',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(255,255,255,0.2)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
                 }}
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ transform: 'rotate(180deg)' }}>
-                  <path d="M11 19l-7-7 7-7M18 19l-7-7 7-7"/>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M9 18l6-6-6-6"/>
                 </svg>
               </button>
             )}
           </div>
 
-          {/* User Info - Clicavel para ir as configuracoes */}
-          <button
-            onClick={() => navigateToSection('config')}
-            style={{
-              width: '100%',
-              padding: sidebarCollapsed && !isMobile ? '12px' : '16px 20px',
-              borderBottom: '1px solid var(--border)',
-              background: 'transparent',
-              border: 'none',
-              cursor: 'pointer',
-              transition: 'background 0.2s',
-              textAlign: 'left'
-            }}
-            title="Ir para configurações"
-          >
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              justifyContent: sidebarCollapsed && !isMobile ? 'center' : 'flex-start'
-            }}>
-              {/* Avatar com circulo dourado */}
-              <div style={{
-                width: '42px',
-                height: '42px',
-                borderRadius: '50%',
-                background: 'linear-gradient(145deg, #D4AF37 0%, #B8860B 100%)',
-                padding: '2px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 2px 6px rgba(212, 175, 55, 0.3)',
-                flexShrink: 0
-              }}>
-                <div style={{
-                  width: '100%',
-                  height: '100%',
-                  borderRadius: '50%',
-                  background: user?.foto_perfil ? `url(${user.foto_perfil}) center/cover` : 'linear-gradient(145deg, #722F37 0%, #5C1A1B 100%)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '14px',
-                  color: '#F4E4BC',
-                  fontWeight: '600',
-                  fontFamily: 'Outfit, sans-serif'
-                }}>
-                  {!user?.foto_perfil && (user?.name?.charAt(0)?.toUpperCase() || 'A')}
-                </div>
-              </div>
-              {(!sidebarCollapsed || isMobile) && (
-                <div>
-                  <div style={{ fontWeight: '600', color: 'var(--text-primary)', fontSize: '14px', fontFamily: 'Outfit, sans-serif' }}>
-                    {user?.name || 'Administrador'}
-                  </div>
-                  <div style={{ fontSize: '12px', color: 'var(--text-secondary)', fontFamily: 'Outfit, sans-serif' }}>
-                    @{user?.username || 'admin'}
-                  </div>
-                </div>
-              )}
-            </div>
-          </button>
+          {/* Label MENU */}
+          {(!sidebarCollapsed || isMobile) && (
+            <p style={{
+              fontFamily: 'Outfit, sans-serif',
+              fontSize: '10px',
+              fontWeight: '600',
+              color: 'rgba(255,255,255,0.4)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px',
+              padding: '16px 20px 8px',
+              margin: 0
+            }}>Menu</p>
+          )}
 
           {/* Menu Items */}
-          <nav style={{ flex: 1, padding: '12px 8px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <nav style={{ flex: 1, padding: '0 12px 12px', display: 'flex', flexDirection: 'column', overflow: 'auto' }}>
+            {/* Retângulo escuro como na sidebar de músico */}
+            <div style={{
+              background: 'rgba(0,0,0,0.2)',
+              borderRadius: '12px',
+              padding: '8px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '2px'
+            }}>
             {menuItems.map(item => (
               <button
                 key={item.id}
@@ -469,11 +445,11 @@ const AdminApp = () => {
                   display: 'flex',
                   alignItems: 'center',
                   gap: '12px',
-                  padding: sidebarCollapsed && !isMobile ? '12px' : '12px 16px',
-                  borderRadius: 'var(--radius-sm)',
-                  background: activeSection === item.id ? 'rgba(212, 175, 55, 0.1)' : 'transparent',
-                  border: activeSection === item.id ? '1px solid rgba(212, 175, 55, 0.3)' : '1px solid transparent',
-                  color: activeSection === item.id ? '#D4AF37' : 'var(--text-secondary)',
+                  padding: sidebarCollapsed && !isMobile ? '11px' : '11px 12px',
+                  borderRadius: '10px',
+                  background: activeSection === item.id ? 'rgba(255,255,255,0.2)' : 'transparent',
+                  border: 'none',
+                  color: activeSection === item.id ? '#fff' : 'rgba(255,255,255,0.7)',
                   cursor: 'pointer',
                   transition: 'all 0.2s',
                   width: '100%',
@@ -483,25 +459,38 @@ const AdminApp = () => {
                   fontWeight: activeSection === item.id ? '600' : '500'
                 }}
                 title={sidebarCollapsed && !isMobile ? item.label : ''}
+                onMouseEnter={(e) => {
+                  if (activeSection !== item.id) {
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
+                    e.currentTarget.style.color = '#fff';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (activeSection !== item.id) {
+                    e.currentTarget.style.background = 'transparent';
+                    e.currentTarget.style.color = 'rgba(255,255,255,0.7)';
+                  }
+                }}
               >
                 <MenuIcon type={item.icon} active={activeSection === item.id} />
                 {(!sidebarCollapsed || isMobile) && <span>{item.label}</span>}
               </button>
             ))}
+            </div>
           </nav>
 
           {/* Botao Sair */}
-          <div style={{ padding: '12px 8px', borderTop: '1px solid var(--border)' }}>
+          <div style={{ padding: '12px', borderTop: '1px solid rgba(255,255,255,0.1)', flexShrink: 0 }}>
             <button
               onClick={handleLogout}
               style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: '12px',
-                padding: sidebarCollapsed && !isMobile ? '12px' : '12px 16px',
-                borderRadius: 'var(--radius-sm)',
+                padding: sidebarCollapsed && !isMobile ? '11px' : '11px 12px',
+                borderRadius: '10px',
                 background: 'transparent',
-                border: '1px solid transparent',
+                border: 'none',
                 color: 'rgba(239, 68, 68, 0.8)',
                 cursor: 'pointer',
                 transition: 'all 0.2s',
@@ -512,10 +501,16 @@ const AdminApp = () => {
                 fontWeight: '500'
               }}
               title={sidebarCollapsed && !isMobile ? 'Sair' : ''}
-              onMouseEnter={(e) => e.currentTarget.style.color = 'rgba(239, 68, 68, 1)'}
-              onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(239, 68, 68, 0.8)'}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)';
+                e.currentTarget.style.color = 'rgba(239, 68, 68, 1)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'transparent';
+                e.currentTarget.style.color = 'rgba(239, 68, 68, 0.8)';
+              }}
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
                 <polyline points="16 17 21 12 16 7"/>
                 <line x1="21" y1="12" x2="9" y2="12"/>
@@ -531,8 +526,10 @@ const AdminApp = () => {
           flex: 1,
           overflow: 'auto',
           marginTop: isMobile ? '60px' : 0,
+          marginLeft: isMobile ? 0 : (sidebarCollapsed ? '72px' : '260px'),
           display: 'flex',
-          flexDirection: 'column'
+          flexDirection: 'column',
+          transition: 'margin-left 0.3s ease'
         }}>
           {/* Header Desktop com toggle de tema */}
           {!isMobile && (
@@ -540,34 +537,23 @@ const AdminApp = () => {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              padding: '16px 24px',
+              padding: '16px 32px',
               borderBottom: '1px solid var(--border)',
-              background: 'var(--bg-primary)'
+              background: 'var(--bg-primary)',
+              maxWidth: '1200px',
+              margin: '0 auto',
+              width: '100%',
+              boxSizing: 'border-box'
             }}>
-              {/* Titulo da secao atual */}
-              <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '2px'
+              {/* Data atual */}
+              <span style={{
+                fontFamily: 'Outfit, sans-serif',
+                fontSize: '14px',
+                color: 'var(--text-muted)',
+                textTransform: 'capitalize'
               }}>
-                <span style={{
-                  fontFamily: 'Outfit, sans-serif',
-                  fontSize: '13px',
-                  color: 'var(--text-muted)',
-                  textTransform: 'capitalize'
-                }}>
-                  {new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}
-                </span>
-                <h1 style={{
-                  fontFamily: 'Outfit, sans-serif',
-                  fontSize: '20px',
-                  fontWeight: '700',
-                  color: 'var(--text-primary)',
-                  margin: 0
-                }}>
-                  {menuItems.find(item => item.id === activeSection)?.label || 'Dashboard'}
-                </h1>
-              </div>
+                {new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}
+              </span>
 
               {/* Acoes do header */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>

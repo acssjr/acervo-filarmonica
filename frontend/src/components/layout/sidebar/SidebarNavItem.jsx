@@ -31,10 +31,24 @@ const SidebarNavItem = ({ icon: Icon, label, isActive, collapsed, onClick, dange
         marginBottom: '2px'
       }}
       onMouseEnter={(e) => {
-        if (danger) e.currentTarget.style.color = dangerHoverColor;
+        if (!isActive) {
+          e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
+        }
+        if (danger) {
+          e.currentTarget.style.color = dangerHoverColor;
+        } else if (!isActive) {
+          e.currentTarget.style.color = '#fff';
+        }
       }}
       onMouseLeave={(e) => {
-        if (danger) e.currentTarget.style.color = dangerColor;
+        if (!isActive) {
+          e.currentTarget.style.background = 'transparent';
+        }
+        if (danger) {
+          e.currentTarget.style.color = dangerColor;
+        } else if (!isActive) {
+          e.currentTarget.style.color = 'rgba(255,255,255,0.7)';
+        }
       }}
     >
       <div style={{ width: '18px', height: '18px', flexShrink: 0 }}>

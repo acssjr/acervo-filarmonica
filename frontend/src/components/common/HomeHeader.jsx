@@ -61,7 +61,7 @@ const HomeHeader = ({ userName, instrument, actions }) => {
 
       {/* Header de saudação */}
       <header style={{
-        padding: isDesktop ? '20px 20px 24px' : '16px 20px 20px',
+        padding: isDesktop ? '20px 0 24px' : '16px 20px 20px',
         paddingTop: isDesktop ? 'max(env(safe-area-inset-top), 20px)' : '16px',
         display: 'flex',
         justifyContent: 'space-between',
