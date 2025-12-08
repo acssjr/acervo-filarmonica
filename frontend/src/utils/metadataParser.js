@@ -7,17 +7,23 @@ import { normalizarTexto } from './instrumentParser';
 // Categorias conhecidas para detecção automatica
 const CATEGORIAS_CONHECIDAS = [
   'dobrado', 'marcha', 'valsa', 'fantasia', 'polaca',
-  'bolero', 'hino', 'marcha funebre', 'marcha funebre',
-  'preludio', 'preludio', 'arranjo', 'hino religioso'
+  'bolero', 'hino', 'marcha funebre', 'marcha religiosa',
+  'preludio', 'arranjo', 'hino religioso', 'hino civico'
 ];
 
 // Mapeamento de termos para IDs de categoria
+// IMPORTANTE: Termos mais especificos devem vir antes dos genericos
+// A funcao detectarCategoria ordena por comprimento, entao isso e automatico
 const MAPEAMENTO_CATEGORIAS = {
   'dobrado': 'dobrado',
   'dobrados': 'dobrado',
+  // Marchas - especificas primeiro
   'marcha funebre': 'marcha-funebre',
   'marcha fúnebre': 'marcha-funebre',
   'marchas funebres': 'marcha-funebre',
+  'marchas fúnebres': 'marcha-funebre',
+  'marcha religiosa': 'marcha-religiosa',
+  'marchas religiosas': 'marcha-religiosa',
   'marcha': 'marcha',
   'marchas': 'marcha',
   'valsa': 'valsa',
@@ -29,9 +35,17 @@ const MAPEAMENTO_CATEGORIAS = {
   'polacas': 'polaca',
   'bolero': 'bolero',
   'boleros': 'bolero',
+  // Hinos - especificos primeiro
   'hino religioso': 'hino-religioso',
   'hinos religiosos': 'hino-religioso',
   'sacro': 'hino-religioso',
+  'hino civico': 'hino-civico',
+  'hinos civicos': 'hino-civico',
+  'hino cívico': 'hino-civico',
+  'hinos cívicos': 'hino-civico',
+  'hino municipal': 'hino-civico',
+  'hino nacional': 'hino-civico',
+  'hino estadual': 'hino-civico',
   'hino': 'hino',
   'hinos': 'hino',
   'preludio': 'preludio',
@@ -106,7 +120,9 @@ export const detectarCategoria = (nome, categorias = []) => {
   const termos = Object.keys(MAPEAMENTO_CATEGORIAS).sort((a, b) => b.length - a.length);
 
   for (const termo of termos) {
-    if (nomeNorm.includes(termo)) {
+    // Normaliza o termo tambem para comparacao consistente
+    const termoNorm = termo.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    if (nomeNorm.includes(termoNorm)) {
       const categoriaId = MAPEAMENTO_CATEGORIAS[termo];
       // Verifica se a categoria existe na lista fornecida
       if (categorias.length === 0 || categorias.some(c => c.id === categoriaId)) {
@@ -183,16 +199,21 @@ export const limparCategoriaDoTitulo = (titulo, categoriaId) => {
   const tituloNorm = normalizarTexto(titulo);
 
   // Busca termos que correspondem a essa categoria
+  // IMPORTANTE: Ordena por comprimento (maior primeiro) para evitar remover termo parcial
+  // Ex: "Marchas Religiosas I" deve remover "Marchas Religiosas", nao apenas "Marchas"
   const termosCategoria = Object.entries(MAPEAMENTO_CATEGORIAS)
     .filter(([_, id]) => id === categoriaId)
-    .map(([termo, _]) => termo);
+    .map(([termo, _]) => termo)
+    .sort((a, b) => b.length - a.length);
 
   for (const termo of termosCategoria) {
     const termoNorm = normalizarTexto(termo);
     // Verifica se o titulo comeca com o termo da categoria
     if (tituloNorm.startsWith(termoNorm)) {
       // Remove o termo do inicio e limpa espacos
-      const regex = new RegExp(`^${termo}\\s*`, 'i');
+      // Escapa caracteres especiais de regex no termo
+      const termoEscapado = termo.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(`^${termoEscapado}\\s*`, 'i');
       const tituloLimpo = titulo.replace(regex, '').trim();
       if (tituloLimpo) {
         return tituloLimpo;

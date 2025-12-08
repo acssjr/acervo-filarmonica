@@ -2,8 +2,31 @@
 // Funções para análise em lote de pastas de partituras
 // Detecta subpastas contendo PDFs e extrai metadados automaticamente
 
-import { extrairInstrumento } from './instrumentParser';
+import { extrairInstrumento, normalizarTexto } from './instrumentParser';
 import { analisarMetadados } from './metadataParser';
+
+/**
+ * Verifica se um titulo ja existe nas partituras do acervo
+ * @param {string} titulo - Titulo da partitura sendo importada
+ * @param {Array} partiturasExistentes - Lista de partituras existentes [{titulo, ...}]
+ * @returns {{ duplicada: boolean, partituraExistente: Object | null }}
+ */
+export const verificarDuplicata = (titulo, partiturasExistentes = []) => {
+  if (!titulo || partiturasExistentes.length === 0) {
+    return { duplicada: false, partituraExistente: null };
+  }
+
+  const tituloNorm = normalizarTexto(titulo);
+
+  for (const partitura of partiturasExistentes) {
+    const partituraTituloNorm = normalizarTexto(partitura.titulo || '');
+    if (tituloNorm === partituraTituloNorm) {
+      return { duplicada: true, partituraExistente: partitura };
+    }
+  }
+
+  return { duplicada: false, partituraExistente: null };
+};
 
 /**
  * Contador incremental para garantir IDs únicos mesmo em processamento rápido
@@ -95,18 +118,30 @@ export const groupFilesByFolder = (files) => {
 /**
  * Determina o status de uma pasta com base nos dados analisados
  * @param {Object} pastaData - Dados da pasta analisada
- * @returns {{ status: string, motivo: string | null }}
+ * @param {Array} partiturasExistentes - Lista de partituras existentes para detectar duplicatas
+ * @returns {{ status: string, motivo: string | null, duplicada: boolean }}
  */
-const determinarStatus = (pastaData) => {
+const determinarStatus = (pastaData, partiturasExistentes = []) => {
   const { arquivos, categoria, titulo } = pastaData;
 
   // Verifica problemas críticos
   if (!arquivos || arquivos.length === 0) {
-    return { status: 'problem', motivo: 'Nenhum arquivo PDF encontrado' };
+    return { status: 'problem', motivo: 'Nenhum arquivo PDF encontrado', duplicada: false };
   }
 
   if (!titulo || titulo.trim() === '') {
-    return { status: 'problem', motivo: 'Título não detectado' };
+    return { status: 'problem', motivo: 'Título não detectado', duplicada: false };
+  }
+
+  // Verifica duplicatas
+  const { duplicada, partituraExistente } = verificarDuplicata(titulo, partiturasExistentes);
+  if (duplicada) {
+    const categoriaExistente = partituraExistente.categoria || 'sem categoria';
+    return {
+      status: 'attention',
+      motivo: `Já existe no acervo (${categoriaExistente})`,
+      duplicada: true
+    };
   }
 
   // Conta instrumentos não reconhecidos
@@ -116,19 +151,19 @@ const determinarStatus = (pastaData) => {
 
   // Verifica se precisa atenção
   if (!categoria) {
-    return { status: 'attention', motivo: 'Categoria não detectada' };
+    return { status: 'attention', motivo: 'Categoria não detectada', duplicada: false };
   }
 
   if (percentualNaoReconhecido > 50) {
-    return { status: 'attention', motivo: `${naoReconhecidos} de ${totalArquivos} instrumentos não reconhecidos` };
+    return { status: 'attention', motivo: `${naoReconhecidos} de ${totalArquivos} instrumentos não reconhecidos`, duplicada: false };
   }
 
   if (naoReconhecidos > 0) {
-    return { status: 'attention', motivo: `${naoReconhecidos} instrumento(s) não reconhecido(s)` };
+    return { status: 'attention', motivo: `${naoReconhecidos} instrumento(s) não reconhecido(s)`, duplicada: false };
   }
 
   // Tudo OK
-  return { status: 'ready', motivo: null };
+  return { status: 'ready', motivo: null, duplicada: false };
 };
 
 /**
@@ -136,9 +171,10 @@ const determinarStatus = (pastaData) => {
  * @param {string} folderPath - Caminho da pasta
  * @param {Array<{file: File, path: string}>} files - Arquivos da pasta
  * @param {Array} categorias - Lista de categorias disponíveis
+ * @param {Array} partiturasExistentes - Lista de partituras existentes para detectar duplicatas
  * @returns {Object} Dados da pasta analisada
  */
-export const analisarPasta = (folderPath, files, categorias = []) => {
+export const analisarPasta = (folderPath, files, categorias = [], partiturasExistentes = []) => {
   // Extrai nome da pasta (último segmento do caminho)
   // Normaliza separadores de caminho (Windows usa \, web usa /)
   const caminhoNormalizado = (folderPath || '').replace(/\\/g, '/');
@@ -174,10 +210,11 @@ export const analisarPasta = (folderPath, files, categorias = []) => {
     selecionada: true
   };
 
-  // Determina status
-  const { status, motivo } = determinarStatus(pastaData);
+  // Determina status (inclui verificação de duplicatas)
+  const { status, motivo, duplicada } = determinarStatus(pastaData, partiturasExistentes);
   pastaData.status = status;
   pastaData.statusMotivo = motivo;
+  pastaData.duplicada = duplicada;
 
   return pastaData;
 };
@@ -186,10 +223,11 @@ export const analisarPasta = (folderPath, files, categorias = []) => {
  * Processa um lote de arquivos arrastados e retorna as partituras detectadas
  * @param {DataTransferItemList} items - Items do DataTransfer
  * @param {Array} categorias - Lista de categorias disponíveis
+ * @param {Array} partiturasExistentes - Lista de partituras existentes para detectar duplicatas
  * @param {Function} onProgress - Callback de progresso (opcional)
  * @returns {Promise<{ pastas: Array, estatisticas: Object }>}
  */
-export const processarLote = async (items, categorias = [], onProgress = null) => {
+export const processarLote = async (items, categorias = [], partiturasExistentes = [], onProgress = null) => {
   const allFiles = [];
 
   // Lê todas as entradas de diretório
@@ -209,7 +247,7 @@ export const processarLote = async (items, categorias = [], onProgress = null) =
   // Analisa cada pasta
   const pastas = [];
   for (const [folderPath, files] of grupos) {
-    const pastaAnalisada = analisarPasta(folderPath, files, categorias);
+    const pastaAnalisada = analisarPasta(folderPath, files, categorias, partiturasExistentes);
     pastas.push(pastaAnalisada);
     processadas++;
 
@@ -247,10 +285,11 @@ export const processarLote = async (items, categorias = [], onProgress = null) =
  * Processa arquivos de um input de diretório (fallback para input file)
  * @param {FileList} fileList - Lista de arquivos do input
  * @param {Array} categorias - Lista de categorias disponíveis
+ * @param {Array} partiturasExistentes - Lista de partituras existentes para detectar duplicatas
  * @param {Function} onProgress - Callback de progresso (opcional)
  * @returns {Promise<{ pastas: Array, estatisticas: Object }>}
  */
-export const processarFileList = async (fileList, categorias = [], onProgress = null) => {
+export const processarFileList = async (fileList, categorias = [], partiturasExistentes = [], onProgress = null) => {
   const files = Array.from(fileList)
     .filter(f => f.name.toLowerCase().endsWith('.pdf'))
     .map(f => ({
@@ -267,7 +306,7 @@ export const processarFileList = async (fileList, categorias = [], onProgress = 
   // Analisa cada pasta
   const pastas = [];
   for (const [folderPath, folderFiles] of grupos) {
-    const pastaAnalisada = analisarPasta(folderPath, folderFiles, categorias);
+    const pastaAnalisada = analisarPasta(folderPath, folderFiles, categorias, partiturasExistentes);
     pastas.push(pastaAnalisada);
     processadas++;
 
