@@ -6,6 +6,7 @@
 name = "acervo-filarmonica-api"
 main = "worker/index.js"
 compatibility_date = "2024-01-01"
+workers_dev = true
 
 # Banco de dados D1
 [[d1_databases]]
@@ -28,6 +29,11 @@ bucket_name = "acervo-pdfs"
 [vars]
 ENVIRONMENT = "production"
 # JWT_SECRET = "sua-chave-secreta-aqui" # Opcional - se não definido, usa derivada do database_id
+
+# Rota customizada para o dominio api.partituras25.com
+[[routes]]
+pattern = "api.partituras25.com/*"
+zone_id = "35bcbcf34f3540cf480ab66c29041845"
 
 # ============================================================
 # COMANDOS ÚTEIS

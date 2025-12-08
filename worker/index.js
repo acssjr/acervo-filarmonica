@@ -15,6 +15,7 @@
 
 // Domínios permitidos para CORS
 const ALLOWED_ORIGINS = [
+  'https://partituras25.com',
   'https://acervo-filarmonica.pages.dev',
   'https://acervo.filarmonica25marco.org.br',
   'http://localhost:5173',
