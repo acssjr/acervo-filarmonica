@@ -114,7 +114,7 @@ describe('AdminDashboard', () => {
       renderDashboard();
 
       await waitFor(() => {
-        expect(screen.getByText(/Sociedade Filarmonica 25 de Marco/)).toBeInTheDocument();
+        expect(screen.getByText(/Sociedade Filarm[oô]nica 25 de Mar[cç]o/)).toBeInTheDocument();
       });
     });
   });
@@ -124,7 +124,7 @@ describe('AdminDashboard', () => {
       renderDashboard();
 
       await waitFor(() => {
-        expect(screen.getByText('Musicos Ativos')).toBeInTheDocument();
+        expect(screen.getByText('Músicos Ativos')).toBeInTheDocument();
         expect(screen.getByText('45')).toBeInTheDocument();
       });
     });
@@ -172,7 +172,7 @@ describe('AdminDashboard', () => {
       renderDashboard();
 
       await waitFor(() => {
-        expect(screen.getByText('Acoes Rapidas')).toBeInTheDocument();
+        expect(screen.getByText('Ações Rápidas')).toBeInTheDocument();
       });
     });
 
@@ -180,7 +180,7 @@ describe('AdminDashboard', () => {
       renderDashboard();
 
       await waitFor(() => {
-        expect(screen.getByText('Novo Musico')).toBeInTheDocument();
+        expect(screen.getByText('Novo Músico')).toBeInTheDocument();
       });
     });
 
