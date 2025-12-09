@@ -24,6 +24,13 @@ const mockToggleFavorite = jest.fn();
 let mockSelectedSheet = null;
 let mockFavorites = [];
 
+// Mock de categorias para testes
+const mockCategoriesMap = new Map([
+  ['dobrados', { id: 'dobrados', name: 'Dobrados' }],
+  ['marchas', { id: 'marchas', name: 'Marchas' }],
+  ['marcha', { id: 'marcha', name: 'Marchas' }] // fallback para testes legados
+]);
+
 // Mock do AuthContext
 jest.unstable_mockModule('@contexts/AuthContext', () => ({
   useAuth: () => ({
@@ -51,7 +58,8 @@ jest.unstable_mockModule('@contexts/DataContext', () => ({
     favorites: mockFavorites,
     toggleFavorite: mockToggleFavorite,
     sheets: [],
-    isLoading: false
+    isLoading: false,
+    categoriesMap: mockCategoriesMap
   }),
   DataProvider: ({ children }) => children
 }));
