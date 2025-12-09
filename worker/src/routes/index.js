@@ -7,6 +7,11 @@ import { setupHealthRoutes } from './healthRoutes.js';
 import { setupAuthRoutes } from './authRoutes.js';
 import { setupFavoritoRoutes } from './favoritoRoutes.js';
 import { setupAtividadeRoutes } from './atividadeRoutes.js';
+import { setupCategoriaRoutes } from './categoriaRoutes.js';
+import { setupEstatisticaRoutes } from './estatisticaRoutes.js';
+import { setupUsuarioRoutes } from './usuarioRoutes.js';
+import { setupPerfilRoutes } from './perfilRoutes.js';
+import { setupPartituraRoutes } from './partituraRoutes.js';
 
 /**
  * Cria e configura o router com todas as rotas da aplicação
@@ -23,13 +28,11 @@ export function createRouter() {
   setupAuthRoutes(router);
   setupFavoritoRoutes(router);
   setupAtividadeRoutes(router);
-
-  // TODO: Adicionar outras rotas conforme forem implementadas
-  // setupPartituraRoutes(router);
-  // setupCategoriaRoutes(router);
-  // setupUsuarioRoutes(router);
-  // setupPerfilRoutes(router);
-  // setupAdminRoutes(router);
+  setupCategoriaRoutes(router);
+  setupEstatisticaRoutes(router);
+  setupUsuarioRoutes(router);
+  setupPerfilRoutes(router);
+  setupPartituraRoutes(router);
 
   return router;
 }
