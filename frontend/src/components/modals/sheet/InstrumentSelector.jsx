@@ -1,23 +1,9 @@
 // ===== INSTRUMENT SELECTOR =====
 // Componente de selecao de instrumento para download
+// NOTA: Lista de instrumentos agora vem do DataContext (API com fallback)
 
 import PropTypes from 'prop-types';
 import { Icons } from '@constants/icons';
-
-// Lista padrao de instrumentos quando nao ha partes cadastradas
-export const DEFAULT_INSTRUMENTS = [
-  'Grade', 'Flautim', 'Flauta', 'Requinta',
-  'Clarinete Bb', 'Clarinete Bb 1', 'Clarinete Bb 2',
-  'Sax. Soprano', 'Sax. Alto', 'Sax. Alto 1', 'Sax. Alto 2',
-  'Sax. Tenor', 'Sax. Tenor 1', 'Sax. Tenor 2', 'Sax. Baritono',
-  'Trompete Bb', 'Trompete Bb 1', 'Trompete Bb 2',
-  'Trompa F', 'Trompa Eb', 'Trompa Eb 1', 'Trompa Eb 2',
-  'Baritono Bb', 'Baritono Bb 1', 'Baritono Bb 2',
-  'Trombone', 'Trombone 1', 'Trombone 2',
-  'Bombardino', 'Bombardino Bb',
-  'Baixo Eb', 'Baixo Bb',
-  'Caixa', 'Bombo', 'Pratos'
-];
 
 const InstrumentSelector = ({
   isOpen,

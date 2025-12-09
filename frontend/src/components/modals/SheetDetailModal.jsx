@@ -12,14 +12,14 @@ import { Icons } from '@constants/icons';
 import { API_BASE_URL } from '@constants/api';
 import CategoryIcon from '@components/common/CategoryIcon';
 import { useSheetDownload } from '@hooks/useSheetDownload';
-import { PartePicker, DownloadConfirm, InstrumentSelector, DEFAULT_INSTRUMENTS } from './sheet';
+import { PartePicker, DownloadConfirm, InstrumentSelector } from './sheet';
 
 const SheetDetailModal = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
   const { selectedSheet, setSelectedSheet, showToast } = useUI();
-  const { favorites, toggleFavorite, categoriesMap } = useData();
+  const { favorites, toggleFavorite, categoriesMap, instrumentNames } = useData();
 
   // Estado local
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
@@ -90,10 +90,10 @@ const SheetDetailModal = () => {
   // Verifica se existe grade disponível para esta partitura
   const hasGrade = partes.some(p => p.instrumento?.toLowerCase() === 'grade');
 
-  // Lista de instrumentos disponiveis
+  // Lista de instrumentos disponiveis (partes da partitura ou lista do contexto)
   const availableInstruments = partes.length > 0
     ? partes.map(p => p.instrumento)
-    : DEFAULT_INSTRUMENTS;
+    : instrumentNames;
 
   const handleClose = () => {
     setSelectedSheet(null);
