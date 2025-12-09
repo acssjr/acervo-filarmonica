@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 import { useUI } from '@contexts/UIContext';
 import { API } from '@services/api';
 import CategoryIcon from '@components/common/CategoryIcon';
+import LottieAnimation from '@components/animations/LottieAnimation';
 import { extrairInstrumento } from '@utils/instrumentParser';
 import { parsearNomePasta, detectarCategoria } from '@utils/metadataParser';
 
@@ -590,10 +591,10 @@ const UploadPastaModal = ({ isOpen, onClose, onSuccess }) => {
             padding: '40px',
             zIndex: 10
           }}>
-            {/* Ícone animado baseado na fase */}
+            {/* Container circular com animação Lottie */}
             <div style={{
-              width: '100px',
-              height: '100px',
+              width: '140px',
+              height: '140px',
               borderRadius: '50%',
               background: uploadPhase === 'error'
                 ? 'linear-gradient(145deg, rgba(231, 76, 60, 0.15) 0%, rgba(231, 76, 60, 0.05) 100%)'
@@ -604,38 +605,26 @@ const UploadPastaModal = ({ isOpen, onClose, onSuccess }) => {
               alignItems: 'center',
               justifyContent: 'center',
               marginBottom: '24px',
-              animation: uploadPhase === 'complete' ? 'successPulse 1s ease-in-out infinite' : 'none'
+              boxShadow: uploadPhase === 'error'
+                ? '0 4px 24px rgba(231, 76, 60, 0.15)'
+                : uploadPhase === 'complete'
+                  ? '0 4px 24px rgba(39, 174, 96, 0.15)'
+                  : '0 4px 24px rgba(212, 175, 55, 0.1)'
             }}>
               {uploadPhase === 'preparing' && (
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="1.5" style={{ animation: 'pulse 1.5s ease-in-out infinite' }}>
-                  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-                </svg>
+                <LottieAnimation name="scan" size={100} />
               )}
               {uploadPhase === 'uploading' && (
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="1.5">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                  <polyline points="17 8 12 3 7 8" style={{ animation: 'floatUpDown 1s ease-in-out infinite' }}/>
-                  <line x1="12" y1="3" x2="12" y2="15" style={{ animation: 'floatUpDown 1s ease-in-out infinite' }}/>
-                </svg>
+                <LottieAnimation name="upload" size={100} />
               )}
               {uploadPhase === 'processing' && (
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2" style={{ animation: 'spin 1s linear infinite' }}>
-                  <circle cx="12" cy="12" r="10" strokeOpacity="0.25"/>
-                  <path d="M12 2a10 10 0 0 1 10 10" strokeLinecap="round"/>
-                </svg>
+                <LottieAnimation name="scan" size={100} />
               )}
               {uploadPhase === 'complete' && (
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#27ae60" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ animation: 'checkmarkPop 0.5s ease-out' }}>
-                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                  <polyline points="22 4 12 14.01 9 11.01"/>
-                </svg>
+                <LottieAnimation name="success" size={100} loop={false} />
               )}
               {uploadPhase === 'error' && (
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#e74c3c" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="10"/>
-                  <line x1="15" y1="9" x2="9" y2="15"/>
-                  <line x1="9" y1="9" x2="15" y2="15"/>
-                </svg>
+                <LottieAnimation name="error" size={100} loop={false} />
               )}
             </div>
 

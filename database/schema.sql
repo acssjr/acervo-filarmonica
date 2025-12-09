@@ -13,16 +13,21 @@ CREATE TABLE IF NOT EXISTS categorias (
     ordem INTEGER DEFAULT 0
 );
 
--- Inserir categorias padrão
+-- Inserir categorias padrão (sincronizado com produção)
 INSERT OR IGNORE INTO categorias (id, nome, emoji, cor, descricao, ordem) VALUES
-    ('dobrado', 'Dobrado', '🎺', '#e74c3c', 'Marchas militares brasileiras', 1),
-    ('marcha', 'Marcha', '🥁', '#3498db', 'Marchas tradicionais', 2),
-    ('valsa', 'Valsa', '💃', '#9b59b6', 'Valsas clássicas e brasileiras', 3),
-    ('fantasia', 'Fantasia', '✨', '#27ae60', 'Fantasias e suítes', 4),
-    ('polaca', 'Polaca', '🎭', '#e67e22', 'Polacas e polonaises', 5),
-    ('bolero', 'Bolero', '🌹', '#e91e63', 'Boleros românticos', 6),
-    ('popular', 'Música Popular', '🎸', '#00bcd4', 'Arranjos de música popular', 7),
-    ('hinos', 'Hinos Religiosos', '⛪', '#ffc107', 'Hinos sacros e religiosos', 8);
+    ('dobrados', 'Dobrados', '🎺', '#e74c3c', 'Marchas militares brasileiras', 1),
+    ('marchas', 'Marchas', '🥁', '#3498db', 'Marchas tradicionais', 2),
+    ('marchas-funebres', 'Marchas Fúnebres', '✝️', '#555555', 'Marchas fúnebres', 3),
+    ('marchas-religiosas', 'Marchas Religiosas', '⛪', '#8B4513', 'Marchas religiosas e processionais', 4),
+    ('fantasias', 'Fantasias', '✨', '#27ae60', 'Fantasias e suítes', 5),
+    ('polacas', 'Polacas', '👑', '#e67e22', 'Polacas e polonaises', 6),
+    ('boleros', 'Boleros', '☀️', '#e91e63', 'Boleros espanhóis', 7),
+    ('valsas', 'Valsas', '💃', '#9b59b6', 'Valsas clássicas e brasileiras', 8),
+    ('arranjos', 'Arranjos', '🎛️', '#00bcd4', 'Arranjos diversos', 9),
+    ('hinos', 'Hinos', '🏴', '#ffc107', 'Hinos em geral', 10),
+    ('hinos-civicos', 'Hinos Cívicos', '🏛️', '#2196F3', 'Hinos cívicos e patrióticos', 11),
+    ('hinos-religiosos', 'Hinos Religiosos', '⛪', '#795548', 'Hinos sacros e religiosos', 12),
+    ('preludios', 'Prelúdios', '✨', '#673AB7', 'Prelúdios e aberturas', 13);
 
 -- Tabela de Partituras
 CREATE TABLE IF NOT EXISTS partituras (

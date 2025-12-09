@@ -4,6 +4,11 @@
   "description": "Acervo Digital da Sociedade Filarmônica 25 de Março",
   "main": "worker/index.js",
   "scripts": {
+    "api": "wrangler dev",
+    "api:local": "wrangler dev --local",
+    "db:init": "wrangler d1 execute acervo-db --local --file=database/schema.sql && wrangler d1 execute acervo-db --local --file=database/seed-local.sql",
+    "db:seed": "wrangler d1 execute acervo-db --local --file=database/seed-local.sql",
+    "db:reset": "wrangler d1 execute acervo-db --local --command=\"DELETE FROM atividades; DELETE FROM favoritos; DELETE FROM partes; DELETE FROM partituras; DELETE FROM usuarios;\" && npm run db:seed",
     "dev": "wrangler pages dev frontend --d1=ACERVO_DB --r2=ACERVO_BUCKET",
     "dev:worker": "wrangler dev worker/index.js",
     "deploy": "wrangler deploy",
