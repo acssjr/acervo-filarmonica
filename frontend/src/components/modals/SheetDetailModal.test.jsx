@@ -31,6 +31,12 @@ const mockCategoriesMap = new Map([
   ['marcha', { id: 'marcha', name: 'Marchas' }] // fallback para testes legados
 ]);
 
+// Mock de instrumentos para testes
+const mockInstrumentNames = [
+  'Grade', 'Flautim', 'Flauta', 'Requinta',
+  'Clarinete Bb', 'Trompete Bb', 'Trombone'
+];
+
 // Mock do AuthContext
 jest.unstable_mockModule('@contexts/AuthContext', () => ({
   useAuth: () => ({
@@ -59,7 +65,8 @@ jest.unstable_mockModule('@contexts/DataContext', () => ({
     toggleFavorite: mockToggleFavorite,
     sheets: [],
     isLoading: false,
-    categoriesMap: mockCategoriesMap
+    categoriesMap: mockCategoriesMap,
+    instrumentNames: mockInstrumentNames
   }),
   DataProvider: ({ children }) => children
 }));

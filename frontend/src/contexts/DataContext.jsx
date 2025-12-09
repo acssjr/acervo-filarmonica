@@ -1,11 +1,12 @@
 // ===== DATA CONTEXT =====
-// Gerencia dados de partituras, categorias e favoritos
+// Gerencia dados de partituras, categorias, instrumentos e favoritos
 // Separado para evitar re-renders quando UI muda
 
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import Storage from '@services/storage';
 import { API, USE_API } from '@services/api';
 import { CATEGORIES as FALLBACK_CATEGORIES } from '@constants/categories';
+import { DEFAULT_INSTRUMENTS as FALLBACK_INSTRUMENTS, DEFAULT_INSTRUMENT_NAMES } from '@constants/instruments';
 
 const DataContext = createContext();
 
@@ -38,6 +39,12 @@ export const DataProvider = ({ children }) => {
     return stored || FALLBACK_CATEGORIES;
   });
 
+  // Instrumentos - fonte única de verdade (API com fallback para constantes)
+  const [instruments, setInstruments] = useState(() => {
+    const stored = Storage.get('instruments', null);
+    return stored || FALLBACK_INSTRUMENTS;
+  });
+
   // Favoritos
   const [favorites, setFavorites] = useState(() => Storage.get('favorites', []));
 
@@ -60,10 +67,11 @@ export const DataProvider = ({ children }) => {
         setApiOnline(isOnline);
 
         if (isOnline) {
-          // Carrega partituras e categorias em paralelo
-          const [partituras, categoriasApi] = await Promise.all([
+          // Carrega partituras, categorias e instrumentos em paralelo
+          const [partituras, categoriasApi, instrumentosApi] = await Promise.all([
             API.getPartituras(),
-            API.getCategorias()
+            API.getCategorias(),
+            API.getInstrumentos()
           ]);
 
           if (partituras && partituras.length > 0) {
@@ -91,6 +99,16 @@ export const DataProvider = ({ children }) => {
             setCategories(mappedCategories);
             Storage.set('categories', mappedCategories);
           }
+
+          // Atualiza instrumentos da API
+          if (instrumentosApi && instrumentosApi.length > 0) {
+            const mappedInstruments = instrumentosApi.map(i => ({
+              id: i.id,
+              nome: i.nome
+            }));
+            setInstruments(mappedInstruments);
+            Storage.set('instruments', mappedInstruments);
+          }
         }
       } catch (error) {
         console.error('Erro ao carregar da API:', error);
@@ -106,9 +124,13 @@ export const DataProvider = ({ children }) => {
   useEffect(() => { Storage.set('sheets', sheets); }, [sheets]);
   useEffect(() => { Storage.set('favorites', favorites); }, [favorites]);
   useEffect(() => { Storage.set('categories', categories); }, [categories]);
+  useEffect(() => { Storage.set('instruments', instruments); }, [instruments]);
 
   // Helper: cria map de categorias para lookup O(1)
   const categoriesMap = new Map(categories.map(cat => [cat.id, cat]));
+
+  // Helper: lista de nomes de instrumentos para uso em selects
+  const instrumentNames = instruments.map(i => i.nome);
 
   // Carrega favoritos do usuario apos login
   const loadUserFavorites = useCallback(async () => {
@@ -162,6 +184,8 @@ export const DataProvider = ({ children }) => {
       loadUserFavorites,
       categories,
       categoriesMap,
+      instruments,
+      instrumentNames,
       activeTab,
       setActiveTab,
       selectedCategory,
