@@ -1,15 +1,15 @@
 // ===== GENRES SCREEN =====
 // Tela de todos os generos musicais
+// Categorias carregadas da API via DataContext
 
 import { useNavigate } from 'react-router-dom';
 import { useData } from '@contexts/DataContext';
-import { CATEGORIES } from '@constants/categories';
 import Header from '@components/common/Header';
 import CategoryCard from '@components/music/CategoryCard';
 
 const GenresScreen = () => {
   const navigate = useNavigate();
-  const { sheets, setSelectedCategory } = useData();
+  const { sheets, categories, setSelectedCategory } = useData();
 
   const getCategoryCount = (catId) => sheets.filter(s => s.category === catId).length;
 
@@ -20,7 +20,7 @@ const GenresScreen = () => {
 
   return (
     <div>
-      <Header title="Gêneros" subtitle={`${CATEGORIES.length} gêneros musicais`} />
+      <Header title="Gêneros" subtitle={`${categories.length} gêneros musicais`} />
 
       <div style={{ padding: '0 20px' }}>
         <div className="categories-grid" style={{
@@ -29,7 +29,7 @@ const GenresScreen = () => {
           gap: '12px',
           width: '100%'
         }}>
-          {CATEGORIES.map((cat, i) => (
+          {categories.map((cat, i) => (
             <CategoryCard
               key={cat.id}
               category={cat}

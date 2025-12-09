@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useUI } from '@contexts/UIContext';
-import { CATEGORIES_MAP } from '@constants/categories';
+import { useData } from '@contexts/DataContext';
 import FeaturedCard from './FeaturedCard';
 
 // Movido para fora do componente (não recria a cada render)
@@ -20,6 +20,7 @@ const CATEGORY_IMAGES = {
 
 const FeaturedSheets = ({ sheets, onToggleFavorite, favorites }) => {
   const { theme } = useUI();
+  const { categoriesMap } = useData();
   const [isDesktop, setIsDesktop] = useState(typeof window !== 'undefined' ? window.innerWidth >= 1024 : false);
   const scrollRef = useRef(null);
   const innerRef = useRef(null);
@@ -147,7 +148,7 @@ const FeaturedSheets = ({ sheets, onToggleFavorite, favorites }) => {
             <FeaturedCard
               key={`${sheet.id}-${index}`}
               sheet={sheet}
-              category={CATEGORIES_MAP.get(sheet.category)}
+              category={categoriesMap.get(sheet.category)}
               bgImage={CATEGORY_IMAGES[sheet.category]}
               isFav={favorites.includes(sheet.id)}
               onToggleFavorite={onToggleFavorite}

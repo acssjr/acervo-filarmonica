@@ -1,13 +1,13 @@
 // ===== LIBRARY SCREEN =====
 // Tela de biblioteca com categorias e partituras
 // Suporta navegacao via URL: /acervo, /acervo/:categoria, /acervo/:categoria/:partituraId
+// Categorias carregadas da API via DataContext
 
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@contexts/AuthContext';
 import { useData } from '@contexts/DataContext';
 import { useUI } from '@contexts/UIContext';
-import { CATEGORIES, CATEGORIES_MAP } from '@constants/categories';
 import { Icons } from '@constants/icons';
 import Header from '@components/common/Header';
 import IconButton from '@components/common/IconButton';
@@ -20,6 +20,7 @@ const LibraryScreen = ({ categoryFromUrl, sheetIdFromUrl }) => {
   const { user } = useAuth();
   const {
     sheets,
+    categories, categoriesMap,
     selectedCategory, setSelectedCategory,
     selectedComposer, setSelectedComposer,
     favorites, toggleFavorite
@@ -32,13 +33,13 @@ const LibraryScreen = ({ categoryFromUrl, sheetIdFromUrl }) => {
   useEffect(() => {
     if (categoryFromUrl) {
       // Busca categoria pelo ID (O(1) via Map)
-      const cat = CATEGORIES_MAP.get(categoryFromUrl);
+      const cat = categoriesMap.get(categoryFromUrl);
       if (cat) {
         setSelectedCategory(cat.id);
         setSelectedComposer(null);
       }
     }
-  }, [categoryFromUrl, setSelectedCategory, setSelectedComposer]);
+  }, [categoryFromUrl, categoriesMap, setSelectedCategory, setSelectedComposer]);
 
   // Abre modal da partitura se vier ID na URL
   useEffect(() => {
@@ -61,7 +62,7 @@ const LibraryScreen = ({ categoryFromUrl, sheetIdFromUrl }) => {
     return result;
   }, [sheets, selectedCategory, selectedComposer]);
 
-  const currentCategory = CATEGORIES_MAP.get(selectedCategory);
+  const currentCategory = categoriesMap.get(selectedCategory);
   const getCategoryCount = (catId) => sheets.filter(s => s.category === catId).length;
 
   const handleBack = () => {
@@ -111,7 +112,7 @@ const LibraryScreen = ({ categoryFromUrl, sheetIdFromUrl }) => {
             gap: '12px',
             width: '100%'
           }}>
-            {CATEGORIES.map((cat, i) => (
+            {categories.map((cat, i) => (
               <CategoryCard
                 key={cat.id}
                 category={cat}

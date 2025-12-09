@@ -7,7 +7,6 @@ import { useAuth } from '@contexts/AuthContext';
 import { useData } from '@contexts/DataContext';
 import { useIsMobile } from '@hooks/useResponsive';
 import { API } from '@services/api';
-import { CATEGORIES } from '@constants/categories';
 import { formatTimeAgo, getAtividadeInfo } from '@utils/formatters';
 import HomeHeader from '@components/common/HomeHeader';
 import HeaderActions from '@components/common/HeaderActions';
@@ -20,7 +19,7 @@ import { PROFILE_ABOUT_CONFIG } from '@components/modals/AboutModal/changelog/pr
 const HomeScreen = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { sheets, favorites, toggleFavorite } = useData();
+  const { sheets, favorites, toggleFavorite, categories, categoriesMap } = useData();
   const isMobile = useIsMobile();
   const [atividades, setAtividades] = useState([]);
 
@@ -99,7 +98,7 @@ const HomeScreen = () => {
           gap: '12px',
           width: '100%'
         }}>
-          {CATEGORIES.slice(0, 4).map((cat, i) => (
+          {categories.slice(0, 4).map((cat, i) => (
             <CategoryCard key={cat.id} category={cat} count={getCategoryCount(cat.id)} index={i}
               onClick={() => navigate(`/acervo/${cat.id}`)} />
           ))}
@@ -117,7 +116,7 @@ const HomeScreen = () => {
           <FileCard
             key={sheet.id}
             sheet={sheet}
-            category={CATEGORIES.find(c => c.id === sheet.category)}
+            category={categoriesMap.get(sheet.category)}
             isFavorite={favorites.includes(sheet.id)}
             onToggleFavorite={() => toggleFavorite(sheet.id)}
           />
@@ -173,7 +172,7 @@ const HomeScreen = () => {
             textAlign: 'center'
           }}>
             <p style={{ fontSize: '32px', fontWeight: '800', color: '#43B97F', fontFamily: 'Outfit, sans-serif' }}>
-              {CATEGORIES.length}
+              {categories.length}
             </p>
             <p style={{ fontSize: '13px', color: 'var(--text-muted)', fontFamily: 'Outfit, sans-serif' }}>
               Gêneros

@@ -7,7 +7,6 @@ import { useUI } from '@contexts/UIContext';
 import { useData } from '@contexts/DataContext';
 import { useNotifications } from '@contexts/NotificationContext';
 import { Icons } from '@constants/icons';
-import { CATEGORIES } from '@constants/categories';
 import CategoryIcon from '@components/common/CategoryIcon';
 import ThemeSelector from '@components/common/ThemeSelector';
 import AdminToggle from '@components/common/AdminToggle';
@@ -47,7 +46,7 @@ const transliterate = (str) => {
 const DesktopHeader = () => {
   const navigate = useNavigate();
   const { setShowNotifications } = useUI();
-  const { sheets, favorites, toggleFavorite, setSelectedCategory } = useData();
+  const { sheets, favorites, toggleFavorite, setSelectedCategory, categoriesMap } = useData();
   const { unreadCount } = useNotifications();
   const [searchQuery, setSearchQuery] = useState('');
   const [showResults, setShowResults] = useState(false);
@@ -65,7 +64,7 @@ const DesktopHeader = () => {
         const titleTranslit = transliterate(titleNorm);
         const composerNorm = normalize(sheet.composer);
         const composerTranslit = transliterate(composerNorm);
-        const category = CATEGORIES.find(c => c.id === sheet.category);
+        const category = categoriesMap.get(sheet.category);
         const categoryNorm = normalize(category?.name || '');
 
         // Pontuação por diferentes critérios

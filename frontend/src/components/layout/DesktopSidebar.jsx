@@ -8,7 +8,6 @@ import { useAuth } from '@contexts/AuthContext';
 import { useUI } from '@contexts/UIContext';
 import { useData } from '@contexts/DataContext';
 import { Icons } from '@constants/icons';
-import { CATEGORIES } from '@constants/categories';
 import { SidebarLogo, SidebarNavItem, SidebarSection } from './sidebar';
 
 const DesktopSidebar = ({ activeTab }) => {
@@ -18,7 +17,7 @@ const DesktopSidebar = ({ activeTab }) => {
   const {
     selectedCategory, setSelectedCategory,
     selectedComposer, setSelectedComposer,
-    sheets
+    sheets, categories
   } = useData();
 
   const sidebarContentRef = useRef(null);
@@ -31,12 +30,12 @@ const DesktopSidebar = ({ activeTab }) => {
 
   // Memoiza categorias ordenadas por quantidade (top 4)
   const categoriesWithCount = useMemo(() => {
-    return CATEGORIES.map(cat => ({
+    return categories.map(cat => ({
       ...cat,
       name: cat.name,
       count: sheets.filter(s => s.category === cat.id).length
     })).sort((a, b) => b.count - a.count).slice(0, 4);
-  }, [sheets]);
+  }, [sheets, categories]);
 
   // Memoiza compositores a exibir (top 3 por prioridade ou quantidade)
   const displayComposers = useMemo(() => {

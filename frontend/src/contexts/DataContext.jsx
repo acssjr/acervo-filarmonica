@@ -1,10 +1,11 @@
 // ===== DATA CONTEXT =====
-// Gerencia dados de partituras e favoritos
+// Gerencia dados de partituras, categorias e favoritos
 // Separado para evitar re-renders quando UI muda
 
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import Storage from '@services/storage';
 import { API, USE_API } from '@services/api';
+import { CATEGORIES as FALLBACK_CATEGORIES } from '@constants/categories';
 
 const DataContext = createContext();
 
@@ -18,11 +19,11 @@ export const useData = () => {
 
 // Gera dados de exemplo para fallback
 const generateSampleData = () => [
-  { id: '1', title: 'Verde e Branco', composer: 'Estevam Moura', category: 'dobrado', year: 1940, downloads: 567, featured: true },
-  { id: '2', title: 'Magnata', composer: 'Estevam Moura', category: 'dobrado', year: 1945, downloads: 489, featured: true },
-  { id: '3', title: 'Tusca', composer: 'Estevam Moura', category: 'dobrado', year: 1942, downloads: 423, featured: false },
-  { id: '4', title: 'Dois Coracoes', composer: 'Pedro Salgado', category: 'dobrado', year: 1935, downloads: 512, featured: true },
-  { id: '5', title: 'Os Corujas', composer: 'Heraclio Guerreiro', category: 'dobrado', year: 1920, downloads: 298, featured: true },
+  { id: '1', title: 'Verde e Branco', composer: 'Estevam Moura', category: 'dobrados', year: 1940, downloads: 567, featured: true },
+  { id: '2', title: 'Magnata', composer: 'Estevam Moura', category: 'dobrados', year: 1945, downloads: 489, featured: true },
+  { id: '3', title: 'Tusca', composer: 'Estevam Moura', category: 'dobrados', year: 1942, downloads: 423, featured: false },
+  { id: '4', title: 'Dois Coracoes', composer: 'Pedro Salgado', category: 'dobrados', year: 1935, downloads: 512, featured: true },
+  { id: '5', title: 'Os Corujas', composer: 'Heraclio Guerreiro', category: 'dobrados', year: 1920, downloads: 298, featured: true },
 ];
 
 export const DataProvider = ({ children }) => {
@@ -30,6 +31,12 @@ export const DataProvider = ({ children }) => {
   const [sheets, setSheets] = useState(() => Storage.get('sheets', generateSampleData()));
   const [isLoading, setIsLoading] = useState(true);
   const [apiOnline, setApiOnline] = useState(false);
+
+  // Categorias - fonte única de verdade (API com fallback para constantes)
+  const [categories, setCategories] = useState(() => {
+    const stored = Storage.get('categories', null);
+    return stored || FALLBACK_CATEGORIES;
+  });
 
   // Favoritos
   const [favorites, setFavorites] = useState(() => Storage.get('favorites', []));
@@ -53,7 +60,12 @@ export const DataProvider = ({ children }) => {
         setApiOnline(isOnline);
 
         if (isOnline) {
-          const partituras = await API.getPartituras();
+          // Carrega partituras e categorias em paralelo
+          const [partituras, categoriasApi] = await Promise.all([
+            API.getPartituras(),
+            API.getCategorias()
+          ]);
+
           if (partituras && partituras.length > 0) {
             const mappedSheets = partituras.map(p => ({
               id: String(p.id),
@@ -69,6 +81,16 @@ export const DataProvider = ({ children }) => {
             setSheets(mappedSheets);
             Storage.set('sheets', mappedSheets);
           }
+
+          // Atualiza categorias da API
+          if (categoriasApi && categoriasApi.length > 0) {
+            const mappedCategories = categoriasApi.map(c => ({
+              id: c.id,
+              name: c.nome
+            }));
+            setCategories(mappedCategories);
+            Storage.set('categories', mappedCategories);
+          }
         }
       } catch (error) {
         console.error('Erro ao carregar da API:', error);
@@ -83,6 +105,10 @@ export const DataProvider = ({ children }) => {
   // Persiste dados
   useEffect(() => { Storage.set('sheets', sheets); }, [sheets]);
   useEffect(() => { Storage.set('favorites', favorites); }, [favorites]);
+  useEffect(() => { Storage.set('categories', categories); }, [categories]);
+
+  // Helper: cria map de categorias para lookup O(1)
+  const categoriesMap = new Map(categories.map(cat => [cat.id, cat]));
 
   // Carrega favoritos do usuario apos login
   const loadUserFavorites = useCallback(async () => {
@@ -134,6 +160,8 @@ export const DataProvider = ({ children }) => {
       setFavorites,
       toggleFavorite,
       loadUserFavorites,
+      categories,
+      categoriesMap,
       activeTab,
       setActiveTab,
       selectedCategory,
