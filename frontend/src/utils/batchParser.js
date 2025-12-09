@@ -133,13 +133,12 @@ const determinarStatus = (pastaData, partiturasExistentes = []) => {
     return { status: 'problem', motivo: 'Título não detectado', duplicada: false };
   }
 
-  // Verifica duplicatas
-  const { duplicada, partituraExistente } = verificarDuplicata(titulo, partiturasExistentes);
+  // Verifica duplicatas - BLOQUEIA upload de partituras que já existem
+  const { duplicada } = verificarDuplicata(titulo, partiturasExistentes);
   if (duplicada) {
-    const categoriaExistente = partituraExistente.categoria || 'sem categoria';
     return {
-      status: 'attention',
-      motivo: `Já existe no acervo (${categoriaExistente})`,
+      status: 'problem',
+      motivo: 'Já existe no acervo',
       duplicada: true
     };
   }

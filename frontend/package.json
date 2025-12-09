@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:prod": "cross-env VITE_API_TARGET=prod vite",
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint src/",
@@ -22,6 +23,7 @@
   },
   "dependencies": {
     "lottie-react": "^2.4.1",
+    "lucide-react": "^0.556.0",
     "prop-types": "^15.8.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -37,6 +39,7 @@
     "@testing-library/user-event": "^14.6.1",
     "@vitejs/plugin-react": "^4.2.1",
     "autoprefixer": "^10.4.16",
+    "cross-env": "^10.1.0",
     "eslint": "^9.39.1",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.0.1",

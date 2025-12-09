@@ -2,6 +2,18 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
 
+// Ambiente: 'local' usa wrangler dev (porta 8787), 'prod' usa API de produção
+const API_TARGET = process.env.VITE_API_TARGET || 'local'
+
+const apiTargets = {
+  local: 'http://localhost:8787',
+  prod: 'https://api.partituras25.com'
+}
+
+if (API_TARGET === 'prod') {
+  console.warn('\n⚠️  ATENÇÃO: Usando API de PRODUÇÃO! Mudanças afetarão dados reais.\n')
+}
+
 export default defineConfig({
   plugins: [react()],
   esbuild: {
@@ -46,9 +58,9 @@ export default defineConfig({
     open: true,
     proxy: {
       '/api': {
-        target: 'https://api.partituras25.com',
+        target: apiTargets[API_TARGET],
         changeOrigin: true,
-        secure: true
+        secure: API_TARGET === 'prod'
       }
     }
   },
@@ -56,9 +68,9 @@ export default defineConfig({
     port: 4173,
     proxy: {
       '/api': {
-        target: 'https://api.partituras25.com',
+        target: apiTargets[API_TARGET],
         changeOrigin: true,
-        secure: true
+        secure: API_TARGET === 'prod'
       }
     }
   }

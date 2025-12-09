@@ -82,6 +82,61 @@ const AdminPartituras = () => {
   // Cache de contagem de partes por partitura
   const [partesCount, setPartesCount] = useState({});
 
+  // Estado para modal de edição
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editingPartitura, setEditingPartitura] = useState(null);
+  const [editForm, setEditForm] = useState({ titulo: '', compositor: '', categoria_id: '' });
+  const [savingEdit, setSavingEdit] = useState(false);
+
+  // Funções para modal de edição
+  const openEditModal = (partitura) => {
+    setEditingPartitura(partitura);
+    setEditForm({
+      titulo: partitura.titulo || '',
+      compositor: partitura.compositor || '',
+      categoria_id: partitura.categoria_id || ''
+    });
+    setEditModalOpen(true);
+  };
+
+  const closeEditModal = () => {
+    setEditModalOpen(false);
+    setEditingPartitura(null);
+    setEditForm({ titulo: '', compositor: '', categoria_id: '' });
+  };
+
+  const saveEditModal = async () => {
+    if (!editingPartitura) return;
+
+    setSavingEdit(true);
+    try {
+      const updateData = {
+        ...editingPartitura,
+        titulo: editForm.titulo || editingPartitura.titulo,
+        compositor: editForm.compositor || null,
+        categoria_id: editForm.categoria_id || null
+      };
+      await API.updatePartitura(editingPartitura.id, updateData);
+
+      // Atualiza estado local
+      setPartituras(prev => prev.map(p =>
+        p.id === editingPartitura.id ? {
+          ...p,
+          titulo: editForm.titulo || p.titulo,
+          compositor: editForm.compositor || null,
+          categoria_id: editForm.categoria_id || null
+        } : p
+      ));
+
+      showToast('Partitura atualizada com sucesso!');
+      closeEditModal();
+    } catch (err) {
+      showToast(err.message || 'Erro ao salvar', 'error');
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
   // Ação pendente após tutorial (ex: abrir modal de upload quando veio pelo atalho)
   const [pendingAction, setPendingAction] = useState(null);
 
@@ -781,7 +836,7 @@ const AdminPartituras = () => {
                               )}
                             </div>
                             <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
-                              {p.compositor} • {cat.nome || p.categoria_id} {p.ano && `• ${p.ano}`}
+                              {p.compositor || 'Sem compositor'} • {cat.nome || 'Sem categoria'} {p.ano && `• ${p.ano}`}
                             </div>
                             <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                               <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -819,6 +874,23 @@ const AdminPartituras = () => {
                           }}>
                             <svg width="16" height="16" viewBox="0 0 24 24" fill={p.destaque === 1 ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2">
                               <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                            </svg>
+                          </button>
+                          <button onClick={() => openEditModal(p)} title="Editar" style={{
+                            width: '36px',
+                            height: '36px',
+                            borderRadius: '10px',
+                            background: 'rgba(52, 152, 219, 0.1)',
+                            border: '1px solid rgba(52, 152, 219, 0.3)',
+                            color: '#3498db',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                             </svg>
                           </button>
                           <button onClick={() => handleDelete(p.id)} title="Excluir" style={{
@@ -1114,11 +1186,344 @@ const AdminPartituras = () => {
         onCollapseFirst={collapseFirstPartitura}
       />
 
+      {/* Modal de Edição de Partitura */}
+      {editModalOpen && editingPartitura && (
+        <>
+          {/* Overlay */}
+          <div
+            onClick={closeEditModal}
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'rgba(0, 0, 0, 0.6)',
+              backdropFilter: 'blur(4px)',
+              zIndex: 1000,
+              animation: 'fadeIn 0.2s ease'
+            }}
+          />
+
+          {/* Modal */}
+          <div
+            style={{
+              position: 'fixed',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              background: 'var(--bg-card)',
+              borderRadius: '24px',
+              padding: '0',
+              zIndex: 1001,
+              width: '440px',
+              maxWidth: '90vw',
+              maxHeight: '90vh',
+              overflow: 'hidden',
+              boxShadow: '0 25px 60px rgba(0, 0, 0, 0.4)',
+              animation: 'scaleIn 0.25s cubic-bezier(0.16, 1, 0.3, 1)'
+            }}
+          >
+            {/* Header do Modal */}
+            <div style={{
+              padding: '24px 24px 20px',
+              borderBottom: '1px solid var(--border)',
+              background: 'linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-card) 100%)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <div style={{
+                  width: '56px',
+                  height: '56px',
+                  borderRadius: '16px',
+                  background: 'linear-gradient(145deg, #3a3a4a 0%, #2a2a38 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  border: '1px solid rgba(212, 175, 55, 0.2)',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)'
+                }}>
+                  <CategoryIcon categoryId={editingPartitura.categoria_id} size={28} color="#D4AF37" />
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <h2 style={{
+                    margin: 0,
+                    fontSize: '20px',
+                    fontWeight: '700',
+                    color: 'var(--text-primary)',
+                    fontFamily: 'Outfit, sans-serif'
+                  }}>
+                    Editar Partitura
+                  </h2>
+                  <p style={{
+                    margin: '4px 0 0',
+                    fontSize: '13px',
+                    color: 'var(--text-muted)',
+                    fontFamily: 'Outfit, sans-serif',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis'
+                  }}>
+                    {editingPartitura.titulo}
+                  </p>
+                </div>
+                <button
+                  onClick={closeEditModal}
+                  style={{
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '12px',
+                    background: 'var(--bg-primary)',
+                    border: '1px solid var(--border)',
+                    color: 'var(--text-muted)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* Corpo do Modal */}
+            <div style={{ padding: '24px' }}>
+              {/* Campo Título */}
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{
+                  display: 'block',
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  color: 'var(--text-secondary)',
+                  marginBottom: '8px',
+                  fontFamily: 'Outfit, sans-serif'
+                }}>
+                  Título da Partitura
+                </label>
+                <input
+                  type="text"
+                  value={editForm.titulo}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, titulo: e.target.value }))}
+                  placeholder="Nome da partitura"
+                  style={{
+                    width: '100%',
+                    padding: '14px 16px',
+                    borderRadius: '12px',
+                    border: '1.5px solid var(--border)',
+                    background: 'var(--bg-primary)',
+                    color: 'var(--text-primary)',
+                    fontSize: '15px',
+                    fontFamily: 'Outfit, sans-serif',
+                    outline: 'none',
+                    transition: 'border-color 0.2s, box-shadow 0.2s',
+                    boxSizing: 'border-box'
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.borderColor = '#D4AF37';
+                    e.target.style.boxShadow = '0 0 0 3px rgba(212, 175, 55, 0.15)';
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.borderColor = 'var(--border)';
+                    e.target.style.boxShadow = 'none';
+                  }}
+                />
+              </div>
+
+              {/* Campo Compositor */}
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{
+                  display: 'block',
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  color: 'var(--text-secondary)',
+                  marginBottom: '8px',
+                  fontFamily: 'Outfit, sans-serif'
+                }}>
+                  Compositor
+                </label>
+                <input
+                  type="text"
+                  value={editForm.compositor}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, compositor: e.target.value }))}
+                  placeholder="Nome do compositor"
+                  style={{
+                    width: '100%',
+                    padding: '14px 16px',
+                    borderRadius: '12px',
+                    border: '1.5px solid var(--border)',
+                    background: 'var(--bg-primary)',
+                    color: 'var(--text-primary)',
+                    fontSize: '15px',
+                    fontFamily: 'Outfit, sans-serif',
+                    outline: 'none',
+                    transition: 'border-color 0.2s, box-shadow 0.2s',
+                    boxSizing: 'border-box'
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.borderColor = '#D4AF37';
+                    e.target.style.boxShadow = '0 0 0 3px rgba(212, 175, 55, 0.15)';
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.borderColor = 'var(--border)';
+                    e.target.style.boxShadow = 'none';
+                  }}
+                />
+              </div>
+
+              {/* Campo Categoria */}
+              <div style={{ marginBottom: '28px' }}>
+                <label style={{
+                  display: 'block',
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  color: 'var(--text-secondary)',
+                  marginBottom: '8px',
+                  fontFamily: 'Outfit, sans-serif'
+                }}>
+                  Categoria
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <select
+                    value={editForm.categoria_id}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, categoria_id: e.target.value }))}
+                    style={{
+                      width: '100%',
+                      padding: '14px 16px',
+                      paddingRight: '44px',
+                      borderRadius: '12px',
+                      border: '1.5px solid var(--border)',
+                      background: 'var(--bg-primary)',
+                      color: 'var(--text-primary)',
+                      fontSize: '15px',
+                      fontFamily: 'Outfit, sans-serif',
+                      outline: 'none',
+                      cursor: 'pointer',
+                      appearance: 'none',
+                      transition: 'border-color 0.2s, box-shadow 0.2s'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#D4AF37';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(212, 175, 55, 0.15)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = 'var(--border)';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  >
+                    <option value="">Sem categoria</option>
+                    {categorias.map(cat => (
+                      <option key={cat.id} value={cat.id}>{cat.nome}</option>
+                    ))}
+                  </select>
+                  <div style={{
+                    position: 'absolute',
+                    right: '16px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    pointerEvents: 'none',
+                    color: 'var(--text-muted)'
+                  }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                  </div>
+                </div>
+              </div>
+
+              {/* Botões */}
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <button
+                  onClick={closeEditModal}
+                  style={{
+                    flex: 1,
+                    padding: '14px 20px',
+                    borderRadius: '12px',
+                    border: '1.5px solid var(--border)',
+                    background: 'transparent',
+                    color: 'var(--text-secondary)',
+                    fontSize: '15px',
+                    fontWeight: '600',
+                    fontFamily: 'Outfit, sans-serif',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={saveEditModal}
+                  disabled={savingEdit || !editForm.titulo.trim()}
+                  style={{
+                    flex: 1,
+                    padding: '14px 20px',
+                    borderRadius: '12px',
+                    border: 'none',
+                    background: savingEdit || !editForm.titulo.trim()
+                      ? 'linear-gradient(135deg, rgba(212, 175, 55, 0.5) 0%, rgba(184, 134, 11, 0.5) 100%)'
+                      : 'linear-gradient(135deg, #D4AF37 0%, #B8860B 100%)',
+                    color: '#fff',
+                    fontSize: '15px',
+                    fontWeight: '600',
+                    fontFamily: 'Outfit, sans-serif',
+                    cursor: savingEdit || !editForm.titulo.trim() ? 'not-allowed' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    transition: 'all 0.2s',
+                    boxShadow: savingEdit || !editForm.titulo.trim() ? 'none' : '0 4px 12px rgba(212, 175, 55, 0.3)'
+                  }}
+                >
+                  {savingEdit ? (
+                    <>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: 'spin 1s linear infinite' }}>
+                        <circle cx="12" cy="12" r="10" strokeOpacity="0.25"/>
+                        <path d="M12 2a10 10 0 0 1 10 10" strokeLinecap="round"/>
+                      </svg>
+                      Salvando...
+                    </>
+                  ) : (
+                    <>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                        <polyline points="17 21 17 13 7 13 7 21"/>
+                        <polyline points="7 3 7 8 15 8"/>
+                      </svg>
+                      Salvar Alterações
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
       {/* Estilos */}
       <style>{`
         @keyframes spin {
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
+        }
+
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+
+        @keyframes scaleIn {
+          from {
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0.9);
+          }
+          to {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+          }
         }
 
         .parte-item:hover {

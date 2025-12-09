@@ -7,6 +7,22 @@ import { API } from '@services/api';
 import CategoryIcon from '@components/common/CategoryIcon';
 import { CategoryListSkeleton } from '@components/common/Skeleton';
 
+// Função para gerar ID a partir do nome (slug)
+const generateId = (nome) => {
+  return nome
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+    .replace(/[^a-z0-9]+/g, '-')     // Substitui não-alfanuméricos por hífen
+    .replace(/^-+|-+$/g, '');        // Remove hífens do início/fim
+};
+
+// Cores padrão para novas categorias
+const CORES_PADRAO = [
+  '#D4AF37', '#8B4513', '#2E8B57', '#4169E1', '#9932CC',
+  '#DC143C', '#FF8C00', '#20B2AA', '#778899', '#6B8E23'
+];
+
 const AdminCategorias = () => {
   const { showToast } = useUI();
   const [categorias, setCategorias] = useState([]);
@@ -53,7 +69,18 @@ const AdminCategorias = () => {
         await API.updateCategoria(editingCategoria.id, { nome: nome.trim() });
         showToast('Categoria atualizada!');
       } else {
-        await API.createCategoria({ nome: nome.trim() });
+        // Gerar ID, emoji e cor para nova categoria
+        const id = generateId(nome.trim());
+        const corIndex = categorias.length % CORES_PADRAO.length;
+        const cor = CORES_PADRAO[corIndex];
+        const emoji = '🎵'; // Emoji padrão - o ícone real vem do CategoryIcon
+
+        await API.createCategoria({
+          id,
+          nome: nome.trim(),
+          emoji,
+          cor
+        });
         showToast('Categoria criada!');
       }
       setShowModal(false);
