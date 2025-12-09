@@ -53,6 +53,20 @@ const ImportacaoLoteModal = ({ isOpen, onClose, onSuccess, onOpenUploadPasta }) 
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
 
+  // Handler para abrir o seletor de pasta (usa getElementById como no UploadPastaModal)
+  const handleClickToSelect = () => {
+    console.log('=== DEBUG: handleClickToSelect chamado ===');
+    const input = document.getElementById('batch-folder-input');
+    console.log('input via getElementById:', input);
+    if (input) {
+      input.value = ''; // Reset para permitir re-seleção
+      input.click();
+      console.log('=== DEBUG: click() executado ===');
+    } else {
+      console.error('=== DEBUG: input é null! ===');
+    }
+  };
+
   // Carrega categorias e partituras existentes
   useEffect(() => {
     const loadData = async () => {
@@ -210,6 +224,27 @@ const ImportacaoLoteModal = ({ isOpen, onClose, onSuccess, onOpenUploadPasta }) 
     }));
   }, []);
 
+  // Editar título de uma pasta
+  const editarTitulo = useCallback((pastaId, novoTitulo) => {
+    setPastas(prev => prev.map(p =>
+      p.id === pastaId ? { ...p, titulo: novoTitulo } : p
+    ));
+  }, []);
+
+  // Editar compositor de uma pasta
+  const editarCompositor = useCallback((pastaId, novoCompositor) => {
+    setPastas(prev => prev.map(p =>
+      p.id === pastaId ? { ...p, compositor: novoCompositor } : p
+    ));
+  }, []);
+
+  // Editar arranjador de uma pasta
+  const editarArranjador = useCallback((pastaId, novoArranjador) => {
+    setPastas(prev => prev.map(p =>
+      p.id === pastaId ? { ...p, arranjador: novoArranjador } : p
+    ));
+  }, []);
+
   // Iniciar upload
   const iniciarUpload = async () => {
     const pastasParaUpload = pastas.filter(p => p.selecionada && p.status !== 'problem');
@@ -361,6 +396,18 @@ const ImportacaoLoteModal = ({ isOpen, onClose, onSuccess, onOpenUploadPasta }) 
           </button>
         </div>
 
+        {/* Input de arquivo com ID para acesso via getElementById */}
+        <input
+          ref={fileInputRef}
+          id="batch-folder-input"
+          type="file"
+          webkitdirectory=""
+          directory=""
+          multiple
+          onChange={handleFileSelect}
+          style={{ display: 'none' }}
+        />
+
         {/* Content */}
         <div style={{
           flex: 1,
@@ -369,12 +416,12 @@ const ImportacaoLoteModal = ({ isOpen, onClose, onSuccess, onOpenUploadPasta }) 
         }}>
           {/* SELECTION STATE */}
           {modalState === STATES.SELECTION && (
-            <label
+            <div
+              onClick={handleClickToSelect}
               onDragEnter={handleDragEnter}
               onDragLeave={handleDragLeave}
               onDragOver={handleDragOver}
               onDrop={handleDrop}
-              htmlFor="batch-folder-input"
               style={{
                 display: 'block',
                 border: isDragging ? '2px dashed #D4AF37' : '2px dashed var(--border)',
@@ -389,16 +436,6 @@ const ImportacaoLoteModal = ({ isOpen, onClose, onSuccess, onOpenUploadPasta }) 
                 transform: isDragging ? 'scale(1.02)' : 'scale(1)'
               }}
             >
-              <input
-                ref={fileInputRef}
-                id="batch-folder-input"
-                type="file"
-                webkitdirectory=""
-                directory=""
-                multiple
-                onChange={handleFileSelect}
-                style={{ display: 'none' }}
-              />
 
               <div style={{
                 width: '100px',
@@ -456,27 +493,39 @@ const ImportacaoLoteModal = ({ isOpen, onClose, onSuccess, onOpenUploadPasta }) 
                   Detecção automática
                 </span>
               </div>
-            </label>
+            </div>
           )}
 
           {/* ANALYZING STATE */}
           {modalState === STATES.ANALYZING && (
             <div style={{ textAlign: 'center', padding: '40px' }}>
-              <LottieAnimation name="scan" size={120} />
+              {/* Container com fundo para melhor visibilidade */}
+              <div style={{
+                width: '140px',
+                height: '140px',
+                margin: '0 auto 24px',
+                borderRadius: '50%',
+                background: 'linear-gradient(145deg, rgba(212, 175, 55, 0.12) 0%, rgba(184, 134, 11, 0.06) 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 4px 24px rgba(212, 175, 55, 0.08)'
+              }}>
+                <LottieAnimation name="scan" size={100} />
+              </div>
 
               <div style={{
-                fontSize: '16px',
+                fontSize: '18px',
                 fontWeight: '600',
                 color: 'var(--text-primary)',
-                marginTop: '24px',
                 marginBottom: '8px'
               }}>
-                Analisando pastas...
+                Preparando arquivos...
               </div>
 
               <div style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '24px' }}>
                 {analyzeProgress.total > 0
-                  ? `${analyzeProgress.processadas} de ${analyzeProgress.total} pastas`
+                  ? `Organizando ${analyzeProgress.total} arquivo(s)...`
                   : 'Lendo estrutura de diretórios...'}
               </div>
 
@@ -484,9 +533,9 @@ const ImportacaoLoteModal = ({ isOpen, onClose, onSuccess, onOpenUploadPasta }) 
                 <div style={{
                   width: '100%',
                   maxWidth: '300px',
-                  height: '8px',
-                  background: 'var(--bg-primary)',
-                  borderRadius: '4px',
+                  height: '6px',
+                  background: 'rgba(212, 175, 55, 0.1)',
+                  borderRadius: '3px',
                   overflow: 'hidden',
                   margin: '0 auto'
                 }}>
@@ -494,8 +543,8 @@ const ImportacaoLoteModal = ({ isOpen, onClose, onSuccess, onOpenUploadPasta }) 
                     width: `${analyzeProgress.percentual}%`,
                     height: '100%',
                     background: 'linear-gradient(90deg, #D4AF37, #B8860B)',
-                    borderRadius: '4px',
-                    transition: 'width 0.2s ease-out'
+                    borderRadius: '3px',
+                    transition: 'width 0.3s ease-out'
                   }} />
                 </div>
               )}
@@ -507,19 +556,36 @@ const ImportacaoLoteModal = ({ isOpen, onClose, onSuccess, onOpenUploadPasta }) 
             <div style={{ textAlign: 'center', padding: '40px' }}>
               {(() => {
                 const resultado = calcularResultado(estatisticas);
+                const bgColor = resultado.tipo === 'success'
+                  ? 'rgba(39, 174, 96, 0.1)'
+                  : resultado.tipo === 'partial'
+                    ? 'rgba(230, 126, 34, 0.1)'
+                    : 'rgba(231, 76, 60, 0.1)';
                 return (
                   <>
-                    <LottieAnimation
-                      name={resultado.tipo === 'success' ? 'success' : resultado.tipo === 'partial' ? 'attention' : 'error'}
-                      size={140}
-                      loop={false}
-                    />
+                    {/* Container com fundo colorido baseado no resultado */}
+                    <div style={{
+                      width: '160px',
+                      height: '160px',
+                      margin: '0 auto 24px',
+                      borderRadius: '50%',
+                      background: bgColor,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: `0 4px 24px ${bgColor}`
+                    }}>
+                      <LottieAnimation
+                        name={resultado.tipo === 'success' ? 'success' : resultado.tipo === 'partial' ? 'attention' : 'error'}
+                        size={120}
+                        loop={false}
+                      />
+                    </div>
 
                     <div style={{
                       fontSize: '24px',
                       fontWeight: '700',
                       color: resultado.tipo === 'success' ? '#27ae60' : resultado.tipo === 'partial' ? '#e67e22' : '#e74c3c',
-                      marginTop: '24px',
                       marginBottom: '8px'
                     }}>
                       {resultado.tipo === 'success' && 'Tudo pronto!'}
@@ -701,65 +767,160 @@ const ImportacaoLoteModal = ({ isOpen, onClose, onSuccess, onOpenUploadPasta }) 
                           whiteSpace: 'nowrap',
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
-                          lineHeight: '1.4'
+                          lineHeight: '1.4',
+                          marginBottom: '6px'
                         }}>
                           {pasta.titulo || pasta.nomePasta || 'Sem título'}
                         </div>
                         <div style={{
-                          fontSize: '12px',
-                          color: 'var(--text-secondary)',
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '8px',
+                          gap: '6px',
                           flexWrap: 'wrap'
                         }}>
-                          <span>{pasta.arquivos.length} arquivo{pasta.arquivos.length !== 1 ? 's' : ''}</span>
-                          {pasta.categoria && (
-                            <>
-                              <span>•</span>
-                              <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                <CategoryIcon categoryId={pasta.categoria} size={10} />
-                                {categorias.find(c => c.id === pasta.categoria)?.nome || pasta.categoria}
-                              </span>
-                            </>
-                          )}
+                          {/* Tag de arquivos */}
+                          <span style={{
+                            fontSize: '11px',
+                            padding: '2px 8px',
+                            borderRadius: '10px',
+                            background: 'var(--bg-secondary)',
+                            color: 'var(--text-secondary)',
+                            border: '1px solid var(--border)'
+                          }}>
+                            {pasta.arquivos.length} arquivo{pasta.arquivos.length !== 1 ? 's' : ''}
+                          </span>
+
+                          {/* Tag de categoria - clicável para edição rápida */}
+                          <span
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              // Abre um prompt simples para selecionar categoria
+                              const select = e.currentTarget.querySelector('select');
+                              if (select) select.click();
+                            }}
+                            style={{
+                              fontSize: '11px',
+                              padding: '2px 8px',
+                              borderRadius: '10px',
+                              background: pasta.categoria ? 'rgba(212, 175, 55, 0.1)' : 'rgba(230, 126, 34, 0.1)',
+                              color: pasta.categoria ? '#D4AF37' : '#e67e22',
+                              border: `1px solid ${pasta.categoria ? 'rgba(212, 175, 55, 0.3)' : 'rgba(230, 126, 34, 0.3)'}`,
+                              cursor: 'pointer',
+                              fontWeight: '500',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              position: 'relative'
+                            }}
+                          >
+                            {categorias.find(c => c.id === pasta.categoria)?.nome || 'Categoria'}
+                            <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                              <polyline points="6 9 12 15 18 9"/>
+                            </svg>
+                            <select
+                              value={pasta.categoria || ''}
+                              onClick={(e) => e.stopPropagation()}
+                              onChange={(e) => {
+                                e.stopPropagation();
+                                editarCategoria(pasta.id, e.target.value);
+                              }}
+                              style={{
+                                position: 'absolute',
+                                opacity: 0,
+                                top: 0,
+                                left: 0,
+                                width: '100%',
+                                height: '100%',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              <option value="">Categoria</option>
+                              {categorias.map(cat => (
+                                <option key={cat.id} value={cat.id}>{cat.nome}</option>
+                              ))}
+                            </select>
+                          </span>
+
+                          {/* Tag de status/problema */}
                           {pasta.statusMotivo && (
-                            <>
-                              <span>•</span>
-                              <span style={{ color: pasta.status === 'attention' ? '#e67e22' : '#e74c3c' }}>
-                                {pasta.statusMotivo}
-                              </span>
-                            </>
+                            <span style={{
+                              fontSize: '11px',
+                              padding: '2px 8px',
+                              borderRadius: '10px',
+                              background: pasta.status === 'attention' ? 'rgba(230, 126, 34, 0.1)' : 'rgba(231, 76, 60, 0.1)',
+                              color: pasta.status === 'attention' ? '#e67e22' : '#e74c3c',
+                              border: `1px solid ${pasta.status === 'attention' ? 'rgba(230, 126, 34, 0.3)' : 'rgba(231, 76, 60, 0.3)'}`
+                            }}>
+                              {pasta.statusMotivo}
+                            </span>
                           )}
                         </div>
                       </div>
 
-                      {/* Botão resolver (para pastas com problema) */}
+                      {/* Botões para pastas com problema */}
                       {pasta.status === 'problem' && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            abrirPastaNoModalIndividual(pasta);
-                          }}
-                          style={{
-                            padding: '6px 12px',
-                            borderRadius: '6px',
-                            border: '1px solid #e74c3c',
-                            background: 'rgba(231, 76, 60, 0.1)',
-                            color: '#e74c3c',
-                            fontSize: '12px',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '4px'
-                          }}
-                        >
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                          </svg>
-                          Resolver
-                        </button>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          {/* Botão Forçar Duplicada - apenas para duplicatas */}
+                          {pasta.duplicada && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                // Força a pasta a ser tratada como pronta (override)
+                                setPastas(prev => prev.map(p =>
+                                  p.id === pasta.id
+                                    ? { ...p, status: 'attention', statusMotivo: 'Duplicada (forçado)', selecionada: true }
+                                    : p
+                                ));
+                              }}
+                              style={{
+                                padding: '6px 12px',
+                                borderRadius: '6px',
+                                border: '1px solid #e67e22',
+                                background: 'rgba(230, 126, 34, 0.1)',
+                                color: '#e67e22',
+                                fontSize: '12px',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                whiteSpace: 'nowrap'
+                              }}
+                            >
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M12 9v4M12 17h.01"/>
+                                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                              </svg>
+                              Forçar
+                            </button>
+                          )}
+                          {/* Botão Resolver - para outros problemas */}
+                          {!pasta.duplicada && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                abrirPastaNoModalIndividual(pasta);
+                              }}
+                              style={{
+                                padding: '6px 12px',
+                                borderRadius: '6px',
+                                border: '1px solid #e74c3c',
+                                background: 'rgba(231, 76, 60, 0.1)',
+                                color: '#e74c3c',
+                                fontSize: '12px',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px'
+                              }}
+                            >
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                              </svg>
+                              Resolver
+                            </button>
+                          )}
+                        </div>
                       )}
 
                       {/* Seta expandir */}
@@ -786,37 +947,101 @@ const ImportacaoLoteModal = ({ isOpen, onClose, onSuccess, onOpenUploadPasta }) 
                         background: 'var(--bg-secondary)',
                         borderTop: '1px solid var(--border)'
                       }}>
-                        {/* Seletor de categoria (se não tiver) */}
-                        {!pasta.categoria && (
-                          <div style={{ marginBottom: '12px' }}>
+                        {/* Campos de edição */}
+                        <div style={{
+                          display: 'grid',
+                          gridTemplateColumns: '1fr 1fr',
+                          gap: '10px',
+                          marginBottom: '12px'
+                        }}>
+                          {/* Título */}
+                          <div style={{ gridColumn: '1 / -1' }}>
                             <label style={{
                               display: 'block',
-                              fontSize: '12px',
-                              color: 'var(--text-secondary)',
-                              marginBottom: '4px'
+                              fontSize: '11px',
+                              color: 'var(--text-muted)',
+                              marginBottom: '3px',
+                              fontWeight: '500'
                             }}>
-                              Selecione uma categoria:
+                              Título
                             </label>
-                            <select
-                              value={pasta.categoria || ''}
-                              onChange={(e) => editarCategoria(pasta.id, e.target.value)}
+                            <input
+                              type="text"
+                              value={pasta.titulo || ''}
+                              onClick={(e) => e.stopPropagation()}
+                              onChange={(e) => editarTitulo(pasta.id, e.target.value)}
+                              placeholder="Nome da partitura"
                               style={{
                                 width: '100%',
-                                padding: '8px 12px',
+                                padding: '8px 10px',
+                                borderRadius: '6px',
+                                border: '1px solid var(--border)',
+                                background: 'var(--bg-primary)',
+                                color: 'var(--text-primary)',
+                                fontSize: '13px',
+                                fontWeight: '500'
+                              }}
+                            />
+                          </div>
+
+                          {/* Compositor */}
+                          <div>
+                            <label style={{
+                              display: 'block',
+                              fontSize: '11px',
+                              color: 'var(--text-muted)',
+                              marginBottom: '3px',
+                              fontWeight: '500'
+                            }}>
+                              Compositor
+                            </label>
+                            <input
+                              type="text"
+                              value={pasta.compositor || ''}
+                              onClick={(e) => e.stopPropagation()}
+                              onChange={(e) => editarCompositor(pasta.id, e.target.value)}
+                              placeholder="Nome do compositor"
+                              style={{
+                                width: '100%',
+                                padding: '8px 10px',
                                 borderRadius: '6px',
                                 border: '1px solid var(--border)',
                                 background: 'var(--bg-primary)',
                                 color: 'var(--text-primary)',
                                 fontSize: '13px'
                               }}
-                            >
-                              <option value="">Selecione...</option>
-                              {categorias.map(cat => (
-                                <option key={cat.id} value={cat.id}>{cat.nome}</option>
-                              ))}
-                            </select>
+                            />
                           </div>
-                        )}
+
+                          {/* Arranjador */}
+                          <div>
+                            <label style={{
+                              display: 'block',
+                              fontSize: '11px',
+                              color: 'var(--text-muted)',
+                              marginBottom: '3px',
+                              fontWeight: '500'
+                            }}>
+                              Arranjador
+                            </label>
+                            <input
+                              type="text"
+                              value={pasta.arranjador || ''}
+                              onClick={(e) => e.stopPropagation()}
+                              onChange={(e) => editarArranjador(pasta.id, e.target.value)}
+                              placeholder="Nome do arranjador"
+                              style={{
+                                width: '100%',
+                                padding: '8px 10px',
+                                borderRadius: '6px',
+                                border: '1px solid var(--border)',
+                                background: 'var(--bg-primary)',
+                                color: 'var(--text-primary)',
+                                fontSize: '13px'
+                              }}
+                            />
+                          </div>
+                        </div>
 
                         {/* Lista de arquivos */}
                         <div style={{ fontSize: '12px' }}>
@@ -870,50 +1095,196 @@ const ImportacaoLoteModal = ({ isOpen, onClose, onSuccess, onOpenUploadPasta }) 
 
           {/* UPLOADING STATE */}
           {modalState === STATES.UPLOADING && (
-            <div style={{ textAlign: 'center', padding: '40px' }}>
-              <LottieAnimation name="upload" size={120} />
+            <div style={{ textAlign: 'center', padding: '40px 40px 32px' }}>
+              {/* Container com fundo para animação */}
+              <div style={{
+                width: '120px',
+                height: '120px',
+                margin: '0 auto 28px',
+                borderRadius: '50%',
+                background: 'linear-gradient(145deg, rgba(212, 175, 55, 0.12) 0%, rgba(184, 134, 11, 0.06) 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 4px 24px rgba(212, 175, 55, 0.08)'
+              }}>
+                <LottieAnimation name="upload" size={80} />
+              </div>
 
               <div style={{
-                fontSize: '16px',
+                fontSize: '20px',
                 fontWeight: '600',
                 color: 'var(--text-primary)',
-                marginTop: '24px',
-                marginBottom: '8px'
+                marginBottom: '6px'
               }}>
-                Enviando partituras...
+                Enviando partituras
               </div>
 
-              <div style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '8px' }}>
-                {uploadProgress.processadas} de {uploadProgress.total}
+              <div style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '32px' }}>
+                {uploadProgress.processadas} de {uploadProgress.total} concluída{uploadProgress.processadas !== 1 ? 's' : ''}
               </div>
 
-              {uploadProgress.pastaAtual && (
-                <div style={{
-                  fontSize: '12px',
-                  color: 'var(--text-muted)',
-                  marginBottom: '24px'
-                }}>
-                  {uploadProgress.pastaAtual}
-                </div>
-              )}
-
+              {/* Barra de progresso moderna com indicador de partitura atual */}
               <div style={{
                 width: '100%',
-                maxWidth: '300px',
-                height: '8px',
-                background: 'var(--bg-primary)',
-                borderRadius: '4px',
-                overflow: 'hidden',
+                maxWidth: '400px',
                 margin: '0 auto'
               }}>
+                {/* Container da barra */}
                 <div style={{
-                  width: `${uploadProgress.percentual}%`,
-                  height: '100%',
-                  background: 'linear-gradient(90deg, #D4AF37, #B8860B)',
+                  position: 'relative',
+                  height: '8px',
+                  background: 'var(--bg-primary)',
                   borderRadius: '4px',
-                  transition: 'width 0.2s ease-out'
-                }} />
+                  overflow: 'hidden',
+                  marginBottom: '16px'
+                }}>
+                  {/* Barra de progresso com gradiente e brilho */}
+                  <div style={{
+                    position: 'absolute',
+                    left: 0,
+                    top: 0,
+                    width: `${uploadProgress.percentual}%`,
+                    height: '100%',
+                    background: 'linear-gradient(90deg, #D4AF37 0%, #F4D03F 50%, #D4AF37 100%)',
+                    backgroundSize: '200% 100%',
+                    borderRadius: '4px',
+                    transition: 'width 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                    animation: 'shimmer 2s linear infinite'
+                  }} />
+                  {/* Brilho animado na ponta */}
+                  <div style={{
+                    position: 'absolute',
+                    left: `calc(${uploadProgress.percentual}% - 20px)`,
+                    top: 0,
+                    width: '20px',
+                    height: '100%',
+                    background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)',
+                    borderRadius: '4px',
+                    opacity: uploadProgress.percentual > 0 && uploadProgress.percentual < 100 ? 1 : 0,
+                    transition: 'left 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
+                  }} />
+                </div>
+
+                {/* Card da partitura atual sendo enviada */}
+                {(() => {
+                  const pastasParaUpload = pastas.filter(p => p.selecionada && p.status !== 'problem');
+                  const pastaAtual = pastasParaUpload[uploadProgress.processadas];
+                  if (!pastaAtual) return null;
+
+                  return (
+                    <div style={{
+                      background: 'var(--bg-primary)',
+                      borderRadius: '12px',
+                      padding: '14px 16px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      border: '1px solid rgba(212, 175, 55, 0.2)'
+                    }}>
+                      {/* Spinner */}
+                      <div style={{
+                        width: '32px',
+                        height: '32px',
+                        borderRadius: '50%',
+                        background: 'rgba(212, 175, 55, 0.1)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0
+                      }}>
+                        <div style={{
+                          width: '18px',
+                          height: '18px',
+                          border: '2px solid rgba(212, 175, 55, 0.3)',
+                          borderTopColor: '#D4AF37',
+                          borderRadius: '50%',
+                          animation: 'spin 0.8s linear infinite'
+                        }} />
+                      </div>
+
+                      {/* Info da partitura */}
+                      <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+                        <div style={{
+                          fontSize: '13px',
+                          fontWeight: '600',
+                          color: 'var(--text-primary)',
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          marginBottom: '2px'
+                        }}>
+                          {pastaAtual.titulo}
+                        </div>
+                        <div style={{
+                          fontSize: '11px',
+                          color: 'var(--text-muted)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px'
+                        }}>
+                          <span>{pastaAtual.arquivos?.length || 0} arquivo{(pastaAtual.arquivos?.length || 0) !== 1 ? 's' : ''}</span>
+                          <span style={{ opacity: 0.5 }}>•</span>
+                          <span style={{ color: '#D4AF37' }}>Enviando...</span>
+                        </div>
+                      </div>
+
+                      {/* Percentual */}
+                      <div style={{
+                        fontSize: '14px',
+                        fontWeight: '700',
+                        color: '#D4AF37',
+                        fontVariantNumeric: 'tabular-nums'
+                      }}>
+                        {uploadProgress.percentual}%
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Indicadores de progresso minimalistas */}
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  marginTop: '20px'
+                }}>
+                  {pastas
+                    .filter(p => p.selecionada && p.status !== 'problem')
+                    .map((pasta, idx) => {
+                      const isCompleted = idx < uploadProgress.processadas;
+                      const isCurrent = idx === uploadProgress.processadas;
+                      return (
+                        <div
+                          key={pasta.id}
+                          title={pasta.titulo}
+                          style={{
+                            width: isCurrent ? '24px' : '8px',
+                            height: '8px',
+                            borderRadius: '4px',
+                            background: isCompleted
+                              ? '#27ae60'
+                              : isCurrent
+                                ? 'linear-gradient(90deg, #D4AF37, #F4D03F)'
+                                : 'var(--bg-secondary)',
+                            transition: 'all 0.3s ease',
+                            cursor: 'default'
+                          }}
+                        />
+                      );
+                    })}
+                </div>
               </div>
+
+              <style>{`
+                @keyframes spin {
+                  to { transform: rotate(360deg); }
+                }
+                @keyframes shimmer {
+                  0% { background-position: 200% 0; }
+                  100% { background-position: -200% 0; }
+                }
+              `}</style>
             </div>
           )}
 
@@ -922,19 +1293,36 @@ const ImportacaoLoteModal = ({ isOpen, onClose, onSuccess, onOpenUploadPasta }) 
             <div style={{ textAlign: 'center', padding: '40px' }}>
               {(() => {
                 const resumo = gerarResumo(uploadResultados.estatisticas);
+                const bgColor = resumo.tipo === 'success'
+                  ? 'rgba(39, 174, 96, 0.1)'
+                  : resumo.tipo === 'partial'
+                    ? 'rgba(230, 126, 34, 0.1)'
+                    : 'rgba(231, 76, 60, 0.1)';
                 return (
                   <>
-                    <LottieAnimation
-                      name={resumo.tipo === 'success' ? 'success' : resumo.tipo === 'partial' ? 'attention' : 'error'}
-                      size={140}
-                      loop={false}
-                    />
+                    {/* Container com fundo colorido */}
+                    <div style={{
+                      width: '160px',
+                      height: '160px',
+                      margin: '0 auto 24px',
+                      borderRadius: '50%',
+                      background: bgColor,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: `0 4px 24px ${bgColor}`
+                    }}>
+                      <LottieAnimation
+                        name={resumo.tipo === 'success' ? 'success' : resumo.tipo === 'partial' ? 'attention' : 'error'}
+                        size={120}
+                        loop={false}
+                      />
+                    </div>
 
                     <div style={{
                       fontSize: '20px',
                       fontWeight: '700',
                       color: resumo.tipo === 'success' ? '#27ae60' : resumo.tipo === 'partial' ? '#e67e22' : '#e74c3c',
-                      marginTop: '24px',
                       marginBottom: '8px'
                     }}>
                       {resumo.tipo === 'success' && 'Upload concluído!'}
@@ -956,8 +1344,10 @@ const ImportacaoLoteModal = ({ isOpen, onClose, onSuccess, onOpenUploadPasta }) 
                         marginTop: '24px',
                         padding: '16px',
                         background: 'rgba(231, 76, 60, 0.1)',
-                        borderRadius: '8px',
-                        textAlign: 'left'
+                        borderRadius: '12px',
+                        textAlign: 'left',
+                        maxWidth: '350px',
+                        margin: '24px auto 0'
                       }}>
                         <div style={{
                           fontSize: '13px',
