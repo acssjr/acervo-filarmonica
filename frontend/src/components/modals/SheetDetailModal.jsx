@@ -8,7 +8,6 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@contexts/AuthContext';
 import { useUI } from '@contexts/UIContext';
 import { useData } from '@contexts/DataContext';
-import { CATEGORIES_MAP } from '@constants/categories';
 import { Icons } from '@constants/icons';
 import { API_BASE_URL } from '@constants/api';
 import CategoryIcon from '@components/common/CategoryIcon';
@@ -20,7 +19,7 @@ const SheetDetailModal = () => {
   const location = useLocation();
   const { user } = useAuth();
   const { selectedSheet, setSelectedSheet, showToast } = useUI();
-  const { favorites, toggleFavorite } = useData();
+  const { favorites, toggleFavorite, categoriesMap } = useData();
 
   // Estado local
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
@@ -82,7 +81,7 @@ const SheetDetailModal = () => {
 
   if (!selectedSheet) return null;
 
-  const category = CATEGORIES_MAP.get(selectedSheet.category);
+  const category = categoriesMap.get(selectedSheet.category);
   const isFavorite = favorites.includes(selectedSheet.id);
   const userInstrument = user?.instrument || 'Trompete Bb';
   const userInstrumentLower = userInstrument?.toLowerCase() || '';

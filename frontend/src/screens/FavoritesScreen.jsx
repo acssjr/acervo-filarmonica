@@ -1,16 +1,16 @@
 // ===== FAVORITES SCREEN =====
 // Tela de favoritos
+// Categorias carregadas da API via DataContext
 
 import { useMemo } from 'react';
 import { useData } from '@contexts/DataContext';
-import { CATEGORIES_MAP } from '@constants/categories';
 import { Icons } from '@constants/icons';
 import Header from '@components/common/Header';
 import EmptyState from '@components/common/EmptyState';
 import FileCard from '@components/music/FileCard';
 
 const FavoritesScreen = () => {
-  const { sheets, favorites, toggleFavorite } = useData();
+  const { sheets, favorites, toggleFavorite, categoriesMap } = useData();
 
   const favoriteSheets = useMemo(() => {
     return sheets.filter(s => favorites.includes(s.id));
@@ -32,7 +32,7 @@ const FavoritesScreen = () => {
             <FileCard
               key={sheet.id}
               sheet={sheet}
-              category={CATEGORIES_MAP.get(sheet.category)}
+              category={categoriesMap.get(sheet.category)}
               isFavorite={true}
               onToggleFavorite={() => toggleFavorite(sheet.id)}
             />

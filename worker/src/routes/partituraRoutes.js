@@ -53,11 +53,13 @@ export function setupPartituraRoutes(router) {
     return deletePartitura(id, req, env);
   }, [adminMiddleware]);
 
-  // Rotas admin - partes
+  // Rota autenticada - listar partes (qualquer usuário logado pode ver para download)
   router.get('/api/partituras/:id/partes', (req, env, params) => {
     const id = params.id;
     return getPartesPartitura(id, req, env);
-  }, [adminMiddleware]);
+  }, [authMiddleware]);
+
+  // Rotas admin - gerenciar partes
   router.post('/api/partituras/:id/partes', (req, env, params) => {
     const id = params.id;
     return addParte(id, req, env);
