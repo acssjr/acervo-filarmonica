@@ -4,7 +4,6 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useData } from '@contexts/DataContext';
-import { CATEGORIES_MAP } from '@constants/categories';
 import { Icons } from '@constants/icons';
 import Header from '@components/common/Header';
 import CategoryIcon from '@components/common/CategoryIcon';
@@ -13,7 +12,7 @@ import { levenshtein } from '@utils/search';
 
 const SearchScreen = () => {
   const navigate = useNavigate();
-  const { sheets, favorites, toggleFavorite } = useData();
+  const { sheets, favorites, toggleFavorite, categoriesMap } = useData();
   const [searchQuery, setSearchQuery] = useState('');
 
   // Debounce de 300ms para evitar re-renders excessivos
@@ -72,7 +71,7 @@ const SearchScreen = () => {
         const titleTranslit = transliterate(titleNorm); // "nymphas" -> "ninfas"
         const composerNorm = normalize(sheet.composer);
         const composerTranslit = transliterate(composerNorm);
-        const category = CATEGORIES_MAP.get(sheet.category);
+        const category = categoriesMap.get(sheet.category);
         const categoryNorm = normalize(category?.name || '');
 
         let score = 0;

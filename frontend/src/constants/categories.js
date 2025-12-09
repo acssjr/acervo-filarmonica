@@ -1,21 +1,22 @@
 // ===== CATEGORIES DATA =====
 // 13 generos musicais da Filarmonica
+// IDs sincronizados com o banco de dados (schema.sql)
 // Icons sao renderizados via CategoryIcon.jsx com SVGs customizados
 
 export const CATEGORIES = [
-  { id: 'dobrado', name: 'Dobrados' },
-  { id: 'marcha', name: 'Marchas' },
-  { id: 'marcha-funebre', name: 'Marchas Funebres' },
-  { id: 'marcha-religiosa', name: 'Marchas Religiosas' },
-  { id: 'fantasia', name: 'Fantasias' },
-  { id: 'polaca', name: 'Polacas' },
-  { id: 'bolero', name: 'Boleros' },
-  { id: 'valsa', name: 'Valsas' },
-  { id: 'arranjo', name: 'Arranjos' },
-  { id: 'hino', name: 'Hinos' },
-  { id: 'hino-civico', name: 'Hinos Civicos' },
-  { id: 'hino-religioso', name: 'Hinos Religiosos' },
-  { id: 'preludio', name: 'Preludios' }
+  { id: 'dobrados', name: 'Dobrados' },
+  { id: 'marchas', name: 'Marchas' },
+  { id: 'marchas-funebres', name: 'Marchas Fúnebres' },
+  { id: 'marchas-religiosas', name: 'Marchas Religiosas' },
+  { id: 'fantasias', name: 'Fantasias' },
+  { id: 'polacas', name: 'Polacas' },
+  { id: 'boleros', name: 'Boleros' },
+  { id: 'valsas', name: 'Valsas' },
+  { id: 'arranjos', name: 'Arranjos' },
+  { id: 'hinos', name: 'Hinos' },
+  { id: 'hinos-civicos', name: 'Hinos Cívicos' },
+  { id: 'hinos-religiosos', name: 'Hinos Religiosos' },
+  { id: 'preludios', name: 'Prelúdios' }
 ];
 
 // Map para lookup O(1)
