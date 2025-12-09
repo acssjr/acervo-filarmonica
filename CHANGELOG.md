@@ -7,47 +7,201 @@ e este projeto adere ao [Versionamento Semantico](https://semver.org/lang/pt-BR/
 
 ---
 
-## [2.4.0] - 2025-12-06
+## [2.6.0] - 2025-12-09
 
-### Proteção do Super Admin e Melhorias na Gestão de Músicos
+### Arquitetura Modular do Backend e Novo Dominio
 
-**Objetivo:** Proteger o administrador master e melhorar a experiência de gerenciamento de músicos no painel admin.
+**Objetivo:** Refatorar o worker monolitico de 2014 linhas para arquitetura hexagonal modular e migrar para o novo dominio partituras25.com.
 
 ### Adicionado
 
-- **Proteção Total do Super Admin (@admin)**
-  - Super admin não aparece na lista de músicos (invisível para outros admins)
-  - Outros admins não podem resetar PIN do super admin
-  - Outros admins não podem desativar o super admin
-  - Backend protege alterações via API (403 Forbidden)
-  - Nome genérico "Administrador" exibido no login em vez do nome real
+- **Arquitetura Hexagonal do Backend** (PR #26, #27)
+  - Refatoracao completa do `worker/index.js` (2014 linhas → ~50 arquivos modulares)
+  - Camada **Config**: constantes centralizadas (ALLOWED_ORIGINS, JWT_EXPIRY, PBKDF2_ITERATIONS)
+  - Camada **Infrastructure**: CORS, JWT, Hashing PBKDF2, Rate Limiting, Response Helpers
+  - Camada **Domain**: Services separados por responsabilidade
+  - Camada **Middleware**: Pipeline de CORS, Auth e Admin
+  - Camada **Routes**: Router customizado com suporte a path params e middleware
 
-- **Badge "Admin" na Lista de Músicos**
-  - Administradores agora têm badge dourado "ADMIN" ao lado do nome
-  - Estilo consistente com a identidade visual (dourado sobre fundo transparente)
+- **Router Class Customizado** (`worker/src/routes/router.js`)
+  - Suporte a path params (`/api/partituras/:id`)
+  - Middleware pipeline (global e por rota)
+  - CORS preflight automatico
+  - Error handling centralizado
 
-- **Animação de Loading no Login**
-  - Barras de equalizer musical animadas durante autenticação
-  - Gradiente dourado para combinar com tema da filarmônica
-  - Texto "Entrando..." abaixo das barras
+- **Domain Services**
+  - `authService.js`: verifyUserFromJwt, verifyAdmin, verifyUser
+  - `loginService.js`: checkUser, login, changePin
+  - `atividadeService.js`: registrarAtividade, getAtividades
+  - `favoritoService.js`: getFavoritos, addFavorito, removeFavorito
+  - `categoriaService.js`: CRUD de categorias
+  - `estatisticaService.js`: estatisticas e instrumentos
+  - `usuarioService.js`: CRUD de usuarios (admin)
+  - `perfilService.js`: perfil do usuario
+  - `partituraService.js`, `parteService.js`, `downloadService.js`: partituras
 
-- **Animação CSS `@keyframes equalizer`**
-  - Animação de 5 barras simulando equalizer de áudio
-  - Delay escalonado para efeito de onda
+- **Novo Dominio** (PR #24)
+  - Frontend: `partituras25.com`
+  - API: `api.partituras25.com`
+  - Rotas customizadas no Cloudflare Workers
+  - CORS atualizado para novos dominios
+
+- **CLAUDE.md** - Instrucoes de desenvolvimento local
+
+### Alterado
+
+- **wrangler.toml**: Entry point alterado para `worker/src/index.js`
+- **Frontend**: API_BASE_URL atualizado para `api.partituras25.com`
+
+### Estrutura de Arquivos Criada
+
+```
+worker/src/
+├── index.js                    # Entry point
+├── config/                     # Constantes centralizadas
+├── infrastructure/             # CORS, JWT, Hashing, RateLimit, Response
+├── domain/                     # Auth, Atividades, Favoritos, Categorias, Estatisticas, Usuarios, Perfil, Partituras
+├── middleware/                 # CORS, Auth, Admin middlewares
+└── routes/                     # Router class + arquivos de rotas
+```
+
+---
+
+## [2.5.1] - 2025-12-08
+
+### Modal de Edicao e Melhorias na Importacao (PR #25)
+
+**Objetivo:** Permitir edicao de partituras existentes e melhorar a experiencia de importacao em lote.
+
+### Adicionado
+
+- **Modal de Edicao de Partituras**
+  - Editar titulo, compositor, arranjador, categoria, ano, descricao
+  - Botao de edicao ao lado do botao deletar
+  - Validacao de campos obrigatorios
+
+- **Melhorias na Importacao em Lote**
+  - Edicao de categoria/titulo/compositor antes do upload
+  - Mensagem simplificada para duplicatas ("Ja existe no acervo")
+  - Deteccao melhorada de instrumentos (caixa-clara, partes I e II)
+
+- **seed-local.sql** - Dados de teste para desenvolvimento local
+
+### Arquivos Modificados
+
+| Arquivo | Alteracao |
+|---------|-----------|
+| `AdminPartituras.jsx` | +407 linhas (modal de edicao) |
+| `ImportacaoLoteModal.jsx` | +646 linhas (edicao pre-upload) |
+| `instrumentParser.js` | +404 linhas (deteccao melhorada) |
+
+---
+
+## [2.5.0] - 2025-12-07
+
+### Skeleton Loading e Correcao de Acentuacao (PR #23)
+
+**Objetivo:** Melhorar feedback visual durante carregamento e corrigir acentuacao em portugues.
+
+### Adicionado
+
+- **Componente Skeleton.jsx** (260 linhas)
+  - Variantes: text, circular, rectangular, rounded
+  - Animacao shimmer suave
+
+- **Animacoes CSS**
+  - `@keyframes shimmer` - efeito de loading
+  - `@keyframes fadeInUp` - entrada de elementos
+  - `@keyframes slideInFromBottom` - transicao de paginas
 
 ### Corrigido
 
-- **Bug de Zeros Aparecendo nos Nomes**
-  - Problema: `{user.admin && <Badge />}` quando `user.admin = 0` (SQLite integer)
-  - JavaScript: `0 && <Component>` retorna `0`, React renderiza "0" como texto
-  - Solução: `{!!user.admin && <Badge />}` - double negation converte para boolean
+- **Acentuacao em Portugues**
+  - "Musico" → "Músico"
+  - "Ultimo" → "Último"
+  - "Acoes Rapidas" → "Ações Rápidas"
+  - "generos" → "gêneros"
+  - "Pagina" → "Página"
 
-### Removido
+---
 
-- **Seção de Manutenção Temporária**
-  - Removidos botões "Limpar números dos nomes" e "Renomear Super Admin"
-  - Funções `handleLimparNomes` e `limpandoNomes` state removidos
-  - Endpoint de manutenção mantido no backend para uso futuro
+## [2.4.2] - 2025-12-07
+
+### Melhorias Visuais nas Sidebars (PR #22)
+
+**Objetivo:** Sincronizar visual das sidebars e corrigir bugs de UX.
+
+### Adicionado
+
+- Hover em itens de navegacao das sidebars
+- Retangulo escuro no menu admin
+
+### Corrigido
+
+- Foco do PIN apos erro de login (delay 100ms)
+- Tutorial: salvar preferencia ao pular/finalizar
+- Alinhamento do header de saudacao com "Em Destaque"
+
+---
+
+## [2.4.1] - 2025-12-07
+
+### Deteccao de Categorias e Animacoes Lottie (PR #21)
+
+**Objetivo:** Melhorar deteccao automatica de categorias e adicionar feedback visual animado.
+
+### Adicionado
+
+- **Animacoes Lottie** (scan, success, error, warning, upload)
+- **Deteccao de Duplicatas** no batch import
+- **Novas Categorias**: marcha-religiosa, hino-civico
+
+### Alterado
+
+- Ordenacao de termos por comprimento (detecta categorias compostas)
+- Normalizacao de acentos melhorada
+
+---
+
+## [2.4.0] - 2025-12-06
+
+### Importacao em Lote de Partituras (PR #20)
+
+**Objetivo:** Permitir upload de multiplas pastas de partituras de uma vez.
+
+### Adicionado
+
+- **ImportacaoLoteModal.jsx** (1079 linhas)
+  - 6 estados: selecao, analise, feedback, revisao, upload, conclusao
+  - Upload em chunks com progresso
+
+- **batchParser.js** (336 linhas) - Analise em lote de pastas
+- **instrumentParser.js** (255 linhas) - 150+ variacoes de instrumentos
+- **metadataParser.js** (263 linhas) - Deteccao de categoria multi-camada
+- **uploadBatch.js** (283 linhas) - Upload com retry automatico
+- **LottieAnimation.jsx** (190 linhas) - Wrapper para animacoes
+
+---
+
+## [2.3.3] - 2025-12-06
+
+### Protecao do Super Admin e Melhorias na Gestao de Musicos
+
+**Objetivo:** Proteger o administrador master e melhorar a experiencia de gerenciamento de musicos.
+
+### Adicionado
+
+- **Protecao Total do Super Admin (@admin)**
+  - Invisivel na lista de musicos
+  - Nao pode ser editado por outros admins
+  - Backend protege alteracoes (403 Forbidden)
+
+- **Badge "Admin"** na lista de musicos
+- **Animacao de Loading** (equalizer) no login
+
+### Corrigido
+
+- Bug de zeros aparecendo nos nomes (`!!user.admin`)
 
 ### Arquivos Modificados
 
@@ -400,7 +554,8 @@ npm run test:e2e:ui                        # Interface interativa
 - [ ] Lazy loading nas screens (React.lazy + Suspense)
 - [ ] Debounce em persistencia localStorage
 - [ ] Error Boundaries
-- [ ] Modularizacao do backend (worker 1800+ linhas)
+- [x] ~~Modularizacao do backend (worker 2014 linhas)~~ (v2.6.0 - Arquitetura Hexagonal)
 - [x] ~~Testes unitarios basicos~~ (v2.3.0 - 215 testes)
 - [x] ~~CI/CD automatizado~~ (v2.3.0 - GitHub Actions)
 - [ ] Aumentar cobertura de testes (Contexts, Utils)
+- [ ] Refatorar componentes frontend monoliticos (AdminPartituras 1155 linhas)
