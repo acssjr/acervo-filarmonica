@@ -28,7 +28,7 @@ const TABS = {
   PROBLEM: 'problem'
 };
 
-const ImportacaoLoteModal = ({ isOpen, onClose, onSuccess, onOpenUploadPasta }) => {
+const ImportacaoLoteModal = ({ isOpen, onClose, onSuccess, onOpenUploadPasta, initialItems }) => {
   const { showToast } = useUI();
 
   // Estado principal
@@ -97,6 +97,46 @@ const ImportacaoLoteModal = ({ isOpen, onClose, onSuccess, onOpenUploadPasta }) 
       setUploadResultados(null);
     }
   }, [isOpen]);
+
+  // Processa items pré-carregados (drag & drop global)
+  useEffect(() => {
+    const processInitialItems = async () => {
+      if (!isOpen || !initialItems || initialItems.length === 0 || categorias.length === 0 || partiturasExistentes === null) return;
+      if (modalState !== STATES.SELECTION) return; // Só processa se estiver no estado inicial
+
+      setModalState(STATES.ANALYZING);
+
+      try {
+        const { pastas: pastasAnalisadas, estatisticas: stats } = await processarLote(
+          initialItems,
+          categorias,
+          partiturasExistentes,
+          setAnalyzeProgress
+        );
+
+        if (pastasAnalisadas.length === 0) {
+          showToast('Nenhuma pasta com PDFs encontrada', 'error');
+          setModalState(STATES.SELECTION);
+          return;
+        }
+
+        setPastas(pastasAnalisadas);
+        setEstatisticas(stats);
+
+        setModalState(STATES.FEEDBACK);
+        setTimeout(() => {
+          setModalState(STATES.REVIEW);
+        }, 2500);
+
+      } catch (err) {
+        console.error('Erro na análise:', err);
+        showToast('Erro ao analisar pastas', 'error');
+        setModalState(STATES.SELECTION);
+      }
+    };
+
+    processInitialItems();
+  }, [isOpen, initialItems, categorias, partiturasExistentes, modalState, showToast]);
 
   // Handlers de Drag & Drop
   const handleDragEnter = (e) => {

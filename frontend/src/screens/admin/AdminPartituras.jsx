@@ -65,6 +65,12 @@ const AdminPartituras = () => {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showImportacaoLote, setShowImportacaoLote] = useState(false);
 
+  // Estado para drag & drop global na tela
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
+  const [droppedFiles, setDroppedFiles] = useState(null); // Arquivos pré-carregados para os modais
+  const [droppedItems, setDroppedItems] = useState(null); // Items do dataTransfer para ImportacaoLote
+  const dragCounterRef = useRef(0); // Para controlar eventos de drag aninhados
+
   // Estado para expansao inline
   const [expandedId, setExpandedId] = useState(null);
   const [partes, setPartes] = useState([]);
@@ -162,6 +168,169 @@ const AdminPartituras = () => {
       .replace(/[\u0300-\u036f]/g, '')
       .trim();
   };
+
+  // ===== DRAG & DROP GLOBAL =====
+  // Função para ler entradas de diretório recursivamente
+  const readAllEntriesRecursively = async (entry, path = '') => {
+    const files = [];
+    if (entry.isFile) {
+      const file = await new Promise((resolve) => entry.file(resolve));
+      Object.defineProperty(file, 'webkitRelativePath', {
+        value: path + file.name,
+        writable: false
+      });
+      files.push(file);
+    } else if (entry.isDirectory) {
+      const reader = entry.createReader();
+      const entries = await new Promise((resolve) => {
+        const allEntries = [];
+        const readEntries = () => {
+          reader.readEntries((results) => {
+            if (results.length === 0) {
+              resolve(allEntries);
+            } else {
+              allEntries.push(...results);
+              readEntries();
+            }
+          });
+        };
+        readEntries();
+      });
+      for (const childEntry of entries) {
+        const childFiles = await readAllEntriesRecursively(childEntry, path + entry.name + '/');
+        files.push(...childFiles);
+      }
+    }
+    return files;
+  };
+
+  // Handlers de drag & drop global
+  const handleGlobalDragEnter = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current++;
+    if (e.dataTransfer.types.includes('Files')) {
+      setIsDraggingOver(true);
+    }
+  }, []);
+
+  const handleGlobalDragLeave = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current--;
+    if (dragCounterRef.current === 0) {
+      setIsDraggingOver(false);
+    }
+  }, []);
+
+  const handleGlobalDragOver = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
+
+  const handleGlobalDrop = useCallback(async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingOver(false);
+    dragCounterRef.current = 0;
+
+    const items = e.dataTransfer.items;
+    if (!items || items.length === 0) return;
+
+    // Conta quantas pastas foram soltas
+    const folderEntries = [];
+    for (const item of items) {
+      const entry = item.webkitGetAsEntry?.();
+      if (entry?.isDirectory) {
+        folderEntries.push(entry);
+      }
+    }
+
+    if (folderEntries.length === 0) {
+      showToast('Arraste uma pasta contendo arquivos PDF', 'error');
+      return;
+    }
+
+    // Verifica se é uma pasta com subpastas (lote) ou pasta simples
+    if (folderEntries.length === 1) {
+      const mainFolder = folderEntries[0];
+      const reader = mainFolder.createReader();
+
+      const entries = await new Promise((resolve) => {
+        const allEntries = [];
+        const readEntries = () => {
+          reader.readEntries((results) => {
+            if (results.length === 0) {
+              resolve(allEntries);
+            } else {
+              allEntries.push(...results);
+              readEntries();
+            }
+          });
+        };
+        readEntries();
+      });
+
+      // Conta subpastas que contêm PDFs
+      const subFolders = entries.filter(e => e.isDirectory);
+      const hasPDFsInRoot = entries.some(e => e.isFile && e.name.toLowerCase().endsWith('.pdf'));
+
+      if (subFolders.length > 0 && !hasPDFsInRoot) {
+        // Tem subpastas e não tem PDFs na raiz -> Importação em Lote
+        // Passa os items originais para o modal de lote processar
+        setDroppedItems(items);
+        setShowImportacaoLote(true);
+      } else if (hasPDFsInRoot) {
+        // Tem PDFs na raiz -> Upload de Pasta simples
+        const allFiles = await readAllEntriesRecursively(mainFolder, '');
+        const pdfFiles = allFiles.filter(f => f.name.toLowerCase().endsWith('.pdf'));
+
+        if (pdfFiles.length === 0) {
+          showToast('Nenhum arquivo PDF encontrado na pasta', 'error');
+          return;
+        }
+
+        setDroppedFiles({ files: pdfFiles, folderName: mainFolder.name });
+        setShowUploadModal(true);
+      } else {
+        // Pasta vazia ou sem PDFs
+        showToast('Nenhum arquivo PDF encontrado na pasta', 'error');
+      }
+    } else {
+      // Múltiplas pastas soltas -> Importação em Lote
+      setDroppedItems(items);
+      setShowImportacaoLote(true);
+    }
+  }, [showToast]);
+
+  // Registra os event listeners globais
+  useEffect(() => {
+    const container = document.body;
+    container.addEventListener('dragenter', handleGlobalDragEnter);
+    container.addEventListener('dragleave', handleGlobalDragLeave);
+    container.addEventListener('dragover', handleGlobalDragOver);
+    container.addEventListener('drop', handleGlobalDrop);
+
+    return () => {
+      container.removeEventListener('dragenter', handleGlobalDragEnter);
+      container.removeEventListener('dragleave', handleGlobalDragLeave);
+      container.removeEventListener('dragover', handleGlobalDragOver);
+      container.removeEventListener('drop', handleGlobalDrop);
+    };
+  }, [handleGlobalDragEnter, handleGlobalDragLeave, handleGlobalDragOver, handleGlobalDrop]);
+
+  // Limpa arquivos pré-carregados quando modais fecham
+  useEffect(() => {
+    if (!showUploadModal) {
+      setDroppedFiles(null);
+    }
+  }, [showUploadModal]);
+
+  useEffect(() => {
+    if (!showImportacaoLote) {
+      setDroppedItems(null);
+    }
+  }, [showImportacaoLote]);
 
   const loadData = async () => {
     setLoading(true);
@@ -1144,6 +1313,77 @@ const AdminPartituras = () => {
         </div>
       )}
 
+      {/* Overlay de Drag & Drop Global */}
+      {isDraggingOver && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.85)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            pointerEvents: 'none'
+          }}
+        >
+          <div style={{
+            width: '140px',
+            height: '140px',
+            borderRadius: '32px',
+            background: 'linear-gradient(145deg, rgba(212, 175, 55, 0.2) 0%, rgba(184, 134, 11, 0.1) 100%)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginBottom: '24px',
+            border: '2px dashed #D4AF37',
+            animation: 'pulse 1.5s ease-in-out infinite'
+          }}>
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+          </div>
+
+          <div style={{
+            fontSize: '24px',
+            fontWeight: '700',
+            color: '#D4AF37',
+            marginBottom: '12px',
+            textAlign: 'center'
+          }}>
+            Solte a pasta aqui
+          </div>
+
+          <div style={{
+            fontSize: '14px',
+            color: 'var(--text-secondary)',
+            textAlign: 'center',
+            maxWidth: '300px'
+          }}>
+            <div style={{ marginBottom: '8px' }}>
+              <strong>1 pasta com PDFs</strong> → Upload simples
+            </div>
+            <div>
+              <strong>Pasta com subpastas</strong> → Importação em lote
+            </div>
+          </div>
+
+          <style>{`
+            @keyframes pulse {
+              0%, 100% { transform: scale(1); opacity: 1; }
+              50% { transform: scale(1.05); opacity: 0.8; }
+            }
+          `}</style>
+        </div>
+      )}
+
       {/* Modal de Upload de Pasta */}
       <UploadPastaModal
         isOpen={showUploadModal}
@@ -1153,6 +1393,7 @@ const AdminPartituras = () => {
           setShowUploadModal(false);
         }}
         categorias={categorias}
+        initialFiles={droppedFiles}
       />
 
       {/* Modal de Importação em Lote */}
@@ -1167,6 +1408,7 @@ const AdminPartituras = () => {
           // TODO: Abrir UploadPastaModal com dados pré-preenchidos
           setShowUploadModal(true);
         }}
+        initialItems={droppedItems}
       />
 
       {/* Modal de Visualizacao de PDF */}

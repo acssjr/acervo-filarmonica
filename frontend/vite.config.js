@@ -3,7 +3,8 @@ import react from '@vitejs/plugin-react'
 import path from 'path'
 
 // Ambiente: 'local' usa wrangler dev (porta 8787), 'prod' usa API de produção
-const API_TARGET = process.env.VITE_API_TARGET || 'local'
+// NOTA: Mude para 'local' quando tiver o worker rodando localmente
+const API_TARGET = process.env.VITE_API_TARGET || 'prod'
 
 const apiTargets = {
   local: 'http://localhost:8787',
