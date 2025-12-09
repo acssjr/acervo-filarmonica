@@ -8,13 +8,13 @@
 
 <br/>
 
-[![Versao](https://img.shields.io/badge/versao-2.5.0-722F37?style=for-the-badge&labelColor=D4AF37)](https://github.com/acssjr/acervo-filarmonica)
-[![Status](https://img.shields.io/badge/status-em%20producao-success?style=for-the-badge)](https://acervo-filarmonica.pages.dev)
+[![Versao](https://img.shields.io/badge/versao-2.6.0-722F37?style=for-the-badge&labelColor=D4AF37)](https://github.com/acssjr/acervo-filarmonica)
+[![Status](https://img.shields.io/badge/status-em%20producao-success?style=for-the-badge)](https://partituras25.com)
 [![CI](https://img.shields.io/github/actions/workflow/status/acssjr/acervo-filarmonica/ci.yml?style=for-the-badge&label=CI&logo=github)](https://github.com/acssjr/acervo-filarmonica/actions)
 
 <br/>
 
-[**Acessar Sistema**](https://acervo-filarmonica.pages.dev)
+[**Acessar Sistema**](https://partituras25.com)
 
 <br/>
 
@@ -45,6 +45,7 @@ O sistema permite que musicos acessem suas partituras de qualquer lugar, baixem 
 - Temas claro/escuro/automatico
 - Notificacoes de novidades
 - Carrossel de compositores em destaque
+- Skeleton loading para melhor UX
 
 </td>
 <td width="33%" valign="top">
@@ -60,9 +61,11 @@ O sistema permite que musicos acessem suas partituras de qualquer lugar, baixem 
 
 ### Para Administradores
 - Upload de pasta completa (multiplas partes de uma vez)
-- Deteccao automatica de instrumentos pelo nome do arquivo
+- Importacao em lote de partituras
+- Deteccao automatica de instrumentos e categorias
 - Gerenciamento individual de partes (substituir/deletar)
-- Visualizacao de PDF inline
+- Modal de edicao de partituras
+- Visualizacao de PDF inline com zoom
 - Gestao de musicos com badges visuais
 - Estatisticas de downloads
 - Reset de PIN de usuarios
@@ -131,6 +134,52 @@ Usuarios recebem notificacoes sobre:
 
 ---
 
+## Arquitetura do Backend
+
+O backend segue uma **Arquitetura Hexagonal (Monolito Modular)** para facilitar manutencao e escalabilidade:
+
+```
+worker/src/
+├── index.js                    # Entry point
+├── config/                     # Constantes e configuracoes
+│   ├── constants.js
+│   └── index.js
+├── infrastructure/             # Camada de infraestrutura
+│   ├── security/               # CORS, crypto helpers
+│   ├── auth/                   # JWT, hashing PBKDF2
+│   ├── ratelimit/              # Rate limiting
+│   ├── response/               # Response helpers
+│   └── index.js
+├── domain/                     # Logica de negocio
+│   ├── auth/                   # Autenticacao
+│   ├── atividades/             # Registro de atividades
+│   ├── categorias/             # Categorias de partituras
+│   ├── estatisticas/           # Estatisticas e instrumentos
+│   ├── favoritos/              # Sistema de favoritos
+│   ├── partituras/             # CRUD de partituras
+│   ├── perfil/                 # Perfil do usuario
+│   └── usuarios/               # Gestao de usuarios (admin)
+├── middleware/                 # Middleware pipeline
+│   ├── corsMiddleware.js
+│   ├── authMiddleware.js
+│   ├── adminMiddleware.js
+│   └── index.js
+└── routes/                     # Rotas da API
+    ├── router.js               # Router com path params
+    ├── healthRoutes.js
+    ├── authRoutes.js
+    ├── favoritoRoutes.js
+    ├── atividadeRoutes.js
+    ├── categoriaRoutes.js
+    ├── estatisticaRoutes.js
+    ├── usuarioRoutes.js
+    ├── perfilRoutes.js
+    ├── partituraRoutes.js
+    └── index.js
+```
+
+---
+
 ## Seguranca
 
 | Recurso | Implementacao |
@@ -161,9 +210,81 @@ Push/PR -> Lint -> Jest (215+) -> E2E Mocked (8) -> Build -> Deploy
 
 ---
 
+## URLs do Sistema
+
+| Ambiente | Frontend | API |
+|----------|----------|-----|
+| **Producao** | https://partituras25.com | https://api.partituras25.com |
+| **Local** | http://localhost:5173 | http://localhost:8787 |
+
+---
+
+## Desenvolvimento Local
+
+### Comandos Principais
+
+```bash
+# Terminal 1: Backend local (D1 + R2 locais)
+npm run api
+
+# Terminal 2: Frontend (proxy para localhost:8787)
+cd frontend && npm run dev
+```
+
+### Primeiro uso (inicializar banco local)
+
+```bash
+npm run db:init
+```
+
+Isso cria as tabelas e insere dados de teste:
+- **admin** / PIN: 1234 (administrador)
+- **musico** / PIN: 1234 (usuario comum)
+
+### Scripts Disponiveis
+
+| Comando | Descricao |
+|---------|-----------|
+| `npm run api` | Inicia backend local (porta 8787) |
+| `npm run db:init` | Cria tabelas + seed inicial |
+| `npm run db:seed` | Apenas seed (se tabelas existem) |
+| `npm run db:reset` | Limpa dados e reaplica seed |
+| `npm test` | Roda testes unitarios |
+| `npm run test:e2e` | Roda testes E2E |
+
+---
+
 ## Changelog
 
 <details open>
+<summary><b>v2.6.0</b> - Dezembro 2025</summary>
+
+**Arquitetura Modular do Backend**
+- Refatoracao completa do worker monolitico (2014 linhas → ~50 arquivos)
+- Arquitetura Hexagonal com separacao Infrastructure/Domain
+- Router customizado com suporte a path params e middleware pipeline
+- Domain Services separados por responsabilidade
+- Re-exports organizados por modulo
+
+**Novo Dominio**
+- Migracao para `partituras25.com` e `api.partituras25.com`
+- Configuracao de rotas customizadas no Cloudflare
+
+**Melhorias de UX**
+- Skeleton loading em todas as telas
+- Correcao de acentuacao em portugues
+- Melhorias visuais nas sidebars
+- Animacoes Lottie no admin
+
+**Admin**
+- Modal de edicao de partituras
+- Importacao em lote melhorada
+- Deteccao automatica de categorias
+- Melhor UX nos botoes de acao
+
+</details>
+
+<details>
 <summary><b>v2.5.0</b> - Dezembro 2025</summary>
 
 **Melhorias de UX no Painel Admin**
@@ -191,39 +312,13 @@ Push/PR -> Lint -> Jest (215+) -> E2E Mocked (8) -> Build -> Deploy
 </details>
 
 <details>
-<summary><b>v2.3.3</b> - Dezembro 2025</summary>
+<summary><b>v2.3.x</b> - Dezembro 2025</summary>
 
 - **Admin Toggle:** Alternar entre modo usuario/admin sem logout
-- **Maestro:** Deteccao correta para download de grade
-- **Download:** Botao desabilitado quando grade indisponivel
-- **Testes:** 214 testes automatizados passando
-
-</details>
-
-<details>
-<summary><b>v2.3.2</b> - Dezembro 2025</summary>
-
 - **Carrossel:** Compositores em destaque na home (mobile)
-- **Glassmorphism:** Design hero cards com backdrop-filter
-- **Scroll:** Correcao de scroll ao navegar para compositores
-
-</details>
-
-<details>
-<summary><b>v2.3.1</b> - Dezembro 2025</summary>
-
-- **Busca:** Transliteracao de grafias antigas (nymphas -> ninfas)
-- **Compositores:** Secao na home com top 6 populares
-- **Logout:** Botao na sidebar do admin
-
-</details>
-
-<details>
-<summary><b>v2.3.0</b> - Dezembro 2025</summary>
-
-- **Testes:** 215 testes unitarios (Jest) + 16 testes E2E (Playwright)
-- **CI/CD:** Pipeline automatico com GitHub Actions
-- **Cobertura:** LoginScreen 100%, AdminDashboard 82%
+- **Busca:** Transliteracao de grafias antigas
+- **Testes:** 215 testes unitarios + 16 E2E
+- **CI/CD:** Pipeline automatizado com GitHub Actions
 
 </details>
 
