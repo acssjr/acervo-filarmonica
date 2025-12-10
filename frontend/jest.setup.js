@@ -84,6 +84,10 @@ window.URL.createObjectURL = jest.fn((blob) => {
 });
 window.URL.revokeObjectURL = jest.fn();
 
+// ===== MOCK DO window.scrollTo =====
+// JSDOM nao implementa scrollTo
+window.scrollTo = jest.fn();
+
 // ===== MOCK DO ResizeObserver =====
 // JSDOM nao tem API de layout
 class ResizeObserverMock {
