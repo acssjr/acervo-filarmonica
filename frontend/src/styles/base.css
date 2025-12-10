@@ -65,3 +65,16 @@ input:focus, select:focus {
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--text-muted); border-radius: 2px; }
+
+/* Modal scroll lock - aplicado via JS quando modal abre */
+html.modal-open,
+html.modal-open body {
+  overflow: hidden !important;
+  position: fixed !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+html.modal-open #root {
+  overflow: hidden !important;
+}

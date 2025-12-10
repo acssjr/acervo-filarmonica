@@ -9,7 +9,7 @@ import { useAuth } from '@contexts/AuthContext';
 import { useUI } from '@contexts/UIContext';
 import { useData } from '@contexts/DataContext';
 import { Icons } from '@constants/icons';
-import { API_BASE_URL } from '@constants/api';
+import { API } from '@services/api';
 import CategoryIcon from '@components/common/CategoryIcon';
 import { useSheetDownload } from '@hooks/useSheetDownload';
 import { PartePicker, DownloadConfirm, InstrumentSelector } from './sheet';
@@ -41,42 +41,54 @@ const SheetDetailModal = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Buscar partes quando abrir o modal (com AbortController para cleanup)
+  // Travar scroll do body quando modal estiver aberto
+  useEffect(() => {
+    if (selectedSheet) {
+      // Salvar posição atual do scroll
+      const scrollY = window.scrollY;
+
+      // Aplicar classe que trava scroll (definida em base.css com !important)
+      document.documentElement.classList.add('modal-open');
+      document.body.style.top = `-${scrollY}px`;
+
+      return () => {
+        // Restaurar scroll
+        document.documentElement.classList.remove('modal-open');
+        document.body.style.top = '';
+        window.scrollTo(0, scrollY);
+      };
+    }
+  }, [selectedSheet]);
+
+  // Buscar partes quando abrir o modal
   useEffect(() => {
     if (!selectedSheet) return;
 
-    const abortController = new AbortController();
+    let cancelled = false;
     setShowInstrumentPicker(false);
     download.handleCancelDownload();
 
     const fetchPartes = async () => {
       setLoadingPartes(true);
       try {
-        const response = await fetch(
-          `${API_BASE_URL}/api/partituras/${selectedSheet.id}/partes`,
-          { signal: abortController.signal }
-        );
-        if (response.ok) {
-          const data = await response.json();
+        const data = await API.getPartesPartitura(selectedSheet.id);
+        if (!cancelled) {
           setPartes(data || []);
-        } else {
-          setPartes([]);
         }
       } catch (e) {
-        // Ignorar erros de abort
-        if (e.name !== 'AbortError') {
+        if (!cancelled) {
           console.error('Erro ao buscar partes:', e);
           setPartes([]);
         }
       }
-      if (!abortController.signal.aborted) {
+      if (!cancelled) {
         setLoadingPartes(false);
       }
     };
 
     fetchPartes();
 
-    return () => abortController.abort();
+    return () => { cancelled = true; };
   }, [selectedSheet]);
 
   if (!selectedSheet) return null;
