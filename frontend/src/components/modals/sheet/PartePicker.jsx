@@ -7,8 +7,8 @@ import PropTypes from 'prop-types';
 const PartePicker = ({
   isOpen,
   partes,
-  instrumentName,
-  downloading,
+  instrumentName = '',
+  downloading = false,
   onSelectParte,
   onClose
 }) => {
@@ -204,11 +204,6 @@ PartePicker.propTypes = {
   downloading: PropTypes.bool,
   onSelectParte: PropTypes.func.isRequired,
   onClose: PropTypes.func.isRequired
-};
-
-PartePicker.defaultProps = {
-  instrumentName: '',
-  downloading: false
 };
 
 export default PartePicker;

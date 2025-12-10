@@ -5,8 +5,8 @@ import PropTypes from 'prop-types';
 
 const DownloadConfirm = ({
   isOpen,
-  instrumentName,
-  downloading,
+  instrumentName = '',
+  downloading = false,
   onConfirm,
   onCancel
 }) => {
@@ -128,11 +128,6 @@ DownloadConfirm.propTypes = {
   downloading: PropTypes.bool,
   onConfirm: PropTypes.func.isRequired,
   onCancel: PropTypes.func.isRequired
-};
-
-DownloadConfirm.defaultProps = {
-  instrumentName: '',
-  downloading: false
 };
 
 export default DownloadConfirm;

@@ -8,9 +8,9 @@ import { Icons } from '@constants/icons';
 const InstrumentSelector = ({
   isOpen,
   instruments,
-  userInstrument,
-  isMaestro,
-  downloading,
+  userInstrument = '',
+  isMaestro = false,
+  downloading = false,
   onToggle,
   onSelectInstrument
 }) => {
@@ -130,12 +130,6 @@ InstrumentSelector.propTypes = {
   downloading: PropTypes.bool,
   onToggle: PropTypes.func.isRequired,
   onSelectInstrument: PropTypes.func.isRequired
-};
-
-InstrumentSelector.defaultProps = {
-  userInstrument: '',
-  isMaestro: false,
-  downloading: false
 };
 
 export default InstrumentSelector;
