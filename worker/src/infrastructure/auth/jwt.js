@@ -11,14 +11,15 @@ import {
  * Cria um JWT usando HMAC SHA-256
  * @param {Object} payload - Dados a serem incluídos no token
  * @param {string} secret - Chave secreta para assinar o token
+ * @param {number} expiryHours - Horas até expiração (opcional, padrão JWT_EXPIRY_HOURS)
  * @returns {Promise<string>} Token JWT assinado
  */
-export async function createJwt(payload, secret) {
+export async function createJwt(payload, secret, expiryHours = JWT_EXPIRY_HOURS) {
   const header = { alg: JWT_ALGORITHM, typ: 'JWT' };
 
   // Adiciona expiração
   const now = Math.floor(Date.now() / 1000);
-  const exp = now + (JWT_EXPIRY_HOURS * 60 * 60);
+  const exp = now + (expiryHours * 60 * 60);
   const fullPayload = { ...payload, iat: now, exp };
 
   const headerB64 = base64UrlEncode(stringToArrayBuffer(JSON.stringify(header)));

@@ -146,7 +146,7 @@ const useLoginForm = ({ onClose }) => {
 
       try {
         if (USE_API) {
-          const result = await API.login(normalizedUsername, fullPin);
+          const result = await API.login(normalizedUsername, fullPin, rememberMe);
 
           if (result.success && result.user) {
             Storage.set('rememberMe', rememberMe);

@@ -15,8 +15,15 @@ export const API = {
 
   // Verifica se o token JWT expirou
   isTokenExpired() {
+    const token = Storage.get('authToken', null);
     const expiresAt = Storage.get('tokenExpiresAt', null);
-    if (!expiresAt) return false;
+
+    // Se não há token, não está expirado (não está logado)
+    if (!token) return false;
+
+    // Se há token mas não há expiresAt, considera expirado
+    // (token antigo sem controle de expiração)
+    if (!expiresAt) return true;
 
     // Considera expirado alguns minutos antes para evitar problemas
     return Date.now() > (expiresAt - TOKEN_EXPIRY_BUFFER_MS);
@@ -225,10 +232,10 @@ export const API = {
 
   // ============ AUTH ============
 
-  async login(username, pin) {
+  async login(username, pin, rememberMe = false) {
     const result = await this.request('/api/login', {
       method: 'POST',
-      body: JSON.stringify({ username, pin })
+      body: JSON.stringify({ username, pin, rememberMe })
     });
 
     if (result.token) {

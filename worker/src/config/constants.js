@@ -13,6 +13,7 @@ export const PAGES_SUBDOMAIN_PATTERN = /^https:\/\/[a-z0-9]+\.acervo-filarmonica
 
 // Configuracao JWT
 export const JWT_EXPIRY_HOURS = 24;
+export const JWT_EXPIRY_HOURS_REMEMBER = 24 * 30; // 30 dias quando "lembrar acesso"
 export const JWT_ALGORITHM = 'HS256';
 
 // Configuracao PBKDF2
