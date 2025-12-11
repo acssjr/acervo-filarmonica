@@ -60,17 +60,15 @@ export const API = {
         headers
       });
 
-      // Se receber 401, token pode ter expirado no servidor
+      // Se receber 401, token expirou ou é inválido - limpa sessão
       if (response.status === 401) {
         const error = await response.json().catch(() => ({ error: 'Não autorizado' }));
-        // Verifica se é erro de expiração
-        if (error.error?.includes('expirad') || error.error?.includes('expired')) {
-          this.clearAuth();
-          if (onTokenExpired) {
-            onTokenExpired();
-          }
+        // Qualquer 401 indica que o token não é mais válido
+        this.clearAuth();
+        if (onTokenExpired) {
+          onTokenExpired();
         }
-        throw new Error(error.error || 'Não autorizado');
+        throw new Error(error.error || 'Sessão expirada. Faça login novamente.');
       }
 
       if (!response.ok) {

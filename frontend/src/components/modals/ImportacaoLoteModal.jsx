@@ -48,6 +48,27 @@ const ImportacaoLoteModal = ({ isOpen, onClose, onSuccess, onOpenUploadPasta, in
   // Upload
   const [uploadProgress, setUploadProgress] = useState({ processadas: 0, total: 0, percentual: 0, pastaAtual: '' });
   const [uploadResultados, setUploadResultados] = useState(null);
+  const [funnyPhraseIndex, setFunnyPhraseIndex] = useState(0);
+
+  // Frases engraçadas para mostrar durante o upload
+  const funnyPhrases = [
+    'Adicionando os últimos detalhes...',
+    'Refinando a visualização das partituras...',
+    'Escrevendo o próximo Dobrado Tusca...',
+    'Removendo o Dobrado Ludgero da próxima apresentação...',
+    'Ratando a primeira nota de Preta Pretinha...',
+    'Esperando João Viana voltar do banheiro...',
+    'Deixando Julielson menos durinho no pandeiro...',
+    'Afinando os pistões virtuais...',
+    'Procurando a partitura perdida do saxofone...',
+    'Ajustando o compasso que ninguém acerta...',
+    'Adicionando mais uma fermata só de sacanagem...',
+    'Verificando se o bombardino está acordado...',
+    'Calibrando o volume da tuba...',
+    'Inserindo pausas estratégicas para o café...',
+    'Convencendo o maestro que está tudo certo...',
+    'Organizando as estantes de partitura...'
+  ];
 
   // UI
   const [isDragging, setIsDragging] = useState(false);
@@ -95,8 +116,19 @@ const ImportacaoLoteModal = ({ isOpen, onClose, onSuccess, onOpenUploadPasta, in
       setPastaExpandida(null);
       setUploadProgress({ processadas: 0, total: 0, percentual: 0, pastaAtual: '' });
       setUploadResultados(null);
+      setFunnyPhraseIndex(0);
     }
   }, [isOpen]);
+
+  // Alterna frases engraçadas durante upload
+  useEffect(() => {
+    if (modalState === STATES.UPLOADING) {
+      const interval = setInterval(() => {
+        setFunnyPhraseIndex(prev => (prev + 1) % funnyPhrases.length);
+      }, 2500);
+      return () => clearInterval(interval);
+    }
+  }, [modalState, funnyPhrases.length]);
 
   // Processa items pré-carregados (drag & drop global)
   useEffect(() => {
@@ -1160,8 +1192,48 @@ const ImportacaoLoteModal = ({ isOpen, onClose, onSuccess, onOpenUploadPasta, in
                 Enviando partituras
               </div>
 
-              <div style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '32px' }}>
+              <div style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '16px' }}>
                 {uploadProgress.processadas} de {uploadProgress.total} concluída{uploadProgress.processadas !== 1 ? 's' : ''}
+              </div>
+
+              {/* Frase engraçada animada */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                marginBottom: '32px',
+                minHeight: '24px'
+              }}>
+                <span
+                  className="sparkle-icon"
+                  style={{
+                    fontSize: '16px',
+                    animation: 'sparkle 1.5s ease-in-out infinite'
+                  }}
+                >
+                  ✨
+                </span>
+                <span
+                  key={funnyPhraseIndex}
+                  style={{
+                    fontSize: '13px',
+                    color: '#D4AF37',
+                    fontStyle: 'italic',
+                    animation: 'fadeInSlide 0.5s ease-out'
+                  }}
+                >
+                  {funnyPhrases[funnyPhraseIndex]}
+                </span>
+                <span
+                  className="sparkle-icon"
+                  style={{
+                    fontSize: '16px',
+                    animation: 'sparkle 1.5s ease-in-out infinite 0.5s'
+                  }}
+                >
+                  ✨
+                </span>
               </div>
 
               {/* Barra de progresso moderna com indicador de partitura atual */}
@@ -1323,6 +1395,26 @@ const ImportacaoLoteModal = ({ isOpen, onClose, onSuccess, onOpenUploadPasta, in
                 @keyframes shimmer {
                   0% { background-position: 200% 0; }
                   100% { background-position: -200% 0; }
+                }
+                @keyframes sparkle {
+                  0%, 100% {
+                    opacity: 1;
+                    transform: scale(1) rotate(0deg);
+                  }
+                  50% {
+                    opacity: 0.6;
+                    transform: scale(1.2) rotate(180deg);
+                  }
+                }
+                @keyframes fadeInSlide {
+                  0% {
+                    opacity: 0;
+                    transform: translateY(8px);
+                  }
+                  100% {
+                    opacity: 1;
+                    transform: translateY(0);
+                  }
                 }
               `}</style>
             </div>
