@@ -13,38 +13,9 @@ import {
   Church,         // hino-religioso e marcha-religiosa - igreja
   SlidersHorizontal, // arranjo - mixer/ajustes
   Music,          // musica-popular e fallback - nota musical
-  Landmark        // hino-civico - monumento/civismo
+  Landmark,       // hino-civico - monumento/civismo
+  Music2          // dobrado - notas musicais duplas
 } from 'lucide-react';
-
-// Ícone de Trompete SVG customizado (não existe no Lucide)
-const TrumpetIcon = ({ size = 24, color = '#fff', strokeWidth = 1.75 }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke={color}
-    strokeWidth={strokeWidth}
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    {/* Campana do trompete */}
-    <path d="M2 12c0-2 1-4 3-4h1" />
-    <ellipse cx="4" cy="12" rx="2" ry="4" />
-    {/* Corpo do trompete */}
-    <path d="M6 12h10" />
-    <path d="M6 10h10" />
-    <path d="M6 14h10" />
-    {/* Bocal */}
-    <path d="M16 10v4" />
-    <path d="M16 12h3" />
-    <circle cx="20.5" cy="12" r="1.5" />
-    {/* Pistons */}
-    <path d="M9 10v-2" />
-    <path d="M11 10v-3" />
-    <path d="M13 10v-2" />
-  </svg>
-);
 
 const CategoryIcon = ({ categoryId, size = 24, color = '#fff' }) => {
   const iconProps = {
@@ -54,9 +25,9 @@ const CategoryIcon = ({ categoryId, size = 24, color = '#fff' }) => {
   };
 
   const categoryMap = {
-    // Dobrado - trompete (ícone customizado)
-    'dobrado': <TrumpetIcon size={size} color={color} />,
-    'dobrados': <TrumpetIcon size={size} color={color} />,
+    // Dobrado - notas musicais duplas (representa o ritmo binário)
+    'dobrado': <Music2 {...iconProps} />,
+    'dobrados': <Music2 {...iconProps} />,
 
     // Marchas
     'marcha': <Drum {...iconProps} />,

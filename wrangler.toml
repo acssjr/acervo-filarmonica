@@ -28,7 +28,7 @@ bucket_name = "acervo-pdfs"
 # Variáveis de ambiente
 [vars]
 ENVIRONMENT = "production"
-# JWT_SECRET = "sua-chave-secreta-aqui" # Opcional - se não definido, usa derivada do database_id
+JWT_SECRET = "acervo-jwt-2e8dc4fb-4f78-45fe-filarmonica25marco"
 
 # Rota customizada para o dominio api.partituras25.com
 [[routes]]
