@@ -161,7 +161,10 @@ const UserLayout = ({ children }) => {
   return (
     <DesktopLayout activeTab={activeTab}>
       <Suspense fallback={<PageLoader />}>
-        {children}
+        {/* Wrapper com animacao de transicao baseado na rota */}
+        <div key={location.pathname} className="page-transition">
+          {children}
+        </div>
       </Suspense>
       <BottomNav activeTab={activeTab} />
     </DesktopLayout>

@@ -8,8 +8,10 @@ import { Storage } from '@services/storage';
 import { MESSAGES } from '@constants/messages';
 import { COLORS, COLORS_RGBA } from '@constants/colors';
 import { TIMING } from '@constants/config';
+import useAnimatedVisibility from '@hooks/useAnimatedVisibility';
 
-const ChangePinModal = ({ onClose }) => {
+const ChangePinModal = ({ isOpen = true, onClose }) => {
+  const { shouldRender, isExiting } = useAnimatedVisibility(isOpen, 200);
   const { showToast } = useUI();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -161,6 +163,8 @@ const ChangePinModal = ({ onClose }) => {
     </div>
   );
 
+  if (!shouldRender) return null;
+
   return (
     <div style={{
       position: 'fixed',
@@ -170,7 +174,11 @@ const ChangePinModal = ({ onClose }) => {
       alignItems: 'center',
       justifyContent: 'center',
       background: 'rgba(0,0,0,0.6)',
-      padding: '20px'
+      backdropFilter: 'blur(4px)',
+      padding: '20px',
+      animation: isExiting
+        ? 'modalBackdropOut 0.2s ease forwards'
+        : 'modalBackdropIn 0.2s ease'
     }}>
       <div style={{
         background: 'var(--bg-primary)',
@@ -178,7 +186,10 @@ const ChangePinModal = ({ onClose }) => {
         padding: '32px',
         width: '100%',
         maxWidth: '360px',
-        boxShadow: '0 20px 40px rgba(0,0,0,0.3)'
+        boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
+        animation: isExiting
+          ? 'modalScaleOut 0.2s ease forwards'
+          : 'modalScaleIn 0.25s ease'
       }}>
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>

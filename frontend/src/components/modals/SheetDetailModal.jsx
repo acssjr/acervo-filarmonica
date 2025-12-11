@@ -3,7 +3,7 @@
 // Suporta URL compartilhavel: /acervo/:categoria/:id
 // Refatorado: extraido componentes e hook de download
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@contexts/AuthContext';
 import { useUI } from '@contexts/UIContext';
@@ -13,6 +13,7 @@ import { API } from '@services/api';
 import CategoryIcon from '@components/common/CategoryIcon';
 import { useSheetDownload } from '@hooks/useSheetDownload';
 import { PartePicker, DownloadConfirm, InstrumentSelector } from './sheet';
+import useAnimatedVisibility from '@hooks/useAnimatedVisibility';
 
 const SheetDetailModal = () => {
   const navigate = useNavigate();
@@ -26,6 +27,9 @@ const SheetDetailModal = () => {
   const [showInstrumentPicker, setShowInstrumentPicker] = useState(false);
   const [partes, setPartes] = useState([]);
   const [loadingPartes, setLoadingPartes] = useState(false);
+
+  // Animação de entrada/saída
+  const { shouldRender, isExiting } = useAnimatedVisibility(!!selectedSheet, 250);
 
   // Hook de download
   const download = useSheetDownload({
@@ -91,7 +95,8 @@ const SheetDetailModal = () => {
     return () => { cancelled = true; };
   }, [selectedSheet]);
 
-  if (!selectedSheet) return null;
+  // Só renderiza se shouldRender for true (permite animação de saída)
+  if (!shouldRender || !selectedSheet) return null;
 
   const category = categoriesMap.get(selectedSheet.category);
   const isFavorite = favorites.includes(selectedSheet.id);
@@ -129,7 +134,9 @@ const SheetDetailModal = () => {
           backdropFilter: 'blur(4px)',
           WebkitBackdropFilter: 'blur(4px)',
           zIndex: 2000,
-          animation: 'fadeIn 0.2s ease'
+          animation: isExiting
+            ? 'modalBackdropOut 0.25s ease forwards'
+            : 'modalBackdropIn 0.2s ease'
         }}
       />
 
@@ -166,13 +173,17 @@ const SheetDetailModal = () => {
             width: '420px',
             maxWidth: '90vw',
             borderRadius: '20px',
-            animation: 'popIn 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
+            animation: isExiting
+              ? 'modalScaleOut 0.25s ease forwards'
+              : 'popIn 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
           } : {
             bottom: 0,
             left: 0,
             right: 0,
             borderRadius: '24px 24px 0 0',
-            animation: 'slideUpModal 0.35s cubic-bezier(0.16, 1, 0.3, 1)'
+            animation: isExiting
+              ? 'slideDownModal 0.25s ease forwards'
+              : 'slideUpModal 0.35s cubic-bezier(0.16, 1, 0.3, 1)'
           }),
           background: 'var(--bg-card)',
           zIndex: 2001,

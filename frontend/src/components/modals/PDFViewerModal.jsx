@@ -5,6 +5,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
+import useAnimatedVisibility from '@hooks/useAnimatedVisibility';
 
 // Configurar worker do PDF.js
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
@@ -118,7 +119,9 @@ const PDFViewerModal = ({
     }
   }, [onClose]);
 
-  if (!isOpen) return null;
+  const { shouldRender, isExiting } = useAnimatedVisibility(isOpen, 200);
+
+  if (!shouldRender) return null;
 
   return (
     <div
@@ -128,7 +131,10 @@ const PDFViewerModal = ({
         zIndex: 9999,
         display: 'flex',
         flexDirection: 'column',
-        background: 'rgba(0, 0, 0, 0.92)'
+        background: 'rgba(0, 0, 0, 0.92)',
+        animation: isExiting
+          ? 'fadeOut 0.2s ease forwards'
+          : 'fadeIn 0.2s ease'
       }}
       onKeyDown={handleKeyDown}
       tabIndex={0}

@@ -2,6 +2,7 @@
 // Modal "Sobre" reutilizavel para ProfileScreen e AdminConfig
 
 import PropTypes from 'prop-types';
+import useAnimatedVisibility from '@hooks/useAnimatedVisibility';
 
 const AboutModal = ({
   isOpen,
@@ -13,7 +14,9 @@ const AboutModal = ({
   legacyVersions = null,
   footerText
 }) => {
-  if (!isOpen) return null;
+  const { shouldRender, isExiting } = useAnimatedVisibility(isOpen, 200);
+
+  if (!shouldRender) return null;
 
   return (
     <div
@@ -25,7 +28,11 @@ const AboutModal = ({
         alignItems: 'center',
         justifyContent: 'center',
         background: 'rgba(0,0,0,0.6)',
-        padding: '20px'
+        backdropFilter: 'blur(4px)',
+        padding: '20px',
+        animation: isExiting
+          ? 'modalBackdropOut 0.2s ease forwards'
+          : 'modalBackdropIn 0.2s ease'
       }}
       onClick={onClose}
     >
@@ -39,7 +46,10 @@ const AboutModal = ({
           boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
           display: 'flex',
           flexDirection: 'column',
-          overflow: 'hidden'
+          overflow: 'hidden',
+          animation: isExiting
+            ? 'modalScaleOut 0.2s ease forwards'
+            : 'modalScaleIn 0.25s ease'
         }}
         onClick={e => e.stopPropagation()}
       >
