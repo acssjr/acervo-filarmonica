@@ -205,13 +205,8 @@ const AdminCategorias = () => {
                 }}>
                   <CategoryIcon categoryId={cat.id} size={24} color="#D4AF37" />
                 </div>
-                <div>
-                  <div style={{ fontWeight: '600', color: 'var(--text-primary)', marginBottom: '2px', fontSize: '16px' }}>
-                    {cat.nome}
-                  </div>
-                  <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-                    ID: {cat.id}
-                  </div>
+                <div style={{ fontWeight: '600', color: 'var(--text-primary)', fontSize: '16px' }}>
+                  {cat.nome}
                 </div>
               </div>
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
