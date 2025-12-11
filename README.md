@@ -63,9 +63,11 @@ O sistema permite que musicos acessem suas partituras de qualquer lugar, baixem 
 
 ### Para Administradores
 - **Drag & drop de pastas direto na tela**
-- Upload de pasta completa (multiplas partes)
-- Importacao em lote de partituras
-- Deteccao automatica de instrumentos e categorias
+- Upload de pasta completa (todas as partes)
+- **Importacao em lote** (dezenas de partituras de uma vez)
+- Deteccao automatica de **100+ instrumentos**
+- Deteccao automatica de **13 categorias**
+- Correcao automatica de encoding (UTF-8/Latin-1)
 - Gerenciamento individual de partes (substituir/deletar)
 - Modal de edicao de partituras
 - Visualizacao de PDF inline com zoom
@@ -82,55 +84,150 @@ O sistema permite que musicos acessem suas partituras de qualquer lugar, baixem 
 
 ---
 
-## Detalhes das Funcionalidades
+## Inteligencia do Sistema
 
-### Drag & Drop Inteligente
+### 🎯 Deteccao Automatica de Instrumentos
+
+O sistema possui um **parser inteligente** que reconhece **100+ variacoes** de nomes de instrumentos, incluindo:
+
+<table>
+<tr>
+<td width="50%">
+
+**Madeiras**
+```
+Flautim, Flauta, Requinta, Oboe, Fagote
+Clarinete Bb (1, 2, 3), Clarinete Baixo
+```
+
+**Saxofones**
+```
+Soprano, Alto (1, 2), Tenor (1, 2), Baritono
+Sax Horn Eb
+```
+
+**Metais Agudos**
+```
+Trompete Bb (1, 2, 3)
+Trompa F/Eb (1, 2, 3, 4)
+```
+
+</td>
+<td width="50%">
+
+**Metais Graves**
+```
+Baritono Bb/TC/BC (1, 2)
+Trombone (1, 2, 3)
+Bombardino, Eufonio
+Baixo Eb/Bb, Tuba
+```
+
+**Percussao**
+```
+Caixa, Bombo, Pratos
+Timpano, Triangulo, Glockenspiel
+Zabumba, Jam Block
+```
+
+**Regencia**
+```
+Grade, Score, Conductor, Maestro
+```
+
+</td>
+</tr>
+</table>
+
+#### Formatos Reconhecidos
+
+O parser entende **qualquer formato** de nomenclatura:
+
+| Entrada | Resultado |
+|---------|-----------|
+| `01 - Clarinete Bb 1.pdf` | Clarinete Bb 1 |
+| `15 III Trompete Bb.pdf` | Trompete Bb 3 |
+| `1º Trompete.pdf` | Trompete Bb 1 |
+| `I e II Clarinetes in Bb.pdf` | Clarinete Bb 1 e 2 |
+| `Caixa-clara.pdf` | Caixa |
+| `Euphonium (bombardino).pdf` | Bombardino |
+| `BarÃ­tono.pdf` | Baritono *(corrige encoding)* |
+
+### 📁 Deteccao Automatica de Categorias
+
+Sistema **multi-camada** com niveis de confianca:
+
+```
+📂 Repertorio/
+   📂 Dobrados/           ← 95% confianca (estrutura de pastas)
+      📂 Dois Coracoes/
+         📄 Grade.pdf
+         📄 Clarinetes.pdf
+```
+
+| Camada | Fonte | Confianca |
+|--------|-------|:---------:|
+| 1ª | Estrutura de pastas (pasta-pai) | 95% |
+| 2ª | Nome da pasta (`Titulo - Categoria - Compositor`) | 85% |
+| 3ª | Palavra-chave no titulo | 75% |
+
+**Categorias detectadas:** Dobrado, Marcha, Marcha Funebre, Marcha Religiosa, Valsa, Fantasia, Polaca, Bolero, Hino, Hino Civico, Hino Religioso, Preludio, Arranjo
+
+### 📦 Importacao em Lote
+
+Importe **dezenas de partituras** de uma vez arrastando uma pasta com subpastas:
+
+```
+📂 Minha Colecao/
+   📂 Dois Coracoes - Dobrado - Estevam Moura/
+   📂 Saudades - Valsa - Autor Desconhecido/
+   📂 Hino Nacional - Hino Civico/
+   ...
+```
+
+**Recursos:**
+- Extracao automatica de titulo, categoria, compositor e arranjador
+- Preview de todas as partituras antes do upload
+- Edicao individual de metadados
+- Barra de progresso com **frases engracadas** animadas
+- Processamento paralelo otimizado
+
+### 🔍 Busca com Transliteracao
+
+O sistema entende **grafias antigas e modernas**:
+
+| Busca | Encontra |
+|-------|----------|
+| `nymphas` | ninfas |
+| `philarmonica` | filarmonica |
+| `symphonia` | sinfonia |
+| `João` | Joao |
+
+### 🖱️ Drag & Drop Inteligente
 
 Arraste pastas diretamente para a tela do admin:
 
-| Conteudo | Acao |
-|----------|------|
-| 1 pasta com PDFs | Abre modal de Upload de Pasta |
-| Pasta com subpastas | Abre modal de Importacao em Lote |
+| O que voce arrasta | O que acontece |
+|-------------------|----------------|
+| 📁 Pasta com PDFs | Abre **Upload de Pasta** (1 partitura) |
+| 📁 Pasta com subpastas | Abre **Importacao em Lote** (N partituras) |
 
-### Upload de Pasta
+### 🔐 Sistema de Autenticacao
 
-O sistema permite fazer upload de uma pasta inteira contendo todas as partes de uma partitura. Os instrumentos sao detectados automaticamente pelo nome dos arquivos:
-
-| Nome do Arquivo | Instrumento Detectado |
-|-----------------|----------------------|
-| `Grade.pdf` | Grade |
-| `Clarinetes.pdf` | Clarinetes |
-| `Saxes Alto.pdf` | Saxes Alto |
-| `Trompetes.pdf` | Trompetes |
-| `Trombones.pdf` | Trombones |
-| `Bombardinos.pdf` | Bombardinos |
-| `Tubas.pdf` | Tubas |
-| `Percussao.pdf` | Percussao |
-| `Caixa-Clara.pdf` | Caixa Clara |
-
-### Busca com Transliteracao
-
-O sistema entende grafias antigas e modernas:
-
-- `nymphas` encontra `ninfas`
-- `philarmonica` encontra `filarmonica`
-- `symphonia` encontra `sinfonia`
-
-### Sistema de Autenticacao
-
-| Opcao | Duracao do Token |
-|-------|------------------|
-| Login normal | 24 horas |
-| "Lembrar meu acesso" | 30 dias |
+| Opcao | Duracao | Uso Recomendado |
+|-------|:-------:|-----------------|
+| Login normal | 24h | Computadores compartilhados |
+| "Lembrar meu acesso" | 30 dias | Dispositivo pessoal |
 
 O sistema detecta automaticamente tokens expirados e redireciona para login.
 
-### Temas Visuais
+### 🎨 Temas Visuais
 
-- **Claro**: Fundo claro, ideal para ambientes iluminados
-- **Escuro**: Fundo escuro, ideal para leitura noturna
-- **Automatico**: Segue a preferencia do sistema operacional
+| Tema | Descricao |
+|------|-----------|
+| ☀️ Claro | Fundo claro, ideal para ambientes iluminados |
+| 🌙 Escuro | Fundo escuro, ideal para leitura noturna |
+| 🔄 Automatico | Segue a preferencia do sistema operacional |
 
 ---
 
