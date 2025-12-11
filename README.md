@@ -8,7 +8,7 @@
 
 <br/>
 
-[![Versao](https://img.shields.io/badge/versao-2.6.0-722F37?style=for-the-badge&labelColor=D4AF37)](https://github.com/acssjr/acervo-filarmonica)
+[![Versao](https://img.shields.io/badge/versao-2.7.0-722F37?style=for-the-badge&labelColor=D4AF37)](https://github.com/acssjr/acervo-filarmonica)
 [![Status](https://img.shields.io/badge/status-em%20producao-success?style=for-the-badge)](https://partituras25.com)
 [![CI](https://img.shields.io/github/actions/workflow/status/acssjr/acervo-filarmonica/ci.yml?style=for-the-badge&label=CI&logo=github)](https://github.com/acssjr/acervo-filarmonica/actions)
 
@@ -46,6 +46,8 @@ O sistema permite que musicos acessem suas partituras de qualquer lugar, baixem 
 - Notificacoes de novidades
 - Carrossel de compositores em destaque
 - Skeleton loading para melhor UX
+- **Transicoes suaves entre paginas e modais**
+- **"Lembrar meu acesso" com token de 30 dias**
 
 </td>
 <td width="33%" valign="top">
@@ -60,12 +62,14 @@ O sistema permite que musicos acessem suas partituras de qualquer lugar, baixem 
 <td width="33%" valign="top">
 
 ### Para Administradores
-- Upload de pasta completa (multiplas partes de uma vez)
+- **Drag & drop de pastas direto na tela**
+- Upload de pasta completa (multiplas partes)
 - Importacao em lote de partituras
 - Deteccao automatica de instrumentos e categorias
 - Gerenciamento individual de partes (substituir/deletar)
 - Modal de edicao de partituras
 - Visualizacao de PDF inline com zoom
+- **Frases engracadas animadas durante upload**
 - Gestao de musicos com badges visuais
 - Estatisticas de downloads
 - Reset de PIN de usuarios
@@ -79,6 +83,15 @@ O sistema permite que musicos acessem suas partituras de qualquer lugar, baixem 
 ---
 
 ## Detalhes das Funcionalidades
+
+### Drag & Drop Inteligente
+
+Arraste pastas diretamente para a tela do admin:
+
+| Conteudo | Acao |
+|----------|------|
+| 1 pasta com PDFs | Abre modal de Upload de Pasta |
+| Pasta com subpastas | Abre modal de Importacao em Lote |
 
 ### Upload de Pasta
 
@@ -94,6 +107,7 @@ O sistema permite fazer upload de uma pasta inteira contendo todas as partes de 
 | `Bombardinos.pdf` | Bombardinos |
 | `Tubas.pdf` | Tubas |
 | `Percussao.pdf` | Percussao |
+| `Caixa-Clara.pdf` | Caixa Clara |
 
 ### Busca com Transliteracao
 
@@ -103,12 +117,14 @@ O sistema entende grafias antigas e modernas:
 - `philarmonica` encontra `filarmonica`
 - `symphonia` encontra `sinfonia`
 
-### Sistema de Notificacoes
+### Sistema de Autenticacao
 
-Usuarios recebem notificacoes sobre:
-- Novas partituras adicionadas
-- Partituras em destaque
-- Atualizacoes do sistema
+| Opcao | Duracao do Token |
+|-------|------------------|
+| Login normal | 24 horas |
+| "Lembrar meu acesso" | 30 dias |
+
+O sistema detecta automaticamente tokens expirados e redireciona para login.
 
 ### Temas Visuais
 
@@ -151,7 +167,7 @@ worker/src/
 │   ├── response/               # Response helpers
 │   └── index.js
 ├── domain/                     # Logica de negocio
-│   ├── auth/                   # Autenticacao
+│   ├── auth/                   # Autenticacao (login, rememberMe)
 │   ├── atividades/             # Registro de atividades
 │   ├── categorias/             # Categorias de partituras
 │   ├── estatisticas/           # Estatisticas e instrumentos
@@ -184,11 +200,11 @@ worker/src/
 
 | Recurso | Implementacao |
 |---------|---------------|
-| **Autenticacao** | JWT com expiracao de 24h |
+| **Autenticacao** | JWT com expiracao configuravel (24h ou 30 dias) |
 | **Senhas** | PBKDF2 (100k iteracoes) |
 | **Rate Limiting** | Protecao contra brute-force |
 | **CORS** | Whitelist de dominios |
-| **Sessao** | Logout automatico ao expirar |
+| **Sessao** | Logout automatico ao expirar + deteccao proativa |
 | **Super Admin** | Protecao total - invisivel e imutavel |
 
 ---
@@ -197,7 +213,7 @@ worker/src/
 
 O projeto possui infraestrutura completa de testes automatizados:
 
-- **215+ testes unitarios** com Jest e Testing Library
+- **216+ testes unitarios** com Jest e Testing Library
 - **16 testes E2E** com Playwright (8 mocked + 8 com backend real)
 - **CI/CD automatizado** via GitHub Actions
 - **ESLint** para padronizacao de codigo
@@ -205,7 +221,7 @@ O projeto possui infraestrutura completa de testes automatizados:
 
 Pipeline automatico em cada push:
 ```
-Push/PR -> Lint -> Jest (215+) -> E2E Mocked (8) -> Build -> Deploy
+Push/PR -> Lint -> Jest (216+) -> E2E Mocked (8) -> Build -> Deploy
 ```
 
 ---
@@ -237,9 +253,7 @@ cd frontend && npm run dev
 npm run db:init
 ```
 
-Isso cria as tabelas e insere dados de teste:
-- **admin** / PIN: 1234 (administrador)
-- **musico** / PIN: 1234 (usuario comum)
+Isso cria as tabelas e insere usuarios de teste para desenvolvimento local.
 
 ### Scripts Disponiveis
 
@@ -257,14 +271,55 @@ Isso cria as tabelas e insere dados de teste:
 ## Changelog
 
 <details open>
-<summary><b>v2.6.0</b> - Dezembro 2025</summary>
+<summary><b>v2.7.0</b> - 11 de Dezembro de 2025</summary>
+
+**Transicoes e Animacoes**
+- Hook `useAnimatedVisibility` para gerenciar animacoes de entrada/saida
+- Animacoes CSS para modais: backdrop blur, scale in/out, slide down
+- Transicao de pagina suave baseada na rota atual
+- Frases engracadas animadas durante upload em lote
+
+**Autenticacao Melhorada**
+- "Lembrar meu acesso" agora gera token de 30 dias
+- Login normal continua com token de 24 horas
+- Deteccao proativa de tokens expirados (limpa auth em qualquer 401)
+- Estabilidade de sessao entre deploys
+
+**Correcoes**
+- Fix: scroll lock robusto em modais (Safari/desktop)
+- Fix: erro 401 ao buscar partes da partitura
+- Fix: teste flaky de login no CI
+
+</details>
+
+<details>
+<summary><b>v2.6.1</b> - 9-10 de Dezembro de 2025</summary>
+
+**Drag & Drop de Pastas**
+- Arraste pastas diretamente para a tela do admin
+- Overlay visual com instrucoes durante arraste
+- Deteccao automatica: pasta simples → Upload, subpastas → Lote
+
+**Melhorias no Upload**
+- Modal redesenhado com header/footer fixos
+- Grid compacto para partes detectadas
+- Suporte a pre-carregamento de arquivos
+
+**Sincronizacao**
+- Categorias e instrumentos sincronizados com banco de dados
+- Fallback local quando API indisponivel
+- Migration para corrigir categorias em producao
+
+</details>
+
+<details>
+<summary><b>v2.6.0</b> - 8-9 de Dezembro de 2025</summary>
 
 **Arquitetura Modular do Backend**
 - Refatoracao completa do worker monolitico (2014 linhas → ~50 arquivos)
 - Arquitetura Hexagonal com separacao Infrastructure/Domain
 - Router customizado com suporte a path params e middleware pipeline
 - Domain Services separados por responsabilidade
-- Re-exports organizados por modulo
 
 **Novo Dominio**
 - Migracao para `partituras25.com` e `api.partituras25.com`
@@ -280,12 +335,11 @@ Isso cria as tabelas e insere dados de teste:
 - Modal de edicao de partituras
 - Importacao em lote melhorada
 - Deteccao automatica de categorias
-- Melhor UX nos botoes de acao
 
 </details>
 
 <details>
-<summary><b>v2.5.0</b> - Dezembro 2025</summary>
+<summary><b>v2.5.0</b> - 7 de Dezembro de 2025</summary>
 
 **Melhorias de UX no Painel Admin**
 - Visualizacao de PDF inline com zoom (Ctrl+Scroll)
@@ -293,16 +347,20 @@ Isso cria as tabelas e insere dados de teste:
 - Hover individual nos botoes de acao (substituir/deletar)
 - Efeito visual de scale nos botoes
 - Fechamento do PDF ao clicar no backdrop
-- Melhor feedback visual para parte sendo visualizada
+
+**Upload**
+- Modal redesenhado com SVGs e animacoes
+- Correcao de deteccao de instrumentos com hifen (ex: Caixa-Clara)
+- Correcao de race condition entre tutorial e modal
 
 **Qualidade**
 - Correcao de bugs no carregamento de PDF
-- Prevencao de interceptacao por gerenciadores de download (IDM)
+- Testes Playwright corrigidos
 
 </details>
 
 <details>
-<summary><b>v2.4.0</b> - Dezembro 2025</summary>
+<summary><b>v2.4.0</b> - 6 de Dezembro de 2025</summary>
 
 - **Super Admin:** Protecao total do @admin (invisivel, imutavel)
 - **Badges:** Identificacao visual de admins na lista
@@ -312,7 +370,7 @@ Isso cria as tabelas e insere dados de teste:
 </details>
 
 <details>
-<summary><b>v2.3.x</b> - Dezembro 2025</summary>
+<summary><b>v2.3.x</b> - 5 de Dezembro de 2025</summary>
 
 - **Admin Toggle:** Alternar entre modo usuario/admin sem logout
 - **Carrossel:** Compositores em destaque na home (mobile)
@@ -323,7 +381,7 @@ Isso cria as tabelas e insere dados de teste:
 </details>
 
 <details>
-<summary><b>v2.2.0</b> - Dezembro 2025</summary>
+<summary><b>v2.2.0</b> - 4 de Dezembro de 2025</summary>
 
 - **Arquitetura:** Contexts separados (Auth, UI, Data, Notifications)
 - **Performance:** Re-renders isolados por dominio
@@ -334,15 +392,20 @@ Isso cria as tabelas e insere dados de teste:
 <details>
 <summary><b>Versoes anteriores</b></summary>
 
-**v2.1.0** - JWT 24h, PBKDF2, Rate limiting, Redirect admin
+**v2.1.0** - 3 de Dezembro de 2025
+- JWT 24h, PBKDF2, Rate limiting, Redirect admin
 
-**v2.0.0** - Upload pasta, deteccao instrumentos, gerenciamento partes
+**v2.0.0** - 2 de Dezembro de 2025
+- Upload pasta, deteccao instrumentos, gerenciamento partes
 
-**v1.5.0** - Modal "Sobre", validacao PIN, melhorias mobile
+**v1.5.0** - 1 de Dezembro de 2025
+- Modal "Sobre", validacao PIN, melhorias mobile
 
-**v1.4.0** - Perfil com foto, alteracao PIN, seletor de tema
+**v1.4.0** - 30 de Novembro de 2025
+- Perfil com foto, alteracao PIN, seletor de tema
 
-**v1.0.0** - Versao inicial
+**v1.0.0** - 28 de Novembro de 2025
+- Versao inicial
 
 </details>
 
