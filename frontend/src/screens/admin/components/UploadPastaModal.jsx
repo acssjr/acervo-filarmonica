@@ -8,7 +8,7 @@ import { API } from '@services/api';
 import CategoryIcon from '@components/common/CategoryIcon';
 import LottieAnimation from '@components/animations/LottieAnimation';
 import { extrairInstrumento } from '@utils/instrumentParser';
-import { parsearNomePasta, detectarCategoria } from '@utils/metadataParser';
+import { analisarMetadados } from '@utils/metadataParser';
 
 const UploadPastaModal = ({ isOpen, onClose, onSuccess, initialFiles }) => {
   const { showToast } = useUI();
@@ -119,18 +119,12 @@ const UploadPastaModal = ({ isOpen, onClose, onSuccess, initialFiles }) => {
     const pastaName = pathParts.length > 0 ? pathParts[0] : 'Pasta sem nome';
     setFolderName(pastaName);
 
-    const { titulo: tit, categoriaDetectada, compositor: comp, arranjador: arr } = parsearNomePasta(pastaName);
-    setTitulo(tit);
-    setCompositor(comp);
-    setArranjador(arr || '');
-
-    let catId;
-    if (categoriaDetectada && categoriaDetectada.toLowerCase() === 'arranjo') {
-      catId = 'arranjo';
-    } else {
-      catId = detectarCategoria(categoriaDetectada || pastaName, categorias);
-    }
-    setCategoria(catId);
+    // Usa análise multi-camada para melhor detecção
+    const metadados = analisarMetadados(folderPath, pastaName, categorias);
+    setTitulo(metadados.titulo);
+    setCompositor(metadados.compositor);
+    setArranjador(metadados.arranjador || '');
+    setCategoria(metadados.categoria);
 
     const parsed = pdfFiles.map(file => {
       const { instrumento, reconhecido } = extrairInstrumento(file.name);
