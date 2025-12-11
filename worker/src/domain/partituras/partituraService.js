@@ -84,6 +84,17 @@ export async function createPartitura(request, env, admin) {
     return errorResponse('Campos obrigatórios: titulo, compositor, categoria, arquivo', 400, request);
   }
 
+  // Verifica se já existe partitura com mesmo título (normalizado)
+  const tituloNorm = titulo.trim().toLowerCase();
+  const duplicada = await env.DB.prepare(`
+    SELECT id, titulo FROM partituras
+    WHERE LOWER(TRIM(titulo)) = ? AND ativo = 1
+  `).bind(tituloNorm).first();
+
+  if (duplicada) {
+    return errorResponse(`Já existe uma partitura com o título "${duplicada.titulo}"`, 409, request);
+  }
+
   const timestamp = Date.now();
   const nomeArquivo = `${timestamp}_${arquivo.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
 
@@ -133,6 +144,17 @@ export async function uploadPastaPartitura(request, env, admin) {
 
     if (!titulo || !categoria || totalArquivos === 0) {
       return errorResponse('Campos obrigatórios: titulo, categoria, arquivos', 400, request);
+    }
+
+    // Verifica se já existe partitura com mesmo título (normalizado)
+    const tituloNorm = titulo.trim().toLowerCase();
+    const duplicada = await env.DB.prepare(`
+      SELECT id, titulo FROM partituras
+      WHERE LOWER(TRIM(titulo)) = ? AND ativo = 1
+    `).bind(tituloNorm).first();
+
+    if (duplicada) {
+      return errorResponse(`Já existe uma partitura com o título "${duplicada.titulo}"`, 409, request);
     }
 
     // Cria a partitura principal
