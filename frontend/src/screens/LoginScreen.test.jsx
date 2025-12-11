@@ -258,7 +258,7 @@ describe('LoginScreen', () => {
     });
 
     test('mostra erro com PIN incorreto', async () => {
-      const user = userEvent.setup();
+      const user = userEvent.setup({ delay: 50 });
       renderLogin();
 
       // Digita usuario
@@ -270,13 +270,21 @@ describe('LoginScreen', () => {
         expect(screen.getByText(/Músico Teste/)).toBeInTheDocument();
       }, { timeout: 2000 });
 
-      // Digita PIN errado
+      // Pequeno delay para garantir que os PIN inputs estao prontos
+      await new Promise(r => setTimeout(r, 100));
+
+      // Digita PIN errado - usando click antes de type como no teste que funciona
       const pinInputs = getPinInputs();
 
       // Digita PIN incorreto (9999 em vez de 1234)
-      for (let i = 0; i < 4; i++) {
-        await user.type(pinInputs[i], '9');
-      }
+      await user.click(pinInputs[0]);
+      await user.type(pinInputs[0], '9');
+      await user.click(pinInputs[1]);
+      await user.type(pinInputs[1], '9');
+      await user.click(pinInputs[2]);
+      await user.type(pinInputs[2], '9');
+      await user.click(pinInputs[3]);
+      await user.type(pinInputs[3], '9');
 
       // Deve mostrar erro
       await waitFor(() => {
