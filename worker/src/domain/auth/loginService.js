@@ -11,7 +11,7 @@ import {
   errorResponse,
   getJwtSecret
 } from '../../infrastructure/index.js';
-import { JWT_EXPIRY_HOURS } from '../../config/index.js';
+import { JWT_EXPIRY_HOURS, JWT_EXPIRY_HOURS_REMEMBER } from '../../config/index.js';
 
 /**
  * Verificar se usuário existe (para o tick verde no login)
@@ -70,7 +70,7 @@ export async function checkUser(request, env) {
  */
 export async function login(request, env) {
   const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
-  const { username, pin } = await request.json();
+  const { username, pin, rememberMe } = await request.json();
 
   // Validação básica
   if (!username || !pin) {
@@ -139,12 +139,15 @@ export async function login(request, env) {
     instrumentoNome = instrumento?.nome;
   }
 
+  // Define expiração baseado em rememberMe
+  const expiryHours = rememberMe ? JWT_EXPIRY_HOURS_REMEMBER : JWT_EXPIRY_HOURS;
+
   // Gera JWT
   const token = await createJwt({
     userId: user.id,
     username: user.username,
     isAdmin: user.admin === 1
-  }, getJwtSecret(env));
+  }, getJwtSecret(env), expiryHours);
 
   // Super admin sempre mostra nome generico
   const nomeExibido = user.username === 'admin' ? 'Administrador' : user.nome;
@@ -161,7 +164,7 @@ export async function login(request, env) {
       foto_url: user.foto_url,
     },
     token,
-    expiresIn: JWT_EXPIRY_HOURS * 60 * 60
+    expiresIn: expiryHours * 60 * 60
   }, 200, request);
 }
 

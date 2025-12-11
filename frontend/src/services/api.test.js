@@ -47,16 +47,30 @@ describe('API Service', () => {
 
   describe('Token Management', () => {
     describe('isTokenExpired()', () => {
-      it('retorna false quando nao ha tokenExpiresAt', () => {
+      it('retorna false quando nao ha token (usuario nao logado)', () => {
         mockStorage.get.mockReturnValue(null);
 
         expect(API.isTokenExpired()).toBe(false);
       });
 
+      it('retorna true quando ha token mas nao ha tokenExpiresAt (token antigo)', () => {
+        mockStorage.get.mockImplementation((key) => {
+          if (key === 'authToken') return 'some-token';
+          if (key === 'tokenExpiresAt') return null;
+          return null;
+        });
+
+        expect(API.isTokenExpired()).toBe(true);
+      });
+
       it('retorna false quando token ainda e valido', () => {
         // Token expira em 1 hora
         const expiresAt = Date.now() + (60 * 60 * 1000);
-        mockStorage.get.mockReturnValue(expiresAt);
+        mockStorage.get.mockImplementation((key) => {
+          if (key === 'authToken') return 'some-token';
+          if (key === 'tokenExpiresAt') return expiresAt;
+          return null;
+        });
 
         expect(API.isTokenExpired()).toBe(false);
       });
@@ -64,7 +78,11 @@ describe('API Service', () => {
       it('retorna true quando token expirou', () => {
         // Token expirou ha 1 hora
         const expiresAt = Date.now() - (60 * 60 * 1000);
-        mockStorage.get.mockReturnValue(expiresAt);
+        mockStorage.get.mockImplementation((key) => {
+          if (key === 'authToken') return 'some-token';
+          if (key === 'tokenExpiresAt') return expiresAt;
+          return null;
+        });
 
         expect(API.isTokenExpired()).toBe(true);
       });
@@ -72,7 +90,11 @@ describe('API Service', () => {
       it('retorna true dentro do buffer de expiracao (5 min)', () => {
         // Token expira em 3 minutos (dentro do buffer de 5 min)
         const expiresAt = Date.now() + (3 * 60 * 1000);
-        mockStorage.get.mockReturnValue(expiresAt);
+        mockStorage.get.mockImplementation((key) => {
+          if (key === 'authToken') return 'some-token';
+          if (key === 'tokenExpiresAt') return expiresAt;
+          return null;
+        });
 
         expect(API.isTokenExpired()).toBe(true);
       });
@@ -80,7 +102,11 @@ describe('API Service', () => {
       it('retorna false fora do buffer de expiracao', () => {
         // Token expira em 10 minutos (fora do buffer de 5 min)
         const expiresAt = Date.now() + (10 * 60 * 1000);
-        mockStorage.get.mockReturnValue(expiresAt);
+        mockStorage.get.mockImplementation((key) => {
+          if (key === 'authToken') return 'some-token';
+          if (key === 'tokenExpiresAt') return expiresAt;
+          return null;
+        });
 
         expect(API.isTokenExpired()).toBe(false);
       });
@@ -101,8 +127,9 @@ describe('API Service', () => {
         const callback = jest.fn();
         API.setOnTokenExpired(callback);
 
-        // Token expirado
+        // Token expirado (ha token mas expirou)
         mockStorage.get.mockImplementation((key) => {
+          if (key === 'authToken') return 'some-token';
           if (key === 'tokenExpiresAt') return Date.now() - 1000;
           return null;
         });
@@ -259,7 +286,23 @@ describe('API Service', () => {
       expect(mockStorage.set).not.toHaveBeenCalledWith('authToken', expect.anything());
     });
 
-    it('envia username e pin no body', async () => {
+    it('envia username, pin e rememberMe no body', async () => {
+      mockStorage.get.mockReturnValue(null);
+
+      global.fetch = createMockFetch({ data: { token: 'test' } });
+
+      await API.login('joao', '1234', true);
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/login'),
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({ username: 'joao', pin: '1234', rememberMe: true })
+        })
+      );
+    });
+
+    it('envia rememberMe como false por padrao', async () => {
       mockStorage.get.mockReturnValue(null);
 
       global.fetch = createMockFetch({ data: { token: 'test' } });
@@ -270,7 +313,7 @@ describe('API Service', () => {
         expect.stringContaining('/api/login'),
         expect.objectContaining({
           method: 'POST',
-          body: JSON.stringify({ username: 'joao', pin: '1234' })
+          body: JSON.stringify({ username: 'joao', pin: '1234', rememberMe: false })
         })
       );
     });
