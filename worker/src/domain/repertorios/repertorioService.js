@@ -103,62 +103,84 @@ export async function isPartituraInRepertorioAtivo(partituraId, request, env) {
   return jsonResponse({ inRepertorio: !!result }, 200, request);
 }
 
-// Ordem padrão de instrumentos para banda de música
+// Ordem das famílias de instrumentos para banda de música
 // Segue a ordem tradicional: Grade, Madeiras agudas→graves, Metais agudos→graves, Percussão
-const ORDEM_INSTRUMENTOS = [
-  // Grade/Maestro
-  'grade', 'maestro', 'regente', 'conductor', 'score',
-  // Flautas
-  'flautim', 'piccolo', 'flauta',
-  // Oboé
-  'oboe', 'oboé',
-  // Requinta
-  'requinta',
-  // Clarinetes
-  'clarinete', 'clarineta', 'clarinet',
-  // Fagote
-  'fagote', 'bassoon',
-  // Saxofones
-  'sax. soprano', 'sax soprano', 'saxofone soprano',
-  'sax. alto', 'sax alto', 'saxofone alto',
-  'sax. tenor', 'sax tenor', 'saxofone tenor',
-  'sax. barítono', 'sax. baritono', 'sax baritono', 'saxofone baritono',
-  // Trompetes
-  'trompete', 'trumpet',
-  // Trompas
-  'trompa', 'horn',
-  // Barítonos
-  'barítono', 'baritono', 'baritone',
-  // Trombones
-  'trombone',
-  // Bombardinos
-  'bombardino', 'euphonium', 'eufônio', 'eufonio',
-  // Baixos/Tubas
-  'baixo', 'tuba', 'bass',
-  // Percussão
-  'caixa', 'snare', 'bombo', 'bumbo', 'pratos', 'timpano', 'tímpano', 'percussão', 'percussao'
+const FAMILIAS_ORDEM = [
+  // Grade/Maestro (índice 0)
+  ['grade', 'maestro', 'regente', 'conductor', 'score'],
+  // Flautim (índice 1)
+  ['flautim', 'piccolo'],
+  // Flauta (índice 2)
+  ['flauta', 'flute'],
+  // Oboé (índice 3)
+  ['oboe', 'oboé'],
+  // Requinta (índice 4)
+  ['requinta'],
+  // Clarinete (índice 5)
+  ['clarinete', 'clarineta', 'clarinet'],
+  // Fagote (índice 6)
+  ['fagote', 'bassoon'],
+  // Sax Soprano (índice 7)
+  ['sax. soprano', 'sax soprano', 'saxofone soprano', 'soprano sax'],
+  // Sax Alto (índice 8)
+  ['sax. alto', 'sax alto', 'saxofone alto', 'alto sax'],
+  // Sax Tenor (índice 9)
+  ['sax. tenor', 'sax tenor', 'saxofone tenor', 'tenor sax'],
+  // Sax Barítono (índice 10)
+  ['sax. barítono', 'sax. baritono', 'sax baritono', 'saxofone baritono', 'baritone sax'],
+  // Trompete (índice 11)
+  ['trompete', 'trumpet'],
+  // Trompa (índice 12)
+  ['trompa', 'horn'],
+  // Barítono (índice 13)
+  ['barítono tc', 'baritono tc', 'barítono bc', 'baritono bc', 'barítono', 'baritono', 'baritone'],
+  // Trombone (índice 14)
+  ['trombone'],
+  // Bombardino (índice 15)
+  ['bombardino', 'euphonium', 'eufônio', 'eufonio'],
+  // Baixo/Tuba (índice 16)
+  ['baixo', 'tuba', 'bass'],
+  // Caixa (índice 17)
+  ['caixa', 'snare'],
+  // Bombo (índice 18)
+  ['bombo', 'bumbo'],
+  // Pratos (índice 19)
+  ['pratos', 'prato', 'cymbal'],
+  // Tímpano (índice 20)
+  ['timpano', 'tímpano', 'timpani'],
+  // Percussão geral (índice 21)
+  ['percussão', 'percussao', 'percussion']
 ];
 
 /**
  * Função para ordenar instrumentos na ordem tradicional de banda
+ * Mantém instrumentos do mesmo tipo agrupados e ordenados por nome completo
+ * Ex: Trompa Eb 1, Trompa Eb 2, Trompa F 1, Trompa F 2
+ *
  * @param {string} instrumento - Nome do instrumento
- * @returns {number} - Índice de ordenação
+ * @returns {string} - Chave de ordenação (formato: "XX_nome_completo")
  */
 function getOrdemInstrumento(instrumento) {
-  const lower = instrumento.toLowerCase();
+  const lower = instrumento.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
-  // Procura match parcial na lista de ordem
-  for (let i = 0; i < ORDEM_INSTRUMENTOS.length; i++) {
-    if (lower.includes(ORDEM_INSTRUMENTOS[i]) || ORDEM_INSTRUMENTOS[i].includes(lower.split(' ')[0])) {
-      // Adiciona sub-ordem baseada em números (ex: Clarinete Bb 1, Clarinete Bb 2)
-      const matchNum = instrumento.match(/(\d+)$/);
-      const subOrdem = matchNum ? parseInt(matchNum[1], 10) / 100 : 0;
-      return i + subOrdem;
+  // Encontrar família do instrumento
+  let familiaIndex = FAMILIAS_ORDEM.length; // Default: final da lista
+
+  for (let i = 0; i < FAMILIAS_ORDEM.length; i++) {
+    for (const termo of FAMILIAS_ORDEM[i]) {
+      const termoNorm = termo.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      if (lower.includes(termoNorm) || lower.startsWith(termoNorm.split(' ')[0])) {
+        familiaIndex = i;
+        break;
+      }
     }
+    if (familiaIndex === i) break;
   }
 
-  // Se não encontrou, coloca no final mas ordenado alfabeticamente
-  return 1000 + lower.charCodeAt(0);
+  // Retorna chave de ordenação: índice da família + nome completo
+  // Isso agrupa por família e depois ordena alfabeticamente dentro da família
+  const familiaStr = String(familiaIndex).padStart(2, '0');
+  return `${familiaStr}_${lower}`;
 }
 
 /**
@@ -175,9 +197,10 @@ export async function getRepertorioInstrumentos(id, request, env) {
   `).bind(id).all();
 
   // Extrair instrumentos e ordenar na ordem tradicional de banda
+  // Agrupa por família e depois ordena alfabeticamente dentro de cada família
   const instrumentos = result.results
     .map(r => r.instrumento)
-    .sort((a, b) => getOrdemInstrumento(a) - getOrdemInstrumento(b));
+    .sort((a, b) => getOrdemInstrumento(a).localeCompare(getOrdemInstrumento(b)));
 
   return jsonResponse(instrumentos, 200, request);
 }
@@ -508,10 +531,12 @@ export async function downloadRepertorio(id, request, env, user) {
 }
 
 /**
- * Normaliza nome de instrumento para comparação
- * Remove tonalidades (Bb, Eb, C, etc.) e números
+ * Extrai o nome base do instrumento (sem tonalidade e sem número)
+ * Ex: "Bombardino C" → "bombardino"
+ * Ex: "Clarinete Bb 1" → "clarinete"
+ * Ex: "Trompa F 2" → "trompa"
  */
-function normalizeInstrument(name) {
+function getInstrumentBase(name) {
   return name.toLowerCase()
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // Remove acentos
     .replace(/\s*(em\s+)?(do|si\s*b|si\s*bemol|mi\s*b|mi\s*bemol|bb|eb|c|f)\s*/gi, ' ')
@@ -521,43 +546,78 @@ function normalizeInstrument(name) {
 }
 
 /**
- * Verifica se dois instrumentos são compatíveis para fallback
- * Ex: "Bombardino C" é compatível com "Bombardino"
- * Ex: "Flauta" NÃO é compatível com "Requinta"
+ * Verifica se um instrumento é genérico (sem tonalidade específica)
+ * Ex: "Bombardino" → true
+ * Ex: "Bombardino C" → false
+ * Ex: "Bombardino Bb" → false
  */
-function areInstrumentsCompatible(selected, available) {
-  const selNorm = normalizeInstrument(selected);
-  const avaNorm = normalizeInstrument(available);
+function isGenericInstrument(name) {
+  const lower = name.toLowerCase();
+  // Se contém tonalidade específica, não é genérico
+  const hasTonality = /\b(bb|eb|c|f|do|si\s*b|mi\s*b)\b/i.test(lower);
+  return !hasTonality;
+}
 
-  // Match exato após normalização
-  if (selNorm === avaNorm) return true;
+/**
+ * Sinônimos de instrumentos
+ */
+const INSTRUMENT_SYNONYMS = {
+  'bombardino': ['euphonium', 'eufonio'],
+  'euphonium': ['bombardino', 'eufonio'],
+  'eufonio': ['bombardino', 'euphonium'],
+  'sax': ['saxofone', 'saxophone'],
+  'saxofone': ['sax', 'saxophone'],
+  'clarinete': ['clarineta', 'clarinet'],
+  'clarineta': ['clarinete', 'clarinet'],
+  'tuba': ['baixo'],
+  'baixo': ['tuba'],
+  'caixa': ['snare'],
+  'bombo': ['bumbo', 'bass drum'],
+  'bumbo': ['bombo', 'bass drum'],
+  // Flauta e Flautim são intercambiáveis em muitas partituras de banda
+  'flauta': ['flautim', 'piccolo'],
+  'flautim': ['flauta', 'piccolo'],
+  'piccolo': ['flautim', 'flauta']
+};
 
-  // Extrair palavra principal (primeiro termo significativo)
-  const selBase = selNorm.split(' ')[0];
-  const avaBase = avaNorm.split(' ')[0];
+/**
+ * Verifica se dois instrumentos são do mesmo tipo base
+ */
+function isSameInstrumentFamily(name1, name2) {
+  const base1 = getInstrumentBase(name1).split(' ')[0];
+  const base2 = getInstrumentBase(name2).split(' ')[0];
 
-  // Mesmo instrumento base
-  if (selBase === avaBase) return true;
+  if (base1 === base2) return true;
+  if (INSTRUMENT_SYNONYMS[base1]?.includes(base2)) return true;
+  if (INSTRUMENT_SYNONYMS[base2]?.includes(base1)) return true;
 
-  // Sinônimos conhecidos
-  const synonyms = {
-    'bombardino': ['euphonium', 'eufonio'],
-    'euphonium': ['bombardino', 'eufonio'],
-    'eufonio': ['bombardino', 'euphonium'],
-    'sax': ['saxofone', 'saxophone'],
-    'saxofone': ['sax', 'saxophone'],
-    'clarinete': ['clarineta', 'clarinet'],
-    'clarineta': ['clarinete', 'clarinet'],
-    'tuba': ['baixo'],
-    'baixo': ['tuba'],
-    'caixa': ['snare'],
-    'bombo': ['bumbo', 'bass drum'],
-    'bumbo': ['bombo', 'bass drum']
-  };
+  return false;
+}
 
-  // Verifica sinônimos
-  if (synonyms[selBase]?.includes(avaBase)) return true;
-  if (synonyms[avaBase]?.includes(selBase)) return true;
+/**
+ * Verifica se uma parte combinada (ex: "Flauta/Flautim") contém o instrumento buscado
+ * Detecta padrões como: "Flauta/Flautim", "Flauta-Flautim", "Flauta / Flautim"
+ */
+function isComboPartMatch(parteNome, instrumentoBuscado) {
+  const parteNomeLower = parteNome.toLowerCase();
+  const instrumentoLower = instrumentoBuscado.toLowerCase();
+  const instrumentoBase = getInstrumentBase(instrumentoBuscado).split(' ')[0];
+
+  // Verifica se é uma parte combinada (contém / ou -)
+  if (!parteNomeLower.includes('/') && !parteNomeLower.includes('-')) {
+    return false;
+  }
+
+  // Separa os instrumentos da combinação
+  const partes = parteNomeLower.split(/[\/\-]/).map(p => p.trim());
+
+  // Verifica se algum dos instrumentos da combinação corresponde
+  for (const p of partes) {
+    const pBase = getInstrumentBase(p).split(' ')[0];
+    if (pBase === instrumentoBase) return true;
+    if (INSTRUMENT_SYNONYMS[pBase]?.includes(instrumentoBase)) return true;
+    if (INSTRUMENT_SYNONYMS[instrumentoBase]?.includes(pBase)) return true;
+  }
 
   return false;
 }
@@ -566,8 +626,11 @@ function areInstrumentsCompatible(selected, available) {
  * Encontrar parte correspondente ao instrumento
  * Estratégia:
  * 1. Match exato (case-insensitive)
- * 2. Match exato após normalização (remove tonalidades)
- * 3. Fallback para instrumento genérico da mesma família
+ * 2. Match em partes combinadas (ex: "Flauta/Flautim" para busca de "Flauta")
+ * 3. Se selecionou específico (ex: "Bombardino C"), só aceita genérico ("Bombardino") como fallback
+ * 4. Se selecionou genérico (ex: "Bombardino"), aceita qualquer da família
+ * 5. Fallback para sinônimos (ex: Flauta -> Flautim se não houver Flauta)
+ * 6. NÃO faz fallback de específico para outro específico diferente (exceto sinônimos)
  */
 async function findMatchingPart(env, partituraId, instrumento) {
   // Buscar todas as partes desta partitura
@@ -578,7 +641,7 @@ async function findMatchingPart(env, partituraId, instrumento) {
   if (!partes.results.length) return null;
 
   const instrLower = instrumento.toLowerCase();
-  const instrNorm = normalizeInstrument(instrumento);
+  const instrBase = getInstrumentBase(instrumento).split(' ')[0];
 
   // 1. Match exato (case-insensitive)
   let parte = partes.results.find(p =>
@@ -586,31 +649,52 @@ async function findMatchingPart(env, partituraId, instrumento) {
   );
   if (parte) return parte;
 
-  // 2. Match exato após normalização
-  parte = partes.results.find(p =>
-    normalizeInstrument(p.instrumento) === instrNorm
-  );
-  if (parte) return parte;
+  // 2. Match em partes combinadas (ex: "Flauta/Flautim" para busca de "Flauta")
+  const comboMatch = partes.results.find(p => isComboPartMatch(p.instrumento, instrumento));
+  if (comboMatch) return comboMatch;
 
-  // 3. Fallback para instrumento compatível (mesmo tipo base)
-  // Ex: Selecionou "Bombardino C" e só tem "Bombardino"
-  // Ex: Selecionou "Flauta" e tem "Flauta 1" ou "Flautas"
-  const compatibles = partes.results.filter(p =>
-    areInstrumentsCompatible(instrumento, p.instrumento)
+  // 3. Se selecionou instrumento específico (com tonalidade)
+  //    Só aceita fallback para versão genérica (sem tonalidade)
+  if (!isGenericInstrument(instrumento)) {
+    // Buscar versão genérica da mesma família
+    const genericMatch = partes.results.find(p =>
+      isSameInstrumentFamily(instrumento, p.instrumento) &&
+      isGenericInstrument(p.instrumento)
+    );
+
+    // Se encontrou genérico, usa ele
+    // Se não encontrou, retorna null (não pega outro específico diferente)
+    return genericMatch || null;
+  }
+
+  // 4. Se selecionou instrumento genérico (sem tonalidade)
+  //    Aceita qualquer da mesma família, preferindo genérico ou primeiro numerado
+  const familyMatches = partes.results.filter(p =>
+    isSameInstrumentFamily(instrumento, p.instrumento)
   );
 
-  if (compatibles.length > 0) {
-    // Ordena para pegar a versão mais genérica ou a primeira numerada
-    compatibles.sort((a, b) => {
-      const aHasNum = /\d/.test(a.instrumento);
-      const bHasNum = /\d/.test(b.instrumento);
-      // Prefere versão sem número (genérica)
-      if (!aHasNum && bHasNum) return -1;
-      if (aHasNum && !bHasNum) return 1;
-      // Ou ordena por número
+  if (familyMatches.length > 0) {
+    // Ordena: genéricos primeiro, depois por nome
+    familyMatches.sort((a, b) => {
+      const aGeneric = isGenericInstrument(a.instrumento);
+      const bGeneric = isGenericInstrument(b.instrumento);
+      if (aGeneric && !bGeneric) return -1;
+      if (!aGeneric && bGeneric) return 1;
       return a.instrumento.localeCompare(b.instrumento);
     });
-    return compatibles[0];
+    return familyMatches[0];
+  }
+
+  // 5. Fallback para sinônimos (ex: Flauta -> Flautim se não houver Flauta)
+  const synonyms = INSTRUMENT_SYNONYMS[instrBase];
+  if (synonyms) {
+    for (const synonym of synonyms) {
+      const synonymMatch = partes.results.find(p => {
+        const pBase = getInstrumentBase(p.instrumento).split(' ')[0];
+        return pBase === synonym;
+      });
+      if (synonymMatch) return synonymMatch;
+    }
   }
 
   return null;
