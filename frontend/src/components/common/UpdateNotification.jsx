@@ -37,9 +37,8 @@ const UpdateNotification = () => {
           setTimeout(() => setIsVisible(true), 100);
         }
       }
-    } catch (e) {
+    } catch {
       // Silencioso - não bloquear o app por erro de versão
-      console.debug('Erro ao verificar versão:', e);
     }
   }, []);
 

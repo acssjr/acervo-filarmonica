@@ -30,7 +30,7 @@ const AdminDashboard = () => {
         const data = await API.getAtividades();
         setAtividades(data || []);
       } catch {
-        console.log('Atividades nao disponiveis');
+        // Silencioso - atividades podem não estar disponíveis
       }
     };
     loadAtividades();

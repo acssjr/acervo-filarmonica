@@ -2,6 +2,7 @@ import js from '@eslint/js';
 import globals from 'globals';
 import reactPlugin from 'eslint-plugin-react';
 import reactHooksPlugin from 'eslint-plugin-react-hooks';
+import reactRefresh from 'eslint-plugin-react-refresh';
 
 export default [
   // Ignorar arquivos de build e dependências
@@ -31,6 +32,7 @@ export default [
     plugins: {
       react: reactPlugin,
       'react-hooks': reactHooksPlugin,
+      'react-refresh': reactRefresh,
     },
     settings: {
       react: {
@@ -51,13 +53,24 @@ export default [
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'warn',
 
+      // React Refresh - garante HMR correto no Vite
+      'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
+
       // JavaScript rules
-      'no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
-      'no-console': 'off', // Permitir console.log
+      'no-unused-vars': [
+        'warn',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          caughtErrors: 'none', // Permite catch sem variável
+          destructuredArrayIgnorePattern: '^_', // Permite [_, value]
+        },
+      ],
+      'no-console': ['warn', { allow: ['warn', 'error'] }], // Bloqueia console.log, permite warn/error
       'no-undef': 'error',
       'prefer-const': 'warn',
       'no-var': 'error',
-      'no-useless-escape': 'warn', // Apenas avisar sobre escapes desnecessários
+      'no-useless-escape': 'warn',
     },
   },
 
@@ -83,6 +96,21 @@ export default [
     rules: {
       'no-unused-vars': 'off', // Mais flexível em testes
       'react/prop-types': 'off', // Não exigir prop-types em testes
+      'react-refresh/only-export-components': 'off', // Testes exportam utils, não só componentes
+    },
+  },
+
+  // Contextos e hooks podem exportar funções além de componentes
+  {
+    files: [
+      'src/contexts/**/*.{js,jsx}',
+      'src/hooks/**/*.{js,jsx}',
+      'src/constants/**/*.{js,jsx}',
+      'src/screens/admin/AdminContext.jsx',
+      'src/components/onboarding/TutorialOverlay.jsx',
+    ],
+    rules: {
+      'react-refresh/only-export-components': 'off',
     },
   },
 ];

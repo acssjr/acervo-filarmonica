@@ -3,7 +3,6 @@
 import { PBKDF2_ITERATIONS, PBKDF2_KEY_LENGTH } from '../../config/index.js';
 import {
   arrayBufferToHex,
-  hexToArrayBuffer,
   stringToArrayBuffer,
 } from '../security/crypto.js';
 

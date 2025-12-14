@@ -8,7 +8,7 @@
     "dev:prod": "cross-env VITE_API_TARGET=prod vite",
     "build": "vite build",
     "preview": "vite preview",
-    "lint": "eslint src/",
+    "lint": "eslint src/ --max-warnings 0",
     "lint:fix": "eslint src/ --fix",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
     "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch",
@@ -19,8 +19,7 @@
   },
   "lint-staged": {
     "src/**/*.{js,jsx}": [
-      "eslint --fix",
-      "eslint"
+      "eslint --fix --max-warnings=0"
     ]
   },
   "dependencies": {
@@ -47,6 +46,7 @@
     "eslint": "^9.39.1",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.4.25",
     "globals": "^16.5.0",
     "husky": "^9.1.7",
     "identity-obj-proxy": "^3.0.0",

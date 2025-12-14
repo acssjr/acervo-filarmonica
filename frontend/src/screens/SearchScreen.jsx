@@ -18,11 +18,18 @@ const SearchScreen = () => {
   // Debounce de 300ms para evitar re-renders excessivos
   const debouncedQuery = useDebounce(searchQuery, 300);
 
-  // Normaliza texto removendo acentos
+  // Normaliza texto para busca (estilo YouTube)
+  // - Remove acentos e diacríticos
+  // - Normaliza "nº", "n°" para "n" (permite "n 6" encontrar "Nº 6")
+  // - Remove indicadores ordinais
   const normalize = (str) => {
     return str.toLowerCase()
       .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+      .replace(/[ºª°]/g, '') // Remove indicadores ordinais
+      .replace(/n[°º.]?\s*/gi, 'n') // "nº ", "n° " → "n"
+      .replace(/\./g, ' ') // Pontos viram espaços
+      .replace(/\s+/g, ' ') // Colapsa espaços múltiplos
       .trim();
   };
 

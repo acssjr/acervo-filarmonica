@@ -431,7 +431,7 @@ export async function createRepertorio(request, env, admin) {
 /**
  * Atualizar repertório
  */
-export async function updateRepertorio(id, request, env, admin) {
+export async function updateRepertorio(id, request, env, _admin) {
   const data = await request.json();
   const { nome, descricao, data_apresentacao, ativo } = data;
 
@@ -471,7 +471,7 @@ export async function updateRepertorio(id, request, env, admin) {
 /**
  * Deletar repertório
  */
-export async function deleteRepertorio(id, request, env, admin) {
+export async function deleteRepertorio(id, request, env, _admin) {
   const existing = await env.DB.prepare(
     'SELECT * FROM repertorios WHERE id = ?'
   ).bind(id).first();
@@ -557,7 +557,7 @@ export async function addPartituraToRepertorio(repertorioId, request, env, admin
 /**
  * Remover partitura do repertório
  */
-export async function removePartituraFromRepertorio(repertorioId, partituraId, request, env, admin) {
+export async function removePartituraFromRepertorio(repertorioId, partituraId, request, env, _admin) {
   await env.DB.prepare(
     'DELETE FROM repertorio_partituras WHERE repertorio_id = ? AND partitura_id = ?'
   ).bind(repertorioId, partituraId).run();
@@ -571,7 +571,7 @@ export async function removePartituraFromRepertorio(repertorioId, partituraId, r
 /**
  * Reordenar partituras no repertório
  */
-export async function reorderPartiturasRepertorio(repertorioId, request, env, admin) {
+export async function reorderPartiturasRepertorio(repertorioId, request, env, _admin) {
   const data = await request.json();
   const { ordens } = data; // Array de { partitura_id, ordem }
 
@@ -738,7 +738,7 @@ function getInstrumentBase(name) {
  * Ex: "Bombardino Bb" → false
  * Ex: "Flauta" → true (F aqui não é tonalidade)
  */
-function isGenericInstrument(name) {
+function _isGenericInstrument(name) {
   const lower = name.toLowerCase();
   // Se contém tonalidade específica PRECEDIDA DE ESPAÇO, não é genérico
   // Isso evita falso positivo em "Flauta" (F não é tonalidade aqui)
@@ -788,7 +788,6 @@ function isSameInstrumentFamily(name1, name2) {
  */
 function isComboPartMatch(parteNome, instrumentoBuscado) {
   const parteNomeLower = parteNome.toLowerCase();
-  const instrumentoLower = instrumentoBuscado.toLowerCase();
   const instrumentoBase = getInstrumentBase(instrumentoBuscado).split(' ')[0];
 
   // Verifica se é uma parte combinada (contém / ou -)
@@ -797,7 +796,7 @@ function isComboPartMatch(parteNome, instrumentoBuscado) {
   }
 
   // Separa os instrumentos da combinação
-  const partes = parteNomeLower.split(/[\/\-]/).map(p => p.trim());
+  const partes = parteNomeLower.split(/[/-]/).map(p => p.trim());
 
   // Verifica se algum dos instrumentos da combinação corresponde
   for (const p of partes) {
@@ -980,7 +979,7 @@ async function generatePdfDownload(env, partes, repertorio, instrumento, request
  */
 async function generateZipDownload(env, partes, repertorio, instrumento, request) {
   // Usar fflate para gerar ZIP
-  const { zipSync, strToU8 } = await import('fflate');
+  const { zipSync } = await import('fflate');
 
   const files = {};
 

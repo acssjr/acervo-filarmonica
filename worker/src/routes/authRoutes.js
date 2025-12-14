@@ -1,7 +1,6 @@
 // worker/src/routes/authRoutes.js
 import { login, checkUser } from '../domain/auth/loginService.js';
 import { authMiddleware } from '../middleware/index.js';
-import { errorResponse } from '../infrastructure/response/helpers.js';
 
 /**
  * Configura rotas de autenticação
