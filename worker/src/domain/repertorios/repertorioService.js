@@ -255,28 +255,56 @@ function getInstrumentGroupKey(name) {
 }
 
 /**
- * Verifica se um instrumento é "genérico" (sem número de voz)
+ * Verifica se um instrumento é "genérico" (sem número de voz ou tonalidade específica)
  * Ex: "Sax Alto" → true (genérico)
  * Ex: "Sax Alto 1" → false (tem voz)
- * Ex: "Clarinete Bb" → true (genérico)
+ * Ex: "Clarinete Bb" → true (genérico, Bb é padrão)
  * Ex: "Clarinete Bb 2" → false (tem voz)
+ * Ex: "Bombardino" → true (genérico)
+ * Ex: "Bombardino Bb" → false (tem tonalidade específica)
+ * Ex: "Bombardino C" → false (tem tonalidade específica)
  */
 function isGenericVoice(name) {
+  const normalized = normalizeInstrumentName(name);
+
   // Se termina com número, não é genérico
-  return !/\s\d+\s*$/.test(name);
+  if (/\s\d+\s*$/.test(normalized)) {
+    return false;
+  }
+
+  // Para bombardino: se tem tonalidade (Bb, C, TC, BC), não é genérico
+  if (/^bombardino$/i.test(normalized)) {
+    return true; // "Bombardino" sem tonalidade é genérico
+  }
+  if (/^bombardino\s+(bb|c|tc|bc)$/i.test(normalized)) {
+    return false; // "Bombardino Bb" ou "Bombardino C" não é genérico
+  }
+
+  // Para outros instrumentos, apenas número de voz define se é genérico
+  return true;
 }
 
 /**
- * Extrai o nome base do instrumento (família + tonalidade, sem número de voz)
+ * Extrai o nome base do instrumento (família, sem número de voz)
+ * Para bombardino, remove também a tonalidade para agrupar Bb e C na mesma família
  * Ex: "Sax Alto 1" → "sax alto"
  * Ex: "Clarinete Bb 2" → "clarinete bb"
+ * Ex: "Bombardino Bb" → "bombardino"
+ * Ex: "Bombardino C" → "bombardino"
  * Ex: "Trompa F" → "trompa f"
  */
 function getInstrumentFamilyKey(name) {
-  const normalized = normalizeInstrumentName(name).toLowerCase();
+  let normalized = normalizeInstrumentName(name).toLowerCase();
+
   // Remove número de voz do final
-  return normalized.replace(/\s+\d+\s*$/, '').trim()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  normalized = normalized.replace(/\s+\d+\s*$/, '').trim();
+
+  // Para bombardino, remove tonalidade para agrupar na mesma família
+  if (/^bombardino\s+(bb|c|tc|bc)$/i.test(normalized)) {
+    normalized = 'bombardino';
+  }
+
+  return normalized.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 }
 
 /**
