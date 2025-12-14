@@ -1,7 +1,6 @@
 // worker/src/domain/auth/loginService.js
 import {
   createJwt,
-  verifyJwt,
   hashPin,
   verifyPin,
   generateSalt,
@@ -114,7 +113,7 @@ export async function login(request, env) {
         'UPDATE usuarios SET pin_hash = ?, pin_salt = ? WHERE id = ?'
       ).bind(newHash, newSalt, user.id).run();
 
-      console.log(`Migrated PIN hash for user ${user.username}`);
+      console.warn(`Migrated PIN hash for user ${user.username}`);
     }
   }
 

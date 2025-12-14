@@ -24,12 +24,12 @@ export function setupRepertorioRoutes(router) {
   // ============ ROTAS PUBLICAS (AUTENTICADAS) ============
 
   // GET /api/repertorio/ativo - Obter repertorio ativo
-  router.get('/api/repertorio/ativo', async (request, env, params, context) => {
+  router.get('/api/repertorio/ativo', async (request, env, _params, _context) => {
     return await getRepertorioAtivo(request, env);
   }, [authMiddleware]);
 
   // GET /api/repertorio/:id - Obter repertorio por ID
-  router.get('/api/repertorio/:id', async (request, env, params, context) => {
+  router.get('/api/repertorio/:id', async (request, env, params, _context) => {
     const id = parseInt(params.id, 10);
     return await getRepertorio(id, request, env);
   }, [authMiddleware]);
@@ -41,13 +41,13 @@ export function setupRepertorioRoutes(router) {
   }, [authMiddleware]);
 
   // GET /api/repertorio/:id/instrumentos - Listar instrumentos disponíveis no repertório
-  router.get('/api/repertorio/:id/instrumentos', async (request, env, params, context) => {
+  router.get('/api/repertorio/:id/instrumentos', async (request, env, params, _context) => {
     const id = parseInt(params.id, 10);
     return await getRepertorioInstrumentos(id, request, env);
   }, [authMiddleware]);
 
   // GET /api/partituras/:id/in-repertorio - Verificar se partitura esta no repertorio
-  router.get('/api/partituras/:id/in-repertorio', async (request, env, params, context) => {
+  router.get('/api/partituras/:id/in-repertorio', async (request, env, params, _context) => {
     const partituraId = parseInt(params.id, 10);
     return await isPartituraInRepertorioAtivo(partituraId, request, env);
   }, [authMiddleware]);
@@ -55,12 +55,12 @@ export function setupRepertorioRoutes(router) {
   // ============ ROTAS ADMIN ============
 
   // GET /api/repertorios - Listar todos (historico)
-  router.get('/api/repertorios', async (request, env, params, context) => {
+  router.get('/api/repertorios', async (request, env, _params, _context) => {
     return await listRepertorios(request, env);
   }, [adminMiddleware]);
 
   // POST /api/repertorios - Criar novo repertorio
-  router.post('/api/repertorios', async (request, env, params, context) => {
+  router.post('/api/repertorios', async (request, env, _params, context) => {
     return await createRepertorio(request, env, context.user);
   }, [adminMiddleware]);
 

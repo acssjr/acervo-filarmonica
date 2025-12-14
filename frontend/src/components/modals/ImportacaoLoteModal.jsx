@@ -75,15 +75,12 @@ const ImportacaoLoteModal = ({ isOpen, onClose, onSuccess, onOpenUploadPasta, in
 
   // Handler para abrir o seletor de pasta (usa getElementById como no UploadPastaModal)
   const handleClickToSelect = () => {
-    console.log('=== DEBUG: handleClickToSelect chamado ===');
     const input = document.getElementById('batch-folder-input');
-    console.log('input via getElementById:', input);
     if (input) {
       input.value = ''; // Reset para permitir re-seleção
       input.click();
-      console.log('=== DEBUG: click() executado ===');
     } else {
-      console.error('=== DEBUG: input é null! ===');
+      console.error('Input batch-folder-input não encontrado');
     }
   };
 

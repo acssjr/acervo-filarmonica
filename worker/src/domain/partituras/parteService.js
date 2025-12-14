@@ -18,19 +18,19 @@ export async function getPartesPartitura(partituraId, request, env) {
         WHEN instrumento LIKE 'Flauta%' THEN 2
         WHEN instrumento LIKE 'Requinta%' THEN 3
         WHEN instrumento LIKE 'Clarinete%' THEN 4
-        WHEN instrumento LIKE 'Sax. Soprano%' THEN 5
-        WHEN instrumento LIKE 'Sax. Alto%' THEN 6
-        WHEN instrumento LIKE 'Sax. Tenor%' THEN 7
-        WHEN instrumento LIKE 'Sax. Barítono%' THEN 8
+        WHEN instrumento LIKE 'Sax. Soprano%' OR instrumento LIKE 'Sax Soprano%' THEN 5
+        WHEN instrumento LIKE 'Sax. Alto%' OR instrumento LIKE 'Sax Alto%' THEN 6
+        WHEN instrumento LIKE 'Sax. Tenor%' OR instrumento LIKE 'Sax Tenor%' THEN 7
+        WHEN instrumento LIKE 'Sax. Barítono%' OR instrumento LIKE 'Sax Baritono%' OR instrumento LIKE 'Sax Barítono%' THEN 8
         WHEN instrumento LIKE 'Trompete%' THEN 9
         WHEN instrumento LIKE 'Trompa F%' THEN 10
-        WHEN instrumento LIKE 'Trompa Eb%' THEN 11
-        WHEN instrumento LIKE 'Barítono%' THEN 12
+        WHEN instrumento LIKE 'Trompa Eb%' OR instrumento LIKE 'Trompa%' THEN 11
+        WHEN instrumento LIKE 'Barítono%' OR instrumento LIKE 'Baritono%' THEN 12
         WHEN instrumento LIKE 'Trombone%' THEN 13
         WHEN instrumento LIKE 'Bombardino%' THEN 14
-        WHEN instrumento LIKE 'Baixo%' THEN 15
+        WHEN instrumento LIKE 'Baixo%' OR instrumento LIKE 'Tuba%' THEN 15
         WHEN instrumento LIKE 'Caixa%' THEN 16
-        WHEN instrumento LIKE 'Bombo%' THEN 17
+        WHEN instrumento LIKE 'Bombo%' OR instrumento LIKE 'Bumbo%' THEN 17
         WHEN instrumento LIKE 'Pratos%' THEN 18
         ELSE 99
       END,

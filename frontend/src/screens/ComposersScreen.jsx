@@ -68,13 +68,26 @@ const ComposersScreen = ({ composerSlugFromUrl }) => {
     }
   }, [composerSlugFromUrl, composersWithCount, setSelectedComposer, setSelectedCategory, navigate]);
 
+  // Normaliza texto para busca (estilo YouTube)
+  const normalizeText = (str) => {
+    return str.toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+      .replace(/[ºª°]/g, '') // Remove indicadores ordinais
+      .replace(/\./g, ' ') // Pontos viram espaços
+      .replace(/\s+/g, ' ') // Colapsa espaços
+      .trim();
+  };
+
   // Filtrar por busca
   const filteredComposers = useMemo(() => {
     if (!searchQuery.trim()) return composersWithCount;
-    const query = searchQuery.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    return composersWithCount.filter(c =>
-      c.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(query)
-    );
+    const query = normalizeText(searchQuery);
+    const queryTerms = query.split(' ').filter(t => t.length > 0);
+    return composersWithCount.filter(c => {
+      const nameNorm = normalizeText(c.name);
+      return queryTerms.every(term => nameNorm.includes(term));
+    });
   }, [composersWithCount, searchQuery]);
 
   // Separar destaque dos demais

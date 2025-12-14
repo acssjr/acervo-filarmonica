@@ -1,6 +1,7 @@
 {
   "name": "acervo-filarmonica",
   "version": "2.8.0",
+  "type": "module",
   "description": "Acervo Digital da Sociedade Filarmônica 25 de Março",
   "main": "worker/index.js",
   "scripts": {
@@ -19,7 +20,8 @@
     "test:watch": "vitest",
     "test:e2e": "npx playwright test",
     "test:e2e:ui": "npx playwright test --ui",
-    "test:e2e:headed": "npx playwright test --headed"
+    "test:e2e:headed": "npx playwright test --headed",
+    "lint:worker": "eslint worker/src/ --max-warnings 0"
   },
   "repository": {
     "type": "git",
@@ -43,8 +45,11 @@
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.10.15",
+    "@eslint/js": "^9.39.2",
     "@playwright/test": "^1.57.0",
     "@types/node": "^24.10.1",
+    "eslint": "^9.39.2",
+    "globals": "^16.5.0",
     "vitest": "3.2",
     "wrangler": "^4.53.0"
   }

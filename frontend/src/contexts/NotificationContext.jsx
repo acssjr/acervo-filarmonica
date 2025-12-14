@@ -48,7 +48,7 @@ export const NotificationProvider = ({ children }) => {
         setNotifications(newSheets);
       }
     } catch {
-      console.log('Notificacoes: erro ao carregar');
+      // Silencioso - notificações serão carregadas depois
       setNotifications([]);
     } finally {
       setLoading(false);

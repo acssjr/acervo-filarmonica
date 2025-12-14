@@ -32,7 +32,7 @@ function getRouter() {
 
 export default {
   async fetch(request, env, ctx) {
-    const url = new URL(request.url);
+    const _url = new URL(request.url);
     const method = request.method;
 
     // Handle OPTIONS (preflight)

@@ -179,7 +179,7 @@ const useLoginForm = ({ onClose }) => {
                 Storage.set('favorites', favoritosStr);
               }
             } catch {
-              console.log('Favoritos serão carregados depois');
+              // Silencioso - favoritos serão carregados depois
             }
 
             showToast(`Bem-vindo, ${result.user.nome.split(' ')[0]}!`);
