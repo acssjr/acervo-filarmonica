@@ -13,7 +13,7 @@ import { AboutModal, PROFILE_CHANGELOG, PROFILE_LEGACY_VERSIONS, PROFILE_ABOUT_C
 
 const ProfileScreen = () => {
   const { user, setUser } = useAuth();
-  const { showToast, theme } = useUI();
+  const { showToast } = useUI();
   const { clearNotifications } = useNotifications();
   const [showChangePinModal, setShowChangePinModal] = useState(false);
   const [showAboutModal, setShowAboutModal] = useState(false);
@@ -28,6 +28,7 @@ const ProfileScreen = () => {
       setProfilePhoto(Storage.get(`profilePhoto_${user.id}`, null));
       setEditedName(user.name);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- atualiza apenas quando ID muda, não quando nome muda
   }, [user?.id]);
 
   // Handler para upload de foto

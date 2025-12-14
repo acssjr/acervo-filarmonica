@@ -229,6 +229,11 @@ function normalizeInstrumentName(name) {
     .map(word => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ');
 
+  // Remove preposições antes das tonalidades (E/Em/In Bb → Bb)
+  // Ex: "Clarinete E Bb 1" → "Clarinete Bb 1"
+  normalized = normalized.replace(/\s+[eE][mM]?\s+(bb|eb|tc|bc|c|f)\b/gi, ' $1');
+  normalized = normalized.replace(/\s+[iI][nN]\s+(bb|eb|tc|bc|c|f)\b/gi, ' $1');
+
   // Mantém tonalidades em formato consistente
   normalized = normalized
     .replace(/\bBB\b/gi, 'Bb')

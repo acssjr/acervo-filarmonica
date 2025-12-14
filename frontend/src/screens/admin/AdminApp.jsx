@@ -26,7 +26,7 @@ const AdminApp = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-  const { user, logout } = useAuth();
+  const { logout } = useAuth();
   const { themeMode, setThemeMode } = useUI();
 
   // Funcao de logout
@@ -63,6 +63,7 @@ const AdminApp = () => {
     if (secao && secao !== activeSection) {
       setActiveSection(secao);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- apenas sincroniza URL → estado, não vice-versa
   }, [secao]);
 
   // Funcao para navegar entre secoes
@@ -83,6 +84,7 @@ const AdminApp = () => {
       }
     };
     return () => { delete window.adminNav; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- configura helper global uma vez na montagem
   }, []);
 
   const menuItems = [

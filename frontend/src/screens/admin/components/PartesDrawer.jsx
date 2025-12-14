@@ -22,7 +22,7 @@ const PartesDrawer = ({ isOpen, onClose, partitura, categorias, onUpdate }) => {
     try {
       const data = await API.getPartesPartitura(partitura.id);
       setPartes(data || []);
-    } catch (_err) {
+    } catch {
       showToast('Erro ao carregar partes', 'error');
     } finally {
       setLoading(false);

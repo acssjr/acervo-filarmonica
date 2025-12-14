@@ -29,12 +29,13 @@ const AdminMusicos = () => {
       ]);
       setUsuarios(users || []);
       setInstrumentos(instr || []);
-    } catch (e) {
+    } catch {
       showToast('Erro ao carregar dados', 'error');
     }
     setLoading(false);
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- carrega apenas na montagem
   useEffect(() => { loadData(); }, []);
 
   // Listener para acao de novo

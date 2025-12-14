@@ -41,7 +41,7 @@ const AdminConfig = () => {
         setUser(prev => ({ ...prev, foto_perfil: result.url }));
         showToast('Foto atualizada!');
       }
-    } catch (err) {
+    } catch {
       showToast('Erro ao atualizar foto', 'error');
     }
     setUploadingPhoto(false);
@@ -52,7 +52,7 @@ const AdminConfig = () => {
       await API.updatePerfil({ foto_perfil: null });
       setUser(prev => ({ ...prev, foto_perfil: null }));
       showToast('Foto removida!');
-    } catch (err) {
+    } catch {
       showToast('Erro ao remover foto', 'error');
     }
   };

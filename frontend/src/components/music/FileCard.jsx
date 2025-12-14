@@ -8,7 +8,7 @@ import { Icons } from '@constants/icons';
 import CategoryIcon from '@components/common/CategoryIcon';
 import styles from './FileCard.module.css';
 
-const FileCard = memo(({ sheet, category, onDownload, isFavorite, onToggleFavorite }) => {
+const FileCard = memo(({ sheet, category, isFavorite, onToggleFavorite }) => {
   const navigate = useNavigate();
   const { setSelectedSheet } = useUI();
   const [isPressed, setIsPressed] = useState(false);

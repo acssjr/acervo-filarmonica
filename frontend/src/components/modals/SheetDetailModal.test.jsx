@@ -210,7 +210,7 @@ describe('SheetDetailModal', () => {
       });
     });
 
-    test('exibe \"Meu Instrumento\" no botao de download', async () => {
+    test('exibe "Meu Instrumento" no botao de download', async () => {
       mockSelectedSheet = createMockSheet();
       renderModal();
 
@@ -343,7 +343,7 @@ describe('SheetDetailModal', () => {
   });
 
   describe('Acessibilidade', () => {
-    test('modal tem role=\"dialog\"', async () => {
+    test('modal tem role="dialog"', async () => {
       mockSelectedSheet = createMockSheet();
       renderModal();
 
@@ -352,7 +352,7 @@ describe('SheetDetailModal', () => {
       });
     });
 
-    test('modal tem aria-modal=\"true\"', async () => {
+    test('modal tem aria-modal="true"', async () => {
       mockSelectedSheet = createMockSheet();
       renderModal();
 

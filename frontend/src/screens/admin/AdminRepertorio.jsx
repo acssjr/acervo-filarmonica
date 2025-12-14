@@ -30,6 +30,7 @@ const AdminRepertorio = () => {
 
   useEffect(() => {
     loadRepertorios();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- carrega apenas na montagem
   }, []);
 
   const openCreateModal = () => {
@@ -123,7 +124,7 @@ const AdminRepertorio = () => {
             ...prev,
             [rep.id]: data.partituras || []
           }));
-        } catch (err) {
+        } catch {
           showToast('Erro ao carregar partituras', 'error');
         }
       }
@@ -147,7 +148,7 @@ const AdminRepertorio = () => {
     try {
       const ordens = partituras.map((p, idx) => ({ partitura_id: p.id, ordem: idx }));
       await API.reorderRepertorioPartituras(repertorioId, ordens);
-    } catch (err) {
+    } catch {
       showToast('Erro ao reordenar', 'error');
       // Recarregar estado original em caso de erro
       const data = await API.getRepertorio(repertorioId);

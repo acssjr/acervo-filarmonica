@@ -12,7 +12,7 @@ import { analisarMetadados } from '@utils/metadataParser';
 
 const UploadPastaModal = ({ isOpen, onClose, onSuccess, initialFiles }) => {
   const { showToast } = useUI();
-  const [files, setFiles] = useState([]);
+  const [_files, setFiles] = useState([]);
   const [folderName, setFolderName] = useState('');
   const [parsedData, setParsedData] = useState([]);
   const [categorias, setCategorias] = useState([]);
@@ -64,7 +64,7 @@ const UploadPastaModal = ({ isOpen, onClose, onSuccess, initialFiles }) => {
       try {
         const cats = await API.getCategorias();
         setCategorias(cats || []);
-      } catch (_e) {
+      } catch {
         console.error('Erro ao carregar categorias');
       }
     };
@@ -104,6 +104,7 @@ const UploadPastaModal = ({ isOpen, onClose, onSuccess, initialFiles }) => {
     if (isOpen && initialFiles && initialFiles.files && initialFiles.files.length > 0 && categorias.length > 0) {
       processFiles(initialFiles.files, initialFiles.folderName + '/');
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- processFiles é função local estável
   }, [isOpen, initialFiles, categorias]);
 
   // Processa os arquivos

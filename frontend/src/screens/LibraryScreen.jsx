@@ -3,7 +3,7 @@
 // Suporta navegacao via URL: /acervo, /acervo/:categoria, /acervo/:categoria/:partituraId
 // Categorias carregadas da API via DataContext
 
-import { useState, useMemo, useEffect } from 'react';
+import { useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@contexts/AuthContext';
 import { useData } from '@contexts/DataContext';
@@ -26,8 +26,6 @@ const LibraryScreen = ({ categoryFromUrl, sheetIdFromUrl }) => {
     favorites, toggleFavorite
   } = useData();
   const { setSelectedSheet } = useUI();
-
-  const [showUploadModal, setShowUploadModal] = useState(false);
 
   // Sincroniza categoria da URL com o estado
   useEffect(() => {
@@ -100,7 +98,7 @@ const LibraryScreen = ({ categoryFromUrl, sheetIdFromUrl }) => {
         showBack={!!(selectedCategory || selectedComposer)}
         onBack={handleBack}
         actions={user?.isAdmin && (
-          <IconButton icon={Icons.Plus} primary onClick={() => setShowUploadModal(true)} />
+          <IconButton icon={Icons.Plus} primary onClick={() => navigate('/admin/partituras')} />
         )}
       />
 

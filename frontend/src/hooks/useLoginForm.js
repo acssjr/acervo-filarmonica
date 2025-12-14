@@ -78,6 +78,7 @@ const useLoginForm = ({ onClose }) => {
     } finally {
       setCheckingUser(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- pinRefs é ref estável
   }, []);
 
   // Carrega usuario salvo se "Lembrar-me" estava ativo
@@ -89,6 +90,7 @@ const useLoginForm = ({ onClose }) => {
         checkUserExists(savedUsername);
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- executa apenas na montagem
   }, []);
 
   // Verifica se usuario existe quando digita (com debounce reduzido)
@@ -176,7 +178,7 @@ const useLoginForm = ({ onClose }) => {
                 setFavorites(favoritosStr);
                 Storage.set('favorites', favoritosStr);
               }
-            } catch (e) {
+            } catch {
               console.log('Favoritos serão carregados depois');
             }
 
@@ -223,6 +225,7 @@ const useLoginForm = ({ onClose }) => {
 
       setIsLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- pinRefs é ref estável
   }, [pin, username, rememberMe, onClose, navigate, setUser, setFavorites, showToast]);
 
   // Handler do backspace no PIN
@@ -230,6 +233,7 @@ const useLoginForm = ({ onClose }) => {
     if (e.key === 'Backspace' && !pin[index] && index > 0) {
       pinRefs[index - 1].current?.focus();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- pinRefs é ref estável
   }, [pin]);
 
   // Toggle remember me

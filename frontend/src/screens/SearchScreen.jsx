@@ -154,6 +154,7 @@ const SearchScreen = () => {
       })
       .filter(sheet => sheet.score > 0)
       .sort((a, b) => b.score - a.score);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- categoriesMap é estável após carregamento inicial
   }, [debouncedQuery, sheets]);
 
   const handleClear = useCallback(() => setSearchQuery(''), []);
@@ -257,7 +258,7 @@ const SearchScreen = () => {
           animation: 'fadeIn 0.3s ease'
         }}>
           <p style={{ fontFamily: 'Outfit, sans-serif', fontSize: '15px' }}>
-            Nenhum resultado para "<strong>{searchQuery}</strong>"
+            Nenhum resultado para &quot;<strong>{searchQuery}</strong>&quot;
           </p>
           <p style={{ fontFamily: 'Outfit, sans-serif', fontSize: '13px', opacity: 0.7, marginTop: '8px' }}>
             Tente outro termo de busca

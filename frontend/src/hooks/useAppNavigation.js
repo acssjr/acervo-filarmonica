@@ -4,7 +4,7 @@
 
 import { useNavigate } from 'react-router-dom';
 import { useData } from '@contexts/DataContext';
-import { slugify } from '@utils/slugify';
+// slugify removido - não utilizado atualmente
 
 const useAppNavigation = () => {
   const navigate = useNavigate();
