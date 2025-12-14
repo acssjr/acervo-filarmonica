@@ -252,9 +252,16 @@ function normalizeInstrumentName(name) {
  * Agrupa apenas variações de NOMENCLATURA (não de voz):
  * - "Sax. Alto 1" e "Saxofone Alto 1" → mesma chave (mesmo instrumento, nomes diferentes)
  * - "Sax Alto 1" e "Sax Alto 2" → chaves DIFERENTES (vozes diferentes)
+ * - "Requinta" e "Requinta Eb" → MESMA chave (Eb é redundante, requinta é sempre em Eb)
  */
 function getInstrumentGroupKey(name) {
-  const normalized = normalizeInstrumentName(name);
+  let normalized = normalizeInstrumentName(name);
+
+  // Requinta é SEMPRE em Eb - tratar "Requinta" e "Requinta Eb" como o mesmo instrumento
+  if (/^requinta\s+eb$/i.test(normalized)) {
+    normalized = 'Requinta';
+  }
+
   return normalized.toLowerCase()
     .normalize('NFD').replace(/[\u0300-\u036f]/g, ''); // Remove acentos
 }
@@ -291,11 +298,12 @@ function isGenericVoice(name) {
 
 /**
  * Extrai o nome base do instrumento (família, sem número de voz)
- * Para bombardino, remove também a tonalidade para agrupar Bb e C na mesma família
+ * Para bombardino e requinta, remove também a tonalidade para agrupar na mesma família
  * Ex: "Sax Alto 1" → "sax alto"
  * Ex: "Clarinete Bb 2" → "clarinete bb"
  * Ex: "Bombardino Bb" → "bombardino"
  * Ex: "Bombardino C" → "bombardino"
+ * Ex: "Requinta Eb" → "requinta"
  * Ex: "Trompa F" → "trompa f"
  */
 function getInstrumentFamilyKey(name) {
@@ -307,6 +315,11 @@ function getInstrumentFamilyKey(name) {
   // Para bombardino, remove tonalidade para agrupar na mesma família
   if (/^bombardino\s+(bb|c|tc|bc)$/i.test(normalized)) {
     normalized = 'bombardino';
+  }
+
+  // Para requinta, remove Eb (é a tonalidade padrão/única)
+  if (/^requinta\s+eb$/i.test(normalized)) {
+    normalized = 'requinta';
   }
 
   return normalized.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
