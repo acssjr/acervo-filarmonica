@@ -188,35 +188,51 @@ function getOrdemInstrumento(instrumento) {
  * Ex: "Sax. Alto 1" → "Sax Alto 1"
  * Ex: "Saxofone Alto" → "Sax Alto"
  * Ex: "Clarineta Bb" → "Clarinete Bb"
+ * Ex: "sax baritono" → "Sax Barítono"
  */
 function normalizeInstrumentName(name) {
   let normalized = name
     .replace(/\./g, '') // Remove pontos
     .replace(/\s+/g, ' ') // Normaliza espaços
-    .trim();
+    .trim()
+    .toLowerCase(); // Primeiro lowercase para normalizar
 
-  // Normaliza variações comuns
+  // Remove preposições antes de tonalidades (ex: "Clarinete em Bb" → "Clarinete Bb")
+  normalized = normalized.replace(/\s+(em|in|e)\s+(bb|eb|f|c)\b/gi, ' $2');
+
+  // Normaliza variações comuns (com nomes corretos em português)
   const replacements = [
-    [/^saxofone\s/i, 'Sax '],
-    [/^saxophone\s/i, 'Sax '],
-    [/^clarineta\s/i, 'Clarinete '],
-    [/^clarinet\s/i, 'Clarinete '],
-    [/^trumpet\s/i, 'Trompete '],
-    [/^trombone\s/i, 'Trombone '],
-    [/^euphonium/i, 'Bombardino'],
-    [/^eufônio/i, 'Bombardino'],
-    [/^eufonio/i, 'Bombardino'],
-    [/^piccolo/i, 'Flautim'],
-    [/^snare/i, 'Caixa'],
-    [/^bass\s*drum/i, 'Bombo'],
+    // Saxofones
+    [/^saxofone\s*/i, 'sax '],
+    [/^saxophone\s*/i, 'sax '],
+    [/\bbaritono\b/i, 'barítono'],
+    [/\bbaritone\b/i, 'barítono'],
+    // Clarinetes
+    [/^clarineta\s*/i, 'clarinete '],
+    [/^clarinet\s*/i, 'clarinete '],
+    // Metais
+    [/^trumpet\s*/i, 'trompete '],
+    [/^euphonium/i, 'bombardino'],
+    [/^eufônio/i, 'bombardino'],
+    [/^eufonio/i, 'bombardino'],
+    // Madeiras
+    [/^piccolo/i, 'flautim'],
+    // Requinta - remove tonalidade (sempre Eb, não precisa mostrar)
+    [/^requinta\s*(eb|mib)?\s*/i, 'requinta '],
+    // Percussão
+    [/^snare/i, 'caixa'],
+    [/^bass\s*drum/i, 'bombo'],
   ];
 
   for (const [pattern, replacement] of replacements) {
     normalized = normalized.replace(pattern, replacement);
   }
 
-  // Capitaliza primeira letra de cada palavra
-  normalized = normalized.replace(/\b\w/g, c => c.toUpperCase());
+  // Capitaliza primeira letra de cada palavra (split por espaço para evitar problemas com acentos)
+  normalized = normalized
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
 
   // Mantém tonalidades em formato consistente
   normalized = normalized
@@ -225,13 +241,17 @@ function normalizeInstrumentName(name) {
     .replace(/\bTC\b/gi, 'TC')
     .replace(/\bBC\b/gi, 'BC');
 
+  // Remove espaços extras que podem ter sido criados
+  normalized = normalized.replace(/\s+/g, ' ').trim();
+
   return normalized;
 }
 
 /**
  * Extrai a "chave de agrupamento" de um instrumento
- * Instrumentos com mesma chave são considerados equivalentes para agrupamento
- * Ex: "Sax. Alto 1" e "Saxofone Alto 1" → mesma chave "sax alto 1"
+ * Agrupa apenas variações de NOMENCLATURA (não de voz):
+ * - "Sax. Alto 1" e "Saxofone Alto 1" → mesma chave (mesmo instrumento, nomes diferentes)
+ * - "Sax Alto 1" e "Sax Alto 2" → chaves DIFERENTES (vozes diferentes)
  */
 function getInstrumentGroupKey(name) {
   const normalized = normalizeInstrumentName(name);
@@ -240,13 +260,69 @@ function getInstrumentGroupKey(name) {
 }
 
 /**
+ * Verifica se um instrumento é "genérico" (sem número de voz ou tonalidade específica)
+ * Ex: "Sax Alto" → true (genérico)
+ * Ex: "Sax Alto 1" → false (tem voz)
+ * Ex: "Clarinete Bb" → true (genérico, Bb é padrão)
+ * Ex: "Clarinete Bb 2" → false (tem voz)
+ * Ex: "Bombardino" → true (genérico)
+ * Ex: "Bombardino Bb" → false (tem tonalidade específica)
+ * Ex: "Bombardino C" → false (tem tonalidade específica)
+ */
+function isGenericVoice(name) {
+  const normalized = normalizeInstrumentName(name);
+
+  // Se termina com número, não é genérico
+  if (/\s\d+\s*$/.test(normalized)) {
+    return false;
+  }
+
+  // Para bombardino: se tem tonalidade (Bb, C, TC, BC), não é genérico
+  if (/^bombardino$/i.test(normalized)) {
+    return true; // "Bombardino" sem tonalidade é genérico
+  }
+  if (/^bombardino\s+(bb|c|tc|bc)$/i.test(normalized)) {
+    return false; // "Bombardino Bb" ou "Bombardino C" não é genérico
+  }
+
+  // Para outros instrumentos, apenas número de voz define se é genérico
+  return true;
+}
+
+/**
+ * Extrai o nome base do instrumento (família, sem número de voz)
+ * Para bombardino, remove também a tonalidade para agrupar Bb e C na mesma família
+ * Ex: "Sax Alto 1" → "sax alto"
+ * Ex: "Clarinete Bb 2" → "clarinete bb"
+ * Ex: "Bombardino Bb" → "bombardino"
+ * Ex: "Bombardino C" → "bombardino"
+ * Ex: "Trompa F" → "trompa f"
+ */
+function getInstrumentFamilyKey(name) {
+  let normalized = normalizeInstrumentName(name).toLowerCase();
+
+  // Remove número de voz do final
+  normalized = normalized.replace(/\s+\d+\s*$/, '').trim();
+
+  // Para bombardino, remove tonalidade para agrupar na mesma família
+  if (/^bombardino\s+(bb|c|tc|bc)$/i.test(normalized)) {
+    normalized = 'bombardino';
+  }
+
+  return normalized.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
+/**
  * Obter lista de instrumentos disponíveis em um repertório
  * (baseado nas partes das partituras do repertório)
  *
- * Normaliza nomes para evitar duplicatas como:
- * - "Sax. Alto" vs "Sax Alto" vs "Saxofone Alto"
+ * Lógica:
+ * - Mostra vozes específicas (1, 2, 3) quando existem
+ * - NÃO mostra genérico se já existe voz específica
+ *   (ex: se tem "Sax Alto 1", não mostra "Sax Alto")
+ * - Mostra genérico apenas se é a ÚNICA opção para aquela família
  *
- * Mantém variações numéricas (1, 2, 3) para permitir seleção específica
+ * O fallback inteligente no download cuida de baixar a parte certa.
  */
 export async function getRepertorioInstrumentos(id, request, env) {
   const result = await env.DB.prepare(`
@@ -257,20 +333,43 @@ export async function getRepertorioInstrumentos(id, request, env) {
     WHERE rp.repertorio_id = ? AND p.ativo = 1
   `).bind(id).all();
 
-  // Agrupar instrumentos por chave normalizada
-  // Mantém o primeiro nome encontrado como representativo
-  const instrumentMap = new Map();
+  // Passo 1: Normalizar todos os instrumentos
+  const normalized = result.results.map(row => ({
+    original: row.instrumento,
+    normalized: normalizeInstrumentName(row.instrumento),
+    key: getInstrumentGroupKey(row.instrumento),
+    familyKey: getInstrumentFamilyKey(row.instrumento),
+    isGeneric: isGenericVoice(row.instrumento)
+  }));
 
-  for (const row of result.results) {
-    const key = getInstrumentGroupKey(row.instrumento);
-    if (!instrumentMap.has(key)) {
-      // Usa nome normalizado como representativo
-      instrumentMap.set(key, normalizeInstrumentName(row.instrumento));
+  // Passo 2: Agrupar por chave normalizada (elimina duplicatas de nomenclatura)
+  const instrumentMap = new Map();
+  for (const item of normalized) {
+    if (!instrumentMap.has(item.key)) {
+      instrumentMap.set(item.key, item);
     }
   }
 
-  // Extrair instrumentos únicos e ordenar
-  const instrumentos = Array.from(instrumentMap.values())
+  // Passo 3: Identificar famílias que têm vozes específicas
+  const familiesWithVoices = new Set();
+  for (const item of instrumentMap.values()) {
+    if (!item.isGeneric) {
+      familiesWithVoices.add(item.familyKey);
+    }
+  }
+
+  // Passo 4: Filtrar - remove genéricos se família tem vozes específicas
+  const filteredInstruments = [];
+  for (const item of instrumentMap.values()) {
+    // Se é genérico E a família tem vozes específicas, não incluir
+    if (item.isGeneric && familiesWithVoices.has(item.familyKey)) {
+      continue;
+    }
+    filteredInstruments.push(item.normalized);
+  }
+
+  // Ordenar
+  const instrumentos = filteredInstruments
     .sort((a, b) => getOrdemInstrumento(a).localeCompare(getOrdemInstrumento(b)));
 
   return jsonResponse(instrumentos, 200, request);
