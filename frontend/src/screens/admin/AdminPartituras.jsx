@@ -13,6 +13,7 @@ import UploadPastaModal from './components/UploadPastaModal';
 import PDFViewerModal from '@components/modals/PDFViewerModal';
 import ImportacaoLoteModal from '@components/modals/ImportacaoLoteModal';
 import TutorialOverlay, { useTutorial } from '@components/onboarding/TutorialOverlay';
+import RepertorioSelectorModal from '@components/modals/RepertorioSelectorModal';
 import Storage from '@services/storage';
 import { API_BASE_URL } from '@constants/api';
 
@@ -95,8 +96,12 @@ const AdminPartituras = () => {
   const [savingEdit, setSavingEdit] = useState(false);
 
   // Estado para repertório
+  const [repertorios, setRepertorios] = useState([]); // Todos os repertórios
   const [repertorioAtivo, setRepertorioAtivo] = useState(null);
   const [partiturasInRepertorio, setPartiturasInRepertorio] = useState(new Set());
+  const [showRepertorioModal, setShowRepertorioModal] = useState(false);
+  const [selectedPartituraForRepertorio, setSelectedPartituraForRepertorio] = useState(null);
+  const [loadingRepertorios, setLoadingRepertorios] = useState(false);
 
   // Funções para modal de edição
   const openEditModal = (partitura) => {
@@ -351,50 +356,105 @@ const AdminPartituras = () => {
     setLoading(false);
   };
 
-  // Carregar repertório ativo
-  const loadRepertorio = async () => {
+  // Carregar todos os repertórios
+  const loadRepertorios = async () => {
+    setLoadingRepertorios(true);
     try {
-      const rep = await API.getRepertorioAtivo();
-      setRepertorioAtivo(rep);
-      if (rep?.partituras) {
-        setPartiturasInRepertorio(new Set(rep.partituras.map(p => p.id)));
+      const reps = await API.getRepertorios();
+      setRepertorios(reps || []);
+      const active = reps?.find(r => r.ativo === 1);
+      setRepertorioAtivo(active || null);
+
+      // Se tem repertório ativo, carregar suas partituras
+      if (active) {
+        const repDetails = await API.getRepertorioAtivo();
+        if (repDetails?.partituras) {
+          setPartiturasInRepertorio(new Set(repDetails.partituras.map(p => p.id)));
+        }
       } else {
         setPartiturasInRepertorio(new Set());
       }
     } catch (_e) {
       // Silencioso - repertório pode não existir
+    } finally {
+      setLoadingRepertorios(false);
     }
   };
 
-  // Toggle repertório
-  const toggleRepertorio = async (partitura) => {
-    if (!repertorioAtivo) {
-      showToast('Nenhum repertorio ativo. Crie um primeiro.', 'error');
+  // Abrir modal de repertório
+  const openRepertorioModal = (partitura) => {
+    // Se já está no repertório ativo, remover diretamente
+    if (repertorioAtivo && partiturasInRepertorio.has(partitura.id)) {
+      removeFromRepertorio(repertorioAtivo.id, partitura.id);
       return;
     }
 
-    const isInRepertorio = partiturasInRepertorio.has(partitura.id);
+    // Se só tem um repertório e é o ativo, adicionar diretamente
+    if (repertorios.length === 1 && repertorioAtivo) {
+      addToRepertorio(repertorioAtivo, partitura.id);
+      return;
+    }
 
+    // Caso contrário, abrir modal para escolher
+    setSelectedPartituraForRepertorio(partitura);
+    setShowRepertorioModal(true);
+  };
+
+  // Adicionar partitura ao repertório
+  const addToRepertorio = async (repertorio, partituraId) => {
     try {
-      if (isInRepertorio) {
-        await API.removePartituraFromRepertorio(repertorioAtivo.id, partitura.id);
-        setPartiturasInRepertorio(prev => {
-          const next = new Set(prev);
-          next.delete(partitura.id);
-          return next;
-        });
-        showToast('Removida do repertorio');
-      } else {
-        await API.addPartituraToRepertorio(repertorioAtivo.id, partitura.id);
-        setPartiturasInRepertorio(prev => new Set([...prev, partitura.id]));
-        showToast('Adicionada ao repertorio');
+      await API.addPartituraToRepertorio(repertorio.id, partituraId);
+      if (repertorio.ativo === 1) {
+        setPartiturasInRepertorio(prev => new Set([...prev, partituraId]));
       }
+      showToast(`Adicionada ao "${repertorio.nome}"`);
+      setShowRepertorioModal(false);
+      setSelectedPartituraForRepertorio(null);
     } catch (err) {
-      showToast(err.message || 'Erro', 'error');
+      showToast(err.message || 'Erro ao adicionar', 'error');
     }
   };
 
-  useEffect(() => { loadData(); loadRepertorio(); }, []);
+  // Remover partitura do repertório
+  const removeFromRepertorio = async (repertorioId, partituraId) => {
+    try {
+      await API.removePartituraFromRepertorio(repertorioId, partituraId);
+      setPartiturasInRepertorio(prev => {
+        const next = new Set(prev);
+        next.delete(partituraId);
+        return next;
+      });
+      showToast('Removida do repertório');
+    } catch (err) {
+      showToast(err.message || 'Erro ao remover', 'error');
+    }
+  };
+
+  // Criar novo repertório e adicionar a partitura
+  const createRepertorioAndAdd = async (nome) => {
+    try {
+      const result = await API.createRepertorio({ nome, ativo: true });
+      showToast('Repertório criado!');
+
+      // Recarregar repertórios
+      await loadRepertorios();
+
+      // Adicionar partitura ao novo repertório
+      if (selectedPartituraForRepertorio && result.id) {
+        await API.addPartituraToRepertorio(result.id, selectedPartituraForRepertorio.id);
+        setPartiturasInRepertorio(new Set([selectedPartituraForRepertorio.id]));
+        showToast(`"${selectedPartituraForRepertorio.titulo}" adicionada!`);
+      }
+
+      setShowRepertorioModal(false);
+      setSelectedPartituraForRepertorio(null);
+    } catch (err) {
+      showToast(err.message || 'Erro ao criar repertório', 'error');
+      throw err;
+    }
+  };
+
+  useEffect(() => { loadData(); loadRepertorios(); }, []);
 
   useEffect(() => {
     const handler = (e) => {
@@ -1095,7 +1155,7 @@ const AdminPartituras = () => {
                             </svg>
                           </button>
                           <button
-                            onClick={() => toggleRepertorio(p)}
+                            onClick={() => openRepertorioModal(p)}
                             title={partiturasInRepertorio.has(p.id) ? 'Remover do Repertorio' : 'Adicionar ao Repertorio'}
                             className="btn-purple-hover"
                             style={{
@@ -1505,6 +1565,20 @@ const AdminPartituras = () => {
         onClose={() => setShowTutorial(false)}
         onExpandFirst={expandFirstPartitura}
         onCollapseFirst={collapseFirstPartitura}
+      />
+
+      {/* Modal de Seleção de Repertório */}
+      <RepertorioSelectorModal
+        isOpen={showRepertorioModal}
+        onClose={() => {
+          setShowRepertorioModal(false);
+          setSelectedPartituraForRepertorio(null);
+        }}
+        onSelect={(repertorio) => addToRepertorio(repertorio, selectedPartituraForRepertorio?.id)}
+        onCreate={createRepertorioAndAdd}
+        repertorios={repertorios}
+        partituraTitulo={selectedPartituraForRepertorio?.titulo}
+        loading={loadingRepertorios}
       />
 
       {/* Modal de Edição de Partitura */}
