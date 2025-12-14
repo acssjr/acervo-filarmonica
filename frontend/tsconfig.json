@@ -1,0 +1,46 @@
+{
+  "compilerOptions": {
+    /* Modo incremental - não quebra arquivos JS existentes */
+    "allowJs": true,
+    "checkJs": false,
+    "strict": false,
+
+    /* Não emite arquivos - Vite cuida do build */
+    "noEmit": true,
+
+    /* Módulos */
+    "target": "ES2020",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+
+    /* Resolução */
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    },
+
+    /* JSX */
+    "jsx": "react-jsx",
+
+    /* Tipos */
+    "types": ["vite/client"],
+
+    /* Outros */
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "src/**/*.js",
+    "src/**/*.jsx"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
+}

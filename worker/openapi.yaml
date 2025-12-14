@@ -1,0 +1,1604 @@
+openapi: 3.0.3
+info:
+  title: Acervo Filarmonica API
+  description: API do sistema de gestão de partituras da Filarmonica 25 de Março
+  version: 1.0.0
+  contact:
+    name: Acervo Filarmonica
+
+servers:
+  - url: http://localhost:8787
+    description: Desenvolvimento local
+  - url: https://api.partituras25.com
+    description: Produção
+
+tags:
+  - name: Health
+    description: Health check
+  - name: Auth
+    description: Autenticação e sessão
+  - name: Partituras
+    description: Gestão de partituras
+  - name: Partes
+    description: Gestão de partes de partituras
+  - name: Categorias
+    description: Gestão de categorias
+  - name: Favoritos
+    description: Favoritos do usuário
+  - name: Atividades
+    description: Log de atividades
+  - name: Estatisticas
+    description: Estatísticas do sistema
+  - name: Usuarios
+    description: Gestão de usuários (admin)
+  - name: Perfil
+    description: Perfil do usuário autenticado
+  - name: Repertorio
+    description: Gestão de repertórios
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    Success:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+
+    # Auth
+    LoginRequest:
+      type: object
+      properties:
+        username:
+          type: string
+        pin:
+          type: string
+      required:
+        - username
+        - pin
+
+    LoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        user:
+          $ref: '#/components/schemas/User'
+
+    CheckUserRequest:
+      type: object
+      properties:
+        username:
+          type: string
+      required:
+        - username
+
+    ChangePinRequest:
+      type: object
+      properties:
+        pin_atual:
+          type: string
+        pin_novo:
+          type: string
+      required:
+        - pin_atual
+        - pin_novo
+
+    # User
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        nome:
+          type: string
+        instrumento:
+          type: string
+        is_admin:
+          type: integer
+        foto_url:
+          type: string
+          nullable: true
+        criado_em:
+          type: string
+          format: date-time
+
+    UserCreate:
+      type: object
+      properties:
+        username:
+          type: string
+        nome:
+          type: string
+        instrumento:
+          type: string
+        pin:
+          type: string
+        is_admin:
+          type: integer
+      required:
+        - username
+        - nome
+        - instrumento
+        - pin
+
+    UserUpdate:
+      type: object
+      properties:
+        nome:
+          type: string
+        instrumento:
+          type: string
+        is_admin:
+          type: integer
+
+    # Categoria
+    Categoria:
+      type: object
+      properties:
+        id:
+          type: integer
+        nome:
+          type: string
+        emoji:
+          type: string
+        cor:
+          type: string
+        ordem:
+          type: integer
+
+    CategoriaCreate:
+      type: object
+      properties:
+        nome:
+          type: string
+        emoji:
+          type: string
+        cor:
+          type: string
+      required:
+        - nome
+
+    CategoriaReorder:
+      type: object
+      properties:
+        ordem:
+          type: array
+          items:
+            type: integer
+
+    # Partitura
+    Partitura:
+      type: object
+      properties:
+        id:
+          type: integer
+        titulo:
+          type: string
+        compositor:
+          type: string
+        arranjador:
+          type: string
+          nullable: true
+        categoria_id:
+          type: integer
+        categoria_nome:
+          type: string
+        categoria_emoji:
+          type: string
+        categoria_cor:
+          type: string
+        ano:
+          type: integer
+          nullable: true
+        descricao:
+          type: string
+          nullable: true
+        arquivo_nome:
+          type: string
+        arquivo_tamanho:
+          type: integer
+        destaque:
+          type: integer
+        total_partes:
+          type: integer
+        criado_em:
+          type: string
+          format: date-time
+
+    PartituraUpdate:
+      type: object
+      properties:
+        titulo:
+          type: string
+        compositor:
+          type: string
+        arranjador:
+          type: string
+        categoria_id:
+          type: integer
+        ano:
+          type: integer
+        descricao:
+          type: string
+        destaque:
+          type: integer
+
+    # Parte
+    Parte:
+      type: object
+      properties:
+        id:
+          type: integer
+        partitura_id:
+          type: integer
+        instrumento:
+          type: string
+        arquivo_nome:
+          type: string
+
+    # Favorito
+    Favorito:
+      type: object
+      properties:
+        id:
+          type: integer
+        partitura_id:
+          type: integer
+        titulo:
+          type: string
+        compositor:
+          type: string
+
+    FavoritosIds:
+      type: object
+      properties:
+        ids:
+          type: array
+          items:
+            type: integer
+
+    # Atividade
+    Atividade:
+      type: object
+      properties:
+        id:
+          type: integer
+        tipo:
+          type: string
+        titulo:
+          type: string
+        subtitulo:
+          type: string
+        usuario_id:
+          type: integer
+        usuario_nome:
+          type: string
+        criado_em:
+          type: string
+          format: date-time
+
+    # Estatisticas
+    Estatisticas:
+      type: object
+      properties:
+        total_partituras:
+          type: integer
+        total_usuarios:
+          type: integer
+        total_downloads:
+          type: integer
+        total_categorias:
+          type: integer
+
+    EstatisticasAdmin:
+      type: object
+      properties:
+        total_partituras:
+          type: integer
+        total_usuarios:
+          type: integer
+        total_downloads:
+          type: integer
+        downloads_mes:
+          type: integer
+        usuarios_ativos:
+          type: integer
+
+    Instrumento:
+      type: object
+      properties:
+        instrumento:
+          type: string
+        total:
+          type: integer
+
+    # Repertorio
+    Repertorio:
+      type: object
+      properties:
+        id:
+          type: integer
+        nome:
+          type: string
+        descricao:
+          type: string
+          nullable: true
+        ativo:
+          type: integer
+        criado_em:
+          type: string
+          format: date-time
+        partituras:
+          type: array
+          items:
+            $ref: '#/components/schemas/Partitura'
+
+    RepertorioCreate:
+      type: object
+      properties:
+        nome:
+          type: string
+        descricao:
+          type: string
+      required:
+        - nome
+
+    RepertorioUpdate:
+      type: object
+      properties:
+        nome:
+          type: string
+        descricao:
+          type: string
+        ativo:
+          type: integer
+
+    RepertorioInstrumento:
+      type: object
+      properties:
+        instrumento:
+          type: string
+        total:
+          type: integer
+
+    AddPartituraToRepertorio:
+      type: object
+      properties:
+        partitura_id:
+          type: integer
+      required:
+        - partitura_id
+
+    ReorderPartituras:
+      type: object
+      properties:
+        ordem:
+          type: array
+          items:
+            type: integer
+
+paths:
+  # ==================== HEALTH ====================
+  /api/health:
+    get:
+      tags: [Health]
+      summary: Health check
+      operationId: healthCheck
+      responses:
+        '200':
+          description: API está funcionando
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+
+  # ==================== AUTH ====================
+  /api/login:
+    post:
+      tags: [Auth]
+      summary: Fazer login
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login bem-sucedido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Credenciais inválidas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/check-user:
+    post:
+      tags: [Auth]
+      summary: Verificar se usuário existe
+      operationId: checkUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckUserRequest'
+      responses:
+        '200':
+          description: Usuário encontrado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  exists:
+                    type: boolean
+                  nome:
+                    type: string
+
+  /api/change-pin:
+    post:
+      tags: [Auth]
+      summary: Alterar PIN do usuário
+      operationId: changePin
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePinRequest'
+      responses:
+        '200':
+          description: PIN alterado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        '401':
+          description: PIN atual incorreto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # ==================== PARTITURAS ====================
+  /api/partituras:
+    get:
+      tags: [Partituras]
+      summary: Listar partituras
+      operationId: getPartituras
+      parameters:
+        - name: categoria
+          in: query
+          schema:
+            type: integer
+          description: Filtrar por categoria
+        - name: busca
+          in: query
+          schema:
+            type: string
+          description: Buscar por título ou compositor
+        - name: destaque
+          in: query
+          schema:
+            type: string
+            enum: ['1']
+          description: Apenas partituras em destaque
+      responses:
+        '200':
+          description: Lista de partituras
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Partitura'
+
+    post:
+      tags: [Partituras]
+      summary: Criar partitura (admin)
+      operationId: createPartitura
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                titulo:
+                  type: string
+                compositor:
+                  type: string
+                arranjador:
+                  type: string
+                categoria:
+                  type: integer
+                ano:
+                  type: integer
+                descricao:
+                  type: string
+                destaque:
+                  type: string
+                  enum: ['0', '1']
+                arquivo:
+                  type: string
+                  format: binary
+              required:
+                - titulo
+                - compositor
+                - categoria
+                - arquivo
+      responses:
+        '201':
+          description: Partitura criada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  id:
+                    type: integer
+                  message:
+                    type: string
+        '409':
+          description: Partitura duplicada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/partituras/upload-pasta:
+    post:
+      tags: [Partituras]
+      summary: Upload de pasta com múltiplas partes (admin)
+      operationId: uploadPastaPartitura
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                titulo:
+                  type: string
+                compositor:
+                  type: string
+                arranjador:
+                  type: string
+                categoria:
+                  type: integer
+                ano:
+                  type: integer
+                total_arquivos:
+                  type: integer
+              required:
+                - titulo
+                - categoria
+                - total_arquivos
+      responses:
+        '201':
+          description: Partitura criada com partes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  id:
+                    type: integer
+                  partes_criadas:
+                    type: integer
+                  message:
+                    type: string
+
+  /api/partituras/{id}:
+    get:
+      tags: [Partituras]
+      summary: Obter partitura por ID
+      operationId: getPartitura
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Partitura encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Partitura'
+        '404':
+          description: Partitura não encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    put:
+      tags: [Partituras]
+      summary: Atualizar partitura (admin)
+      operationId: updatePartitura
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PartituraUpdate'
+      responses:
+        '200':
+          description: Partitura atualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+
+    delete:
+      tags: [Partituras]
+      summary: Deletar partitura (admin)
+      operationId: deletePartitura
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Partitura removida
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+
+  /api/partituras/{id}/partes:
+    get:
+      tags: [Partes]
+      summary: Listar partes de uma partitura
+      operationId: getPartesPartitura
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Lista de partes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Parte'
+
+    post:
+      tags: [Partes]
+      summary: Adicionar parte a uma partitura (admin)
+      operationId: addParte
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                instrumento:
+                  type: string
+                arquivo:
+                  type: string
+                  format: binary
+              required:
+                - instrumento
+                - arquivo
+      responses:
+        '201':
+          description: Parte adicionada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+
+  # ==================== PARTES (rotas independentes) ====================
+  /api/partes/{id}/substituir:
+    put:
+      tags: [Partes]
+      summary: Substituir arquivo de uma parte (admin)
+      operationId: substituirParte
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID da parte (não da partitura)
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                arquivo:
+                  type: string
+                  format: binary
+              required:
+                - arquivo
+      responses:
+        '200':
+          description: Parte substituída
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+
+  /api/partes/{id}:
+    delete:
+      tags: [Partes]
+      summary: Deletar parte (admin)
+      operationId: deleteParte
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID da parte (não da partitura)
+      responses:
+        '200':
+          description: Parte removida
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+
+  # ==================== DOWNLOADS ====================
+  /api/download/{id}:
+    get:
+      tags: [Partituras]
+      summary: Download da partitura completa
+      operationId: downloadPartitura
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Arquivo PDF
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Arquivo não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/download/parte/{id}:
+    get:
+      tags: [Partes]
+      summary: Download de uma parte específica
+      operationId: downloadParte
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Arquivo PDF
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+
+  # ==================== CATEGORIAS ====================
+  /api/categorias:
+    get:
+      tags: [Categorias]
+      summary: Listar categorias
+      operationId: getCategorias
+      responses:
+        '200':
+          description: Lista de categorias
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Categoria'
+
+    post:
+      tags: [Categorias]
+      summary: Criar categoria (admin)
+      operationId: createCategoria
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoriaCreate'
+      responses:
+        '201':
+          description: Categoria criada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+
+  /api/categorias/{id}:
+    put:
+      tags: [Categorias]
+      summary: Atualizar categoria (admin)
+      operationId: updateCategoria
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoriaCreate'
+      responses:
+        '200':
+          description: Categoria atualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+
+    delete:
+      tags: [Categorias]
+      summary: Deletar categoria (admin)
+      operationId: deleteCategoria
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Categoria removida
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+
+  /api/categorias/reorder:
+    post:
+      tags: [Categorias]
+      summary: Reordenar categorias (admin)
+      operationId: reorderCategorias
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoriaReorder'
+      responses:
+        '200':
+          description: Categorias reordenadas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+
+  # ==================== FAVORITOS ====================
+  /api/favoritos:
+    get:
+      tags: [Favoritos]
+      summary: Listar favoritos do usuário
+      operationId: getFavoritos
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Lista de favoritos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Favorito'
+
+  /api/favoritos/ids:
+    get:
+      tags: [Favoritos]
+      summary: Obter IDs dos favoritos
+      operationId: getFavoritosIds
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Lista de IDs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FavoritosIds'
+
+  /api/favoritos/{id}:
+    post:
+      tags: [Favoritos]
+      summary: Adicionar partitura aos favoritos
+      operationId: addFavorito
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID da partitura
+      responses:
+        '200':
+          description: Favorito adicionado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+
+    delete:
+      tags: [Favoritos]
+      summary: Remover partitura dos favoritos
+      operationId: removeFavorito
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID da partitura
+      responses:
+        '200':
+          description: Favorito removido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+
+  # ==================== ATIVIDADES ====================
+  /api/atividades:
+    get:
+      tags: [Atividades]
+      summary: Listar atividades recentes
+      operationId: getAtividades
+      responses:
+        '200':
+          description: Lista de atividades
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Atividade'
+
+  /api/minhas-atividades:
+    get:
+      tags: [Atividades]
+      summary: Listar atividades do usuário logado
+      operationId: getAtividadesUsuario
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Lista de atividades do usuário
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Atividade'
+
+  # ==================== ESTATISTICAS ====================
+  /api/estatisticas:
+    get:
+      tags: [Estatisticas]
+      summary: Obter estatísticas públicas
+      operationId: getEstatisticas
+      responses:
+        '200':
+          description: Estatísticas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Estatisticas'
+
+  /api/instrumentos:
+    get:
+      tags: [Estatisticas]
+      summary: Listar instrumentos disponíveis
+      operationId: getInstrumentos
+      responses:
+        '200':
+          description: Lista de instrumentos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Instrumento'
+
+  /api/admin/estatisticas:
+    get:
+      tags: [Estatisticas]
+      summary: Obter estatísticas administrativas
+      operationId: getEstatisticasAdmin
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Estatísticas admin
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EstatisticasAdmin'
+
+  # ==================== USUARIOS (ADMIN) ====================
+  /api/usuarios:
+    get:
+      tags: [Usuarios]
+      summary: Listar usuários (admin)
+      operationId: getUsuarios
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Lista de usuários
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+
+    post:
+      tags: [Usuarios]
+      summary: Criar usuário (admin)
+      operationId: createUsuario
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreate'
+      responses:
+        '201':
+          description: Usuário criado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+
+  /api/usuarios/{id}:
+    get:
+      tags: [Usuarios]
+      summary: Obter usuário por ID (admin)
+      operationId: getUsuario
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Usuário encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+
+    put:
+      tags: [Usuarios]
+      summary: Atualizar usuário (admin)
+      operationId: updateUsuario
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUpdate'
+      responses:
+        '200':
+          description: Usuário atualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+
+    delete:
+      tags: [Usuarios]
+      summary: Deletar usuário (admin)
+      operationId: deleteUsuario
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Usuário removido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+
+  # ==================== PERFIL ====================
+  /api/perfil:
+    get:
+      tags: [Perfil]
+      summary: Obter perfil do usuário logado
+      operationId: getPerfil
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Perfil do usuário
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+
+    put:
+      tags: [Perfil]
+      summary: Atualizar perfil
+      operationId: updatePerfil
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nome:
+                  type: string
+                instrumento:
+                  type: string
+      responses:
+        '200':
+          description: Perfil atualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+
+  /api/perfil/foto:
+    post:
+      tags: [Perfil]
+      summary: Upload de foto de perfil
+      operationId: uploadFotoPerfil
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                foto:
+                  type: string
+                  format: binary
+              required:
+                - foto
+      responses:
+        '200':
+          description: Foto atualizada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  foto_url:
+                    type: string
+
+  # ==================== REPERTORIO ====================
+  /api/repertorio/ativo:
+    get:
+      tags: [Repertorio]
+      summary: Obter repertório ativo
+      operationId: getRepertorioAtivo
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Repertório ativo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Repertorio'
+        '404':
+          description: Nenhum repertório ativo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/repertorio/{id}:
+    get:
+      tags: [Repertorio]
+      summary: Obter repertório por ID
+      operationId: getRepertorio
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Repertório
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Repertorio'
+
+    put:
+      tags: [Repertorio]
+      summary: Atualizar repertório (admin)
+      operationId: updateRepertorio
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RepertorioUpdate'
+      responses:
+        '200':
+          description: Repertório atualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+
+    delete:
+      tags: [Repertorio]
+      summary: Deletar repertório (admin)
+      operationId: deleteRepertorio
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Repertório removido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+
+  /api/repertorio/{id}/download:
+    get:
+      tags: [Repertorio]
+      summary: Download do repertório (ZIP)
+      operationId: downloadRepertorio
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Arquivo ZIP
+          content:
+            application/zip:
+              schema:
+                type: string
+                format: binary
+
+  /api/repertorio/{id}/instrumentos:
+    get:
+      tags: [Repertorio]
+      summary: Listar instrumentos disponíveis no repertório
+      operationId: getRepertorioInstrumentos
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Lista de instrumentos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RepertorioInstrumento'
+
+  /api/partituras/{id}/in-repertorio:
+    get:
+      tags: [Repertorio]
+      summary: Verificar se partitura está no repertório ativo
+      operationId: isPartituraInRepertorioAtivo
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  in_repertorio:
+                    type: boolean
+
+  /api/repertorios:
+    get:
+      tags: [Repertorio]
+      summary: Listar todos os repertórios (admin)
+      operationId: listRepertorios
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Lista de repertórios
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Repertorio'
+
+    post:
+      tags: [Repertorio]
+      summary: Criar repertório (admin)
+      operationId: createRepertorio
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RepertorioCreate'
+      responses:
+        '201':
+          description: Repertório criado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+
+  /api/repertorio/{id}/partituras:
+    post:
+      tags: [Repertorio]
+      summary: Adicionar partitura ao repertório (admin)
+      operationId: addPartituraToRepertorio
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddPartituraToRepertorio'
+      responses:
+        '200':
+          description: Partitura adicionada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+
+  /api/repertorio/{repertorioId}/partituras/{partituraId}:
+    delete:
+      tags: [Repertorio]
+      summary: Remover partitura do repertório (admin)
+      operationId: removePartituraFromRepertorio
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: repertorioId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: partituraId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Partitura removida
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+
+  /api/repertorio/{id}/reorder:
+    put:
+      tags: [Repertorio]
+      summary: Reordenar partituras no repertório (admin)
+      operationId: reorderPartiturasRepertorio
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReorderPartituras'
+      responses:
+        '200':
+          description: Partituras reordenadas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+
+  /api/repertorio/{id}/duplicar:
+    post:
+      tags: [Repertorio]
+      summary: Duplicar repertório (admin)
+      operationId: duplicarRepertorio
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '201':
+          description: Repertório duplicado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  id:
+                    type: integer
+                  message:
+                    type: string

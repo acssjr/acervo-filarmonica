@@ -15,6 +15,8 @@
     "deploy:pages": "wrangler pages deploy frontend --project-name=acervo-filarmonica",
     "setup": "node scripts/setup.js",
     "db:migrate": "wrangler d1 execute acervo-db --file=database/schema.sql",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "test:e2e": "npx playwright test",
     "test:e2e:ui": "npx playwright test --ui",
     "test:e2e:headed": "npx playwright test --headed"
@@ -36,12 +38,14 @@
   },
   "homepage": "https://github.com/acssjr/acervo-filarmonica#readme",
   "dependencies": {
-    "pdf-lib": "^1.17.1",
-    "fflate": "^0.8.2"
+    "fflate": "^0.8.2",
+    "pdf-lib": "^1.17.1"
   },
   "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.10.15",
     "@playwright/test": "^1.57.0",
     "@types/node": "^24.10.1",
+    "vitest": "3.2",
     "wrangler": "^4.53.0"
   }
 }
