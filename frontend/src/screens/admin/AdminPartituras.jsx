@@ -400,32 +400,46 @@ const AdminPartituras = () => {
     setShowRepertorioModal(true);
   };
 
-  // Adicionar partitura ao repertório
+  // Adicionar partitura ao repertório (UI otimista)
   const addToRepertorio = async (repertorio, partituraId) => {
+    // UI otimista: atualiza imediatamente
+    if (repertorio.ativo === 1) {
+      setPartiturasInRepertorio(prev => new Set([...prev, partituraId]));
+    }
+    setShowRepertorioModal(false);
+    setSelectedPartituraForRepertorio(null);
+
     try {
       await API.addPartituraToRepertorio(repertorio.id, partituraId);
-      if (repertorio.ativo === 1) {
-        setPartiturasInRepertorio(prev => new Set([...prev, partituraId]));
-      }
       showToast(`Adicionada ao "${repertorio.nome}"`);
-      setShowRepertorioModal(false);
-      setSelectedPartituraForRepertorio(null);
     } catch (err) {
+      // Reverte em caso de erro
+      if (repertorio.ativo === 1) {
+        setPartiturasInRepertorio(prev => {
+          const next = new Set(prev);
+          next.delete(partituraId);
+          return next;
+        });
+      }
       showToast(err.message || 'Erro ao adicionar', 'error');
     }
   };
 
-  // Remover partitura do repertório
+  // Remover partitura do repertório (UI otimista)
   const removeFromRepertorio = async (repertorioId, partituraId) => {
+    // UI otimista: atualiza imediatamente
+    setPartiturasInRepertorio(prev => {
+      const next = new Set(prev);
+      next.delete(partituraId);
+      return next;
+    });
+
     try {
       await API.removePartituraFromRepertorio(repertorioId, partituraId);
-      setPartiturasInRepertorio(prev => {
-        const next = new Set(prev);
-        next.delete(partituraId);
-        return next;
-      });
       showToast('Removida do repertório');
     } catch (err) {
+      // Reverte em caso de erro
+      setPartiturasInRepertorio(prev => new Set([...prev, partituraId]));
       showToast(err.message || 'Erro ao remover', 'error');
     }
   };
