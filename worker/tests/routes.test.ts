@@ -275,3 +275,252 @@ describe('Métodos HTTP incorretos', () => {
     expect(response.status).toBe(404);
   });
 });
+
+// ============================================================
+// TESTES DE CRUD - Validam operações completas
+// ============================================================
+
+describe('CRUD de Categorias', () => {
+  let adminToken: string;
+
+  beforeAll(async () => {
+    adminToken = await createTestToken(1, true);
+  });
+
+  it('fluxo completo: criar, ler, atualizar e deletar categoria', async () => {
+    const testCategoryId = 'categoria-teste-crud';
+
+    // 1. Criar categoria
+    const createResponse = await SELF.fetch('https://test.local/api/categorias', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${adminToken}`,
+      },
+      body: JSON.stringify({
+        id: testCategoryId,
+        nome: 'Categoria Teste',
+        emoji: '🎵',
+        cor: '#FF0000',
+      }),
+    });
+
+    expect(createResponse.status).toBe(201);
+    const createData = await createResponse.json() as { success: boolean };
+    expect(createData.success).toBe(true);
+
+    // 2. Verificar que aparece na lista
+    const listResponse = await SELF.fetch('https://test.local/api/categorias');
+    expect(listResponse.status).toBe(200);
+    const listData = await listResponse.json() as Array<{ id: string; nome: string }>;
+    const found = listData.find(c => c.id === testCategoryId);
+    expect(found).toBeDefined();
+    expect(found?.nome).toBe('Categoria Teste');
+
+    // 3. Atualizar categoria
+    const updateResponse = await SELF.fetch(`https://test.local/api/categorias/${testCategoryId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${adminToken}`,
+      },
+      body: JSON.stringify({
+        nome: 'Categoria Atualizada',
+      }),
+    });
+
+    expect(updateResponse.status).toBe(200);
+
+    // 4. Deletar categoria
+    const deleteResponse = await SELF.fetch(`https://test.local/api/categorias/${testCategoryId}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${adminToken}` },
+    });
+
+    expect(deleteResponse.status).toBe(200);
+
+    // 5. Verificar que foi deletada
+    const checkResponse = await SELF.fetch('https://test.local/api/categorias');
+    const checkData = await checkResponse.json() as Array<{ id: string }>;
+    const notFound = checkData.find(c => c.id === testCategoryId);
+    expect(notFound).toBeUndefined();
+  });
+
+  it('GET /api/categorias retorna lista com categorias de seed', async () => {
+    const response = await SELF.fetch('https://test.local/api/categorias');
+    expect(response.status).toBe(200);
+
+    const data = await response.json() as Array<{ id: string; nome: string }>;
+    expect(Array.isArray(data)).toBe(true);
+    // Verifica se há pelo menos as categorias de seed
+    expect(data.length).toBeGreaterThanOrEqual(2);
+  });
+});
+
+describe('CRUD de Repertórios', () => {
+  let adminToken: string;
+
+  beforeAll(async () => {
+    adminToken = await createTestToken(1, true);
+  });
+
+  it('fluxo completo: criar, ler, atualizar e deletar repertório', async () => {
+    // 1. Criar repertório
+    const createResponse = await SELF.fetch('https://test.local/api/repertorios', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${adminToken}`,
+      },
+      body: JSON.stringify({
+        nome: 'Repertório Teste CRUD',
+        descricao: 'Descrição do repertório de teste',
+      }),
+    });
+
+    expect(createResponse.status).toBe(201);
+    const createData = await createResponse.json() as { id: number };
+    expect(createData).toHaveProperty('id');
+    const repertorioId = createData.id;
+
+    // 2. Ler repertório específico
+    const getResponse = await SELF.fetch(`https://test.local/api/repertorio/${repertorioId}`, {
+      headers: { Authorization: `Bearer ${adminToken}` },
+    });
+
+    expect(getResponse.status).toBe(200);
+    const getData = await getResponse.json() as { nome: string };
+    expect(getData.nome).toBe('Repertório Teste CRUD');
+
+    // 3. Atualizar repertório
+    const updateResponse = await SELF.fetch(`https://test.local/api/repertorio/${repertorioId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${adminToken}`,
+      },
+      body: JSON.stringify({
+        nome: 'Repertório Atualizado',
+      }),
+    });
+
+    expect(updateResponse.status).toBe(200);
+
+    // 4. Deletar repertório
+    const deleteResponse = await SELF.fetch(`https://test.local/api/repertorio/${repertorioId}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${adminToken}` },
+    });
+
+    expect(deleteResponse.status).toBe(200);
+
+    // 5. Verificar que foi deletado
+    const checkResponse = await SELF.fetch(`https://test.local/api/repertorio/${repertorioId}`, {
+      headers: { Authorization: `Bearer ${adminToken}` },
+    });
+    expect(checkResponse.status).toBe(404);
+  });
+
+  it('GET /api/repertorios lista repertórios', async () => {
+    const response = await SELF.fetch('https://test.local/api/repertorios', {
+      headers: { Authorization: `Bearer ${adminToken}` },
+    });
+
+    expect(response.status).toBe(200);
+    const data = await response.json() as Array<{ id: number }>;
+    expect(Array.isArray(data)).toBe(true);
+  });
+
+  it('GET /api/repertorio/ativo retorna 200 ou 404', async () => {
+    const response = await SELF.fetch('https://test.local/api/repertorio/ativo', {
+      headers: { Authorization: `Bearer ${adminToken}` },
+    });
+
+    // Pode ser 200 (encontrou) ou 404 (não há ativo)
+    expect([200, 404]).toContain(response.status);
+  });
+});
+
+describe('CRUD de Favoritos', () => {
+  let userToken: string;
+
+  beforeAll(async () => {
+    userToken = await createTestToken(2, false);
+  });
+
+  it('POST /api/favoritos/:id adiciona favorito', async () => {
+    // Tenta adicionar partitura 1 aos favoritos (pode não existir, mas rota deve funcionar)
+    const response = await SELF.fetch('https://test.local/api/favoritos/1', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${userToken}` },
+    });
+
+    // 200/201 se sucesso, 404 se partitura não existe
+    expect([200, 201, 404]).toContain(response.status);
+  });
+
+  it('GET /api/favoritos lista favoritos do usuário', async () => {
+    const response = await SELF.fetch('https://test.local/api/favoritos', {
+      headers: { Authorization: `Bearer ${userToken}` },
+    });
+
+    expect(response.status).toBe(200);
+    const data = await response.json();
+    expect(Array.isArray(data)).toBe(true);
+  });
+
+  it('GET /api/favoritos/ids retorna apenas IDs', async () => {
+    const response = await SELF.fetch('https://test.local/api/favoritos/ids', {
+      headers: { Authorization: `Bearer ${userToken}` },
+    });
+
+    expect(response.status).toBe(200);
+    const data = await response.json() as number[];
+    // A API retorna array de IDs diretamente (não { ids: [...] })
+    expect(Array.isArray(data)).toBe(true);
+  });
+
+  it('DELETE /api/favoritos/:id remove favorito', async () => {
+    const response = await SELF.fetch('https://test.local/api/favoritos/1', {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${userToken}` },
+    });
+
+    // 200 se removeu, 404 se não existia
+    expect([200, 404]).toContain(response.status);
+  });
+});
+
+describe('Rotas de Perfil', () => {
+  let userToken: string;
+
+  beforeAll(async () => {
+    userToken = await createTestToken(2, false);
+  });
+
+  it('GET /api/perfil retorna dados do usuário', async () => {
+    const response = await SELF.fetch('https://test.local/api/perfil', {
+      headers: { Authorization: `Bearer ${userToken}` },
+    });
+
+    expect(response.status).toBe(200);
+    const data = await response.json() as { id: number; username: string };
+    expect(data).toHaveProperty('id');
+    expect(data).toHaveProperty('username');
+  });
+
+  it('PUT /api/perfil atualiza dados do usuário', async () => {
+    const response = await SELF.fetch('https://test.local/api/perfil', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${userToken}`,
+      },
+      body: JSON.stringify({
+        nome: 'Músico Teste Atualizado',
+      }),
+    });
+
+    expect(response.status).toBe(200);
+  });
+});

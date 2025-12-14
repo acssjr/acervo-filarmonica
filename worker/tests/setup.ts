@@ -77,23 +77,25 @@ const STATEMENTS = [
     ordem INTEGER DEFAULT 0
   )`,
 
-  // Atividades
+  // Atividades (sincronizado com schema principal)
   `CREATE TABLE IF NOT EXISTS atividades (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     tipo TEXT NOT NULL,
-    titulo TEXT,
-    subtitulo TEXT,
+    titulo TEXT NOT NULL,
+    detalhes TEXT,
     usuario_id INTEGER,
     criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
   )`,
 
-  // Repertorios
+  // Repertorios (sincronizado com migration 003)
   `CREATE TABLE IF NOT EXISTS repertorios (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     nome TEXT NOT NULL,
     descricao TEXT,
     ativo INTEGER DEFAULT 0,
-    criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
+    data_criacao DATETIME DEFAULT CURRENT_TIMESTAMP,
+    data_apresentacao DATE,
+    criado_por INTEGER
   )`,
 
   // Repertorio Partituras
