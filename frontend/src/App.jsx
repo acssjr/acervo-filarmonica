@@ -13,6 +13,7 @@ import DesktopLayout from '@components/layout/DesktopLayout';
 // Modals - carregados sempre (necessários globalmente)
 import SheetDetailModal from '@components/modals/SheetDetailModal';
 import NotificationsPanel from '@components/modals/NotificationsPanel';
+import UpdateNotification from '@components/common/UpdateNotification';
 
 // Login - carregado sempre (primeira tela)
 import LoginScreen from '@screens/LoginScreen';
@@ -311,6 +312,9 @@ const AppContent = () => {
       {/* Modals (globais) */}
       <SheetDetailModal />
       <NotificationsPanel />
+
+      {/* Notificação de atualização */}
+      <UpdateNotification />
 
       {toast && <Toast message={toast.message} type={toast.type} onClose={clearToast} />}
     </>
