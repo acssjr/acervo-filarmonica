@@ -129,7 +129,7 @@ const AdminPartituras = () => {
         ...editingPartitura,
         titulo: editForm.titulo || editingPartitura.titulo,
         compositor: editForm.compositor || null,
-        categoria_id: editForm.categoria_id || null
+        categoria_id: editForm.categoria_id || editingPartitura.categoria_id
       };
       await API.updatePartitura(editingPartitura.id, updateData);
 
@@ -139,7 +139,7 @@ const AdminPartituras = () => {
           ...p,
           titulo: editForm.titulo || p.titulo,
           compositor: editForm.compositor || null,
-          categoria_id: editForm.categoria_id || null
+          categoria_id: editForm.categoria_id || p.categoria_id
         } : p
       ));
 
