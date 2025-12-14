@@ -428,31 +428,59 @@ const SheetDetailModal = () => {
             />
           </div>
 
-          {/* Botao Favoritar */}
-          <button
-            onClick={() => toggleFavorite(selectedSheet.id)}
-            aria-pressed={isFavorite}
-            aria-label={isFavorite ? `Remover ${selectedSheet.title} dos favoritos` : `Adicionar ${selectedSheet.title} aos favoritos`}
-            style={{
-              width: '100%',
-              padding: '10px',
-              borderRadius: '10px',
-              background: isFavorite ? 'rgba(232,90,79,0.1)' : 'transparent',
-              border: isFavorite ? '1.5px solid var(--primary)' : '1.5px solid var(--border)',
-              color: isFavorite ? 'var(--primary)' : 'var(--text-muted)',
-              fontFamily: 'Outfit, sans-serif',
-              fontSize: '12px',
-              fontWeight: '600',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '6px'
-            }}
-          >
-            <div style={{ width: '14px', height: '14px' }}><Icons.Heart filled={isFavorite} /></div>
-            {isFavorite ? 'Remover dos Favoritos' : 'Adicionar aos Favoritos'}
-          </button>
+          {/* Botoes Imprimir e Favoritar */}
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              onClick={() => download.handlePrintInstrument(isMaestro ? 'Grade' : userInstrument)}
+              disabled={download.downloading || loadingPartes || (isMaestro && !hasGrade)}
+              aria-label="Imprimir partitura"
+              style={{
+                flex: 1,
+                padding: '10px',
+                borderRadius: '10px',
+                background: (isMaestro && !hasGrade) ? 'var(--bg-secondary)' : 'rgba(52, 152, 219, 0.1)',
+                border: (isMaestro && !hasGrade) ? '1.5px solid var(--border)' : '1.5px solid rgba(52, 152, 219, 0.3)',
+                color: (isMaestro && !hasGrade) ? 'var(--text-muted)' : '#3498db',
+                fontFamily: 'Outfit, sans-serif',
+                fontSize: '12px',
+                fontWeight: '600',
+                cursor: (isMaestro && !hasGrade) || download.downloading || loadingPartes ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+                opacity: (isMaestro && !hasGrade) ? 0.5 : 1
+              }}
+            >
+              <div style={{ width: '14px', height: '14px' }}><Icons.Printer /></div>
+              Imprimir
+            </button>
+
+            <button
+              onClick={() => toggleFavorite(selectedSheet.id)}
+              aria-pressed={isFavorite}
+              aria-label={isFavorite ? `Remover dos favoritos` : `Adicionar aos favoritos`}
+              style={{
+                flex: 1,
+                padding: '10px',
+                borderRadius: '10px',
+                background: isFavorite ? 'rgba(232,90,79,0.1)' : 'transparent',
+                border: isFavorite ? '1.5px solid var(--primary)' : '1.5px solid var(--border)',
+                color: isFavorite ? 'var(--primary)' : 'var(--text-muted)',
+                fontFamily: 'Outfit, sans-serif',
+                fontSize: '12px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px'
+              }}
+            >
+              <div style={{ width: '14px', height: '14px' }}><Icons.Heart filled={isFavorite} /></div>
+              {isFavorite ? 'Favorito' : 'Favoritar'}
+            </button>
+          </div>
         </div>
       </div>
     </>

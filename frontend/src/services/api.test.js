@@ -546,4 +546,198 @@ describe('API Service', () => {
       });
     });
   });
+
+  // ============ REPERTORIO ============
+
+  describe('Repertorio', () => {
+    beforeEach(() => {
+      mockStorage.get.mockImplementation((key) => {
+        if (key === 'authToken') return 'test-token';
+        if (key === 'tokenExpiresAt') return Date.now() + (60 * 60 * 1000);
+        return null;
+      });
+    });
+
+    it('getRepertorioAtivo() faz GET para /api/repertorio/ativo', async () => {
+      global.fetch = createMockFetch({ data: { id: 1, nome: 'Repertório Ativo' } });
+
+      const result = await API.getRepertorioAtivo();
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/repertorio/ativo'),
+        expect.anything()
+      );
+      expect(result.nome).toBe('Repertório Ativo');
+    });
+
+    it('getRepertorio() faz GET para /api/repertorio/:id', async () => {
+      global.fetch = createMockFetch({ data: { id: 5, nome: 'Repertório 5' } });
+
+      await API.getRepertorio(5);
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/repertorio/5'),
+        expect.anything()
+      );
+    });
+
+    it('getRepertorios() faz GET para /api/repertorios', async () => {
+      global.fetch = createMockFetch({ data: [{ id: 1 }, { id: 2 }] });
+
+      const result = await API.getRepertorios();
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringMatching(/\/api\/repertorios$/),
+        expect.anything()
+      );
+      expect(result).toHaveLength(2);
+    });
+
+    it('createRepertorio() faz POST com dados', async () => {
+      global.fetch = createMockFetch({ data: { success: true, id: 10 } });
+
+      const data = { nome: 'Novo Repertório', descricao: 'Teste' };
+      await API.createRepertorio(data);
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringMatching(/\/api\/repertorios$/),
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify(data)
+        })
+      );
+    });
+
+    it('updateRepertorio() faz PUT com dados', async () => {
+      global.fetch = createMockFetch({ data: { success: true } });
+
+      const data = { nome: 'Nome Atualizado' };
+      await API.updateRepertorio(5, data);
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/repertorio/5'),
+        expect.objectContaining({
+          method: 'PUT',
+          body: JSON.stringify(data)
+        })
+      );
+    });
+
+    it('deleteRepertorio() faz DELETE', async () => {
+      global.fetch = createMockFetch({ data: { success: true } });
+
+      await API.deleteRepertorio(5);
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/repertorio/5'),
+        expect.objectContaining({ method: 'DELETE' })
+      );
+    });
+
+    it('addPartituraToRepertorio() faz POST com partitura_id', async () => {
+      global.fetch = createMockFetch({ data: { success: true } });
+
+      await API.addPartituraToRepertorio(1, 42);
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/repertorio/1/partituras'),
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({ partitura_id: 42 })
+        })
+      );
+    });
+
+    it('removePartituraFromRepertorio() faz DELETE', async () => {
+      global.fetch = createMockFetch({ data: { success: true } });
+
+      await API.removePartituraFromRepertorio(1, 42);
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/repertorio/1/partituras/42'),
+        expect.objectContaining({ method: 'DELETE' })
+      );
+    });
+
+    it('reorderRepertorioPartituras() faz PUT com ordens', async () => {
+      global.fetch = createMockFetch({ data: { success: true } });
+
+      const ordens = [{ partitura_id: 1, ordem: 0 }, { partitura_id: 2, ordem: 1 }];
+      await API.reorderRepertorioPartituras(5, ordens);
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/repertorio/5/reorder'),
+        expect.objectContaining({
+          method: 'PUT',
+          body: JSON.stringify({ ordens })
+        })
+      );
+    });
+
+    it('duplicarRepertorio() faz POST', async () => {
+      global.fetch = createMockFetch({ data: { success: true, id: 11 } });
+
+      await API.duplicarRepertorio(5);
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/repertorio/5/duplicar'),
+        expect.objectContaining({ method: 'POST' })
+      );
+    });
+
+    it('isPartituraInRepertorio() faz GET para verificar', async () => {
+      global.fetch = createMockFetch({ data: { inRepertorio: true } });
+
+      const result = await API.isPartituraInRepertorio(42);
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/partituras/42/in-repertorio'),
+        expect.anything()
+      );
+      expect(result.inRepertorio).toBe(true);
+    });
+
+    it('getRepertorioDownloadUrl() retorna URL sem instrumento', () => {
+      const url = API.getRepertorioDownloadUrl(5);
+
+      expect(url).toContain('/api/repertorio/5/download');
+      expect(url).toContain('formato=pdf');
+      expect(url).not.toContain('instrumento');
+    });
+
+    it('getRepertorioDownloadUrl() retorna URL com instrumento', () => {
+      const url = API.getRepertorioDownloadUrl(5, 'trompete', 'zip');
+
+      expect(url).toContain('/api/repertorio/5/download');
+      expect(url).toContain('formato=zip');
+      expect(url).toContain('instrumento=trompete');
+    });
+
+    it('getRepertorioDownloadUrl() encoda instrumento com caracteres especiais', () => {
+      const url = API.getRepertorioDownloadUrl(5, 'Saxofone Barítono');
+
+      expect(url).toContain('instrumento=Saxofone%20Bar%C3%ADtono');
+    });
+
+    it('getRepertorioDownloadUrl() inclui IDs de partituras selecionadas', () => {
+      const url = API.getRepertorioDownloadUrl(5, 'trompete', 'pdf', [1, 2, 3]);
+
+      expect(url).toContain('/api/repertorio/5/download');
+      expect(url).toContain('formato=pdf');
+      expect(url).toContain('instrumento=trompete');
+      expect(url).toContain('partituras=1,2,3');
+    });
+
+    it('getRepertorioDownloadUrl() não inclui partituras se array vazio', () => {
+      const url = API.getRepertorioDownloadUrl(5, 'trompete', 'pdf', []);
+
+      expect(url).not.toContain('partituras');
+    });
+
+    it('getRepertorioDownloadUrl() não inclui partituras se null', () => {
+      const url = API.getRepertorioDownloadUrl(5, 'trompete', 'pdf', null);
+
+      expect(url).not.toContain('partituras');
+    });
+  });
 });

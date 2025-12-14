@@ -419,6 +419,79 @@ export const API = {
       method: 'POST',
       body: JSON.stringify(data)
     });
+  },
+
+  // ============ REPERTORIO ============
+
+  async getRepertorioAtivo() {
+    return this.request('/api/repertorio/ativo');
+  },
+
+  async getRepertorio(id) {
+    return this.request(`/api/repertorio/${id}`);
+  },
+
+  async getRepertorios() {
+    return this.request('/api/repertorios');
+  },
+
+  async createRepertorio(data) {
+    return this.request('/api/repertorios', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  },
+
+  async updateRepertorio(id, data) {
+    return this.request(`/api/repertorio/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    });
+  },
+
+  async deleteRepertorio(id) {
+    return this.request(`/api/repertorio/${id}`, {
+      method: 'DELETE'
+    });
+  },
+
+  async addPartituraToRepertorio(repertorioId, partituraId) {
+    return this.request(`/api/repertorio/${repertorioId}/partituras`, {
+      method: 'POST',
+      body: JSON.stringify({ partitura_id: partituraId })
+    });
+  },
+
+  async removePartituraFromRepertorio(repertorioId, partituraId) {
+    return this.request(`/api/repertorio/${repertorioId}/partituras/${partituraId}`, {
+      method: 'DELETE'
+    });
+  },
+
+  async reorderRepertorioPartituras(repertorioId, ordens) {
+    return this.request(`/api/repertorio/${repertorioId}/reorder`, {
+      method: 'PUT',
+      body: JSON.stringify({ ordens })
+    });
+  },
+
+  async duplicarRepertorio(id) {
+    return this.request(`/api/repertorio/${id}/duplicar`, {
+      method: 'POST'
+    });
+  },
+
+  async isPartituraInRepertorio(partituraId) {
+    return this.request(`/api/partituras/${partituraId}/in-repertorio`);
+  },
+
+  getRepertorioDownloadUrl(id, instrumento, formato = 'pdf', partituraIds = null) {
+    let url = `${API_BASE_URL}/api/repertorio/${id}/download?formato=${formato}`;
+    if (instrumento) url += `&instrumento=${encodeURIComponent(instrumento)}`;
+    if (partituraIds && partituraIds.length > 0) {
+      url += `&partituras=${partituraIds.join(',')}`;
+    }
+    return url;
   }
 };
 
