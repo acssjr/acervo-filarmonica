@@ -552,8 +552,9 @@ async function downloadParte(parteId, request, env) {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `${disposition}; filename="${nomeArquivo}"`,
-        // Cache-Control para evitar re-downloads desnecessarios
-        'Cache-Control': 'private, max-age=300',
+        // Cache-Control: no-cache para sempre buscar versão atualizada
+        // (importante quando admin substitui uma parte)
+        'Cache-Control': 'private, no-cache',
         ...getCorsHeaders(request),
       },
     });
