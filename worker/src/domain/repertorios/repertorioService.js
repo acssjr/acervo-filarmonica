@@ -184,8 +184,112 @@ function getOrdemInstrumento(instrumento) {
 }
 
 /**
+ * Normaliza o nome de um instrumento para exibição consistente
+ * Ex: "Sax. Alto 1" → "Sax Alto 1"
+ * Ex: "Saxofone Alto" → "Sax Alto"
+ * Ex: "Clarineta Bb" → "Clarinete Bb"
+ * Ex: "sax baritono" → "Sax Barítono"
+ */
+function normalizeInstrumentName(name) {
+  let normalized = name
+    .replace(/\./g, '') // Remove pontos
+    .replace(/\s+/g, ' ') // Normaliza espaços
+    .trim()
+    .toLowerCase(); // Primeiro lowercase para normalizar
+
+  // Normaliza variações comuns (com nomes corretos em português)
+  const replacements = [
+    // Saxofones
+    [/^saxofone\s*/i, 'sax '],
+    [/^saxophone\s*/i, 'sax '],
+    [/\bbaritono\b/i, 'barítono'],
+    [/\bbaritone\b/i, 'barítono'],
+    // Clarinetes
+    [/^clarineta\s*/i, 'clarinete '],
+    [/^clarinet\s*/i, 'clarinete '],
+    // Metais
+    [/^trumpet\s*/i, 'trompete '],
+    [/^euphonium/i, 'bombardino'],
+    [/^eufônio/i, 'bombardino'],
+    [/^eufonio/i, 'bombardino'],
+    // Madeiras
+    [/^piccolo/i, 'flautim'],
+    // Percussão
+    [/^snare/i, 'caixa'],
+    [/^bass\s*drum/i, 'bombo'],
+  ];
+
+  for (const [pattern, replacement] of replacements) {
+    normalized = normalized.replace(pattern, replacement);
+  }
+
+  // Capitaliza primeira letra de cada palavra (split por espaço para evitar problemas com acentos)
+  normalized = normalized
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+
+  // Mantém tonalidades em formato consistente
+  normalized = normalized
+    .replace(/\bBB\b/gi, 'Bb')
+    .replace(/\bEB\b/gi, 'Eb')
+    .replace(/\bTC\b/gi, 'TC')
+    .replace(/\bBC\b/gi, 'BC');
+
+  // Remove espaços extras que podem ter sido criados
+  normalized = normalized.replace(/\s+/g, ' ').trim();
+
+  return normalized;
+}
+
+/**
+ * Extrai a "chave de agrupamento" de um instrumento
+ * Agrupa apenas variações de NOMENCLATURA (não de voz):
+ * - "Sax. Alto 1" e "Saxofone Alto 1" → mesma chave (mesmo instrumento, nomes diferentes)
+ * - "Sax Alto 1" e "Sax Alto 2" → chaves DIFERENTES (vozes diferentes)
+ */
+function getInstrumentGroupKey(name) {
+  const normalized = normalizeInstrumentName(name);
+  return normalized.toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, ''); // Remove acentos
+}
+
+/**
+ * Verifica se um instrumento é "genérico" (sem número de voz)
+ * Ex: "Sax Alto" → true (genérico)
+ * Ex: "Sax Alto 1" → false (tem voz)
+ * Ex: "Clarinete Bb" → true (genérico)
+ * Ex: "Clarinete Bb 2" → false (tem voz)
+ */
+function isGenericVoice(name) {
+  // Se termina com número, não é genérico
+  return !/\s\d+\s*$/.test(name);
+}
+
+/**
+ * Extrai o nome base do instrumento (família + tonalidade, sem número de voz)
+ * Ex: "Sax Alto 1" → "sax alto"
+ * Ex: "Clarinete Bb 2" → "clarinete bb"
+ * Ex: "Trompa F" → "trompa f"
+ */
+function getInstrumentFamilyKey(name) {
+  const normalized = normalizeInstrumentName(name).toLowerCase();
+  // Remove número de voz do final
+  return normalized.replace(/\s+\d+\s*$/, '').trim()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
+/**
  * Obter lista de instrumentos disponíveis em um repertório
  * (baseado nas partes das partituras do repertório)
+ *
+ * Lógica:
+ * - Mostra vozes específicas (1, 2, 3) quando existem
+ * - NÃO mostra genérico se já existe voz específica
+ *   (ex: se tem "Sax Alto 1", não mostra "Sax Alto")
+ * - Mostra genérico apenas se é a ÚNICA opção para aquela família
+ *
+ * O fallback inteligente no download cuida de baixar a parte certa.
  */
 export async function getRepertorioInstrumentos(id, request, env) {
   const result = await env.DB.prepare(`
@@ -196,10 +300,43 @@ export async function getRepertorioInstrumentos(id, request, env) {
     WHERE rp.repertorio_id = ? AND p.ativo = 1
   `).bind(id).all();
 
-  // Extrair instrumentos e ordenar na ordem tradicional de banda
-  // Agrupa por família e depois ordena alfabeticamente dentro de cada família
-  const instrumentos = result.results
-    .map(r => r.instrumento)
+  // Passo 1: Normalizar todos os instrumentos
+  const normalized = result.results.map(row => ({
+    original: row.instrumento,
+    normalized: normalizeInstrumentName(row.instrumento),
+    key: getInstrumentGroupKey(row.instrumento),
+    familyKey: getInstrumentFamilyKey(row.instrumento),
+    isGeneric: isGenericVoice(row.instrumento)
+  }));
+
+  // Passo 2: Agrupar por chave normalizada (elimina duplicatas de nomenclatura)
+  const instrumentMap = new Map();
+  for (const item of normalized) {
+    if (!instrumentMap.has(item.key)) {
+      instrumentMap.set(item.key, item);
+    }
+  }
+
+  // Passo 3: Identificar famílias que têm vozes específicas
+  const familiesWithVoices = new Set();
+  for (const item of instrumentMap.values()) {
+    if (!item.isGeneric) {
+      familiesWithVoices.add(item.familyKey);
+    }
+  }
+
+  // Passo 4: Filtrar - remove genéricos se família tem vozes específicas
+  const filteredInstruments = [];
+  for (const item of instrumentMap.values()) {
+    // Se é genérico E a família tem vozes específicas, não incluir
+    if (item.isGeneric && familiesWithVoices.has(item.familyKey)) {
+      continue;
+    }
+    filteredInstruments.push(item.normalized);
+  }
+
+  // Ordenar
+  const instrumentos = filteredInstruments
     .sort((a, b) => getOrdemInstrumento(a).localeCompare(getOrdemInstrumento(b)));
 
   return jsonResponse(instrumentos, 200, request);
@@ -628,14 +765,35 @@ function isComboPartMatch(parteNome, instrumentoBuscado) {
 }
 
 /**
+ * Extrai o número da voz de um instrumento (ex: "Sax Alto 2" → 2, "Sax Alto" → null)
+ */
+function getVoiceNumber(name) {
+  const match = name.match(/\s(\d+)\s*$/);
+  return match ? parseInt(match[1], 10) : null;
+}
+
+/**
+ * Remove o número da voz do nome do instrumento
+ * Ex: "Sax Alto 2" → "Sax Alto"
+ */
+function removeVoiceNumber(name) {
+  return name.replace(/\s+\d+\s*$/, '').trim();
+}
+
+/**
  * Encontrar parte correspondente ao instrumento
- * Estratégia:
- * 1. Match exato (case-insensitive)
- * 2. Match em partes combinadas (ex: "Flauta/Flautim" para busca de "Flauta")
- * 3. Se selecionou específico (ex: "Bombardino C"), só aceita genérico ("Bombardino") como fallback
- * 4. Se selecionou genérico (ex: "Bombardino"), aceita qualquer da família
- * 5. Fallback para sinônimos (ex: Flauta -> Flautim se não houver Flauta)
- * 6. NÃO faz fallback de específico para outro específico diferente (exceto sinônimos)
+ *
+ * Lógica de fallback para bandas:
+ * 1. Match exato (case-insensitive, normalizado)
+ * 2. Match em partes combinadas (ex: "Flauta/Flautim")
+ * 3. Se buscou voz específica (ex: "Sax Alto 2"):
+ *    a) Busca "Sax Alto 2" exato
+ *    b) Fallback: "Sax Alto" genérico (sem número)
+ *    c) Fallback: "Sax Alto 1" (voz anterior mais próxima)
+ * 4. Se buscou genérico (ex: "Sax Alto"):
+ *    a) Busca "Sax Alto" exato
+ *    b) Fallback: primeira voz disponível ("Sax Alto 1")
+ * 5. Fallback para sinônimos (ex: Flauta -> Flautim)
  */
 async function findMatchingPart(env, partituraId, instrumento) {
   // Buscar todas as partes desta partitura
@@ -646,11 +804,16 @@ async function findMatchingPart(env, partituraId, instrumento) {
   if (!partes.results.length) return null;
 
   const instrLower = instrumento.toLowerCase();
+  const instrNormalized = normalizeInstrumentName(instrumento);
+  const instrNormalizedLower = instrNormalized.toLowerCase();
   const instrBase = getInstrumentBase(instrumento).split(' ')[0];
+  const voiceNumber = getVoiceNumber(instrumento);
+  const instrWithoutVoice = removeVoiceNumber(instrumento).toLowerCase();
 
   // 1. Match exato (case-insensitive)
   let parte = partes.results.find(p =>
-    p.instrumento.toLowerCase() === instrLower
+    p.instrumento.toLowerCase() === instrLower ||
+    normalizeInstrumentName(p.instrumento).toLowerCase() === instrNormalizedLower
   );
   if (parte) return parte;
 
@@ -658,33 +821,57 @@ async function findMatchingPart(env, partituraId, instrumento) {
   const comboMatch = partes.results.find(p => isComboPartMatch(p.instrumento, instrumento));
   if (comboMatch) return comboMatch;
 
-  // 3. Se selecionou instrumento específico (com tonalidade)
-  //    Só aceita fallback para versão genérica (sem tonalidade)
-  if (!isGenericInstrument(instrumento)) {
-    // Buscar versão genérica da mesma família
-    const genericMatch = partes.results.find(p =>
-      isSameInstrumentFamily(instrumento, p.instrumento) &&
-      isGenericInstrument(p.instrumento)
-    );
+  // 3. Se buscou voz específica (ex: "Sax Alto 2")
+  if (voiceNumber !== null) {
+    // 3a. Busca versão genérica (sem número) da mesma família
+    const genericMatch = partes.results.find(p => {
+      const pNorm = normalizeInstrumentName(p.instrumento).toLowerCase();
+      const pWithoutVoice = removeVoiceNumber(p.instrumento).toLowerCase();
+      const pVoice = getVoiceNumber(p.instrumento);
 
-    // Se encontrou genérico, usa ele
-    // Se não encontrou, retorna null (não pega outro específico diferente)
-    return genericMatch || null;
+      // Match se é da mesma família e não tem número (genérico)
+      return pVoice === null &&
+        (pWithoutVoice === instrWithoutVoice ||
+         pNorm === removeVoiceNumber(instrNormalized).toLowerCase() ||
+         isSameInstrumentFamily(instrumento, p.instrumento));
+    });
+
+    if (genericMatch) return genericMatch;
+
+    // 3b. Fallback para voz anterior (2 → 1, 3 → 2 → 1)
+    for (let v = voiceNumber - 1; v >= 1; v--) {
+      const prevVoiceMatch = partes.results.find(p => {
+        const pVoice = getVoiceNumber(p.instrumento);
+        return pVoice === v && isSameInstrumentFamily(instrumento, p.instrumento);
+      });
+      if (prevVoiceMatch) return prevVoiceMatch;
+    }
+
+    // 3c. Se não encontrou nenhuma voz anterior, pega qualquer voz da família
+    const anyVoiceMatch = partes.results.find(p =>
+      isSameInstrumentFamily(instrumento, p.instrumento)
+    );
+    if (anyVoiceMatch) return anyVoiceMatch;
   }
 
-  // 4. Se selecionou instrumento genérico (sem tonalidade)
-  //    Aceita qualquer da mesma família, preferindo genérico ou primeiro numerado
+  // 4. Se buscou instrumento genérico ou com tonalidade (sem número de voz)
   const familyMatches = partes.results.filter(p =>
     isSameInstrumentFamily(instrumento, p.instrumento)
   );
 
   if (familyMatches.length > 0) {
-    // Ordena: genéricos primeiro, depois por nome
+    // Ordena: genéricos primeiro, depois por número de voz crescente
     familyMatches.sort((a, b) => {
-      const aGeneric = isGenericInstrument(a.instrumento);
-      const bGeneric = isGenericInstrument(b.instrumento);
-      if (aGeneric && !bGeneric) return -1;
-      if (!aGeneric && bGeneric) return 1;
+      const aVoice = getVoiceNumber(a.instrumento);
+      const bVoice = getVoiceNumber(b.instrumento);
+
+      // Genéricos (sem número) primeiro
+      if (aVoice === null && bVoice !== null) return -1;
+      if (aVoice !== null && bVoice === null) return 1;
+
+      // Depois por número de voz
+      if (aVoice !== null && bVoice !== null) return aVoice - bVoice;
+
       return a.instrumento.localeCompare(b.instrumento);
     });
     return familyMatches[0];
