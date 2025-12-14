@@ -172,7 +172,8 @@ export const API = {
 
   async replacePartePartitura(partituraId, parteId, formData) {
     const token = Storage.get('authToken', null);
-    const response = await fetch(`${API_BASE_URL}/api/partituras/${partituraId}/partes/${parteId}`, {
+    // Endpoint correto: PUT /api/partes/:id/substituir (partituraId não é usado)
+    const response = await fetch(`${API_BASE_URL}/api/partes/${parteId}/substituir`, {
       method: 'PUT',
       headers: {
         ...(token && { 'Authorization': `Bearer ${token}` })
@@ -189,7 +190,8 @@ export const API = {
   },
 
   async deletePartePartitura(partituraId, parteId) {
-    return this.request(`/api/partituras/${partituraId}/partes/${parteId}`, {
+    // Endpoint correto: DELETE /api/partes/:id (partituraId não é usado)
+    return this.request(`/api/partes/${parteId}`, {
       method: 'DELETE'
     });
   },

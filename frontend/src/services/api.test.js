@@ -31,9 +31,12 @@ const createMockFetch = (response) => {
 
 describe('API Service', () => {
   let originalFetch;
+  let consoleErrorSpy;
 
   beforeEach(() => {
     originalFetch = global.fetch;
+    // Silencia console.error durante testes de erro (comportamento esperado)
+    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
     jest.clearAllMocks();
     // Reset do callback de token expirado
     API.setOnTokenExpired(null);
@@ -41,6 +44,7 @@ describe('API Service', () => {
 
   afterEach(() => {
     global.fetch = originalFetch;
+    consoleErrorSpy.mockRestore();
   });
 
   // ============ TOKEN MANAGEMENT ============
@@ -385,6 +389,61 @@ describe('API Service', () => {
       expect(global.fetch).toHaveBeenCalledWith(
         expect.stringContaining('/api/partituras/1'),
         expect.objectContaining({ method: 'DELETE' })
+      );
+    });
+  });
+
+  // ============ PARTES ============
+
+  describe('Partes', () => {
+    beforeEach(() => {
+      mockStorage.get.mockReturnValue('fake-token');
+    });
+
+    it('getPartesPartitura() busca partes de uma partitura', async () => {
+      global.fetch = createMockFetch({ data: [{ id: 1, instrumento: 'Flauta' }] });
+
+      await API.getPartesPartitura(123);
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/partituras/123/partes'),
+        expect.anything()
+      );
+    });
+
+    it('replacePartePartitura() faz PUT para /api/partes/:id/substituir', async () => {
+      global.fetch = createMockFetch({ data: { success: true } });
+      const formData = new FormData();
+      formData.append('arquivo', new Blob(['test']));
+
+      await API.replacePartePartitura(1, 99, formData);
+
+      // Verifica que chama o endpoint CORRETO (não usa partituraId na URL)
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/partes/99/substituir'),
+        expect.objectContaining({ method: 'PUT' })
+      );
+      // Verifica que NÃO usa o endpoint errado
+      expect(global.fetch).not.toHaveBeenCalledWith(
+        expect.stringContaining('/api/partituras/1/partes/99'),
+        expect.anything()
+      );
+    });
+
+    it('deletePartePartitura() faz DELETE para /api/partes/:id', async () => {
+      global.fetch = createMockFetch({ data: { success: true } });
+
+      await API.deletePartePartitura(1, 99);
+
+      // Verifica que chama o endpoint CORRETO (não usa partituraId na URL)
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/partes/99'),
+        expect.objectContaining({ method: 'DELETE' })
+      );
+      // Verifica que NÃO usa o endpoint errado
+      expect(global.fetch).not.toHaveBeenCalledWith(
+        expect.stringContaining('/api/partituras/1/partes/99'),
+        expect.anything()
       );
     });
   });

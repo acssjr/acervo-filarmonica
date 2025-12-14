@@ -2,7 +2,7 @@
 // Testes do fluxo de autenticacao
 // Seguindo o guia: testes comportamentais com roles e acessibilidade
 
-import { describe, test, expect, jest, beforeEach } from '@jest/globals';
+import { describe, test, expect, jest, beforeEach, afterEach } from '@jest/globals';
 
 // ===== MOCKS DOS CONTEXTOS =====
 
@@ -64,8 +64,16 @@ const renderLogin = (props = {}) => {
 // ===== TESTS =====
 
 describe('LoginScreen', () => {
+  let consoleErrorSpy;
+
   beforeEach(() => {
     jest.clearAllMocks();
+    // Silencia console.error durante testes de erro (comportamento esperado)
+    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    consoleErrorSpy.mockRestore();
   });
 
   describe('Renderizacao', () => {
