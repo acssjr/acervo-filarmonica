@@ -51,16 +51,17 @@ const LottieAnimation = ({
 
   // Callback de conclusao
   useEffect(() => {
-    if (onComplete && lottieRef.current) {
+    const lottieInstance = lottieRef.current;
+    if (onComplete && lottieInstance) {
       const handleComplete = () => {
         if (!loop) {
           onComplete();
         }
       };
 
-      lottieRef.current.addEventListener('complete', handleComplete);
+      lottieInstance.addEventListener('complete', handleComplete);
       return () => {
-        lottieRef.current?.removeEventListener('complete', handleComplete);
+        lottieInstance?.removeEventListener('complete', handleComplete);
       };
     }
   }, [loop, onComplete]);
