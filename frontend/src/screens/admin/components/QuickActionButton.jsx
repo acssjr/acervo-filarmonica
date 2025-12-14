@@ -36,7 +36,7 @@ const QuickActionButton = ({ icon, label, onClick }) => {
   };
 
   return (
-    <button onClick={onClick} style={{
+    <button onClick={onClick} className="btn-primary-hover" style={{
       display: 'flex',
       alignItems: 'center',
       gap: '8px',

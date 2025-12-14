@@ -187,6 +187,7 @@ const AdminRepertorio = () => {
         </div>
         <button
           onClick={openCreateModal}
+          className="btn-primary-hover"
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -255,6 +256,7 @@ const AdminRepertorio = () => {
                 <p>Nenhum repertório ativo</p>
                 <button
                   onClick={openCreateModal}
+                  className="btn-secondary-hover"
                   style={{
                     marginTop: '12px',
                     padding: '8px 16px',
@@ -438,6 +440,7 @@ const AdminRepertorio = () => {
             }}>
               <button
                 onClick={closeModal}
+                className="btn-ghost-hover"
                 style={{
                   padding: '10px 20px',
                   borderRadius: '8px',
@@ -452,6 +455,7 @@ const AdminRepertorio = () => {
               <button
                 onClick={handleSave}
                 disabled={saving}
+                className="btn-primary-hover"
                 style={{
                   padding: '10px 20px',
                   borderRadius: '8px',
@@ -528,6 +532,7 @@ const RepertorioCard = ({
       {/* Header do card */}
       <div
         onClick={onToggleExpand}
+        className="card-header-hover"
         style={{
           padding: '16px 20px',
           display: 'flex',
@@ -587,6 +592,7 @@ const RepertorioCard = ({
             <button
               onClick={onActivate}
               title="Ativar repertório"
+              className="btn-success-hover"
               style={{
                 width: '32px',
                 height: '32px',
@@ -606,6 +612,7 @@ const RepertorioCard = ({
           <button
             onClick={onDuplicate}
             title="Duplicar"
+            className="btn-purple-hover"
             style={{
               width: '32px',
               height: '32px',
@@ -624,6 +631,7 @@ const RepertorioCard = ({
           <button
             onClick={onEdit}
             title="Editar"
+            className="btn-info-hover"
             style={{
               width: '32px',
               height: '32px',
@@ -645,6 +653,7 @@ const RepertorioCard = ({
           <button
             onClick={onDelete}
             title="Excluir"
+            className="btn-danger-hover"
             style={{
               width: '32px',
               height: '32px',
@@ -712,6 +721,7 @@ const RepertorioCard = ({
                   onDragLeave={handleDragLeave}
                   onDrop={(e) => handleDrop(e, i)}
                   onDragEnd={handleDragEnd}
+                  className={draggedIndex !== i && dragOverIndex !== i ? 'draggable-item-hover' : ''}
                   style={{
                     display: 'flex',
                     alignItems: 'center',

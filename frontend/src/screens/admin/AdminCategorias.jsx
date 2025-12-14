@@ -139,6 +139,7 @@ const AdminCategorias = () => {
       <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'center' }}>
         <button
           onClick={() => { setEditingCategoria(null); setNome(''); setShowModal(true); }}
+          className="btn-primary-hover"
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -152,8 +153,7 @@ const AdminCategorias = () => {
             fontWeight: '600',
             cursor: 'pointer',
             fontFamily: 'Outfit, sans-serif',
-            boxShadow: '0 4px 16px rgba(212, 175, 55, 0.3)',
-            transition: 'all 0.2s'
+            boxShadow: '0 4px 16px rgba(212, 175, 55, 0.3)'
           }}
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -171,7 +171,7 @@ const AdminCategorias = () => {
           {categorias.map((cat, index) => (
             <div
               key={cat.id}
-              className="list-item-animate"
+              className="list-item-animate card-hover"
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -180,16 +180,7 @@ const AdminCategorias = () => {
                 background: 'var(--bg-secondary)',
                 borderRadius: '16px',
                 border: '1px solid var(--border)',
-                animationDelay: `${index * 0.03}s`,
-                transition: 'all 0.2s ease'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = 'none';
+                animationDelay: `${index * 0.03}s`
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
@@ -210,7 +201,7 @@ const AdminCategorias = () => {
                 </div>
               </div>
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                <button onClick={() => openEdit(cat)} title="Editar" style={{
+                <button onClick={() => openEdit(cat)} title="Editar" className="btn-icon-hover" style={{
                   width: '40px',
                   height: '40px',
                   borderRadius: '10px',
@@ -227,7 +218,7 @@ const AdminCategorias = () => {
                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                   </svg>
                 </button>
-                <button onClick={() => handleDelete(cat.id)} title="Excluir" style={{
+                <button onClick={() => handleDelete(cat.id)} title="Excluir" className="btn-danger-hover" style={{
                   width: '40px',
                   height: '40px',
                   borderRadius: '10px',
@@ -319,7 +310,7 @@ const AdminCategorias = () => {
             />
 
             <div style={{ display: 'flex', gap: '12px' }}>
-              <button onClick={() => setShowModal(false)} style={{
+              <button onClick={() => setShowModal(false)} className="btn-ghost-hover" style={{
                 flex: 1,
                 padding: '14px',
                 borderRadius: '10px',
@@ -333,7 +324,7 @@ const AdminCategorias = () => {
               }}>
                 Cancelar
               </button>
-              <button onClick={handleSave} disabled={saving} style={{
+              <button onClick={handleSave} disabled={saving} className="btn-primary-hover" style={{
                 flex: 1,
                 padding: '14px',
                 borderRadius: '10px',

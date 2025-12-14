@@ -47,14 +47,13 @@ const StatCard = ({ icon, label, value, color, loading }) => {
   };
 
   return (
-    <div style={{
+    <div className="card-hover" style={{
       background: 'var(--bg-secondary)',
       borderRadius: '16px',
       padding: isMobile ? '12px' : '16px',
       textAlign: 'center',
       border: '1px solid var(--border)',
-      fontFamily: 'Outfit, sans-serif',
-      transition: 'all 0.2s ease'
+      fontFamily: 'Outfit, sans-serif'
     }}>
       <div style={{ marginBottom: isMobile ? '8px' : '10px', display: 'flex', justifyContent: 'center' }}>
         <div style={{
