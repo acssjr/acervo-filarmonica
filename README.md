@@ -8,7 +8,7 @@
 
 <br/>
 
-[![Versão](https://img.shields.io/badge/versão-2.7.1-722F37?style=for-the-badge&labelColor=D4AF37)](https://github.com/acssjr/acervo-filarmonica)
+[![Versão](https://img.shields.io/badge/versão-2.8.0-722F37?style=for-the-badge&labelColor=D4AF37)](https://github.com/acssjr/acervo-filarmonica)
 [![Status](https://img.shields.io/badge/status-em%20produção-success?style=for-the-badge)](https://partituras25.com)
 [![CI](https://img.shields.io/github/actions/workflow/status/acssjr/acervo-filarmonica/ci.yml?style=for-the-badge&label=CI&logo=github)](https://github.com/acssjr/acervo-filarmonica/actions)
 
@@ -369,6 +369,21 @@ Isso cria as tabelas e insere usuários de teste para desenvolvimento local.
 ## Changelog
 
 <details open>
+<summary><b>v2.8.0</b> - 14 de Dezembro de 2025</summary>
+
+**Sistema de Repertório**
+- Download em lote: baixe todas as partituras do repertório em PDF único ou ZIP
+- Impressão direta: imprima todo o repertório de uma vez
+- Lista de instrumentos corrigida: agora mostra todos os instrumentos reais das partituras (ex: "Bombardino C" e "Bombardino Bb")
+
+**Melhorias de UX**
+- Animações de hover nos botões administrativos (escala + sombra)
+- Botão de repertório com UI otimista (resposta instantânea, reverte em caso de erro)
+- Modal para selecionar/criar repertório ao adicionar partitura
+
+</details>
+
+<details>
 <summary><b>v2.7.1</b> - 11 de Dezembro de 2025</summary>
 
 **Melhorias na Detecção**
