@@ -22,6 +22,7 @@ const HomeScreen = lazy(() => import('@screens/HomeScreen'));
 const LibraryScreen = lazy(() => import('@screens/LibraryScreen'));
 const SearchScreen = lazy(() => import('@screens/SearchScreen'));
 const FavoritesScreen = lazy(() => import('@screens/FavoritesScreen'));
+const RepertorioScreen = lazy(() => import('@screens/RepertorioScreen'));
 const GenresScreen = lazy(() => import('@screens/GenresScreen'));
 const ComposersScreen = lazy(() => import('@screens/ComposersScreen'));
 const ProfileScreen = lazy(() => import('@screens/ProfileScreen'));
@@ -150,6 +151,7 @@ const UserLayout = ({ children }) => {
     if (path.startsWith('/acervo')) return 'library';
     if (path === '/buscar') return 'search';
     if (path === '/favoritos') return 'favorites';
+    if (path === '/repertorio') return 'repertorio';
     if (path === '/perfil') return 'profile';
     if (path === '/generos') return 'genres';
     if (path.startsWith('/compositores')) return 'composers';
@@ -254,6 +256,13 @@ const AppContent = () => {
         <Route path="/favoritos" element={
           <ProtectedRoute>
             <UserLayout><FavoritesScreen /></UserLayout>
+          </ProtectedRoute>
+        } />
+
+        {/* Repertorio */}
+        <Route path="/repertorio" element={
+          <ProtectedRoute>
+            <UserLayout><RepertorioScreen /></UserLayout>
           </ProtectedRoute>
         } />
 

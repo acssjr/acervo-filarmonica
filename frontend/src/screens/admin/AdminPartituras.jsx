@@ -94,6 +94,10 @@ const AdminPartituras = () => {
   const [editForm, setEditForm] = useState({ titulo: '', compositor: '', categoria_id: '' });
   const [savingEdit, setSavingEdit] = useState(false);
 
+  // Estado para repertório
+  const [repertorioAtivo, setRepertorioAtivo] = useState(null);
+  const [partiturasInRepertorio, setPartiturasInRepertorio] = useState(new Set());
+
   // Funções para modal de edição
   const openEditModal = (partitura) => {
     setEditingPartitura(partitura);
@@ -347,7 +351,50 @@ const AdminPartituras = () => {
     setLoading(false);
   };
 
-  useEffect(() => { loadData(); }, []);
+  // Carregar repertório ativo
+  const loadRepertorio = async () => {
+    try {
+      const rep = await API.getRepertorioAtivo();
+      setRepertorioAtivo(rep);
+      if (rep?.partituras) {
+        setPartiturasInRepertorio(new Set(rep.partituras.map(p => p.id)));
+      } else {
+        setPartiturasInRepertorio(new Set());
+      }
+    } catch (_e) {
+      // Silencioso - repertório pode não existir
+    }
+  };
+
+  // Toggle repertório
+  const toggleRepertorio = async (partitura) => {
+    if (!repertorioAtivo) {
+      showToast('Nenhum repertorio ativo. Crie um primeiro.', 'error');
+      return;
+    }
+
+    const isInRepertorio = partiturasInRepertorio.has(partitura.id);
+
+    try {
+      if (isInRepertorio) {
+        await API.removePartituraFromRepertorio(repertorioAtivo.id, partitura.id);
+        setPartiturasInRepertorio(prev => {
+          const next = new Set(prev);
+          next.delete(partitura.id);
+          return next;
+        });
+        showToast('Removida do repertorio');
+      } else {
+        await API.addPartituraToRepertorio(repertorioAtivo.id, partitura.id);
+        setPartiturasInRepertorio(prev => new Set([...prev, partitura.id]));
+        showToast('Adicionada ao repertorio');
+      }
+    } catch (err) {
+      showToast(err.message || 'Erro', 'error');
+    }
+  };
+
+  useEffect(() => { loadData(); loadRepertorio(); }, []);
 
   useEffect(() => {
     const handler = (e) => {
@@ -1044,6 +1091,35 @@ const AdminPartituras = () => {
                             <svg width="16" height="16" viewBox="0 0 24 24" fill={p.destaque === 1 ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2">
                               <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
                             </svg>
+                          </button>
+                          <button
+                            onClick={() => toggleRepertorio(p)}
+                            title={partiturasInRepertorio.has(p.id) ? 'Remover do Repertorio' : 'Adicionar ao Repertorio'}
+                            style={{
+                              width: '36px',
+                              height: '36px',
+                              borderRadius: '10px',
+                              background: partiturasInRepertorio.has(p.id)
+                                ? 'linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%)'
+                                : 'rgba(155, 89, 182, 0.1)',
+                              border: partiturasInRepertorio.has(p.id) ? 'none' : '1px solid rgba(155, 89, 182, 0.3)',
+                              color: partiturasInRepertorio.has(p.id) ? '#fff' : '#9b59b6',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center'
+                            }}
+                          >
+                            {partiturasInRepertorio.has(p.id) ? (
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="20 6 9 17 4 12"/>
+                              </svg>
+                            ) : (
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <line x1="12" y1="5" x2="12" y2="19"/>
+                                <line x1="5" y1="12" x2="19" y2="12"/>
+                              </svg>
+                            )}
                           </button>
                           <button onClick={() => openEditModal(p)} title="Editar" style={{
                             width: '36px',

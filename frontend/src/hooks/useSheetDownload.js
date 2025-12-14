@@ -228,6 +228,58 @@ export const useSheetDownload = ({ showToast, selectedSheet, partes = [] }) => {
     setConfirmInstrument(null);
   }, []);
 
+  /**
+   * Imprime uma parte especifica
+   */
+  const printParte = useCallback(async (parte) => {
+    if (downloading || !selectedSheet) return;
+    setDownloading(true);
+
+    showToast(`Preparando impressão "${selectedSheet.title}" - ${parte.instrumento}...`);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/download/parte/${parte.id}`, {
+        headers: { 'Authorization': `Bearer ${Storage.get('authToken')}` }
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        const printWindow = window.open(blobUrl, '_blank');
+        if (printWindow) {
+          printWindow.onload = () => {
+            printWindow.print();
+          };
+        }
+        showToast('Abrindo impressão...');
+      } else {
+        const error = await response.json().catch(() => ({}));
+        showToast(error.error || 'Erro ao preparar impressão', 'error');
+      }
+    } catch (e) {
+      console.error('Erro na impressão:', e);
+      showToast('Erro ao preparar impressão', 'error');
+    }
+
+    setDownloading(false);
+  }, [downloading, selectedSheet, showToast]);
+
+  /**
+   * Inicia fluxo de impressão para um instrumento
+   */
+  const handlePrintInstrument = useCallback((instrument) => {
+    const correspondentes = findPartesCorrespondentes(instrument, partes);
+
+    if (correspondentes.length === 0) {
+      showToast('Parte não encontrada para impressão', 'error');
+    } else if (correspondentes.length === 1) {
+      printParte(correspondentes[0]);
+    } else {
+      // Usa primeira parte para simplicidade
+      printParte(correspondentes[0]);
+    }
+  }, [partes, printParte, showToast]);
+
   return {
     // State
     downloading,
@@ -243,6 +295,8 @@ export const useSheetDownload = ({ showToast, selectedSheet, partes = [] }) => {
     handleConfirmDownload,
     handleCancelDownload,
     closePartePicker,
+    printParte,
+    handlePrintInstrument,
 
     // Utilities
     findPartesCorrespondentes: (inst) => findPartesCorrespondentes(inst, partes),

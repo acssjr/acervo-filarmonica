@@ -35,6 +35,10 @@
     "url": "https://github.com/acssjr/acervo-filarmonica/issues"
   },
   "homepage": "https://github.com/acssjr/acervo-filarmonica#readme",
+  "dependencies": {
+    "pdf-lib": "^1.17.1",
+    "fflate": "^0.8.2"
+  },
   "devDependencies": {
     "@playwright/test": "^1.57.0",
     "@types/node": "^24.10.1",

@@ -35,8 +35,8 @@ const BottomNav = ({ activeTab }) => {
   }, [isMobile]);
 
   const tabs = [
-    { id: 'home', path: '/', icon: Icons.Home, label: 'Inicio' },
-    { id: 'library', path: '/acervo', icon: Icons.Folder, label: 'Acervo' },
+    { id: 'home', path: '/', icon: Icons.Home, label: 'Início' },
+    { id: 'repertorio', path: '/repertorio', icon: Icons.ListMusic, label: 'Repertório' },
     { id: 'search', path: '/buscar', icon: Icons.Search, label: 'Buscar', isCenter: true },
     { id: 'favorites', path: '/favoritos', icon: Icons.Heart, label: 'Favoritos' },
     { id: 'profile', path: '/perfil', icon: Icons.User, label: 'Perfil' }
