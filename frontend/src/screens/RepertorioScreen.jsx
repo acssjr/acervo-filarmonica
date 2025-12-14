@@ -623,10 +623,30 @@ const RepertorioScreen = () => {
     setLoading(false);
   };
 
+  // Recarregar instrumentos quando o modal abre (para refletir mudanças feitas no admin)
+  const reloadInstrumentos = async () => {
+    if (repertorio?.id) {
+      try {
+        const instrumentos = await API.getRepertorioInstrumentos(repertorio.id);
+        setRepertorioInstrumentos(instrumentos);
+      } catch (err) {
+        console.error('Erro ao recarregar instrumentos:', err);
+      }
+    }
+  };
+
   useEffect(() => {
     loadRepertorio();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Recarrega instrumentos sempre que o modal abre
+  useEffect(() => {
+    if (showDownloadModal) {
+      reloadInstrumentos();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showDownloadModal]);
 
   // Handler de download
   const handleDownload = async (formato, instrumento, partituraIds) => {
