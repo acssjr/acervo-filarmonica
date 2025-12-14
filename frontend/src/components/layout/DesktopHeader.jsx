@@ -46,7 +46,7 @@ const transliterate = (str) => {
 const DesktopHeader = () => {
   const navigate = useNavigate();
   const { setShowNotifications } = useUI();
-  const { sheets, favorites, toggleFavorite, setSelectedCategory, categoriesMap } = useData();
+  const { sheets, favorites, toggleFavorite, categoriesMap } = useData();
   const { unreadCount } = useNotifications();
   const [searchQuery, setSearchQuery] = useState('');
   const [showResults, setShowResults] = useState(false);
@@ -96,7 +96,7 @@ const DesktopHeader = () => {
       .filter(sheet => sheet.score > 0)
       .sort((a, b) => b.score - a.score)
       .slice(0, 8);
-  }, [searchQuery, sheets]);
+  }, [searchQuery, sheets, categoriesMap]);
 
   // Controla exibição dos resultados com delay para animação
   useEffect(() => {
@@ -431,7 +431,7 @@ const DesktopHeader = () => {
               color: 'var(--text-muted)'
             }}>
               <p style={{ fontFamily: 'Outfit, sans-serif', fontSize: '14px' }}>
-                Nenhuma partitura encontrada para "{searchQuery}"
+                Nenhuma partitura encontrada para &ldquo;{searchQuery}&rdquo;
               </p>
             </div>
           )}

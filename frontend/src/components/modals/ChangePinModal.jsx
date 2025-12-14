@@ -29,7 +29,7 @@ const ChangePinModal = ({ isOpen = true, onClose }) => {
   // Foca no primeiro input ao abrir
   useEffect(() => {
     currentPinRefs[0].current?.focus();
-  }, []);
+  }, [currentPinRefs]);
 
   const handlePinInput = (index, value, pinArray, setPinArray, refs, onComplete) => {
     if (value && !/^\d$/.test(value)) return;
@@ -57,7 +57,7 @@ const ChangePinModal = ({ isOpen = true, onClose }) => {
   };
 
   // Avança para próximo step quando PIN atual é digitado
-  const handleCurrentPinComplete = (pin) => {
+  const handleCurrentPinComplete = (_pin) => {
     // Não valida localmente - a API vai verificar
     setStep(2);
     setTimeout(() => newPinRefs[0].current?.focus(), 100);

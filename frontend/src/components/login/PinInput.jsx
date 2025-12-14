@@ -11,7 +11,7 @@ const PinInput = ({
   onKeyDown,
   onFocus
 }) => {
-  const handleFocus = (e, index) => {
+  const handleFocus = (e, _index) => {
     e.target.style.borderColor = 'rgba(212, 175, 55, 0.5)';
     e.target.style.background = 'rgba(255, 255, 255, 0.1)';
     onFocus?.();
