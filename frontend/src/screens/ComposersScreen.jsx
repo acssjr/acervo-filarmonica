@@ -5,16 +5,16 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useData } from '@contexts/DataContext';
-import { slugify, deslugify } from '@utils/slugify';
+import { slugify } from '@utils/slugify';
+
+// Compositores prioritários (ordem de importância para a banda) - definido fora do componente para estabilidade
+const PRIORITY_ORDER = ['Estevam Moura', 'Tertuliano Santos', 'Amando Nobre', 'Heráclio Guerreiro'];
 
 const ComposersScreen = ({ composerSlugFromUrl }) => {
   const navigate = useNavigate();
   const { sheets, setSelectedComposer, setSelectedCategory } = useData();
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('count'); // 'count' ou 'alpha'
-
-  // Compositores prioritários (ordem de importância para a banda)
-  const priorityOrder = ['Estevam Moura', 'Tertuliano Santos', 'Amando Nobre', 'Heráclio Guerreiro'];
 
   // Fotos dos compositores (caminhos locais - WebP otimizado)
   const composerPhotos = {
@@ -39,8 +39,8 @@ const ComposersScreen = ({ composerSlugFromUrl }) => {
     return Object.entries(composerMap)
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => {
-        const aIndex = priorityOrder.indexOf(a.name);
-        const bIndex = priorityOrder.indexOf(b.name);
+        const aIndex = PRIORITY_ORDER.indexOf(a.name);
+        const bIndex = PRIORITY_ORDER.indexOf(b.name);
 
         if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex;
         if (aIndex !== -1) return -1;
@@ -78,9 +78,9 @@ const ComposersScreen = ({ composerSlugFromUrl }) => {
   }, [composersWithCount, searchQuery]);
 
   // Separar destaque dos demais
-  const featuredComposers = filteredComposers.filter(c => priorityOrder.includes(c.name));
+  const featuredComposers = filteredComposers.filter(c => PRIORITY_ORDER.includes(c.name));
   const otherComposers = useMemo(() => {
-    const others = filteredComposers.filter(c => !priorityOrder.includes(c.name));
+    const others = filteredComposers.filter(c => !PRIORITY_ORDER.includes(c.name));
     if (sortBy === 'alpha') {
       return [...others].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
     }
@@ -312,7 +312,7 @@ const ComposersScreen = ({ composerSlugFromUrl }) => {
           )}
 
           {/* Outros Compositores - Lista textual */}
-          {(searchQuery ? filteredComposers.filter(c => !priorityOrder.includes(c.name)) : otherComposers).length > 0 && (
+          {(searchQuery ? filteredComposers.filter(c => !PRIORITY_ORDER.includes(c.name)) : otherComposers).length > 0 && (
             <div>
               {/* Header com título e ordenação */}
               <div style={{
@@ -327,7 +327,7 @@ const ComposersScreen = ({ composerSlugFromUrl }) => {
                   fontWeight: '600',
                   color: 'var(--text-secondary)'
                 }}>
-                  {searchQuery ? 'Resultados' : 'Todos os Compositores'} ({(searchQuery ? filteredComposers.filter(c => !priorityOrder.includes(c.name)) : otherComposers).length})
+                  {searchQuery ? 'Resultados' : 'Todos os Compositores'} ({(searchQuery ? filteredComposers.filter(c => !PRIORITY_ORDER.includes(c.name)) : otherComposers).length})
                 </h2>
 
                 {/* Botões de ordenação */}
@@ -383,7 +383,7 @@ const ComposersScreen = ({ composerSlugFromUrl }) => {
                 border: '1px solid var(--border)',
                 overflow: 'hidden'
               }}>
-                {(searchQuery ? filteredComposers.filter(c => !priorityOrder.includes(c.name)) : otherComposers).map((comp, index, arr) => (
+                {(searchQuery ? filteredComposers.filter(c => !PRIORITY_ORDER.includes(c.name)) : otherComposers).map((comp, index, arr) => (
                   <button
                     key={comp.name}
                     onClick={() => handleSelectComposer(comp.name)}

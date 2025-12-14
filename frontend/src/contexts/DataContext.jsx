@@ -6,7 +6,7 @@ import { createContext, useContext, useState, useEffect, useCallback } from 'rea
 import Storage from '@services/storage';
 import { API, USE_API } from '@services/api';
 import { CATEGORIES as FALLBACK_CATEGORIES } from '@constants/categories';
-import { DEFAULT_INSTRUMENTS as FALLBACK_INSTRUMENTS, DEFAULT_INSTRUMENT_NAMES } from '@constants/instruments';
+import { DEFAULT_INSTRUMENTS as FALLBACK_INSTRUMENTS } from '@constants/instruments';
 
 const DataContext = createContext();
 
@@ -144,7 +144,7 @@ export const DataProvider = ({ children }) => {
         setFavorites(favoritosStr);
         Storage.set('favorites', favoritosStr);
       }
-    } catch (e) {
+    } catch {
       // Silencioso - favoritos nao sao criticos
     }
   }, []);

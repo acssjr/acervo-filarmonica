@@ -3,7 +3,7 @@
 // Suporta URL compartilhavel: /acervo/:categoria/:id
 // Refatorado: extraido componentes e hook de download
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@contexts/AuthContext';
 import { useUI } from '@contexts/UIContext';
@@ -93,6 +93,7 @@ const SheetDetailModal = () => {
     fetchPartes();
 
     return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- download é estável (useSheetDownload)
   }, [selectedSheet]);
 
   // Só renderiza se shouldRender for true (permite animação de saída)

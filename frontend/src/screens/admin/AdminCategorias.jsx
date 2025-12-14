@@ -37,12 +37,13 @@ const AdminCategorias = () => {
     try {
       const cats = await API.getCategorias();
       setCategorias(cats || []);
-    } catch (e) {
+    } catch {
       showToast('Erro ao carregar categorias', 'error');
     }
     setLoading(false);
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- carrega apenas na montagem
   useEffect(() => { loadData(); }, []);
 
   useEffect(() => {

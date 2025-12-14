@@ -455,7 +455,7 @@ export const extrairInstrumento = (nomeArquivo) => {
   // MAS preserva:
   // - números ordinais (1º, 2º, 1°, 2°, 1ª, 2ª) que indicam voz do instrumento
   // - números seguidos de " e " que indicam partes combinadas (1 e 2)
-  nome = nome.replace(/^\d+(?![ºª°]|\s*e\s*\d)[\s\-_\.]*/, '');
+  nome = nome.replace(/^\d+(?![ºª°]|\s*e\s*\d)[\s\-_.]*/, '');
 
   // Para arquivos com padrão "Nome_-_Tipo_-_Autor_-_Instrumento", pega o último segmento
   // Isso preserva instrumentos com hífen como "Caixa-clara"

@@ -2,7 +2,7 @@
 // Hook para gerenciar animações de entrada e saída de componentes
 // Permite que o componente execute animação de saída antes de desmontar
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 
 /**
  * Hook para controlar visibilidade com animações de entrada/saída

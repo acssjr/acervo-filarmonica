@@ -5,7 +5,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useUI } from '@contexts/UIContext';
 import { API } from '@services/api';
-import CategoryIcon from '@components/common/CategoryIcon';
 import LottieAnimation from '@components/animations/LottieAnimation';
 import { processarLote, processarFileList, filtrarPorStatus, calcularResultado } from '@utils/batchParser';
 import { uploadLote, estimarTempo, gerarResumo } from '@utils/uploadBatch';
@@ -98,7 +97,7 @@ const ImportacaoLoteModal = ({ isOpen, onClose, onSuccess, onOpenUploadPasta, in
         ]);
         setCategorias(cats || []);
         setPartiturasExistentes(partituras || []);
-      } catch (_e) {
+      } catch {
         console.error('Erro ao carregar dados');
       }
     };

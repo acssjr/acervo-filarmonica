@@ -310,6 +310,7 @@ const AdminPartituras = () => {
       setDroppedItems(items);
       setShowImportacaoLote(true);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- readAllEntriesRecursively é função recursiva estável
   }, [showToast]);
 
   // Registra os event listeners globais
@@ -350,7 +351,7 @@ const AdminPartituras = () => {
       ]);
       setPartituras(parts || []);
       setCategorias(cats || []);
-    } catch (_e) {
+    } catch {
       showToast('Erro ao carregar dados', 'error');
     }
     setLoading(false);
@@ -374,7 +375,7 @@ const AdminPartituras = () => {
       } else {
         setPartiturasInRepertorio(new Set());
       }
-    } catch (_e) {
+    } catch {
       // Silencioso - repertório pode não existir
     } finally {
       setLoadingRepertorios(false);
@@ -468,6 +469,7 @@ const AdminPartituras = () => {
     }
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- carrega apenas na montagem
   useEffect(() => { loadData(); loadRepertorios(); }, []);
 
   useEffect(() => {
@@ -538,7 +540,7 @@ const AdminPartituras = () => {
       setPartes(data || []);
       // Atualiza cache de contagem
       setPartesCount(prev => ({ ...prev, [partituraId]: (data || []).length }));
-    } catch (_err) {
+    } catch {
       showToast('Erro ao carregar partes', 'error');
     } finally {
       setLoadingPartes(false);
@@ -1556,7 +1558,7 @@ const AdminPartituras = () => {
         onSuccess={() => {
           loadData();
         }}
-        onOpenUploadPasta={(pastaData) => {
+        onOpenUploadPasta={() => {
           setShowImportacaoLote(false);
           // TODO: Abrir UploadPastaModal com dados pré-preenchidos
           setShowUploadModal(true);

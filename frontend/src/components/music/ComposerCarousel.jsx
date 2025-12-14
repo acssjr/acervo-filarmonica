@@ -2,7 +2,7 @@
 // Carrossel de compositores com glassmorphism para mobile
 // Exibe os 3 principais compositores em cards hero com auto-scroll
 
-import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { useState, useRef, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 // Fotos dos compositores (caminhos locais - WebP otimizado)

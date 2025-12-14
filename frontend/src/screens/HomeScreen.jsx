@@ -55,9 +55,6 @@ const HomeScreen = () => {
       .slice(0, 6);
   }, [sheets]);
 
-  // Pega o primeiro nome do usuário
-  const firstName = user?.name?.split(' ')[0] || 'Músico';
-
   // Carrega atividades da API somente se usuario estiver autenticado
   useEffect(() => {
     if (!user) return;
@@ -66,7 +63,7 @@ const HomeScreen = () => {
       try {
         const data = await API.getMinhasAtividades();
         setAtividades(data || []);
-      } catch (e) {
+      } catch {
         // Silencioso - atividades nao sao criticas
       }
     };

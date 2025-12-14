@@ -143,7 +143,6 @@ const TutorialOverlay = ({ isOpen, onClose, onExpandFirst, onCollapseFirst }) =>
     if (targetElement) {
       // Verifica se o elemento está visível na viewport
       const rect = targetElement.getBoundingClientRect();
-      const TOOLTIP_HEIGHT = 400; // Altura estimada do tooltip + margem
       const MARGIN = 100; // Margem extra para garantir que o tooltip também caiba
 
       const isElementVisible = (

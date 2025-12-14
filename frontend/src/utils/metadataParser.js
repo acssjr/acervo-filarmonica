@@ -83,7 +83,7 @@ export const parsearNomePasta = (nome) => {
 
     // Detecta arranjador
     if (/^arr[:\s]/i.test(parte) || /arranjo/i.test(parte)) {
-      arranjador = parte.replace(/^(arr[:\s]*|arranjo[\.\:\s]*)/i, '').trim();
+      arranjador = parte.replace(/^(arr[:\s]*|arranjo[.:\s]*)/i, '').trim();
       temArranjador = true;
     }
     // Detecta categoria
