@@ -55,7 +55,7 @@ function getCorsHeaders(request) {
   const origin = request.headers.get('Origin');
   const headers = {
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
   };
 
   if (origin && isOriginAllowed(origin)) {
@@ -552,8 +552,9 @@ async function downloadParte(parteId, request, env) {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `${disposition}; filename="${nomeArquivo}"`,
-        // Cache-Control para evitar re-downloads desnecessarios
-        'Cache-Control': 'private, max-age=300',
+        // Cache-Control: no-cache para sempre buscar versão atualizada
+        // (importante quando admin substitui uma parte)
+        'Cache-Control': 'private, no-cache',
         ...getCorsHeaders(request),
       },
     });
