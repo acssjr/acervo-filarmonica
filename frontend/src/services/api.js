@@ -431,6 +431,10 @@ export const API = {
     return this.request(`/api/repertorio/${id}`);
   },
 
+  async getRepertorioInstrumentos(id) {
+    return this.request(`/api/repertorio/${id}/instrumentos`);
+  },
+
   async getRepertorios() {
     return this.request('/api/repertorios');
   },
