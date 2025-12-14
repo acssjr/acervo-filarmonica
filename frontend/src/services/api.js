@@ -285,6 +285,15 @@ export const API = {
     }
   },
 
+  // Obter versão atual do servidor
+  async getVersion() {
+    try {
+      return await this.request('/api/version');
+    } catch {
+      return null;
+    }
+  },
+
   // ============ PERFIL ============
 
   async getPerfil() {
