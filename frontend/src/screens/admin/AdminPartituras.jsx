@@ -717,6 +717,7 @@ const AdminPartituras = () => {
             data-tutorial="upload-pasta"
             onClick={() => window.adminNav?.('partituras', 'pasta')}
             disabled={tutorialPending || showTutorial}
+            className="btn-primary-hover"
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -746,6 +747,7 @@ const AdminPartituras = () => {
           <button
             onClick={() => setShowImportacaoLote(true)}
             disabled={tutorialPending || showTutorial}
+            className="btn-secondary-hover"
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -1076,7 +1078,7 @@ const AdminPartituras = () => {
 
                         {/* Botoes de acao */}
                         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                          <button onClick={() => toggleDestaque(p)} title={p.destaque === 1 ? 'Remover destaque' : 'Destacar'} style={{
+                          <button onClick={() => toggleDestaque(p)} title={p.destaque === 1 ? 'Remover destaque' : 'Destacar'} className="btn-icon-hover" style={{
                             width: '36px',
                             height: '36px',
                             borderRadius: '10px',
@@ -1095,6 +1097,7 @@ const AdminPartituras = () => {
                           <button
                             onClick={() => toggleRepertorio(p)}
                             title={partiturasInRepertorio.has(p.id) ? 'Remover do Repertorio' : 'Adicionar ao Repertorio'}
+                            className="btn-purple-hover"
                             style={{
                               width: '36px',
                               height: '36px',
@@ -1121,7 +1124,7 @@ const AdminPartituras = () => {
                               </svg>
                             )}
                           </button>
-                          <button onClick={() => openEditModal(p)} title="Editar" style={{
+                          <button onClick={() => openEditModal(p)} title="Editar" className="btn-info-hover" style={{
                             width: '36px',
                             height: '36px',
                             borderRadius: '10px',
@@ -1138,7 +1141,7 @@ const AdminPartituras = () => {
                               <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                             </svg>
                           </button>
-                          <button onClick={() => handleDelete(p.id)} title="Excluir" style={{
+                          <button onClick={() => handleDelete(p.id)} title="Excluir" className="btn-danger-hover" style={{
                             width: '36px',
                             height: '36px',
                             borderRadius: '10px',
@@ -1586,6 +1589,7 @@ const AdminPartituras = () => {
                 </div>
                 <button
                   onClick={closeEditModal}
+                  className="btn-icon-hover"
                   style={{
                     width: '36px',
                     height: '36px',
@@ -1756,6 +1760,7 @@ const AdminPartituras = () => {
               <div style={{ display: 'flex', gap: '12px' }}>
                 <button
                   onClick={closeEditModal}
+                  className="btn-ghost-hover"
                   style={{
                     flex: 1,
                     padding: '14px 20px',
@@ -1775,6 +1780,7 @@ const AdminPartituras = () => {
                 <button
                   onClick={saveEditModal}
                   disabled={savingEdit || !editForm.titulo.trim()}
+                  className="btn-primary-hover"
                   style={{
                     flex: 1,
                     padding: '14px 20px',
