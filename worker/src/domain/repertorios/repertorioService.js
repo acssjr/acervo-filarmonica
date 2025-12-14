@@ -535,11 +535,14 @@ export async function downloadRepertorio(id, request, env, user) {
  * Ex: "Bombardino C" → "bombardino"
  * Ex: "Clarinete Bb 1" → "clarinete"
  * Ex: "Trompa F 2" → "trompa"
+ * Ex: "Flauta" → "flauta" (não remove F do início)
  */
 function getInstrumentBase(name) {
   return name.toLowerCase()
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // Remove acentos
-    .replace(/\s*(em\s+)?(do|si\s*b|si\s*bemol|mi\s*b|mi\s*bemol|bb|eb|c|f)\s*/gi, ' ')
+    // Remove tonalidades APENAS quando precedidas de espaço (palavra isolada)
+    // Isso evita remover o "F" de "Flauta" ou "C" de "Caixa"
+    .replace(/\s+(em\s+)?(do|si\s*b|si\s*bemol|mi\s*b|mi\s*bemol|bb|eb|c|f)(\s+|$)/gi, ' ')
     .replace(/\s+\d+\s*$/, '') // Remove números no final
     .replace(/\s+/g, ' ')
     .trim();
@@ -550,11 +553,13 @@ function getInstrumentBase(name) {
  * Ex: "Bombardino" → true
  * Ex: "Bombardino C" → false
  * Ex: "Bombardino Bb" → false
+ * Ex: "Flauta" → true (F aqui não é tonalidade)
  */
 function isGenericInstrument(name) {
   const lower = name.toLowerCase();
-  // Se contém tonalidade específica, não é genérico
-  const hasTonality = /\b(bb|eb|c|f|do|si\s*b|mi\s*b)\b/i.test(lower);
+  // Se contém tonalidade específica PRECEDIDA DE ESPAÇO, não é genérico
+  // Isso evita falso positivo em "Flauta" (F não é tonalidade aqui)
+  const hasTonality = /\s(bb|eb|c|f|do|si\s*b|mi\s*b)(\s|$)/i.test(lower);
   return !hasTonality;
 }
 
