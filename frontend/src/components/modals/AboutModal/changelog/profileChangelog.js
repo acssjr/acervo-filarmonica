@@ -1,8 +1,18 @@
 // Changelog completo para o app do usuario (ProfileScreen)
 export const PROFILE_CHANGELOG = [
   {
-    version: '2.4.0',
+    version: '2.8.0',
     isCurrent: true,
+    items: [
+      { bold: 'Repertório:', text: 'Sistema completo de download em lote e impressão' },
+      { bold: 'Download:', text: 'Lista de instrumentos agora mostra todos os instrumentos reais das partituras' },
+      { bold: 'UI:', text: 'Animações de hover nos botões administrativos' },
+      { bold: 'UX:', text: 'Botão de repertório com resposta instantânea (UI otimista)' },
+      { bold: 'Admin:', text: 'Modal para selecionar/criar repertório ao adicionar partitura' }
+    ]
+  },
+  {
+    version: '2.4.0',
     items: [
       { bold: 'Super Admin:', text: 'Proteção total do administrador master' },
       { bold: 'Músicos:', text: 'Badge "Admin" para identificar administradores' },
@@ -133,7 +143,7 @@ export const PROFILE_ABOUT_CONFIG = {
   subtitle: 'Sociedade Filarmônica 25 de Março',
   maxWidth: 420,
   infoCards: [
-    { label: 'Versão', value: '2.4.0' },
+    { label: 'Versão', value: '2.8.0' },
     { label: 'Tecnologias', value: 'React • JS • CSS' },
     { label: 'Por', value: 'Antonio Jr.', isHighlighted: true }
   ],

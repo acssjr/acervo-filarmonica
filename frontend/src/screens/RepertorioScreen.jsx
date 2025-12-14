@@ -596,19 +596,26 @@ const DownloadModal = ({
 const RepertorioScreen = () => {
   const { user } = useAuth();
   const { showToast, setSelectedSheet } = useUI();
-  const { favorites, toggleFavorite, categoriesMap, instrumentNames } = useData();
+  const { favorites, toggleFavorite, categoriesMap } = useData();
 
   const [repertorio, setRepertorio] = useState(null);
+  const [repertorioInstrumentos, setRepertorioInstrumentos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
   const [showDownloadModal, setShowDownloadModal] = useState(false);
 
-  // Carregar repertório ativo
+  // Carregar repertório ativo e seus instrumentos
   const loadRepertorio = async () => {
     setLoading(true);
     try {
       const data = await API.getRepertorioAtivo();
       setRepertorio(data);
+
+      // Carregar instrumentos reais das partes do repertório
+      if (data?.id) {
+        const instrumentos = await API.getRepertorioInstrumentos(data.id);
+        setRepertorioInstrumentos(instrumentos);
+      }
     } catch (err) {
       console.error('Erro ao carregar repertório:', err);
       showToast(err.message || 'Erro ao carregar repertório', 'error');
@@ -939,7 +946,7 @@ const RepertorioScreen = () => {
         isOpen={showDownloadModal}
         onClose={() => setShowDownloadModal(false)}
         sheets={sheets}
-        instruments={instrumentNames}
+        instruments={repertorioInstrumentos}
         userInstrument={user?.instrumento}
         downloading={downloading}
         onDownload={handleDownload}

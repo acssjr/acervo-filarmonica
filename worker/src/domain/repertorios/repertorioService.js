@@ -103,6 +103,26 @@ export async function isPartituraInRepertorioAtivo(partituraId, request, env) {
   return jsonResponse({ inRepertorio: !!result }, 200, request);
 }
 
+/**
+ * Obter lista de instrumentos disponíveis em um repertório
+ * (baseado nas partes das partituras do repertório)
+ */
+export async function getRepertorioInstrumentos(id, request, env) {
+  const result = await env.DB.prepare(`
+    SELECT DISTINCT pa.instrumento
+    FROM repertorio_partituras rp
+    JOIN partituras p ON rp.partitura_id = p.id
+    JOIN partes pa ON pa.partitura_id = p.id
+    WHERE rp.repertorio_id = ? AND p.ativo = 1
+    ORDER BY pa.instrumento ASC
+  `).bind(id).all();
+
+  // Extrair apenas os nomes dos instrumentos
+  const instrumentos = result.results.map(r => r.instrumento);
+
+  return jsonResponse(instrumentos, 200, request);
+}
+
 // ============ CRUD ADMIN ============
 
 /**

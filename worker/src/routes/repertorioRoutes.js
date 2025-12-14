@@ -11,7 +11,8 @@ import {
   reorderPartiturasRepertorio,
   duplicarRepertorio,
   isPartituraInRepertorioAtivo,
-  downloadRepertorio
+  downloadRepertorio,
+  getRepertorioInstrumentos
 } from '../domain/repertorios/repertorioService.js';
 import { authMiddleware, adminMiddleware } from '../middleware/index.js';
 
@@ -37,6 +38,12 @@ export function setupRepertorioRoutes(router) {
   router.get('/api/repertorio/:id/download', async (request, env, params, context) => {
     const id = parseInt(params.id, 10);
     return await downloadRepertorio(id, request, env, context.user);
+  }, [authMiddleware]);
+
+  // GET /api/repertorio/:id/instrumentos - Listar instrumentos disponíveis no repertório
+  router.get('/api/repertorio/:id/instrumentos', async (request, env, params, context) => {
+    const id = parseInt(params.id, 10);
+    return await getRepertorioInstrumentos(id, request, env);
   }, [authMiddleware]);
 
   // GET /api/partituras/:id/in-repertorio - Verificar se partitura esta no repertorio
