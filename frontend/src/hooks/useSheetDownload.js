@@ -52,19 +52,37 @@ const normalizeInstrumento = (nome) => {
 };
 
 /**
+ * Extrai tonalidade de um nome de instrumento normalizado
+ * Ex: "trompa f" -> "f", "trompete bb 1" -> "bb", "clarinete" -> null
+ */
+const extractTonalidade = (nome) => {
+  const match = nome.match(/\s+(bb|eb|f|c)\b/i);
+  return match ? match[1].toLowerCase() : null;
+};
+
+/**
  * Encontra partes correspondentes ao instrumento
  * Considera variacoes como "Trompete Bb 1", "Trompete Bb 2"
  * E normaliza nomes: "Saxofone Soprano" -> "Sax Soprano"
+ * IMPORTANTE: Nao mistura tonalidades (Trompa F nao baixa Trompa Eb)
  */
 export const findPartesCorrespondentes = (instrumento, partes) => {
   if (!instrumento || partes.length === 0) return [];
 
   const instrNorm = normalizeInstrumento(instrumento);
-  const instrBase = instrNorm.replace(/\s*(bb|eb|c)?\s*\d*$/i, '').trim();
+  const instrTonalidade = extractTonalidade(instrNorm);
+  const instrBase = instrNorm.replace(/\s*(bb|eb|f|c)?\s*\d*$/i, '').trim();
 
   return partes.filter(p => {
     const parteNorm = normalizeInstrumento(p.instrumento);
-    const parteBase = parteNorm.replace(/\s*(bb|eb|c)?\s*\d*$/i, '').trim();
+    const parteTonalidade = extractTonalidade(parteNorm);
+    const parteBase = parteNorm.replace(/\s*(bb|eb|f|c)?\s*\d*$/i, '').trim();
+
+    // Se ambos tem tonalidade e sao diferentes, nao combina
+    // Ex: Trompa F nao baixa Trompa Eb
+    if (instrTonalidade && parteTonalidade && instrTonalidade !== parteTonalidade) {
+      return false;
+    }
 
     return parteNorm === instrNorm ||
       parteNorm.startsWith(instrNorm) ||
