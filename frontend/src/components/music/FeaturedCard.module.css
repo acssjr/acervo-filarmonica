@@ -16,6 +16,7 @@
   width: 200px;
   min-width: 200px;
   max-width: 200px;
+  min-height: 180px;
   padding: 20px;
 }
 
@@ -23,6 +24,7 @@
   width: 280px;
   min-width: 280px;
   max-width: 280px;
+  min-height: 200px;
   padding: 24px;
 }
 
@@ -139,6 +141,10 @@
   background: rgba(212, 175, 55, 0.2);
   border-radius: 8px;
   border: 1px solid rgba(212, 175, 55, 0.3);
+  flex-shrink: 1;
+  min-width: 0;
+  max-width: 70%;
+  overflow: hidden;
 }
 
 .categoryText {
@@ -146,6 +152,10 @@
   font-family: 'Outfit', sans-serif;
   color: #D4AF37;
   font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
 }
 
 /* Botao favorito */
