@@ -39,23 +39,37 @@ const saveBlob = (blob, filename) => {
 };
 
 /**
+ * Normaliza nome de instrumento para comparacao
+ * Converte variantes como "Saxofone Alto" -> "sax alto"
+ */
+const normalizeInstrumento = (nome) => {
+  return nome.toLowerCase()
+    .replace(/\./g, '') // Remove pontos: "Sax." -> "Sax"
+    .replace(/saxofone/g, 'sax') // Normaliza Saxofone -> Sax
+    .replace(/clarineta/g, 'clarinete') // Variante
+    .replace(/\s+/g, ' ') // Colapsa espacos
+    .trim();
+};
+
+/**
  * Encontra partes correspondentes ao instrumento
  * Considera variacoes como "Trompete Bb 1", "Trompete Bb 2"
+ * E normaliza nomes: "Saxofone Soprano" -> "Sax Soprano"
  */
 export const findPartesCorrespondentes = (instrumento, partes) => {
   if (!instrumento || partes.length === 0) return [];
 
-  const instrLower = instrumento.toLowerCase();
-  const instrBase = instrLower.replace(/\s*(bb|eb)?\s*\d*$/i, '').trim();
+  const instrNorm = normalizeInstrumento(instrumento);
+  const instrBase = instrNorm.replace(/\s*(bb|eb|c)?\s*\d*$/i, '').trim();
 
   return partes.filter(p => {
-    const parteLower = p.instrumento.toLowerCase();
-    const parteBase = parteLower.replace(/\s*(bb|eb)?\s*\d*$/i, '').trim();
+    const parteNorm = normalizeInstrumento(p.instrumento);
+    const parteBase = parteNorm.replace(/\s*(bb|eb|c)?\s*\d*$/i, '').trim();
 
-    return parteLower === instrLower ||
-      parteLower.startsWith(instrLower) ||
+    return parteNorm === instrNorm ||
+      parteNorm.startsWith(instrNorm) ||
       parteBase === instrBase ||
-      instrLower.startsWith(parteBase);
+      instrNorm.startsWith(parteBase);
   });
 };
 
