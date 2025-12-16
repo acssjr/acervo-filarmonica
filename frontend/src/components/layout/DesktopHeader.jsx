@@ -13,11 +13,15 @@ import AdminToggle from '@components/common/AdminToggle';
 import { getNextRehearsal } from '@hooks/useNextRehearsal';
 import { levenshtein } from '@utils/search';
 
-// Normaliza texto removendo acentos
+// Normaliza texto para busca (estilo YouTube)
 const normalize = (str) => {
   return str.toLowerCase()
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+    .replace(/[ºª°]/g, '') // Remove indicadores ordinais
+    .replace(/n[°º.]?\s*/gi, 'n') // "nº ", "n° " → "n"
+    .replace(/\./g, ' ') // Pontos viram espaços
+    .replace(/\s+/g, ' ') // Colapsa espaços múltiplos
     .trim();
 };
 
@@ -51,12 +55,14 @@ const DesktopHeader = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showResults, setShowResults] = useState(false);
 
-  // Busca fuzzy nos sheets com transliteracao
+  // Busca fuzzy nos sheets com transliteracao - TODAS as palavras devem ser encontradas
   const searchResults = useMemo(() => {
     if (!searchQuery.trim()) return [];
 
     const query = normalize(searchQuery);
     const queryTranslit = transliterate(query);
+    const queryWords = query.split(/\s+/).filter(w => w.length > 0);
+    const queryWordsTranslit = queryWords.map(w => transliterate(w));
 
     return sheets
       .map(sheet => {
@@ -67,10 +73,9 @@ const DesktopHeader = () => {
         const category = categoriesMap.get(sheet.category);
         const categoryNorm = normalize(category?.name || '');
 
-        // Pontuação por diferentes critérios
         let score = 0;
 
-        // Match exato no início (maior peso) - normal e transliterado
+        // Match pela query completa (maior peso)
         if (titleNorm.startsWith(query)) score += 100;
         else if (titleNorm.includes(query)) score += 50;
         else if (titleTranslit.startsWith(queryTranslit)) score += 95;
@@ -84,12 +89,52 @@ const DesktopHeader = () => {
         if (categoryNorm.startsWith(query)) score += 60;
         else if (categoryNorm.includes(query)) score += 30;
 
-        // Fuzzy match com Levenshtein
-        const titleDist = levenshtein(query, titleNorm.slice(0, query.length));
-        const composerDist = levenshtein(query, composerNorm.slice(0, query.length));
+        // Busca por palavras individuais - TODAS devem ser encontradas
+        const searchText = `${titleNorm} ${composerNorm} ${categoryNorm}`;
+        const wordMatches = queryWords.map((word, idx) => {
+          if (word.length < 1) return { found: true, score: 0 };
+          const wordTranslit = queryWordsTranslit[idx];
+          let wordScore = 0;
+          let found = false;
 
-        if (titleDist <= 2) score += (20 - titleDist * 5);
-        if (composerDist <= 2) score += (15 - composerDist * 5);
+          if (titleNorm.includes(word)) {
+            wordScore += 25;
+            found = true;
+          } else if (titleTranslit.includes(wordTranslit)) {
+            wordScore += 22;
+            found = true;
+          } else if (composerNorm.includes(word)) {
+            wordScore += 20;
+            found = true;
+          } else if (composerTranslit.includes(wordTranslit)) {
+            wordScore += 18;
+            found = true;
+          } else if (categoryNorm.includes(word)) {
+            wordScore += 15;
+            found = true;
+          }
+
+          // Fuzzy match se não encontrou
+          if (!found) {
+            for (const tw of searchText.split(/\s+/)) {
+              if (levenshtein(word, tw) <= 1) {
+                wordScore += 5;
+                found = true;
+                break;
+              }
+            }
+          }
+
+          return { found, score: wordScore };
+        });
+
+        // TODAS as palavras devem ser encontradas
+        if (!wordMatches.every(m => m.found)) {
+          return { ...sheet, score: 0, category };
+        }
+
+        wordMatches.forEach(m => { score += m.score; });
+        if (queryWords.length > 1) score += 30;
 
         return { ...sheet, score, category };
       })

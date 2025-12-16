@@ -97,56 +97,61 @@ const SearchScreen = () => {
         if (categoryNorm.startsWith(query)) score += 60;
         else if (categoryNorm.includes(query)) score += 30;
 
-        // Busca por palavras individuais (para queries como "ninfas amor")
-        let matchedWords = 0;
-        queryWords.forEach((word, idx) => {
-          if (word.length < 2) return;
+        // Busca por palavras individuais - TODAS devem ser encontradas
+        const wordMatches = queryWords.map((word, idx) => {
+          if (word.length < 1) return { found: true, score: 0 }; // Ignora palavras vazias
           const wordTranslit = queryWordsTranslit[idx];
+          let wordScore = 0;
+          let found = false;
 
-          // Match normal
+          // Combina título + compositor + categoria para busca
+          const searchText = `${titleNorm} ${composerNorm} ${categoryNorm}`;
+
+          // Match exato
           if (titleNorm.includes(word)) {
-            score += 25;
-            matchedWords++;
+            wordScore += 25;
+            found = true;
           } else if (titleTranslit.includes(wordTranslit)) {
-            // Match transliterado (ninfas encontra nymphas)
-            score += 22;
-            matchedWords++;
-          }
-
-          if (composerNorm.includes(word)) {
-            score += 20;
-            matchedWords++;
+            wordScore += 22;
+            found = true;
+          } else if (composerNorm.includes(word)) {
+            wordScore += 20;
+            found = true;
           } else if (composerTranslit.includes(wordTranslit)) {
-            score += 18;
-            matchedWords++;
+            wordScore += 18;
+            found = true;
+          } else if (categoryNorm.includes(word)) {
+            wordScore += 15;
+            found = true;
           }
 
-          if (categoryNorm.includes(word)) {
-            score += 15;
-            matchedWords++;
-          }
-
-          // Fuzzy match por palavra (normal e transliterado)
-          const titleWords = titleNorm.split(/\s+/);
-          const titleWordsTranslit = titleTranslit.split(/\s+/);
-
-          titleWords.forEach((tw, twIdx) => {
-            const dist = levenshtein(word, tw);
-            if (dist <= 2 && dist > 0) {
-              score += (10 - dist * 3);
-            }
-            // Fuzzy na versao transliterada
-            if (titleWordsTranslit[twIdx]) {
-              const distTranslit = levenshtein(wordTranslit, titleWordsTranslit[twIdx]);
-              if (distTranslit <= 2 && distTranslit > 0) {
-                score += (8 - distTranslit * 2);
+          // Fuzzy match apenas se não encontrou exato
+          if (!found) {
+            const allWords = searchText.split(/\s+/);
+            for (const tw of allWords) {
+              const dist = levenshtein(word, tw);
+              if (dist <= 1) { // Tolerância mais baixa (era 2)
+                wordScore += (10 - dist * 5);
+                found = true;
+                break;
               }
             }
-          });
+          }
+
+          return { found, score: wordScore };
         });
 
-        // Bonus se todas as palavras foram encontradas
-        if (queryWords.length > 1 && matchedWords >= queryWords.length) {
+        // TODAS as palavras devem ser encontradas
+        const allWordsFound = wordMatches.every(m => m.found);
+        if (!allWordsFound) {
+          return { ...sheet, score: 0, category }; // Não mostra se faltou alguma palavra
+        }
+
+        // Soma scores das palavras
+        wordMatches.forEach(m => { score += m.score; });
+
+        // Bonus se todas encontradas (já está garantido acima)
+        if (queryWords.length > 1) {
           score += 30;
         }
 
