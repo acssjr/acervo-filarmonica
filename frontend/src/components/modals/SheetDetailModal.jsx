@@ -127,8 +127,9 @@ const SheetDetailModal = () => {
   const hasGrade = partes.some(p => p.instrumento?.toLowerCase() === 'grade');
 
   // Lista de instrumentos disponiveis (partes da partitura ou lista do contexto)
+  // Usa Set para remover duplicatas (pode haver entradas duplicadas no banco)
   const availableInstruments = partes.length > 0
-    ? partes.map(p => p.instrumento)
+    ? [...new Set(partes.map(p => p.instrumento))]
     : instrumentNames;
 
   const handleClose = () => {

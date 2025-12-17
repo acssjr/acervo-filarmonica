@@ -336,8 +336,9 @@ const LoginRoute = () => {
     return <LoadingScreen />;
   }
 
-  // Se ja logado, redireciona para home (todos os usuarios)
-  // Admin acessa area administrativa via AdminToggle no header
+  // Se ja logado, redireciona para pagina inicial
+  // Todos os usuarios (incluindo admin) vao para / (home com musicas)
+  // Admin pode acessar area administrativa via AdminToggle no header
   if (user) {
     return <Navigate to="/" replace />;
   }
