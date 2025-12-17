@@ -23,6 +23,13 @@ const PDFViewerModal = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const pdfContainerRef = useRef(null);
+  const pdfWrapperRef = useRef(null);
+
+  // Refs para pinch-to-zoom suave
+  const lastTouchDistance = useRef(null);
+  const initialScale = useRef(1.0);
+  const currentVisualScale = useRef(1.0);
+  const rafId = useRef(null);
 
   // Dimensoes da tela para responsividade
   const [screenSize, setScreenSize] = useState({
@@ -33,7 +40,7 @@ const PDFViewerModal = ({
 
   // Detectar mudanca de orientacao/tamanho da tela
   useEffect(() => {
-    const handleResize = () => {
+    const updateScreenSize = () => {
       setScreenSize({
         width: window.innerWidth,
         height: window.innerHeight,
@@ -41,29 +48,57 @@ const PDFViewerModal = ({
       });
     };
 
+    const handleResize = () => {
+      updateScreenSize();
+    };
+
+    // orientationchange precisa de um delay porque as dimensoes
+    // nao estao atualizadas imediatamente apos o evento
+    const handleOrientationChange = () => {
+      // Atualiza imediatamente
+      updateScreenSize();
+      // E novamente apos um delay para garantir
+      setTimeout(updateScreenSize, 100);
+      setTimeout(updateScreenSize, 300);
+    };
+
     window.addEventListener('resize', handleResize);
-    window.addEventListener('orientationchange', handleResize);
+    window.addEventListener('orientationchange', handleOrientationChange);
+
+    // Usa screen.orientation API se disponivel
+    if (screen.orientation) {
+      screen.orientation.addEventListener('change', handleOrientationChange);
+    }
 
     return () => {
       window.removeEventListener('resize', handleResize);
-      window.removeEventListener('orientationchange', handleResize);
+      window.removeEventListener('orientationchange', handleOrientationChange);
+      if (screen.orientation) {
+        screen.orientation.removeEventListener('change', handleOrientationChange);
+      }
     };
   }, []);
 
   // Calcular largura ideal do PDF baseada na orientacao
-  // Em landscape, usa mais da largura disponivel
+  // Em landscape, usa a altura disponivel para determinar a largura ideal
   const getOptimalWidth = useCallback(() => {
     const padding = 40; // Padding lateral
     const availableWidth = screenSize.width - padding;
-    const availableHeight = screenSize.height - 140; // Header + padding
+    const availableHeight = screenSize.height - 120; // Header + controles
 
     if (screenSize.isLandscape) {
-      // Em landscape, prioriza altura para caber na tela
-      return Math.min(availableWidth * 0.9, availableHeight * 0.75);
+      // Em landscape mobile, queremos que o PDF caiba na altura da tela
+      // Assume proporcao A4 (1:1.414), entao largura = altura / 1.414
+      const widthFromHeight = availableHeight / 1.414;
+      // Usa o menor entre a largura calculada e 85% da largura disponivel
+      return Math.min(widthFromHeight, availableWidth * 0.85);
     }
     // Em portrait, usa largura disponivel
     return Math.min(availableWidth, 600);
   }, [screenSize]);
+
+  // Limite maximo de zoom (maior em landscape para permitir detalhes)
+  const maxZoom = screenSize.isLandscape ? 5.0 : 4.0;
 
   const onDocumentLoadSuccess = useCallback(({ numPages }) => {
     setNumPages(numPages);
@@ -87,7 +122,7 @@ const PDFViewerModal = ({
   };
 
   const zoomIn = () => {
-    setScale(prev => Math.min(prev + 0.25, 3.0));
+    setScale(prev => Math.min(prev + 0.25, maxZoom));
   };
 
   const zoomOut = () => {
@@ -96,6 +131,11 @@ const PDFViewerModal = ({
 
   const resetZoom = () => {
     setScale(1.0);
+    currentVisualScale.current = 1.0;
+    // Reset transform do wrapper
+    if (pdfWrapperRef.current) {
+      pdfWrapperRef.current.style.transform = 'scale(1)';
+    }
   };
 
   const handleDownload = () => {
@@ -114,20 +154,83 @@ const PDFViewerModal = ({
     } else if (e.key === 'ArrowRight') {
       setPageNumber(prev => Math.min(prev + 1, numPages || 1));
     } else if (e.key === '+' || e.key === '=') {
-      setScale(prev => Math.min(prev + 0.25, 3.0));
+      setScale(prev => Math.min(prev + 0.25, maxZoom));
     } else if (e.key === '-') {
       setScale(prev => Math.max(prev - 0.25, 0.5));
     }
-  }, [numPages, onClose]);
+  }, [numPages, onClose, maxZoom]);
 
   // Handler para Ctrl+Scroll fazer zoom no PDF
   const handleWheel = useCallback((e) => {
     if (e.ctrlKey) {
       e.preventDefault();
       const delta = e.deltaY > 0 ? -0.1 : 0.1;
-      setScale(prev => Math.min(Math.max(prev + delta, 0.5), 3.0));
+      setScale(prev => Math.min(Math.max(prev + delta, 0.5), maxZoom));
     }
+  }, [maxZoom]);
+
+  // Calcula distancia entre dois toques
+  const getTouchDistance = useCallback((touches) => {
+    if (touches.length < 2) return 0;
+    const dx = touches[0].clientX - touches[1].clientX;
+    const dy = touches[0].clientY - touches[1].clientY;
+    return Math.sqrt(dx * dx + dy * dy);
   }, []);
+
+  // Aplica zoom visual via CSS transform (suave, sem re-render)
+  const applyVisualZoom = useCallback((visualScale) => {
+    if (rafId.current) {
+      cancelAnimationFrame(rafId.current);
+    }
+    rafId.current = requestAnimationFrame(() => {
+      if (pdfWrapperRef.current) {
+        // Calcula a escala relativa ao scale atual do PDF
+        const relativeScale = visualScale / scale;
+        pdfWrapperRef.current.style.transform = `scale(${relativeScale})`;
+        pdfWrapperRef.current.style.transformOrigin = 'center center';
+      }
+    });
+  }, [scale]);
+
+  // Pinch-to-zoom: inicio do toque
+  const handleTouchStart = useCallback((e) => {
+    if (e.touches.length === 2) {
+      // Nao previne default para permitir scroll suave
+      lastTouchDistance.current = getTouchDistance(e.touches);
+      initialScale.current = scale;
+      currentVisualScale.current = scale;
+    }
+  }, [scale, getTouchDistance]);
+
+  // Pinch-to-zoom: movimento (usa CSS transform para suavidade)
+  const handleTouchMove = useCallback((e) => {
+    if (e.touches.length === 2 && lastTouchDistance.current !== null) {
+      e.preventDefault(); // Previne apenas durante pinch ativo
+      const currentDistance = getTouchDistance(e.touches);
+      const distanceRatio = currentDistance / lastTouchDistance.current;
+      const newVisualScale = Math.min(Math.max(initialScale.current * distanceRatio, 0.5), maxZoom);
+
+      currentVisualScale.current = newVisualScale;
+      // Aplica zoom visual via CSS (instantaneo e suave)
+      applyVisualZoom(newVisualScale);
+    }
+  }, [getTouchDistance, maxZoom, applyVisualZoom]);
+
+  // Pinch-to-zoom: fim do toque - aplica a escala final ao state
+  const handleTouchEnd = useCallback(() => {
+    if (lastTouchDistance.current !== null) {
+      // Reseta o transform CSS
+      if (pdfWrapperRef.current) {
+        pdfWrapperRef.current.style.transform = 'scale(1)';
+      }
+      // Atualiza o state com a escala final (causa re-render com nova resolucao)
+      const finalScale = currentVisualScale.current;
+      if (Math.abs(finalScale - scale) > 0.01) {
+        setScale(finalScale);
+      }
+    }
+    lastTouchDistance.current = null;
+  }, [scale]);
 
   // Previne zoom da pagina inteira quando Ctrl+Scroll no modal
   useEffect(() => {
@@ -441,11 +544,14 @@ const PDFViewerModal = ({
         </div>
       </div>
 
-      {/* Area do PDF - clicavel para fechar */}
+      {/* Area do PDF - clicavel para fechar, suporta pinch-to-zoom */}
       <div
         ref={pdfContainerRef}
         onClick={handleBackdropClick}
         onWheel={handleWheel}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
         style={{
           flex: 1,
           overflow: 'auto',
@@ -454,7 +560,9 @@ const PDFViewerModal = ({
           alignItems: 'flex-start',
           padding: '20px',
           background: 'rgba(40, 40, 50, 0.5)',
-          cursor: 'pointer'
+          cursor: 'pointer',
+          touchAction: 'manipulation', // Permite scroll e tap, desabilita zoom nativo
+          overscrollBehavior: 'contain' // Evita pull-to-refresh
         }}
       >
         {loading && (
@@ -512,22 +620,31 @@ const PDFViewerModal = ({
           </div>
         )}
 
-        <Document
-          file={pdfUrl}
-          onLoadSuccess={onDocumentLoadSuccess}
-          onLoadError={onDocumentLoadError}
-          loading={null}
-          error={null}
+        {/* Wrapper para aplicar CSS transform durante pinch-to-zoom */}
+        <div
+          ref={pdfWrapperRef}
+          style={{
+            willChange: 'transform',
+            transition: 'none' // Sem transicao para resposta imediata
+          }}
         >
-          <Page
-            pageNumber={pageNumber}
-            width={getOptimalWidth()}
-            scale={scale}
-            renderTextLayer={true}
-            renderAnnotationLayer={true}
+          <Document
+            file={pdfUrl}
+            onLoadSuccess={onDocumentLoadSuccess}
+            onLoadError={onDocumentLoadError}
             loading={null}
-          />
-        </Document>
+            error={null}
+          >
+            <Page
+              pageNumber={pageNumber}
+              width={getOptimalWidth()}
+              scale={scale}
+              renderTextLayer={true}
+              renderAnnotationLayer={true}
+              loading={null}
+            />
+          </Document>
+        </div>
       </div>
 
       {/* Estilos */}
