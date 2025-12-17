@@ -37,6 +37,32 @@ const ShareCartModal = () => {
     return acc;
   }, {});
 
+  // Funcao auxiliar para baixar arquivos via download
+  const downloadFiles = useCallback((files) => {
+    showToast(`Baixando ${files.length} arquivo(s)...`);
+    files.forEach((file, idx) => {
+      setTimeout(() => {
+        const url = URL.createObjectURL(file);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = file.name;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+        // Mostra sucesso ao terminar ultimo arquivo
+        if (idx === files.length - 1) {
+          setTimeout(() => {
+            showToast('Downloads concluídos!');
+            clearShareCart();
+            setShowShareCart(false);
+          }, 500);
+        }
+      }, idx * 500);
+    });
+  }, [showToast, clearShareCart, setShowShareCart]);
+
   // Compartilha multiplos arquivos
   const handleShareAll = useCallback(async () => {
     if (sharing || shareCart.length === 0) return;
@@ -46,61 +72,52 @@ const ShareCartModal = () => {
 
     try {
       const files = [];
+      const errors = [];
 
       // Baixa cada parte
       for (const item of shareCart) {
-        const response = await fetch(`${API_BASE_URL}/api/download/parte/${item.parteId}`, {
-          headers: { 'Authorization': `Bearer ${Storage.get('authToken')}` }
-        });
+        try {
+          const response = await fetch(`${API_BASE_URL}/api/download/parte/${item.parteId}`, {
+            headers: { 'Authorization': `Bearer ${Storage.get('authToken')}` }
+          });
 
-        if (response.ok) {
-          const blob = await response.blob();
-          const filename = `${item.sheetTitle} - ${item.instrument}.pdf`;
-          files.push(new File([blob], filename, { type: 'application/pdf' }));
+          if (response.ok) {
+            const blob = await response.blob();
+            const filename = `${item.sheetTitle} - ${item.instrument}.pdf`;
+            files.push(new File([blob], filename, { type: 'application/pdf' }));
+          } else {
+            errors.push(`${item.instrument}: erro ${response.status}`);
+          }
+        } catch (fetchErr) {
+          console.error(`Erro ao baixar ${item.instrument}:`, fetchErr);
+          errors.push(`${item.instrument}: falha na conexão`);
         }
       }
 
       if (files.length === 0) {
-        showToast('Erro ao preparar arquivos', 'error');
+        showToast('Erro ao preparar arquivos. Verifique sua conexão.', 'error');
         setSharing(false);
         return;
       }
 
-      // Verifica se pode compartilhar
-      if (navigator.canShare && navigator.canShare({ files })) {
-        await navigator.share({
-          files,
-          title: `${files.length} partituras`,
-          text: `Partituras: ${shareCart.map(p => p.sheetTitle).join(', ')}`
-        });
-        showToast('Compartilhado com sucesso!');
-        clearShareCart();
-        setShowShareCart(false);
-      } else {
-        // Fallback: baixa arquivos individualmente
-        showToast('Compartilhamento não suportado. Baixando arquivos...');
-        files.forEach((file, idx) => {
-          setTimeout(() => {
-            const url = URL.createObjectURL(file);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = file.name;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
-          }, idx * 500);
-        });
+      // Mostra aviso se alguns arquivos falharam
+      if (errors.length > 0) {
+        console.warn('Alguns arquivos falharam:', errors);
       }
+
+      // NOTA: Web Share API (navigator.share) NAO pode ser usado aqui porque
+      // requer ser chamado DIRETAMENTE em um user gesture (clique).
+      // Apos qualquer await (como os fetch() acima), o browser considera que
+      // nao esta mais em um "user gesture" e bloqueia a chamada com NotAllowedError.
+      // Por isso, usamos download direto como unica opcao viavel.
+      downloadFiles(files);
     } catch (e) {
-      if (e.name !== 'AbortError') {
-        console.error('Erro no compartilhamento:', e);
-        showToast('Erro ao compartilhar', 'error');
-      }
+      console.error('Erro no compartilhamento:', e);
+      showToast('Erro ao compartilhar. Tente novamente.', 'error');
     }
 
     setSharing(false);
-  }, [sharing, shareCart, clearShareCart, setShowShareCart, showToast]);
+  }, [sharing, shareCart, showToast, downloadFiles]);
 
   const handleClose = () => setShowShareCart(false);
 
@@ -392,10 +409,10 @@ const ShareCartModal = () => {
                   animation: 'spin 0.8s linear infinite'
                 }} />
               ) : (
-                <Icons.Share />
+                <Icons.Download />
               )}
             </div>
-            {sharing ? 'Enviando...' : 'Enviar Todos'}
+            {sharing ? 'Baixando...' : 'Baixar Todos'}
           </button>
         </div>
       </div>

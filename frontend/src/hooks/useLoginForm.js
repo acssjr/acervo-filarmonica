@@ -188,10 +188,9 @@ const useLoginForm = ({ onClose }) => {
             if (onClose) {
               onClose();
             } else {
-              // Determina destino baseado no papel do usuario
-              // Admin vai para /admin, usuario comum SEMPRE vai para home /
-              const destino = userData.isAdmin ? '/admin' : '/';
-              navigate(destino, { replace: true });
+              // TODOS os usuarios (admin ou nao) vao para home /
+              // Admin pode acessar area administrativa via AdminToggle no header
+              navigate('/', { replace: true });
             }
 
             setIsLoading(false);
