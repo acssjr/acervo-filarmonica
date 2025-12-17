@@ -13,7 +13,9 @@ import DesktopLayout from '@components/layout/DesktopLayout';
 // Modals - carregados sempre (necessários globalmente)
 import SheetDetailModal from '@components/modals/SheetDetailModal';
 import NotificationsPanel from '@components/modals/NotificationsPanel';
+import ShareCartModal from '@components/modals/ShareCartModal';
 import UpdateNotification from '@components/common/UpdateNotification';
+import ShareCartFAB from '@components/common/ShareCartFAB';
 
 // Login - carregado sempre (primeira tela)
 import LoginScreen from '@screens/LoginScreen';
@@ -312,6 +314,10 @@ const AppContent = () => {
       {/* Modals (globais) */}
       <SheetDetailModal />
       <NotificationsPanel />
+      <ShareCartModal />
+
+      {/* FAB do carrinho de compartilhamento */}
+      <ShareCartFAB />
 
       {/* Notificação de atualização */}
       <UpdateNotification />
@@ -330,10 +336,10 @@ const LoginRoute = () => {
     return <LoadingScreen />;
   }
 
-  // Se ja logado, redireciona para pagina inicial (sempre)
-  // Admin -> /admin (dashboard), Usuario -> / (home)
+  // Se ja logado, redireciona para home (todos os usuarios)
+  // Admin acessa area administrativa via AdminToggle no header
   if (user) {
-    return <Navigate to={user.isAdmin ? '/admin' : '/'} replace />;
+    return <Navigate to="/" replace />;
   }
 
   return <LoginScreen required={true} />;

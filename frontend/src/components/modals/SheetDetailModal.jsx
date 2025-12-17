@@ -3,7 +3,7 @@
 // Suporta URL compartilhavel: /acervo/:categoria/:id
 // Refatorado: extraido componentes e hook de download
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@contexts/AuthContext';
 import { useUI } from '@contexts/UIContext';
@@ -11,7 +11,7 @@ import { useData } from '@contexts/DataContext';
 import { Icons } from '@constants/icons';
 import { API } from '@services/api';
 import CategoryIcon from '@components/common/CategoryIcon';
-import { useSheetDownload } from '@hooks/useSheetDownload';
+import { useSheetDownload, findParteExata } from '@hooks/useSheetDownload';
 import { PartePicker, DownloadConfirm, InstrumentSelector } from './sheet';
 import useAnimatedVisibility from '@hooks/useAnimatedVisibility';
 
@@ -19,7 +19,7 @@ const SheetDetailModal = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
-  const { selectedSheet, setSelectedSheet, showToast } = useUI();
+  const { selectedSheet, setSelectedSheet, showToast, addToShareCart } = useUI();
   const { favorites, toggleFavorite, categoriesMap, instrumentNames } = useData();
 
   // Estado local
@@ -37,6 +37,24 @@ const SheetDetailModal = () => {
     selectedSheet,
     partes
   });
+
+  // Handler para adicionar parte ao carrinho de compartilhamento
+  const handleAddToCart = useCallback((instrument) => {
+    if (!selectedSheet) return;
+
+    const parte = findParteExata(instrument, partes);
+    if (parte) {
+      addToShareCart({
+        sheetId: selectedSheet.id,
+        parteId: parte.id,
+        sheetTitle: selectedSheet.title,
+        instrument: parte.instrumento
+      });
+      showToast(`${parte.instrumento} adicionado ao carrinho`);
+    } else {
+      showToast('Parte não encontrada', 'error');
+    }
+  }, [selectedSheet, partes, addToShareCart, showToast]);
 
   // Detectar desktop
   useEffect(() => {
@@ -424,12 +442,16 @@ const SheetDetailModal = () => {
               userInstrument={userInstrument}
               isMaestro={isMaestro}
               downloading={download.downloading}
+              canShare={download.canShareFiles()}
               onToggle={() => setShowInstrumentPicker(!showInstrumentPicker)}
               onSelectInstrument={download.handleSelectParteEspecifica}
+              onPrintInstrument={download.handlePrintInstrument}
+              onShareInstrument={download.handleShareInstrument}
+              onAddToCart={handleAddToCart}
             />
           </div>
 
-          {/* Botoes Imprimir e Favoritar */}
+          {/* Botoes Imprimir, Compartilhar e Favoritar */}
           <div style={{ display: 'flex', gap: '8px' }}>
             <button
               onClick={() => download.handlePrintInstrument(isMaestro ? 'Grade' : userInstrument)}
@@ -456,6 +478,35 @@ const SheetDetailModal = () => {
               <div style={{ width: '14px', height: '14px' }}><Icons.Printer /></div>
               Imprimir
             </button>
+
+            {/* Botao Compartilhar - apenas se suportado */}
+            {download.canShareFiles() && (
+              <button
+                onClick={() => download.handleShareInstrument(isMaestro ? 'Grade' : userInstrument)}
+                disabled={download.downloading || loadingPartes || (isMaestro && !hasGrade)}
+                aria-label="Compartilhar partitura"
+                style={{
+                  flex: 1,
+                  padding: '10px',
+                  borderRadius: '10px',
+                  background: (isMaestro && !hasGrade) ? 'var(--bg-secondary)' : 'rgba(37, 211, 102, 0.1)',
+                  border: (isMaestro && !hasGrade) ? '1.5px solid var(--border)' : '1.5px solid rgba(37, 211, 102, 0.3)',
+                  color: (isMaestro && !hasGrade) ? 'var(--text-muted)' : '#25D366',
+                  fontFamily: 'Outfit, sans-serif',
+                  fontSize: '12px',
+                  fontWeight: '600',
+                  cursor: (isMaestro && !hasGrade) || download.downloading || loadingPartes ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  opacity: (isMaestro && !hasGrade) ? 0.5 : 1
+                }}
+              >
+                <div style={{ width: '14px', height: '14px' }}><Icons.Share /></div>
+                Enviar
+              </button>
+            )}
 
             <button
               onClick={() => toggleFavorite(selectedSheet.id)}

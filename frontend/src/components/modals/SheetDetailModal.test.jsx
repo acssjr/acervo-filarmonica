@@ -47,13 +47,17 @@ jest.unstable_mockModule('@contexts/AuthContext', () => ({
 }));
 
 // Mock do UIContext
+const mockAddToShareCart = jest.fn();
+
 jest.unstable_mockModule('@contexts/UIContext', () => ({
   useUI: () => ({
     selectedSheet: mockSelectedSheet,
     setSelectedSheet: mockSetSelectedSheet,
     showToast: mockShowToast,
     sidebarCollapsed: false,
-    setSidebarCollapsed: jest.fn()
+    setSidebarCollapsed: jest.fn(),
+    // Carrinho de compartilhamento
+    addToShareCart: mockAddToShareCart
   }),
   UIProvider: ({ children }) => children
 }));
@@ -84,7 +88,16 @@ jest.unstable_mockModule('@hooks/useSheetDownload', () => ({
     handleSelectParteEspecifica: jest.fn(),
     handleConfirmDownload: jest.fn(),
     handleCancelDownload: jest.fn(),
-    closePartePicker: jest.fn()
+    closePartePicker: jest.fn(),
+    // Funcoes de compartilhamento/impressao adicionadas na feature de share
+    handlePrintInstrument: jest.fn(),
+    handleShareInstrument: jest.fn(),
+    canShareFiles: jest.fn(() => false)
+  }),
+  // Exporta funcao auxiliar usada pelo SheetDetailModal
+  findParteExata: jest.fn((instrumento, partes) => {
+    if (!partes || partes.length === 0) return null;
+    return partes.find(p => p.instrumento === instrumento) || partes[0];
   })
 }));
 
