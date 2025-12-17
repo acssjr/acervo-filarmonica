@@ -1,5 +1,5 @@
-// ===== ADMIN MUSICOS =====
-// Gerenciamento de musicos
+// ===== ADMIN MÚSICOS =====
+// Gerenciamento de músicos
 
 import { useState, useEffect } from 'react';
 import { useUI } from '@contexts/UIContext';
@@ -38,7 +38,7 @@ const AdminMusicos = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps -- carrega apenas na montagem
   useEffect(() => { loadData(); }, []);
 
-  // Listener para acao de novo
+  // Listener para ação de novo
   useEffect(() => {
     const handler = (e) => {
       if (e.detail === 'novo') setShowModal(true);
@@ -120,7 +120,7 @@ const AdminMusicos = () => {
         </p>
       </div>
 
-      {/* Botao Novo Musico */}
+      {/* Botão Novo Músico */}
       <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'center' }}>
         <button
           onClick={() => { setEditingUser(null); setShowModal(true); }}

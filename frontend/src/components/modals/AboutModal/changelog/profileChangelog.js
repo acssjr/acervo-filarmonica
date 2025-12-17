@@ -1,4 +1,4 @@
-// Changelog completo para o app do usuario (ProfileScreen)
+// Changelog completo para o app do usuário (ProfileScreen)
 export const PROFILE_CHANGELOG = [
   {
     version: '2.8.0',

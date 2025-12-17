@@ -4,55 +4,55 @@ export const ADMIN_CHANGELOG = [
     version: '2.8.0',
     isCurrent: true,
     items: [
-      { bold: 'Repertorio:', text: 'Modal para selecionar/criar repertorio ao adicionar partitura' },
-      { bold: 'UI:', text: 'Animacoes de hover nos botoes (escala + sombra)' },
-      { bold: 'UX:', text: 'Botao de repertorio com resposta instantanea (UI otimista)' },
+      { bold: 'Repertório:', text: 'Modal para selecionar/criar repertório ao adicionar partitura' },
+      { bold: 'UI:', text: 'Animações de hover nos botões (escala + sombra)' },
+      { bold: 'UX:', text: 'Botão de repertório com resposta instantânea (UI otimista)' },
       { bold: 'Fix:', text: 'Lista de instrumentos agora mostra todos os instrumentos reais' }
     ]
   },
   {
     version: '2.1.0',
     items: [
-      { bold: 'Seguranca:', text: 'Autenticacao JWT com expiracao de 24h' },
-      { bold: 'Seguranca:', text: 'Senhas criptografadas com PBKDF2' },
-      { bold: 'Seguranca:', text: 'Rate limiting para protecao contra ataques' },
-      { bold: 'Admin:', text: 'Redirecionamento automatico para /admin' },
+      { bold: 'Segurança:', text: 'Autenticação JWT com expiração de 24h' },
+      { bold: 'Segurança:', text: 'Senhas criptografadas com PBKDF2' },
+      { bold: 'Segurança:', text: 'Rate limiting para proteção contra ataques' },
+      { bold: 'Admin:', text: 'Redirecionamento automático para /admin' },
       { bold: 'Admin:', text: 'Toggle de tema movido para o header' },
-      { bold: 'UX:', text: 'Sessao expira com aviso ao usuario' },
-      { text: 'Melhorias de performance e correcoes de bugs' }
+      { bold: 'UX:', text: 'Sessão expira com aviso ao usuário' },
+      { text: 'Melhorias de performance e correções de bugs' }
     ]
   },
   {
     version: '2.0.0',
     items: [
-      { text: 'Upload de pasta com multiplas partes' },
-      { text: 'Deteccao automatica de instrumentos' },
+      { text: 'Upload de pasta com múltiplas partes' },
+      { text: 'Detecção automática de instrumentos' },
       { text: 'Gerenciamento de partes no admin' },
       { text: 'Sistema de favoritos sincronizado' },
-      { text: 'Correcao de bugs e melhorias gerais' }
+      { text: 'Correção de bugs e melhorias gerais' }
     ]
   },
   {
     version: '1.0.0',
     items: [
       { text: 'Painel administrativo completo' },
-      { text: 'Dashboard com estatisticas' },
-      { text: 'Gerenciamento de musicos' },
+      { text: 'Dashboard com estatísticas' },
+      { text: 'Gerenciamento de músicos' },
       { text: 'Gerenciamento de partituras' },
       { text: 'Gerenciamento de categorias' }
     ]
   }
 ];
 
-// Config padrao para AdminConfig
+// Config padrão para AdminConfig
 export const ADMIN_ABOUT_CONFIG = {
   subtitle: 'Painel Administrativo',
   maxWidth: 480,
   infoCards: [
-    { label: 'Versao', value: '2.8.0' },
+    { label: 'Versão', value: '2.8.0' },
     { label: 'Backend', value: 'Cloudflare Workers' },
     { label: 'Dev', value: 'Antonio Jr.', isHighlighted: true }
   ],
-  footerText: 'S.F. 25 de Marco • Feira de Santana, BA • Fundada em 1868',
+  footerText: 'S.F. 25 de Março • Feira de Santana, BA • Fundada em 1868',
   showLegacyVersions: false
 };

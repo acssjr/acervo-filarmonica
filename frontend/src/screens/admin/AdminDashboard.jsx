@@ -16,7 +16,7 @@ const AdminDashboard = () => {
   const [atividades, setAtividades] = useState([]);
   const [isMobile, setIsMobile] = useState(window.innerWidth < BREAKPOINTS.mobile);
 
-  // Detecta mudanca de tamanho
+  // Detecta mudança de tamanho
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < BREAKPOINTS.mobile);
     window.addEventListener('resize', handleResize);
@@ -38,7 +38,7 @@ const AdminDashboard = () => {
 
   return (
     <div className="page-transition" style={{ padding: isMobile ? '16px' : '32px', maxWidth: '1200px', margin: '0 auto', fontFamily: 'Outfit, sans-serif' }}>
-      {/* Header com saudacao */}
+      {/* Header com saudação */}
       <div style={{ marginBottom: isMobile ? '20px' : '32px' }}>
         <div style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '4px', fontFamily: 'Outfit, sans-serif' }}>
           Olá,
@@ -72,7 +72,7 @@ const AdminDashboard = () => {
           </span>
         </div>
         <p style={{ color: 'var(--text-secondary)', fontFamily: 'Outfit, sans-serif', margin: 0 }}>
-          Acervo Digital - Sociedade Filarmonica 25 de Marco
+          Acervo Digital - Sociedade Filarmônica 25 de Março
         </p>
       </div>
 

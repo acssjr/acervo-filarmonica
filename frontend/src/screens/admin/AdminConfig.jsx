@@ -1,5 +1,5 @@
 // ===== ADMIN CONFIG =====
-// Configuracoes do admin
+// Configurações do admin
 
 import { useState } from 'react';
 import { useAuth } from '@contexts/AuthContext';
@@ -271,7 +271,7 @@ const AdminConfig = () => {
         </h3>
         <div style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: '1.6', fontFamily: 'Outfit, sans-serif' }}>
           <p><strong>Acervo Digital</strong> v{PROFILE_ABOUT_CONFIG.infoCards[0].value}</p>
-          <p>Sociedade Filarmonica 25 de Marco</p>
+          <p>Sociedade Filarmônica 25 de Março</p>
           <p>Fundada em 1868 - Feira de Santana, BA</p>
         </div>
       </button>

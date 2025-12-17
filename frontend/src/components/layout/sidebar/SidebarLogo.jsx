@@ -20,7 +20,7 @@ const SidebarLogo = ({ collapsed }) => {
       }}>
         <img
           src="/assets/images/ui/brasao-256x256.png"
-          alt="Brasao"
+          alt="Brasão"
           style={{
             width: '100%',
             height: '100%',
@@ -48,7 +48,7 @@ const SidebarLogo = ({ collapsed }) => {
       }}>
         <img
           src="/assets/images/ui/brasao-256x256.png"
-          alt="Brasao"
+          alt="Brasão"
           style={{
             width: '100%',
             height: '100%',
@@ -65,7 +65,7 @@ const SidebarLogo = ({ collapsed }) => {
           marginBottom: '1px',
           lineHeight: '1.2'
         }}>
-          S.F. 25 de Marco
+          S.F. 25 de Março
         </h1>
         <p style={{ fontFamily: 'Outfit, sans-serif', fontSize: '10px', color: 'rgba(255,255,255,0.5)', marginBottom: '4px' }}>
           Feira de Santana - BA

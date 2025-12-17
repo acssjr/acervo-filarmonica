@@ -239,7 +239,7 @@ const AdminApp = () => {
                   justifyContent: 'center',
                   overflow: 'hidden'
                 }}>
-                  <img src="/assets/images/ui/brasao-256x256.png" alt="Brasao" style={{ width: '75%', height: '75%', objectFit: 'contain' }} />
+                  <img src="/assets/images/ui/brasao-256x256.png" alt="Brasão" style={{ width: '75%', height: '75%', objectFit: 'contain' }} />
                 </div>
               </div>
               <span style={{ fontWeight: '600', color: 'var(--text-primary)', fontSize: '14px' }}>Painel Admin</span>
@@ -331,12 +331,12 @@ const AdminApp = () => {
                     justifyContent: 'center',
                     overflow: 'hidden'
                   }}>
-                    <img src="/assets/images/ui/brasao-256x256.png" alt="Brasao" style={{ width: '75%', height: '75%', objectFit: 'contain' }} />
+                    <img src="/assets/images/ui/brasao-256x256.png" alt="Brasão" style={{ width: '75%', height: '75%', objectFit: 'contain' }} />
                   </div>
                 </div>
                 {(!sidebarCollapsed || isMobile) && (
                   <div>
-                    <div style={{ fontWeight: '700', color: '#F4E4BC', fontSize: '14px', fontFamily: 'Outfit, sans-serif' }}>S.F. 25 de Marco</div>
+                    <div style={{ fontWeight: '700', color: '#F4E4BC', fontSize: '14px', fontFamily: 'Outfit, sans-serif' }}>S.F. 25 de Março</div>
                     <div style={{ fontSize: '11px', color: '#D4AF37', fontFamily: 'Outfit, sans-serif' }}>PAINEL ADMIN</div>
                   </div>
                 )}
