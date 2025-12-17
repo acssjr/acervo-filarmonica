@@ -23,10 +23,13 @@ const PDFViewerModal = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const pdfContainerRef = useRef(null);
+  const pdfWrapperRef = useRef(null);
 
-  // Refs para pinch-to-zoom
+  // Refs para pinch-to-zoom suave
   const lastTouchDistance = useRef(null);
   const initialScale = useRef(1.0);
+  const currentVisualScale = useRef(1.0);
+  const rafId = useRef(null);
 
   // Dimensoes da tela para responsividade
   const [screenSize, setScreenSize] = useState({
@@ -77,19 +80,23 @@ const PDFViewerModal = ({
   }, []);
 
   // Calcular largura ideal do PDF baseada na orientacao
-  // Em landscape, usa mais da largura disponivel
+  // Em landscape, usa ratio A4 para calcular largura otima
   const getOptimalWidth = useCallback(() => {
     const padding = 40; // Padding lateral
     const availableWidth = screenSize.width - padding;
-    const availableHeight = screenSize.height - 140; // Header + padding
+    const availableHeight = screenSize.height - 120; // Header + padding
 
     if (screenSize.isLandscape) {
-      // Em landscape, prioriza altura para caber na tela
-      return Math.min(availableWidth * 0.9, availableHeight * 0.75);
+      // Usa ratio A4 (1:1.414) para calcular largura ideal baseada na altura
+      const widthFromHeight = availableHeight / 1.414;
+      return Math.min(widthFromHeight, availableWidth * 0.85);
     }
     // Em portrait, usa largura disponivel
     return Math.min(availableWidth, 600);
   }, [screenSize]);
+
+  // Zoom maximo depende da orientacao - landscape permite mais zoom
+  const maxZoom = screenSize.isLandscape ? 5.0 : 4.0;
 
   const onDocumentLoadSuccess = useCallback(({ numPages }) => {
     setNumPages(numPages);
@@ -112,17 +119,17 @@ const PDFViewerModal = ({
     setPageNumber(prev => Math.min(prev + 1, numPages || 1));
   };
 
-  const zoomIn = () => {
-    setScale(prev => Math.min(prev + 0.25, 3.0));
-  };
+  const zoomIn = useCallback(() => {
+    setScale(prev => Math.min(prev + 0.25, maxZoom));
+  }, [maxZoom]);
 
-  const zoomOut = () => {
+  const zoomOut = useCallback(() => {
     setScale(prev => Math.max(prev - 0.25, 0.5));
-  };
+  }, []);
 
-  const resetZoom = () => {
+  const resetZoom = useCallback(() => {
     setScale(1.0);
-  };
+  }, []);
 
   const handleDownload = () => {
     if (onDownload) {
@@ -140,20 +147,20 @@ const PDFViewerModal = ({
     } else if (e.key === 'ArrowRight') {
       setPageNumber(prev => Math.min(prev + 1, numPages || 1));
     } else if (e.key === '+' || e.key === '=') {
-      setScale(prev => Math.min(prev + 0.25, 3.0));
+      setScale(prev => Math.min(prev + 0.25, maxZoom));
     } else if (e.key === '-') {
       setScale(prev => Math.max(prev - 0.25, 0.5));
     }
-  }, [numPages, onClose]);
+  }, [numPages, onClose, maxZoom]);
 
   // Handler para Ctrl+Scroll fazer zoom no PDF
   const handleWheel = useCallback((e) => {
     if (e.ctrlKey) {
       e.preventDefault();
       const delta = e.deltaY > 0 ? -0.1 : 0.1;
-      setScale(prev => Math.min(Math.max(prev + delta, 0.5), 3.0));
+      setScale(prev => Math.min(Math.max(prev + delta, 0.5), maxZoom));
     }
-  }, []);
+  }, [maxZoom]);
 
   // Calcula distancia entre dois toques
   const getTouchDistance = useCallback((touches) => {
@@ -163,30 +170,58 @@ const PDFViewerModal = ({
     return Math.sqrt(dx * dx + dy * dy);
   }, []);
 
-  // Pinch-to-zoom: inicio do toque
+  // Aplica zoom visual via CSS transform (sem re-render durante o gesto)
+  const applyVisualZoom = useCallback((visualScale) => {
+    if (rafId.current) {
+      cancelAnimationFrame(rafId.current);
+    }
+    rafId.current = requestAnimationFrame(() => {
+      if (pdfWrapperRef.current) {
+        // Calcula escala relativa ao scale atual do React state
+        const relativeScale = visualScale / scale;
+        pdfWrapperRef.current.style.transform = `scale(${relativeScale})`;
+        pdfWrapperRef.current.style.transformOrigin = 'center center';
+      }
+    });
+  }, [scale]);
+
+  // Pinch-to-zoom suave: inicio do toque
   const handleTouchStart = useCallback((e) => {
     if (e.touches.length === 2) {
-      e.preventDefault();
       lastTouchDistance.current = getTouchDistance(e.touches);
       initialScale.current = scale;
+      currentVisualScale.current = scale;
     }
   }, [scale, getTouchDistance]);
 
-  // Pinch-to-zoom: movimento
+  // Pinch-to-zoom suave: movimento (usa CSS transform para feedback visual imediato)
   const handleTouchMove = useCallback((e) => {
     if (e.touches.length === 2 && lastTouchDistance.current !== null) {
       e.preventDefault();
       const currentDistance = getTouchDistance(e.touches);
       const distanceRatio = currentDistance / lastTouchDistance.current;
-      const newScale = Math.min(Math.max(initialScale.current * distanceRatio, 0.5), 3.0);
-      setScale(newScale);
+      const newVisualScale = Math.min(Math.max(initialScale.current * distanceRatio, 0.5), maxZoom);
+      currentVisualScale.current = newVisualScale;
+      // Aplica zoom visual via CSS (suave, sem re-render)
+      applyVisualZoom(newVisualScale);
     }
-  }, [getTouchDistance]);
+  }, [getTouchDistance, maxZoom, applyVisualZoom]);
 
-  // Pinch-to-zoom: fim do toque
+  // Pinch-to-zoom suave: fim do toque (aplica o estado final ao React)
   const handleTouchEnd = useCallback(() => {
+    if (lastTouchDistance.current !== null) {
+      // Reseta o transform CSS
+      if (pdfWrapperRef.current) {
+        pdfWrapperRef.current.style.transform = 'scale(1)';
+      }
+      // Aplica o scale final ao React state (causa re-render unico)
+      const finalScale = currentVisualScale.current;
+      if (Math.abs(finalScale - scale) > 0.01) {
+        setScale(finalScale);
+      }
+    }
     lastTouchDistance.current = null;
-  }, []);
+  }, [scale]);
 
   // Previne zoom da pagina inteira quando Ctrl+Scroll no modal
   useEffect(() => {
@@ -414,16 +449,16 @@ const PDFViewerModal = ({
 
             <button
               onClick={zoomIn}
-              disabled={scale >= 3.0}
-              title="Aumentar zoom (+)"
+              disabled={scale >= maxZoom}
+              title={`Aumentar zoom (+) máx ${Math.round(maxZoom * 100)}%`}
               style={{
                 width: '32px',
                 height: '32px',
                 borderRadius: '6px',
                 border: 'none',
-                background: scale >= 3.0 ? 'transparent' : 'rgba(255, 255, 255, 0.1)',
-                color: scale >= 3.0 ? 'rgba(255, 255, 255, 0.3)' : '#fff',
-                cursor: scale >= 3.0 ? 'not-allowed' : 'pointer',
+                background: scale >= maxZoom ? 'transparent' : 'rgba(255, 255, 255, 0.1)',
+                color: scale >= maxZoom ? 'rgba(255, 255, 255, 0.3)' : '#fff',
+                cursor: scale >= maxZoom ? 'not-allowed' : 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -517,7 +552,8 @@ const PDFViewerModal = ({
           padding: '20px',
           background: 'rgba(40, 40, 50, 0.5)',
           cursor: 'pointer',
-          touchAction: 'pan-x pan-y' // Permite scroll mas desabilita zoom nativo do browser
+          touchAction: 'manipulation', // Permite scroll/tap mas desabilita zoom nativo
+          overscrollBehavior: 'contain' // Previne pull-to-refresh
         }}
       >
         {loading && (
@@ -575,22 +611,31 @@ const PDFViewerModal = ({
           </div>
         )}
 
-        <Document
-          file={pdfUrl}
-          onLoadSuccess={onDocumentLoadSuccess}
-          onLoadError={onDocumentLoadError}
-          loading={null}
-          error={null}
+        {/* Wrapper para aplicar CSS transform durante pinch-to-zoom */}
+        <div
+          ref={pdfWrapperRef}
+          style={{
+            willChange: 'transform',
+            transition: 'none'
+          }}
         >
-          <Page
-            pageNumber={pageNumber}
-            width={getOptimalWidth()}
-            scale={scale}
-            renderTextLayer={true}
-            renderAnnotationLayer={true}
+          <Document
+            file={pdfUrl}
+            onLoadSuccess={onDocumentLoadSuccess}
+            onLoadError={onDocumentLoadError}
             loading={null}
-          />
-        </Document>
+            error={null}
+          >
+            <Page
+              pageNumber={pageNumber}
+              width={getOptimalWidth()}
+              scale={scale}
+              renderTextLayer={true}
+              renderAnnotationLayer={true}
+              loading={null}
+            />
+          </Document>
+        </div>
       </div>
 
       {/* Estilos */}
