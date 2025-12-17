@@ -312,6 +312,80 @@ export const useSheetDownload = ({ showToast, selectedSheet, partes = [] }) => {
     }
   }, [partes, printParte, showToast]);
 
+  /**
+   * Verifica se o navegador suporta compartilhamento de arquivos
+   */
+  const canShareFiles = useCallback(() => {
+    if (!navigator.share || !navigator.canShare) return false;
+    // Testa se pode compartilhar arquivos PDF
+    const testFile = new File([''], 'test.pdf', { type: 'application/pdf' });
+    return navigator.canShare({ files: [testFile] });
+  }, []);
+
+  /**
+   * Compartilha uma parte especifica via Web Share API
+   */
+  const shareParte = useCallback(async (parte) => {
+    if (downloading || !selectedSheet) return;
+    setDownloading(true);
+
+    showToast(`Preparando "${selectedSheet.title}" - ${parte.instrumento}...`);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/download/parte/${parte.id}`, {
+        headers: { 'Authorization': `Bearer ${Storage.get('authToken')}` }
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const filename = `${selectedSheet.title} - ${parte.instrumento}.pdf`;
+        const file = new File([blob], filename, { type: 'application/pdf' });
+
+        // Verifica se pode compartilhar arquivos
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            files: [file],
+            title: `${selectedSheet.title} - ${parte.instrumento}`,
+            text: `Partitura: ${selectedSheet.title}\nParte: ${parte.instrumento}`
+          });
+          showToast('Compartilhado com sucesso!');
+        } else {
+          // Fallback: baixa o arquivo se não suportar compartilhamento
+          showToast('Compartilhamento não suportado. Baixando arquivo...', 'error');
+          const pdfBlob = new Blob([blob], { type: 'application/pdf' });
+          saveBlob(pdfBlob, filename);
+        }
+      } else {
+        const error = await response.json().catch(() => ({}));
+        showToast(error.error || 'Erro ao preparar arquivo', 'error');
+      }
+    } catch (e) {
+      // AbortError acontece quando usuario cancela o share
+      if (e.name !== 'AbortError') {
+        console.error('Erro no compartilhamento:', e);
+        showToast('Erro ao compartilhar arquivo', 'error');
+      }
+    }
+
+    setDownloading(false);
+  }, [downloading, selectedSheet, showToast]);
+
+  /**
+   * Inicia fluxo de compartilhamento para um instrumento
+   */
+  const handleShareInstrument = useCallback((instrument) => {
+    const correspondentes = findPartesCorrespondentes(instrument, partes);
+
+    if (correspondentes.length === 0) {
+      showToast('Parte não encontrada para compartilhar', 'error');
+    } else if (correspondentes.length === 1) {
+      shareParte(correspondentes[0]);
+    } else {
+      // Usa primeira parte para simplicidade
+      shareParte(correspondentes[0]);
+    }
+  }, [partes, shareParte, showToast]);
+
   return {
     // State
     downloading,
@@ -329,6 +403,9 @@ export const useSheetDownload = ({ showToast, selectedSheet, partes = [] }) => {
     closePartePicker,
     printParte,
     handlePrintInstrument,
+    shareParte,
+    handleShareInstrument,
+    canShareFiles,
 
     // Utilities
     findPartesCorrespondentes: (inst) => findPartesCorrespondentes(inst, partes),

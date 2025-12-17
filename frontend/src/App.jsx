@@ -330,10 +330,10 @@ const LoginRoute = () => {
     return <LoadingScreen />;
   }
 
-  // Se ja logado, redireciona para pagina inicial (sempre)
-  // Admin -> /admin (dashboard), Usuario -> / (home)
+  // Se ja logado, redireciona para home (todos os usuarios)
+  // Admin acessa area administrativa via AdminToggle no header
   if (user) {
-    return <Navigate to={user.isAdmin ? '/admin' : '/'} replace />;
+    return <Navigate to="/" replace />;
   }
 
   return <LoginScreen required={true} />;
