@@ -24,6 +24,10 @@ const PDFViewerModal = ({
   const [error, setError] = useState(null);
   const pdfContainerRef = useRef(null);
 
+  // Refs para pinch-to-zoom
+  const lastTouchDistance = useRef(null);
+  const initialScale = useRef(1.0);
+
   // Dimensoes da tela para responsividade
   const [screenSize, setScreenSize] = useState({
     width: window.innerWidth,
@@ -33,7 +37,7 @@ const PDFViewerModal = ({
 
   // Detectar mudanca de orientacao/tamanho da tela
   useEffect(() => {
-    const handleResize = () => {
+    const updateScreenSize = () => {
       setScreenSize({
         width: window.innerWidth,
         height: window.innerHeight,
@@ -41,12 +45,34 @@ const PDFViewerModal = ({
       });
     };
 
+    const handleResize = () => {
+      updateScreenSize();
+    };
+
+    // orientationchange precisa de um delay porque as dimensoes
+    // nao estao atualizadas imediatamente apos o evento
+    const handleOrientationChange = () => {
+      // Atualiza imediatamente
+      updateScreenSize();
+      // E novamente apos um delay para garantir
+      setTimeout(updateScreenSize, 100);
+      setTimeout(updateScreenSize, 300);
+    };
+
     window.addEventListener('resize', handleResize);
-    window.addEventListener('orientationchange', handleResize);
+    window.addEventListener('orientationchange', handleOrientationChange);
+
+    // Usa screen.orientation API se disponivel
+    if (screen.orientation) {
+      screen.orientation.addEventListener('change', handleOrientationChange);
+    }
 
     return () => {
       window.removeEventListener('resize', handleResize);
-      window.removeEventListener('orientationchange', handleResize);
+      window.removeEventListener('orientationchange', handleOrientationChange);
+      if (screen.orientation) {
+        screen.orientation.removeEventListener('change', handleOrientationChange);
+      }
     };
   }, []);
 
@@ -127,6 +153,39 @@ const PDFViewerModal = ({
       const delta = e.deltaY > 0 ? -0.1 : 0.1;
       setScale(prev => Math.min(Math.max(prev + delta, 0.5), 3.0));
     }
+  }, []);
+
+  // Calcula distancia entre dois toques
+  const getTouchDistance = useCallback((touches) => {
+    if (touches.length < 2) return 0;
+    const dx = touches[0].clientX - touches[1].clientX;
+    const dy = touches[0].clientY - touches[1].clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+  }, []);
+
+  // Pinch-to-zoom: inicio do toque
+  const handleTouchStart = useCallback((e) => {
+    if (e.touches.length === 2) {
+      e.preventDefault();
+      lastTouchDistance.current = getTouchDistance(e.touches);
+      initialScale.current = scale;
+    }
+  }, [scale, getTouchDistance]);
+
+  // Pinch-to-zoom: movimento
+  const handleTouchMove = useCallback((e) => {
+    if (e.touches.length === 2 && lastTouchDistance.current !== null) {
+      e.preventDefault();
+      const currentDistance = getTouchDistance(e.touches);
+      const distanceRatio = currentDistance / lastTouchDistance.current;
+      const newScale = Math.min(Math.max(initialScale.current * distanceRatio, 0.5), 3.0);
+      setScale(newScale);
+    }
+  }, [getTouchDistance]);
+
+  // Pinch-to-zoom: fim do toque
+  const handleTouchEnd = useCallback(() => {
+    lastTouchDistance.current = null;
   }, []);
 
   // Previne zoom da pagina inteira quando Ctrl+Scroll no modal
@@ -441,11 +500,14 @@ const PDFViewerModal = ({
         </div>
       </div>
 
-      {/* Area do PDF - clicavel para fechar */}
+      {/* Area do PDF - clicavel para fechar, suporta pinch-to-zoom */}
       <div
         ref={pdfContainerRef}
         onClick={handleBackdropClick}
         onWheel={handleWheel}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
         style={{
           flex: 1,
           overflow: 'auto',
@@ -454,7 +516,8 @@ const PDFViewerModal = ({
           alignItems: 'flex-start',
           padding: '20px',
           background: 'rgba(40, 40, 50, 0.5)',
-          cursor: 'pointer'
+          cursor: 'pointer',
+          touchAction: 'pan-x pan-y' // Permite scroll mas desabilita zoom nativo do browser
         }}
       >
         {loading && (

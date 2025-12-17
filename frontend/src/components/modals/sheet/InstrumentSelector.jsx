@@ -224,7 +224,7 @@ const InstrumentSelector = ({
                   )}
 
                   {/* Adicionar/Remover do carrinho (para envio em lote) */}
-                  {canShare && onAddToCart && (
+                  {onAddToCart && (
                     <button
                       onClick={() => {
                         if (isInCart && onRemoveFromCart) {
