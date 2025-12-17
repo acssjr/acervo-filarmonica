@@ -1,5 +1,5 @@
 // ===== LOGIN HEADER COMPONENT =====
-// Cabecalho do login com logo, titulo e badge de status
+// Cabeçalho do login com logo, título e badge de status
 
 const LoginHeader = () => {
   return (
@@ -21,7 +21,7 @@ const LoginHeader = () => {
       }}>
         <img
           src="/assets/images/ui/brasao-256x256.png"
-          alt="Brasao Filarmonica 25 de Marco"
+          alt="Brasão Filarmônica 25 de Março"
           style={{
             width: '100%',
             height: '100%',
@@ -45,7 +45,7 @@ const LoginHeader = () => {
         fontSize: '14px',
         color: 'rgba(244, 228, 188, 0.6)'
       }}>
-        S.F. 25 de Marco • Feira de Santana
+        S.F. 25 de Março • Feira de Santana
       </p>
 
       {/* Status badge */}

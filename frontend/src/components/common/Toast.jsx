@@ -1,5 +1,5 @@
 // ===== TOAST COMPONENT =====
-// Notificacoes flutuantes
+// Notificações flutuantes
 
 import { useEffect } from 'react';
 import { Icons } from '@constants/icons';
@@ -52,7 +52,7 @@ const Toast = ({ message, type = 'success', onClose }) => {
         </span>
         {isDownload && (
           <span style={{ fontSize: '12px', opacity: 0.85, marginTop: '2px', display: 'block' }}>
-            Verifique a barra de notificacoes
+            Verifique a barra de notificações
           </span>
         )}
       </div>

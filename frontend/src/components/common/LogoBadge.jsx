@@ -1,5 +1,5 @@
 // ===== LOGO BADGE =====
-// Brasao da Filarmonica em formato circular
+// Brasão da Filarmônica em formato circular
 
 import PropTypes from 'prop-types';
 
@@ -34,7 +34,7 @@ const LogoBadge = ({ size = 38, variant = 'dark', style = {} }) => {
     }}>
       <img
         src="/assets/images/ui/brasao-256x256.png"
-        alt="Brasao Filarmonica 25 de Marco"
+        alt="Brasão Filarmônica 25 de Março"
         style={{
           width: '100%',
           height: '100%',

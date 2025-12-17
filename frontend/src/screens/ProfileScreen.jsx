@@ -1,5 +1,5 @@
 // ===== PROFILE SCREEN =====
-// Tela de perfil do usuario com todas as funcionalidades
+// Tela de perfil do usuário com todas as funcionalidades
 
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@contexts/AuthContext';
@@ -80,13 +80,13 @@ const ProfileScreen = () => {
             margin: '0 auto 20px', color: 'var(--text-muted)'
           }}><div style={{ width: '32px', height: '32px' }}><Icons.User /></div></div>
           <h3 style={{ fontFamily: "Outfit, sans-serif", fontSize: '20px', fontWeight: '700', marginBottom: '8px', color: 'var(--text-primary)' }}>Bem-vindo!</h3>
-          <p style={{ color: 'var(--text-muted)', marginBottom: '24px', fontSize: '14px' }}>Faca login para acessar o acervo</p>
+          <p style={{ color: 'var(--text-muted)', marginBottom: '24px', fontSize: '14px' }}>Faça login para acessar o acervo</p>
         </div>
       </div>
     );
   }
 
-  // Componente de item de configuracao
+  // Componente de item de configuração
   const SettingItem = ({ icon, label, value, onClick, rightElement, danger }) => (
     <button
       onClick={onClick}
@@ -259,9 +259,9 @@ const ProfileScreen = () => {
         )}
       </div>
 
-      {/* Configuracoes */}
+      {/* Configurações */}
       <div style={{ padding: '0 20px 20px' }}>
-        {/* Secao: Conta */}
+        {/* Seção: Conta */}
         <p style={{
           fontFamily: 'Outfit, sans-serif',
           fontSize: '12px',
@@ -289,7 +289,7 @@ const ProfileScreen = () => {
           onClick={() => setShowChangePinModal(true)}
         />
 
-        {/* Secao: Contato */}
+        {/* Seção: Contato */}
         <p style={{
           fontFamily: 'Outfit, sans-serif',
           fontSize: '12px',
@@ -311,7 +311,7 @@ const ProfileScreen = () => {
           onClick={() => window.open('https://wa.me/5575981234176', '_blank')}
         />
 
-        {/* Secao: Sobre */}
+        {/* Seção: Sobre */}
         <p style={{
           fontFamily: 'Outfit, sans-serif',
           fontSize: '12px',
