@@ -39,6 +39,28 @@ export const UIProvider = ({ children }) => {
   const [selectedSheet, setSelectedSheet] = useState(null);
   const [showNotifications, setShowNotifications] = useState(false);
 
+  // Carrinho de compartilhamento
+  const [shareCart, setShareCart] = useState([]);
+  const [showShareCart, setShowShareCart] = useState(false);
+
+  const addToShareCart = useCallback((item) => {
+    // Evita duplicatas (mesmo parteId)
+    setShareCart(prev => {
+      if (prev.some(i => i.parteId === item.parteId)) {
+        return prev;
+      }
+      return [...prev, item];
+    });
+  }, []);
+
+  const removeFromShareCart = useCallback((parteId) => {
+    setShareCart(prev => prev.filter(i => i.parteId !== parteId));
+  }, []);
+
+  const clearShareCart = useCallback(() => {
+    setShareCart([]);
+  }, []);
+
   // Atualiza tema quando muda preferencia do sistema
   useEffect(() => {
     const updateTheme = () => setTheme(getEffectiveTheme());
@@ -72,7 +94,13 @@ export const UIProvider = ({ children }) => {
       selectedSheet,
       setSelectedSheet,
       showNotifications,
-      setShowNotifications
+      setShowNotifications,
+      shareCart,
+      showShareCart,
+      setShowShareCart,
+      addToShareCart,
+      removeFromShareCart,
+      clearShareCart
     }}>
       {children}
     </UIContext.Provider>

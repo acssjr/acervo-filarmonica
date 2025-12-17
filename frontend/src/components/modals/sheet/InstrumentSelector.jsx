@@ -15,7 +15,8 @@ const InstrumentSelector = ({
   onToggle,
   onSelectInstrument,
   onPrintInstrument,
-  onShareInstrument
+  onShareInstrument,
+  onAddToCart
 }) => {
   // Determina qual instrumento destacar
   const highlightedInstrument = isMaestro ? 'Grade' : userInstrument;
@@ -190,6 +191,23 @@ const InstrumentSelector = ({
                       <div style={{ width: '14px', height: '14px' }}><Icons.Share /></div>
                     </button>
                   )}
+
+                  {/* Adicionar ao carrinho (para envio em lote) */}
+                  {canShare && onAddToCart && (
+                    <button
+                      onClick={() => onAddToCart(instrument)}
+                      disabled={downloading}
+                      aria-label={`Adicionar ${instrument} ao carrinho`}
+                      title="Adicionar ao carrinho"
+                      style={{
+                        ...actionButtonStyle,
+                        background: 'rgba(155, 89, 182, 0.15)',
+                        color: '#9b59b6'
+                      }}
+                    >
+                      <div style={{ width: '14px', height: '14px' }}><Icons.Plus /></div>
+                    </button>
+                  )}
                 </div>
               </div>
             );
@@ -210,7 +228,8 @@ InstrumentSelector.propTypes = {
   onToggle: PropTypes.func.isRequired,
   onSelectInstrument: PropTypes.func.isRequired,
   onPrintInstrument: PropTypes.func,
-  onShareInstrument: PropTypes.func
+  onShareInstrument: PropTypes.func,
+  onAddToCart: PropTypes.func
 };
 
 export default InstrumentSelector;

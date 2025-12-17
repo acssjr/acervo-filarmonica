@@ -3,7 +3,7 @@
 // Suporta URL compartilhavel: /acervo/:categoria/:id
 // Refatorado: extraido componentes e hook de download
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@contexts/AuthContext';
 import { useUI } from '@contexts/UIContext';
@@ -11,7 +11,7 @@ import { useData } from '@contexts/DataContext';
 import { Icons } from '@constants/icons';
 import { API } from '@services/api';
 import CategoryIcon from '@components/common/CategoryIcon';
-import { useSheetDownload } from '@hooks/useSheetDownload';
+import { useSheetDownload, findParteExata } from '@hooks/useSheetDownload';
 import { PartePicker, DownloadConfirm, InstrumentSelector } from './sheet';
 import useAnimatedVisibility from '@hooks/useAnimatedVisibility';
 
@@ -19,7 +19,7 @@ const SheetDetailModal = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
-  const { selectedSheet, setSelectedSheet, showToast } = useUI();
+  const { selectedSheet, setSelectedSheet, showToast, addToShareCart } = useUI();
   const { favorites, toggleFavorite, categoriesMap, instrumentNames } = useData();
 
   // Estado local
@@ -37,6 +37,24 @@ const SheetDetailModal = () => {
     selectedSheet,
     partes
   });
+
+  // Handler para adicionar parte ao carrinho de compartilhamento
+  const handleAddToCart = useCallback((instrument) => {
+    if (!selectedSheet) return;
+
+    const parte = findParteExata(instrument, partes);
+    if (parte) {
+      addToShareCart({
+        sheetId: selectedSheet.id,
+        parteId: parte.id,
+        sheetTitle: selectedSheet.title,
+        instrument: parte.instrumento
+      });
+      showToast(`${parte.instrumento} adicionado ao carrinho`);
+    } else {
+      showToast('Parte não encontrada', 'error');
+    }
+  }, [selectedSheet, partes, addToShareCart, showToast]);
 
   // Detectar desktop
   useEffect(() => {
@@ -429,6 +447,7 @@ const SheetDetailModal = () => {
               onSelectInstrument={download.handleSelectParteEspecifica}
               onPrintInstrument={download.handlePrintInstrument}
               onShareInstrument={download.handleShareInstrument}
+              onAddToCart={handleAddToCart}
             />
           </div>
 
