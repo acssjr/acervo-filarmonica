@@ -57,7 +57,9 @@ jest.unstable_mockModule('@contexts/UIContext', () => ({
     sidebarCollapsed: false,
     setSidebarCollapsed: jest.fn(),
     // Carrinho de compartilhamento
-    addToShareCart: mockAddToShareCart
+    addToShareCart: mockAddToShareCart,
+    removeFromShareCart: jest.fn(),
+    shareCart: []
   }),
   UIProvider: ({ children }) => children
 }));
@@ -83,14 +85,18 @@ jest.unstable_mockModule('@hooks/useSheetDownload', () => ({
     selectedParte: null,
     showPartePicker: false,
     partesDisponiveis: [],
+    // Estado do visualizador PDF embutido
+    pdfViewer: { isOpen: false, url: null, title: '', instrument: '' },
     downloadParteDireta: jest.fn(),
     handleSelectInstrument: jest.fn(),
     handleSelectParteEspecifica: jest.fn(),
     handleConfirmDownload: jest.fn(),
     handleCancelDownload: jest.fn(),
     closePartePicker: jest.fn(),
-    // Funcoes de compartilhamento/impressao adicionadas na feature de share
+    closePdfViewer: jest.fn(),
+    // Funcoes de compartilhamento/impressao/visualizacao
     handlePrintInstrument: jest.fn(),
+    handleViewInstrument: jest.fn(),
     handleShareInstrument: jest.fn(),
     canShareFiles: jest.fn(() => false)
   }),
@@ -99,6 +105,11 @@ jest.unstable_mockModule('@hooks/useSheetDownload', () => ({
     if (!partes || partes.length === 0) return null;
     return partes.find(p => p.instrumento === instrumento) || partes[0];
   })
+}));
+
+// Mock do PDFViewerModal (evita erro DOMMatrix do pdfjs-dist no Jest)
+jest.unstable_mockModule('./PDFViewerModal', () => ({
+  default: () => null
 }));
 
 // Nota: fetch e mockado pelo MSW no jest.setup.js
