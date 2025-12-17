@@ -24,6 +24,47 @@ const PDFViewerModal = ({
   const [error, setError] = useState(null);
   const pdfContainerRef = useRef(null);
 
+  // Dimensoes da tela para responsividade
+  const [screenSize, setScreenSize] = useState({
+    width: window.innerWidth,
+    height: window.innerHeight,
+    isLandscape: window.innerWidth > window.innerHeight
+  });
+
+  // Detectar mudanca de orientacao/tamanho da tela
+  useEffect(() => {
+    const handleResize = () => {
+      setScreenSize({
+        width: window.innerWidth,
+        height: window.innerHeight,
+        isLandscape: window.innerWidth > window.innerHeight
+      });
+    };
+
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('orientationchange', handleResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('orientationchange', handleResize);
+    };
+  }, []);
+
+  // Calcular largura ideal do PDF baseada na orientacao
+  // Em landscape, usa mais da largura disponivel
+  const getOptimalWidth = useCallback(() => {
+    const padding = 40; // Padding lateral
+    const availableWidth = screenSize.width - padding;
+    const availableHeight = screenSize.height - 140; // Header + padding
+
+    if (screenSize.isLandscape) {
+      // Em landscape, prioriza altura para caber na tela
+      return Math.min(availableWidth * 0.9, availableHeight * 0.75);
+    }
+    // Em portrait, usa largura disponivel
+    return Math.min(availableWidth, 600);
+  }, [screenSize]);
+
   const onDocumentLoadSuccess = useCallback(({ numPages }) => {
     setNumPages(numPages);
     setPageNumber(1);
@@ -139,41 +180,44 @@ const PDFViewerModal = ({
       onKeyDown={handleKeyDown}
       tabIndex={0}
     >
-      {/* Header / Toolbar */}
+      {/* Header / Toolbar - compacto em landscape */}
       <div style={{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: '12px 20px',
+        padding: screenSize.isLandscape ? '8px 16px' : '12px 20px',
         background: 'rgba(30, 30, 40, 0.95)',
         borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-        gap: '16px',
-        flexWrap: 'wrap'
+        gap: screenSize.isLandscape ? '12px' : '16px',
+        flexWrap: 'wrap',
+        flexShrink: 0
       }}>
-        {/* Titulo */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          minWidth: 0,
-          flex: '1 1 auto'
-        }}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-            <polyline points="14 2 14 8 20 8"/>
-          </svg>
-          <span style={{
-            fontFamily: 'Outfit, sans-serif',
-            fontSize: '15px',
-            fontWeight: '600',
-            color: '#fff',
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis'
+        {/* Titulo - oculto em landscape mobile para economizar espaco */}
+        {!screenSize.isLandscape && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            minWidth: 0,
+            flex: '1 1 auto'
           }}>
-            {title}
-          </span>
-        </div>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+            </svg>
+            <span style={{
+              fontFamily: 'Outfit, sans-serif',
+              fontSize: '15px',
+              fontWeight: '600',
+              color: '#fff',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis'
+            }}>
+              {title}
+            </span>
+          </div>
+        )}
 
         {/* Controles centrais */}
         <div style={{
@@ -477,6 +521,7 @@ const PDFViewerModal = ({
         >
           <Page
             pageNumber={pageNumber}
+            width={getOptimalWidth()}
             scale={scale}
             renderTextLayer={true}
             renderAnnotationLayer={true}
