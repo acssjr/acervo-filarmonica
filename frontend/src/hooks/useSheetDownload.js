@@ -112,6 +112,14 @@ export const useSheetDownload = ({ showToast, selectedSheet, partes = [] }) => {
   const [showPartePicker, setShowPartePicker] = useState(false);
   const [partesDisponiveis, setPartesDisponiveis] = useState([]);
 
+  // Estado para o visualizador de PDF embutido (mobile)
+  const [pdfViewer, setPdfViewer] = useState({
+    isOpen: false,
+    url: null,
+    title: '',
+    instrument: ''
+  });
+
   /**
    * Download direto de uma parte especifica
    */
@@ -313,6 +321,74 @@ export const useSheetDownload = ({ showToast, selectedSheet, partes = [] }) => {
   }, [partes, printParte, showToast]);
 
   /**
+   * Visualiza uma parte especifica (abre no modal embutido)
+   */
+  const viewParte = useCallback(async (parte) => {
+    if (downloading || !selectedSheet) return;
+    setDownloading(true);
+
+    showToast(`Carregando "${selectedSheet.title}" - ${parte.instrumento}...`);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/download/parte/${parte.id}`, {
+        headers: { 'Authorization': `Bearer ${Storage.get('authToken')}` }
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(blob);
+
+        // Abre no modal embutido
+        setPdfViewer({
+          isOpen: true,
+          url: blobUrl,
+          title: selectedSheet.title,
+          instrument: parte.instrumento
+        });
+      } else {
+        const error = await response.json().catch(() => ({}));
+        showToast(error.error || 'Erro ao abrir arquivo', 'error');
+      }
+    } catch (e) {
+      console.error('Erro ao visualizar:', e);
+      showToast('Erro ao abrir arquivo', 'error');
+    }
+
+    setDownloading(false);
+  }, [downloading, selectedSheet, showToast]);
+
+  /**
+   * Fecha o visualizador de PDF embutido
+   */
+  const closePdfViewer = useCallback(() => {
+    // Revogar URL do blob para liberar memoria
+    if (pdfViewer.url) {
+      URL.revokeObjectURL(pdfViewer.url);
+    }
+    setPdfViewer({
+      isOpen: false,
+      url: null,
+      title: '',
+      instrument: ''
+    });
+  }, [pdfViewer.url]);
+
+  /**
+   * Inicia fluxo de visualização para um instrumento
+   */
+  const handleViewInstrument = useCallback((instrument) => {
+    const correspondentes = findPartesCorrespondentes(instrument, partes);
+
+    if (correspondentes.length === 0) {
+      showToast('Parte não encontrada', 'error');
+    } else if (correspondentes.length === 1) {
+      viewParte(correspondentes[0]);
+    } else {
+      viewParte(correspondentes[0]);
+    }
+  }, [partes, viewParte, showToast]);
+
+  /**
    * Verifica se o navegador suporta compartilhamento de arquivos
    */
   const canShareFiles = useCallback(() => {
@@ -393,6 +469,7 @@ export const useSheetDownload = ({ showToast, selectedSheet, partes = [] }) => {
     selectedParte,
     showPartePicker,
     partesDisponiveis,
+    pdfViewer,
 
     // Actions
     downloadParteDireta,
@@ -403,6 +480,9 @@ export const useSheetDownload = ({ showToast, selectedSheet, partes = [] }) => {
     closePartePicker,
     printParte,
     handlePrintInstrument,
+    viewParte,
+    handleViewInstrument,
+    closePdfViewer,
     shareParte,
     handleShareInstrument,
     canShareFiles,

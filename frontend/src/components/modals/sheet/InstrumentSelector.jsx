@@ -2,6 +2,7 @@
 // Componente de selecao de instrumento para download/impressao/compartilhamento
 // NOTA: Lista de instrumentos agora vem do DataContext (API com fallback)
 
+import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { Icons } from '@constants/icons';
 
@@ -12,12 +13,22 @@ const InstrumentSelector = ({
   isMaestro = false,
   downloading = false,
   canShare = false,
+  shareCart = [],
   onToggle,
   onSelectInstrument,
   onPrintInstrument,
+  onViewInstrument,
   onShareInstrument,
-  onAddToCart
+  onAddToCart,
+  onRemoveFromCart
 }) => {
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   // Determina qual instrumento destacar
   const highlightedInstrument = isMaestro ? 'Grade' : userInstrument;
 
@@ -85,11 +96,13 @@ const InstrumentSelector = ({
             borderTop: 'none',
             borderRadius: '0 0 10px 10px',
             maxHeight: '200px',
-            overflowY: 'auto'
+            overflowY: 'auto',
+            animation: 'expandDown 0.2s ease-out'
           }}
         >
           {instruments.map((instrument, idx) => {
             const isHighlighted = instrument === highlightedInstrument;
+            const isInCart = shareCart.some(item => item.instrument === instrument);
 
             return (
               <div
@@ -107,14 +120,23 @@ const InstrumentSelector = ({
                   gap: '8px'
                 }}
               >
-                {/* Nome do instrumento */}
-                <div style={{
-                  flex: 1,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  minWidth: 0
-                }}>
+                {/* Nome do instrumento - clicável para download */}
+                <button
+                  onClick={() => onSelectInstrument(instrument)}
+                  disabled={downloading}
+                  style={{
+                    flex: 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    minWidth: 0,
+                    background: 'transparent',
+                    border: 'none',
+                    padding: '4px 0',
+                    cursor: downloading ? 'wait' : 'pointer',
+                    textAlign: 'left'
+                  }}
+                >
                   <span style={{
                     color: isHighlighted ? 'var(--accent)' : 'var(--text-primary)',
                     fontFamily: 'Outfit, sans-serif',
@@ -139,73 +161,93 @@ const InstrumentSelector = ({
                       {isMaestro ? '\u2605' : 'MEU'}
                     </span>
                   )}
-                </div>
+                </button>
 
-                {/* Botoes de acao */}
-                <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
-                  {/* Baixar */}
-                  <button
-                    onClick={() => onSelectInstrument(instrument)}
-                    disabled={downloading}
-                    aria-label={`Baixar ${instrument}`}
-                    title="Baixar"
-                    style={{
-                      ...actionButtonStyle,
-                      background: 'rgba(114, 47, 55, 0.15)',
-                      color: '#722F37'
-                    }}
-                  >
-                    <div style={{ width: '14px', height: '14px' }}><Icons.Download /></div>
-                  </button>
-
-                  {/* Imprimir */}
-                  {onPrintInstrument && (
-                    <button
-                      onClick={() => onPrintInstrument(instrument)}
-                      disabled={downloading}
-                      aria-label={`Imprimir ${instrument}`}
-                      title="Imprimir"
-                      style={{
-                        ...actionButtonStyle,
-                        background: 'rgba(52, 152, 219, 0.15)',
-                        color: '#3498db'
-                      }}
-                    >
-                      <div style={{ width: '14px', height: '14px' }}><Icons.Printer /></div>
-                    </button>
+                {/* Botoes de acao - compactos */}
+                <div style={{ display: 'flex', gap: '3px', flexShrink: 0 }}>
+                  {/* Visualizar (mobile) ou Imprimir (desktop) */}
+                  {isMobile ? (
+                    onViewInstrument && (
+                      <button
+                        onClick={() => onViewInstrument(instrument)}
+                        disabled={downloading}
+                        aria-label={`Visualizar ${instrument}`}
+                        title="Visualizar"
+                        className="action-btn"
+                        style={{
+                          ...actionButtonStyle,
+                          background: 'rgba(52, 152, 219, 0.12)',
+                          color: '#3498db',
+                          transition: 'all 0.15s ease'
+                        }}
+                      >
+                        <div style={{ width: '13px', height: '13px' }}><Icons.Eye /></div>
+                      </button>
+                    )
+                  ) : (
+                    onPrintInstrument && (
+                      <button
+                        onClick={() => onPrintInstrument(instrument)}
+                        disabled={downloading}
+                        aria-label={`Imprimir ${instrument}`}
+                        title="Imprimir"
+                        className="action-btn"
+                        style={{
+                          ...actionButtonStyle,
+                          background: 'rgba(52, 152, 219, 0.12)',
+                          color: '#3498db',
+                          transition: 'all 0.15s ease'
+                        }}
+                      >
+                        <div style={{ width: '13px', height: '13px' }}><Icons.Printer /></div>
+                      </button>
+                    )
                   )}
 
-                  {/* Compartilhar */}
+                  {/* Compartilhar individual */}
                   {canShare && onShareInstrument && (
                     <button
                       onClick={() => onShareInstrument(instrument)}
                       disabled={downloading}
                       aria-label={`Enviar ${instrument}`}
                       title="Enviar"
+                      className="action-btn"
                       style={{
                         ...actionButtonStyle,
-                        background: 'rgba(37, 211, 102, 0.15)',
-                        color: '#25D366'
+                        background: 'rgba(37, 211, 102, 0.12)',
+                        color: '#25D366',
+                        transition: 'all 0.15s ease'
                       }}
                     >
-                      <div style={{ width: '14px', height: '14px' }}><Icons.Share /></div>
+                      <div style={{ width: '13px', height: '13px' }}><Icons.Share /></div>
                     </button>
                   )}
 
-                  {/* Adicionar ao carrinho (para envio em lote) */}
+                  {/* Adicionar/Remover do carrinho (para envio em lote) */}
                   {canShare && onAddToCart && (
                     <button
-                      onClick={() => onAddToCart(instrument)}
+                      onClick={() => {
+                        if (isInCart && onRemoveFromCart) {
+                          const cartItem = shareCart.find(item => item.instrument === instrument);
+                          if (cartItem) onRemoveFromCart(cartItem.parteId);
+                        } else {
+                          onAddToCart(instrument);
+                        }
+                      }}
                       disabled={downloading}
-                      aria-label={`Adicionar ${instrument} ao carrinho`}
-                      title="Adicionar ao carrinho"
+                      aria-label={isInCart ? `Remover ${instrument} do carrinho` : `Adicionar ${instrument} ao carrinho`}
+                      title={isInCart ? 'Remover do carrinho' : 'Adicionar ao carrinho'}
+                      className="action-btn"
                       style={{
                         ...actionButtonStyle,
-                        background: 'rgba(155, 89, 182, 0.15)',
-                        color: '#9b59b6'
+                        background: isInCart ? 'rgba(39, 174, 96, 0.2)' : 'rgba(155, 89, 182, 0.12)',
+                        color: isInCart ? '#27ae60' : '#9b59b6',
+                        transition: 'all 0.15s ease'
                       }}
                     >
-                      <div style={{ width: '14px', height: '14px' }}><Icons.Plus /></div>
+                      <div style={{ width: '13px', height: '13px' }}>
+                        {isInCart ? <Icons.Check /> : <Icons.Plus />}
+                      </div>
                     </button>
                   )}
                 </div>
@@ -225,11 +267,17 @@ InstrumentSelector.propTypes = {
   isMaestro: PropTypes.bool,
   downloading: PropTypes.bool,
   canShare: PropTypes.bool,
+  shareCart: PropTypes.arrayOf(PropTypes.shape({
+    instrument: PropTypes.string.isRequired,
+    parteId: PropTypes.number
+  })),
   onToggle: PropTypes.func.isRequired,
   onSelectInstrument: PropTypes.func.isRequired,
   onPrintInstrument: PropTypes.func,
+  onViewInstrument: PropTypes.func,
   onShareInstrument: PropTypes.func,
-  onAddToCart: PropTypes.func
+  onAddToCart: PropTypes.func,
+  onRemoveFromCart: PropTypes.func
 };
 
 export default InstrumentSelector;

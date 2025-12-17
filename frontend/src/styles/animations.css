@@ -55,6 +55,22 @@
   to { transform: translateY(100px); opacity: 0; }
 }
 
+/* Expand down - para listas que abrem */
+@keyframes expandDown {
+  from { opacity: 0; max-height: 0; transform: translateY(-8px); }
+  to { opacity: 1; max-height: 200px; transform: translateY(0); }
+}
+
+/* ===== HOVER EFFECTS FOR ACTION BUTTONS ===== */
+.action-btn:hover:not(:disabled) {
+  transform: scale(1.1);
+  filter: brightness(1.15);
+}
+
+.action-btn:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
 @keyframes slideUpNav {
   from { transform: translateX(-50%) translateY(100px); opacity: 0; }
   to { transform: translateX(-50%) translateY(0); opacity: 1; }

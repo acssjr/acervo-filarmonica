@@ -1,8 +1,9 @@
 // ===== SHARE CART MODAL =====
 // Modal para revisar e compartilhar multiplas partes de partituras
 // Agrupa partes por partitura e permite remover individualmente
+// Usa pre-carregamento para habilitar Web Share API
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useUI } from '@contexts/UIContext';
 import { Icons } from '@constants/icons';
 import { API_BASE_URL } from '@constants/api';
@@ -22,6 +23,15 @@ const ShareCartModal = () => {
   const [isDesktop] = useState(window.innerWidth >= 1024);
   const [sharing, setSharing] = useState(false);
 
+  // Estados para pre-carregamento
+  const [preparedFiles, setPreparedFiles] = useState([]);
+  const [preparingProgress, setPreparingProgress] = useState({ current: 0, total: 0 });
+  const [isPreparing, setIsPreparing] = useState(false);
+  const [prepareError, setPrepareError] = useState(null);
+
+  // Ref para controlar cancelamento
+  const abortControllerRef = useRef(null);
+
   // Animacao de entrada/saida
   const { shouldRender, isExiting } = useAnimatedVisibility(showShareCart, 250);
 
@@ -36,6 +46,84 @@ const ShareCartModal = () => {
     acc[item.sheetId].partes.push(item);
     return acc;
   }, {});
+
+  // Pre-carrega arquivos quando o modal abre ou carrinho muda
+  useEffect(() => {
+    if (!showShareCart || shareCart.length === 0) {
+      setPreparedFiles([]);
+      setPreparingProgress({ current: 0, total: 0 });
+      setPrepareError(null);
+      return;
+    }
+
+    // Cancela carregamento anterior
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
+    const prepareFiles = async () => {
+      setIsPreparing(true);
+      setPrepareError(null);
+      setPreparingProgress({ current: 0, total: shareCart.length });
+
+      const files = [];
+      const errors = [];
+
+      for (let i = 0; i < shareCart.length; i++) {
+        if (controller.signal.aborted) return;
+
+        const item = shareCart[i];
+        setPreparingProgress({ current: i + 1, total: shareCart.length });
+
+        try {
+          const response = await fetch(`${API_BASE_URL}/api/download/parte/${item.parteId}`, {
+            headers: { 'Authorization': `Bearer ${Storage.get('authToken')}` },
+            signal: controller.signal
+          });
+
+          if (response.ok) {
+            const blob = await response.blob();
+            const filename = `${item.sheetTitle} - ${item.instrument}.pdf`;
+            files.push(new File([blob], filename, { type: 'application/pdf' }));
+          } else {
+            errors.push(`${item.instrument}: erro ${response.status}`);
+          }
+        } catch (err) {
+          if (err.name === 'AbortError') return;
+          console.error(`Erro ao baixar ${item.instrument}:`, err);
+          errors.push(`${item.instrument}: falha`);
+        }
+      }
+
+      if (!controller.signal.aborted) {
+        setPreparedFiles(files);
+        setIsPreparing(false);
+        if (errors.length > 0 && files.length === 0) {
+          setPrepareError('Erro ao preparar arquivos');
+        }
+      }
+    };
+
+    prepareFiles();
+
+    return () => {
+      controller.abort();
+    };
+  }, [showShareCart, shareCart]);
+
+  // Verifica se Web Share API com arquivos esta disponivel
+  const canShareFiles = useCallback(() => {
+    try {
+      const testFile = new File(['test'], 'test.txt', { type: 'text/plain' });
+      return typeof navigator.canShare === 'function' &&
+        navigator.canShare({ files: [testFile] });
+    } catch {
+      return false;
+    }
+  }, []);
 
   // Funcao auxiliar para baixar arquivos via download
   const downloadFiles = useCallback((files) => {
@@ -63,63 +151,47 @@ const ShareCartModal = () => {
     });
   }, [showToast, clearShareCart, setShowShareCart]);
 
-  // Compartilha multiplos arquivos
-  const handleShareAll = useCallback(async () => {
-    if (sharing || shareCart.length === 0) return;
+  // Compartilha arquivos pre-carregados (chamado direto no clique)
+  const handleShareAll = useCallback(() => {
+    if (sharing || preparedFiles.length === 0) return;
     setSharing(true);
 
-    showToast(`Preparando ${shareCart.length} partitura(s)...`);
-
-    try {
-      const files = [];
-      const errors = [];
-
-      // Baixa cada parte
-      for (const item of shareCart) {
-        try {
-          const response = await fetch(`${API_BASE_URL}/api/download/parte/${item.parteId}`, {
-            headers: { 'Authorization': `Bearer ${Storage.get('authToken')}` }
-          });
-
-          if (response.ok) {
-            const blob = await response.blob();
-            const filename = `${item.sheetTitle} - ${item.instrument}.pdf`;
-            files.push(new File([blob], filename, { type: 'application/pdf' }));
-          } else {
-            errors.push(`${item.instrument}: erro ${response.status}`);
+    // Web Share API - chamado DIRETO no user gesture (sem await antes)
+    if (canShareFiles() && navigator.canShare({ files: preparedFiles })) {
+      navigator.share({
+        files: preparedFiles,
+        title: `${preparedFiles.length} partituras`,
+        text: `Partituras: ${shareCart.map(p => p.sheetTitle).join(', ')}`
+      })
+        .then(() => {
+          showToast('Compartilhado com sucesso!');
+          clearShareCart();
+          setShowShareCart(false);
+        })
+        .catch((err) => {
+          if (err.name !== 'AbortError') {
+            console.error('Erro no share:', err);
+            // Fallback para download
+            downloadFiles(preparedFiles);
           }
-        } catch (fetchErr) {
-          console.error(`Erro ao baixar ${item.instrument}:`, fetchErr);
-          errors.push(`${item.instrument}: falha na conexão`);
-        }
-      }
-
-      if (files.length === 0) {
-        showToast('Erro ao preparar arquivos. Verifique sua conexão.', 'error');
-        setSharing(false);
-        return;
-      }
-
-      // Mostra aviso se alguns arquivos falharam
-      if (errors.length > 0) {
-        console.warn('Alguns arquivos falharam:', errors);
-      }
-
-      // NOTA: Web Share API (navigator.share) NAO pode ser usado aqui porque
-      // requer ser chamado DIRETAMENTE em um user gesture (clique).
-      // Apos qualquer await (como os fetch() acima), o browser considera que
-      // nao esta mais em um "user gesture" e bloqueia a chamada com NotAllowedError.
-      // Por isso, usamos download direto como unica opcao viavel.
-      downloadFiles(files);
-    } catch (e) {
-      console.error('Erro no compartilhamento:', e);
-      showToast('Erro ao compartilhar. Tente novamente.', 'error');
+        })
+        .finally(() => {
+          setSharing(false);
+        });
+    } else {
+      // Fallback: download
+      downloadFiles(preparedFiles);
+      setSharing(false);
     }
-
-    setSharing(false);
-  }, [sharing, shareCart, showToast, downloadFiles]);
+  }, [sharing, preparedFiles, shareCart, canShareFiles, clearShareCart, setShowShareCart, showToast, downloadFiles]);
 
   const handleClose = () => setShowShareCart(false);
+
+  // Calcula estado do botao
+  const isReady = preparedFiles.length > 0 && !isPreparing;
+  const progressPercent = preparingProgress.total > 0
+    ? Math.round((preparingProgress.current / preparingProgress.total) * 100)
+    : 0;
 
   if (!shouldRender) return null;
 
@@ -256,6 +328,22 @@ const ShareCartModal = () => {
           </button>
         </div>
 
+        {/* Barra de progresso */}
+        {isPreparing && (
+          <div style={{
+            height: '3px',
+            background: 'var(--bg-secondary)',
+            overflow: 'hidden'
+          }}>
+            <div style={{
+              height: '100%',
+              width: `${progressPercent}%`,
+              background: 'linear-gradient(90deg, #25D366 0%, #128C7E 100%)',
+              transition: 'width 0.3s ease'
+            }} />
+          </div>
+        )}
+
         {/* Lista de partes */}
         <div style={{
           flex: 1,
@@ -346,6 +434,18 @@ const ShareCartModal = () => {
               </p>
             </div>
           )}
+
+          {prepareError && (
+            <p style={{
+              fontFamily: 'Outfit, sans-serif',
+              fontSize: '12px',
+              color: '#e74c3c',
+              textAlign: 'center',
+              marginTop: '8px'
+            }}>
+              {prepareError}
+            </p>
+          )}
         </div>
 
         {/* Footer com botoes */}
@@ -378,41 +478,41 @@ const ShareCartModal = () => {
 
           <button
             onClick={handleShareAll}
-            disabled={shareCart.length === 0 || sharing}
+            disabled={!isReady || sharing}
             style={{
               flex: 2,
               padding: '12px',
               borderRadius: '10px',
-              background: shareCart.length === 0 ? 'var(--bg-secondary)' : 'linear-gradient(145deg, #25D366 0%, #128C7E 100%)',
+              background: !isReady ? 'var(--bg-secondary)' : 'linear-gradient(145deg, #25D366 0%, #128C7E 100%)',
               border: 'none',
-              color: shareCart.length === 0 ? 'var(--text-muted)' : '#FFFFFF',
+              color: !isReady ? 'var(--text-muted)' : '#FFFFFF',
               fontFamily: 'Outfit, sans-serif',
               fontSize: '13px',
               fontWeight: '600',
-              cursor: shareCart.length === 0 || sharing ? 'not-allowed' : 'pointer',
+              cursor: !isReady || sharing ? 'not-allowed' : 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               gap: '8px',
-              boxShadow: shareCart.length === 0 ? 'none' : '0 4px 12px rgba(37, 211, 102, 0.3)',
-              opacity: shareCart.length === 0 ? 0.5 : 1
+              boxShadow: !isReady ? 'none' : '0 4px 12px rgba(37, 211, 102, 0.3)',
+              opacity: !isReady ? 0.5 : 1
             }}
           >
             <div style={{ width: '16px', height: '16px' }}>
-              {sharing ? (
+              {isPreparing || sharing ? (
                 <div style={{
                   width: '16px',
                   height: '16px',
                   border: '2px solid rgba(255,255,255,0.3)',
-                  borderTopColor: '#fff',
+                  borderTopColor: !isReady ? 'var(--text-muted)' : '#fff',
                   borderRadius: '50%',
                   animation: 'spin 0.8s linear infinite'
                 }} />
               ) : (
-                <Icons.Download />
+                <Icons.Share />
               )}
             </div>
-            {sharing ? 'Baixando...' : 'Baixar Todos'}
+            {isPreparing ? `Preparando... ${progressPercent}%` : (sharing ? 'Enviando...' : 'Compartilhar')}
           </button>
         </div>
       </div>

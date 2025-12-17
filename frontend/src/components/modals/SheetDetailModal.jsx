@@ -13,13 +13,14 @@ import { API } from '@services/api';
 import CategoryIcon from '@components/common/CategoryIcon';
 import { useSheetDownload, findParteExata } from '@hooks/useSheetDownload';
 import { PartePicker, DownloadConfirm, InstrumentSelector } from './sheet';
+import PDFViewerModal from './PDFViewerModal';
 import useAnimatedVisibility from '@hooks/useAnimatedVisibility';
 
 const SheetDetailModal = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
-  const { selectedSheet, setSelectedSheet, showToast, addToShareCart } = useUI();
+  const { selectedSheet, setSelectedSheet, showToast, addToShareCart, removeFromShareCart, shareCart } = useUI();
   const { favorites, toggleFavorite, categoriesMap, instrumentNames } = useData();
 
   // Estado local
@@ -177,6 +178,20 @@ const SheetDetailModal = () => {
         downloading={download.downloading}
         onConfirm={download.handleConfirmDownload}
         onCancel={download.handleCancelDownload}
+      />
+
+      {/* Visualizador de PDF embutido */}
+      <PDFViewerModal
+        isOpen={download.pdfViewer.isOpen}
+        pdfUrl={download.pdfViewer.url}
+        title={`${download.pdfViewer.title} - ${download.pdfViewer.instrument}`}
+        onClose={download.closePdfViewer}
+        onDownload={() => {
+          // Abre em nova aba como fallback
+          if (download.pdfViewer.url) {
+            window.open(download.pdfViewer.url, '_blank');
+          }
+        }}
       />
 
       {/* Modal Principal */}
@@ -444,11 +459,14 @@ const SheetDetailModal = () => {
               isMaestro={isMaestro}
               downloading={download.downloading}
               canShare={download.canShareFiles()}
+              shareCart={shareCart.filter(item => item.sheetId === selectedSheet.id)}
               onToggle={() => setShowInstrumentPicker(!showInstrumentPicker)}
               onSelectInstrument={download.handleSelectParteEspecifica}
               onPrintInstrument={download.handlePrintInstrument}
+              onViewInstrument={download.handleViewInstrument}
               onShareInstrument={download.handleShareInstrument}
               onAddToCart={handleAddToCart}
+              onRemoveFromCart={removeFromShareCart}
             />
           </div>
 
