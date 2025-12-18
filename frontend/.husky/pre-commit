@@ -1,1 +1,5 @@
-cd frontend && npx lint-staged
+# Lint do Worker (raiz) - executa do diretorio raiz com npm run
+cd "$(git rev-parse --show-toplevel)" && npm run lint:worker
+
+# Lint do Frontend (staged files)
+cd "$(git rev-parse --show-toplevel)/frontend" && npx lint-staged
