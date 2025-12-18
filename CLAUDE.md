@@ -1,10 +1,19 @@
-# Contexto do Projeto - Acervo Filarmonica
+# Contexto do Projeto - Acervo Filarmônica
 
-Sistema de gestao de partituras musicais para a Sociedade Filarmonica 25 de Marco.
+Sistema de gestão de partituras musicais para a Sociedade Filarmônica 25 de Março.
 
 ---
 
-## Principios de Trabalho do Claude
+## Idioma
+
+- **Comunicar em Português (PT-BR) com acentuação correta**
+- Usar acentos: á, é, í, ó, ú, â, ê, ô, ã, õ, ç
+- Documentação técnica e código podem permanecer em inglês
+- Mensagens de commit em português ou inglês (consistente)
+
+---
+
+## Princípios de Trabalho do Claude
 
 ### Objetividade Profissional
 
