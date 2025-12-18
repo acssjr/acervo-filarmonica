@@ -1,17 +1,17 @@
 // ===== FILE CARD =====
 // Card de partitura com navegacao por URL
 
-import { useState, memo } from 'react';
+import { memo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { useUI } from '@contexts/UIContext';
 import { Icons } from '@constants/icons';
 import CategoryIcon from '@components/common/CategoryIcon';
 import styles from './FileCard.module.css';
 
-const FileCard = memo(({ sheet, category, isFavorite, onToggleFavorite }) => {
+const FileCard = memo(({ sheet, category, isFavorite, onToggleFavorite, index = 0 }) => {
   const navigate = useNavigate();
   const { setSelectedSheet } = useUI();
-  const [isPressed, setIsPressed] = useState(false);
 
   const handleDownloadClick = (e) => {
     e.stopPropagation();
@@ -24,26 +24,22 @@ const FileCard = memo(({ sheet, category, isFavorite, onToggleFavorite }) => {
     navigate(`/acervo/${sheet.category}/${sheet.id}`, { replace: true });
   };
 
-  const handleMouseDown = (e) => {
-    if (e.target.closest('button')) return;
-    setIsPressed(true);
-  };
-
-  const handleMouseUp = () => setIsPressed(false);
-
   return (
-    <div
-      className={`file-card ${styles.card} ${isPressed ? styles.pressed : ''}`}
+    <motion.div
+      className={`file-card ${styles.card}`}
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.03, duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
+      whileTap={{ scale: 0.98 }}
       onClick={handleCardClick}
-      onMouseDown={handleMouseDown}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseUp}
-      onTouchStart={handleMouseDown}
-      onTouchEnd={handleMouseUp}
     >
-      <div className={styles.thumbnail}>
+      <motion.div
+        className={styles.thumbnail}
+        layoutId={`sheet-icon-${sheet.id}`}
+        transition={{ type: 'spring', stiffness: 350, damping: 30 }}
+      >
         <CategoryIcon categoryId={category?.id} size={24} color="#D4AF37" />
-      </div>
+      </motion.div>
 
       <div className={styles.info}>
         <h4 className={styles.title}>{sheet.title}</h4>
@@ -67,13 +63,14 @@ const FileCard = memo(({ sheet, category, isFavorite, onToggleFavorite }) => {
       >
         <div className={styles.iconLarge}><Icons.Download /></div>
       </button>
-    </div>
+    </motion.div>
   );
 }, (prevProps, nextProps) => {
   return (
     prevProps.sheet.id === nextProps.sheet.id &&
     prevProps.isFavorite === nextProps.isFavorite &&
-    prevProps.category?.id === nextProps.category?.id
+    prevProps.category?.id === nextProps.category?.id &&
+    prevProps.index === nextProps.index
   );
 });
 

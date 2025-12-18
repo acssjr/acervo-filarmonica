@@ -109,13 +109,14 @@ const HomeScreen = () => {
       </div>
 
       <div className="sheets-grid" style={{ padding: '0 20px' }}>
-        {recentSheets.map(sheet => (
+        {recentSheets.map((sheet, index) => (
           <FileCard
             key={sheet.id}
             sheet={sheet}
             category={categoriesMap.get(sheet.category)}
             isFavorite={favorites.includes(sheet.id)}
             onToggleFavorite={() => toggleFavorite(sheet.id)}
+            index={index}
           />
         ))}
       </div>

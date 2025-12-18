@@ -5,6 +5,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@contexts/AuthContext';
 import { useUI } from '@contexts/UIContext';
 import { useData } from '@contexts/DataContext';
@@ -14,7 +15,6 @@ import CategoryIcon from '@components/common/CategoryIcon';
 import { useSheetDownload, findParteExata } from '@hooks/useSheetDownload';
 import { PartePicker, DownloadConfirm, InstrumentSelector } from './sheet';
 import PDFViewerModal from './PDFViewerModal';
-import useAnimatedVisibility from '@hooks/useAnimatedVisibility';
 
 const SheetDetailModal = () => {
   const navigate = useNavigate();
@@ -28,9 +28,6 @@ const SheetDetailModal = () => {
   const [showInstrumentPicker, setShowInstrumentPicker] = useState(false);
   const [partes, setPartes] = useState([]);
   const [loadingPartes, setLoadingPartes] = useState(false);
-
-  // Animação de entrada/saída
-  const { shouldRender, isExiting } = useAnimatedVisibility(!!selectedSheet, 250);
 
   // Hook de download
   const download = useSheetDownload({
@@ -115,24 +112,6 @@ const SheetDetailModal = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps -- download é estável (useSheetDownload)
   }, [selectedSheet]);
 
-  // Só renderiza se shouldRender for true (permite animação de saída)
-  if (!shouldRender || !selectedSheet) return null;
-
-  const category = categoriesMap.get(selectedSheet.category);
-  const isFavorite = favorites.includes(selectedSheet.id);
-  const userInstrument = user?.instrument || 'Trompete Bb';
-  const userInstrumentLower = userInstrument?.toLowerCase() || '';
-  const isMaestro = userInstrumentLower === 'maestro' || userInstrumentLower === 'regente';
-
-  // Verifica se existe grade disponível para esta partitura
-  const hasGrade = partes.some(p => p.instrumento?.toLowerCase() === 'grade');
-
-  // Lista de instrumentos disponiveis (partes da partitura ou lista do contexto)
-  // Usa Set para remover duplicatas (pode haver entradas duplicadas no banco)
-  const availableInstruments = partes.length > 0
-    ? [...new Set(partes.map(p => p.instrumento))]
-    : instrumentNames;
-
   const handleClose = () => {
     setSelectedSheet(null);
     // Se estamos numa URL de partitura, volta para o acervo da categoria
@@ -142,24 +121,39 @@ const SheetDetailModal = () => {
     }
   };
 
+  // Dados derivados do selectedSheet (só acessados quando existe)
+  const category = selectedSheet ? categoriesMap.get(selectedSheet.category) : null;
+  const isFavorite = selectedSheet ? favorites.includes(selectedSheet.id) : false;
+  const userInstrument = user?.instrument || 'Trompete Bb';
+  const userInstrumentLower = userInstrument?.toLowerCase() || '';
+  const isMaestro = userInstrumentLower === 'maestro' || userInstrumentLower === 'regente';
+  const hasGrade = partes.some(p => p.instrumento?.toLowerCase() === 'grade');
+  const availableInstruments = partes.length > 0
+    ? [...new Set(partes.map(p => p.instrumento))]
+    : instrumentNames;
+
   return (
-    <>
-      {/* Overlay */}
-      <div
-        onClick={handleClose}
-        role="presentation"
-        style={{
-          position: 'fixed',
-          inset: 0,
-          background: 'rgba(0,0,0,0.6)',
-          backdropFilter: 'blur(4px)',
-          WebkitBackdropFilter: 'blur(4px)',
-          zIndex: 2000,
-          animation: isExiting
-            ? 'modalBackdropOut 0.25s ease forwards'
-            : 'modalBackdropIn 0.2s ease'
-        }}
-      />
+    <AnimatePresence>
+      {selectedSheet && (
+        <>
+          {/* Overlay */}
+          <motion.div
+            key="sheet-modal-overlay"
+            onClick={handleClose}
+            role="presentation"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            style={{
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(0,0,0,0.6)',
+              backdropFilter: 'blur(4px)',
+              WebkitBackdropFilter: 'blur(4px)',
+              zIndex: 2000
+            }}
+          />
 
       {/* Modal de Selecao de Partes */}
       <PartePicker
@@ -195,30 +189,30 @@ const SheetDetailModal = () => {
       />
 
       {/* Modal Principal */}
-      <div
+      <motion.div
+        key="sheet-modal-content"
         role="dialog"
         aria-modal="true"
         aria-labelledby="sheet-detail-title"
+        initial={isDesktop ? { opacity: 0, scale: 0.95 } : { opacity: 1, y: '100%' }}
+        animate={isDesktop ? { opacity: 1, scale: 1 } : { opacity: 1, y: 0 }}
+        exit={isDesktop ? { opacity: 0, scale: 0.95 } : { opacity: 1, y: '100%' }}
+        transition={{ type: 'spring', stiffness: 350, damping: 30 }}
         style={{
           position: 'fixed',
           ...(isDesktop ? {
             top: '50%',
             left: '50%',
-            transform: 'translate(-50%, -50%)',
+            x: '-50%',
+            y: '-50%',
             width: '420px',
             maxWidth: '90vw',
-            borderRadius: '20px',
-            animation: isExiting
-              ? 'modalScaleOut 0.25s ease forwards'
-              : 'popIn 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
+            borderRadius: '20px'
           } : {
             bottom: 0,
             left: 0,
             right: 0,
-            borderRadius: '24px 24px 0 0',
-            animation: isExiting
-              ? 'slideDownModal 0.25s ease forwards'
-              : 'slideUpModal 0.35s cubic-bezier(0.16, 1, 0.3, 1)'
+            borderRadius: '24px 24px 0 0'
           }),
           background: 'var(--bg-card)',
           zIndex: 2001,
@@ -260,19 +254,23 @@ const SheetDetailModal = () => {
           }} />
 
           <div style={{ display: 'flex', gap: '14px', alignItems: 'flex-start', position: 'relative', zIndex: 1 }}>
-            <div style={{
-              width: '56px',
-              height: '56px',
-              borderRadius: '14px',
-              background: 'linear-gradient(145deg, #3a3a4a 0%, #2a2a38 100%)',
-              border: '1px solid rgba(212, 175, 55, 0.2)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0
-            }}>
+            <motion.div
+              layoutId={`sheet-icon-${selectedSheet.id}`}
+              transition={{ type: 'spring', stiffness: 350, damping: 30 }}
+              style={{
+                width: '56px',
+                height: '56px',
+                borderRadius: '14px',
+                background: 'linear-gradient(145deg, #3a3a4a 0%, #2a2a38 100%)',
+                border: '1px solid rgba(212, 175, 55, 0.2)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0
+              }}
+            >
               <CategoryIcon categoryId={category?.id} size={26} color="var(--accent)" />
-            </div>
+            </motion.div>
 
             <div style={{ flex: 1, minWidth: 0 }}>
               <h2
@@ -553,8 +551,10 @@ const SheetDetailModal = () => {
             </button>
           </div>
         </div>
-      </div>
-    </>
+      </motion.div>
+        </>
+      )}
+    </AnimatePresence>
   );
 };
 
