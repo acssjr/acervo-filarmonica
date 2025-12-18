@@ -2,7 +2,6 @@
 // Card de destaque com borda dourada animada
 
 import { memo, useRef } from 'react';
-import { motion } from 'framer-motion';
 import { useUI } from '@contexts/UIContext';
 import { Icons } from '@constants/icons';
 import styles from './FeaturedCard.module.css';
@@ -47,13 +46,9 @@ const FeaturedCard = memo(({ sheet, category, bgImage, isFav, onToggleFavorite, 
       <div className={styles.badge}>Em estudo</div>
 
       <div className={styles.content}>
-        <motion.div
-          className={styles.iconContainer}
-          layoutId={`sheet-icon-${sheet.id}`}
-          transition={{ type: 'spring', stiffness: 350, damping: 30 }}
-        >
+        <div className={styles.iconContainer}>
           <div className={styles.icon}><Icons.Music /></div>
-        </motion.div>
+        </div>
 
         <h4 className={styles.title}>{sheet.title}</h4>
         <p className={styles.composer}>{sheet.composer}</p>
