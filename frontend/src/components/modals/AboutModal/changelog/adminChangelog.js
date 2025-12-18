@@ -1,12 +1,23 @@
 // Changelog para o painel administrativo (AdminConfig)
 export const ADMIN_CHANGELOG = [
   {
-    version: '2.8.0',
+    version: '2.9.0',
     isCurrent: true,
     items: [
-      { bold: 'Repertório:', text: 'Modal para selecionar/criar repertório ao adicionar partitura' },
-      { bold: 'UI:', text: 'Animações de hover nos botões (escala + sombra)' },
-      { bold: 'UX:', text: 'Botão de repertório com resposta instantânea (UI otimista)' },
+      { bold: 'Git Workflow:', text: 'Commitlint + pre-commit hooks para qualidade' },
+      { bold: 'PR Template:', text: 'Template padronizado para pull requests' },
+      { bold: 'Testes:', text: 'Suite completa com Vitest + Playwright E2E' },
+      { bold: 'PDF:', text: 'Visualizador com pinch-to-zoom suave' },
+      { bold: 'Instrumentos:', text: 'Matching inteligente de tonalidades e vozes' },
+      { bold: 'Carrinho:', text: 'Botao flutuante visivel em todos navegadores' }
+    ]
+  },
+  {
+    version: '2.8.0',
+    items: [
+      { bold: 'Repertorio:', text: 'Modal para selecionar/criar repertorio ao adicionar partitura' },
+      { bold: 'UI:', text: 'Animacoes de hover nos botoes (escala + sombra)' },
+      { bold: 'UX:', text: 'Botao de repertorio com resposta instantanea (UI otimista)' },
       { bold: 'Fix:', text: 'Lista de instrumentos agora mostra todos os instrumentos reais' }
     ]
   },
@@ -49,10 +60,10 @@ export const ADMIN_ABOUT_CONFIG = {
   subtitle: 'Painel Administrativo',
   maxWidth: 480,
   infoCards: [
-    { label: 'Versão', value: '2.8.0' },
+    { label: 'Versao', value: '2.9.0' },
     { label: 'Backend', value: 'Cloudflare Workers' },
     { label: 'Dev', value: 'Antonio Jr.', isHighlighted: true }
   ],
-  footerText: 'S.F. 25 de Março • Feira de Santana, BA • Fundada em 1868',
+  footerText: 'S.F. 25 de Marco • Feira de Santana, BA • Fundada em 1868',
   showLegacyVersions: false
 };

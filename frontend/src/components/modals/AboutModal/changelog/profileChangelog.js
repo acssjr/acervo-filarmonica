@@ -1,14 +1,26 @@
 // Changelog completo para o app do usuário (ProfileScreen)
 export const PROFILE_CHANGELOG = [
   {
-    version: '2.8.0',
+    version: '2.9.0',
     isCurrent: true,
     items: [
-      { bold: 'Repertório:', text: 'Sistema completo de download em lote e impressão' },
+      { bold: 'Compartilhar:', text: 'Envie partituras via WhatsApp direto do app' },
+      { bold: 'Carrinho:', text: 'Selecione varias partituras e baixe todas de uma vez' },
+      { bold: 'PDF:', text: 'Pinch-to-zoom suave no visualizador de partituras' },
+      { bold: 'PWA:', text: 'Icones e favicon para instalar como app' },
+      { bold: 'Atualizacao:', text: 'Notificacao quando houver nova versao disponivel' },
+      { bold: 'Busca:', text: 'Resultados mais precisos (exige todas as palavras)' },
+      { bold: 'Instrumentos:', text: 'Matching inteligente de tonalidades e vozes' }
+    ]
+  },
+  {
+    version: '2.8.0',
+    items: [
+      { bold: 'Repertorio:', text: 'Sistema completo de download em lote e impressao' },
       { bold: 'Download:', text: 'Lista de instrumentos agora mostra todos os instrumentos reais das partituras' },
-      { bold: 'UI:', text: 'Animações de hover nos botões administrativos' },
-      { bold: 'UX:', text: 'Botão de repertório com resposta instantânea (UI otimista)' },
-      { bold: 'Admin:', text: 'Modal para selecionar/criar repertório ao adicionar partitura' }
+      { bold: 'UI:', text: 'Animacoes de hover nos botoes administrativos' },
+      { bold: 'UX:', text: 'Botao de repertorio com resposta instantanea (UI otimista)' },
+      { bold: 'Admin:', text: 'Modal para selecionar/criar repertorio ao adicionar partitura' }
     ]
   },
   {
@@ -140,10 +152,10 @@ export const PROFILE_LEGACY_VERSIONS = {
 
 // Config padrão para ProfileScreen
 export const PROFILE_ABOUT_CONFIG = {
-  subtitle: 'Sociedade Filarmônica 25 de Março',
+  subtitle: 'Sociedade Filarmonica 25 de Marco',
   maxWidth: 420,
   infoCards: [
-    { label: 'Versão', value: '2.8.0' },
+    { label: 'Versao', value: '2.9.0' },
     { label: 'Tecnologias', value: 'React • JS • CSS' },
     { label: 'Por', value: 'Antonio Jr.', isHighlighted: true }
   ],
