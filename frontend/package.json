@@ -23,6 +23,7 @@
     ]
   },
   "dependencies": {
+    "framer-motion": "^12.23.26",
     "lottie-react": "^2.4.1",
     "lucide-react": "^0.556.0",
     "openapi-fetch": "^0.15.0",

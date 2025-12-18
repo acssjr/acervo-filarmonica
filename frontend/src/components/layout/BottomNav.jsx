@@ -1,8 +1,9 @@
 // ===== BOTTOM NAVIGATION =====
-// Navegacao movel inferior com efeito glassmorphism
+// Navegacao movel inferior com efeito glassmorphism e indicador animado
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { useUI } from '@contexts/UIContext';
 import { Icons } from '@constants/icons';
 import styles from './BottomNav.module.css';
@@ -59,28 +60,63 @@ const BottomNav = ({ activeTab }) => {
 
         if (tab.isCenter) {
           return (
-            <button
+            <motion.button
               key={tab.id}
               aria-label={tab.label}
               className={styles.centerButton}
               onClick={() => navigate(tab.path)}
+              whileTap={{ scale: 0.9 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 20 }}
             >
-              <div className={styles.centerIcon}><tab.icon filled /></div>
-            </button>
+              <motion.div
+                className={styles.centerIcon}
+                animate={{ rotate: isActive ? 0 : 0 }}
+              >
+                <tab.icon filled />
+              </motion.div>
+            </motion.button>
           );
         }
 
         return (
-          <button
+          <motion.button
             key={tab.id}
             aria-label={tab.label}
             aria-current={isActive ? 'page' : undefined}
             className={`${styles.tabButton} ${isActive ? styles.active : styles.inactive}`}
             onClick={() => navigate(tab.path)}
+            whileTap={{ scale: 0.9 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 20 }}
           >
-            <div className={styles.tabIcon}><tab.icon filled={isActive} /></div>
-            <span className={styles.tabLabel}>{tab.label}</span>
-          </button>
+            {/* Indicador animado - só aparece no tab ativo */}
+            {isActive && (
+              <motion.div
+                layoutId="bottomNavIndicator"
+                className={styles.indicator}
+                transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+              />
+            )}
+            <motion.div
+              className={styles.tabIcon}
+              animate={{
+                scale: isActive ? 1.1 : 1,
+                y: isActive ? -2 : 0
+              }}
+              transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+            >
+              <tab.icon filled={isActive} />
+            </motion.div>
+            <motion.span
+              className={styles.tabLabel}
+              animate={{
+                opacity: isActive ? 1 : 0.7,
+                scale: isActive ? 1.05 : 1
+              }}
+              transition={{ duration: 0.2 }}
+            >
+              {tab.label}
+            </motion.span>
+          </motion.button>
         );
       })}
     </nav>

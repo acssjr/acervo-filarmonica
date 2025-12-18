@@ -3,6 +3,7 @@
 // Músicos veem o repertório ativo e podem baixar suas partes
 
 import { useState, useEffect, useMemo } from 'react';
+import { motion } from 'framer-motion';
 import { useAuth } from '@contexts/AuthContext';
 import { useUI } from '@contexts/UIContext';
 import { useData } from '@contexts/DataContext';
@@ -11,6 +12,112 @@ import Storage from '@services/storage';
 import { Icons } from '@constants/icons';
 import Header from '@components/common/Header';
 import EmptyState from '@components/common/EmptyState';
+
+// ============ SKELETON LOADING ============
+const RepertorioSkeleton = () => (
+  <div>
+    {/* Header skeleton */}
+    <div style={{ padding: '20px 20px 0' }}>
+      <div style={{
+        width: '160px',
+        height: '24px',
+        background: 'linear-gradient(90deg, var(--bg-secondary) 25%, var(--bg-card) 50%, var(--bg-secondary) 75%)',
+        backgroundSize: '200% 100%',
+        animation: 'shimmer 1.5s infinite',
+        borderRadius: '6px',
+        marginBottom: '8px'
+      }} />
+      <div style={{
+        width: '100px',
+        height: '16px',
+        background: 'linear-gradient(90deg, var(--bg-secondary) 25%, var(--bg-card) 50%, var(--bg-secondary) 75%)',
+        backgroundSize: '200% 100%',
+        animation: 'shimmer 1.5s infinite',
+        borderRadius: '4px'
+      }} />
+    </div>
+
+    {/* Download button skeleton */}
+    <div style={{ padding: '16px', display: 'flex', justifyContent: 'center' }}>
+      <div style={{
+        width: '140px',
+        height: '44px',
+        background: 'linear-gradient(90deg, var(--bg-secondary) 25%, var(--bg-card) 50%, var(--bg-secondary) 75%)',
+        backgroundSize: '200% 100%',
+        animation: 'shimmer 1.5s infinite',
+        borderRadius: '12px'
+      }} />
+    </div>
+
+    {/* List skeleton */}
+    <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      {[1, 2, 3, 4, 5].map(i => (
+        <div
+          key={i}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            padding: '12px 16px',
+            background: 'var(--bg-secondary)',
+            borderRadius: '12px'
+          }}
+        >
+          {/* Number circle */}
+          <div style={{
+            width: '28px',
+            height: '28px',
+            borderRadius: '50%',
+            background: 'linear-gradient(90deg, var(--bg-card) 25%, var(--border) 50%, var(--bg-card) 75%)',
+            backgroundSize: '200% 100%',
+            animation: 'shimmer 1.5s infinite',
+            animationDelay: `${i * 0.1}s`,
+            flexShrink: 0
+          }} />
+          {/* Text area */}
+          <div style={{ flex: 1 }}>
+            <div style={{
+              width: `${70 + Math.random() * 30}%`,
+              height: '14px',
+              background: 'linear-gradient(90deg, var(--bg-card) 25%, var(--border) 50%, var(--bg-card) 75%)',
+              backgroundSize: '200% 100%',
+              animation: 'shimmer 1.5s infinite',
+              animationDelay: `${i * 0.1}s`,
+              borderRadius: '4px',
+              marginBottom: '6px'
+            }} />
+            <div style={{
+              width: `${40 + Math.random() * 20}%`,
+              height: '12px',
+              background: 'linear-gradient(90deg, var(--bg-card) 25%, var(--border) 50%, var(--bg-card) 75%)',
+              backgroundSize: '200% 100%',
+              animation: 'shimmer 1.5s infinite',
+              animationDelay: `${i * 0.1}s`,
+              borderRadius: '4px'
+            }} />
+          </div>
+          {/* Action button */}
+          <div style={{
+            width: '32px',
+            height: '32px',
+            borderRadius: '8px',
+            background: 'linear-gradient(90deg, var(--bg-card) 25%, var(--border) 50%, var(--bg-card) 75%)',
+            backgroundSize: '200% 100%',
+            animation: 'shimmer 1.5s infinite',
+            animationDelay: `${i * 0.1}s`
+          }} />
+        </div>
+      ))}
+    </div>
+
+    <style>{`
+      @keyframes shimmer {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+      }
+    `}</style>
+  </div>
+);
 
 // ============ MODAL DE DOWNLOAD ============
 // Usa o mesmo padrão do SheetDetailModal (compacto, no estilo bottom-sheet)
@@ -604,23 +711,25 @@ const RepertorioScreen = () => {
   const [downloading, setDownloading] = useState(false);
   const [showDownloadModal, setShowDownloadModal] = useState(false);
 
-  // Carregar repertório ativo e seus instrumentos
+  // Carregar repertório ativo (instrumentos são prefetched em background)
   const loadRepertorio = async () => {
     setLoading(true);
     try {
       const data = await API.getRepertorioAtivo();
       setRepertorio(data);
+      setLoading(false); // Libera UI imediatamente após dados críticos
 
-      // Carregar instrumentos reais das partes do repertório
+      // Prefetch instrumentos em background (non-blocking)
       if (data?.id) {
-        const instrumentos = await API.getRepertorioInstrumentos(data.id);
-        setRepertorioInstrumentos(instrumentos);
+        API.getRepertorioInstrumentos(data.id)
+          .then(setRepertorioInstrumentos)
+          .catch(err => console.error('Prefetch instrumentos falhou:', err));
       }
     } catch (err) {
       console.error('Erro ao carregar repertório:', err);
       showToast(err.message || 'Erro ao carregar repertório', 'error');
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   // Recarregar instrumentos quando o modal abre (para refletir mudanças feitas no admin)
@@ -734,28 +843,7 @@ const RepertorioScreen = () => {
   }, [repertorio]);
 
   if (loading) {
-    return (
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: '60vh'
-      }}>
-        <div style={{
-          width: '40px',
-          height: '40px',
-          border: '3px solid rgba(212, 175, 55, 0.2)',
-          borderTopColor: '#D4AF37',
-          borderRadius: '50%',
-          animation: 'spin 1s linear infinite'
-        }} />
-        <style>{`
-          @keyframes spin {
-            to { transform: rotate(360deg); }
-          }
-        `}</style>
-      </div>
-    );
+    return <RepertorioSkeleton />;
   }
 
   if (!repertorio) {
@@ -835,8 +923,16 @@ const RepertorioScreen = () => {
           {sheets.map((sheet, index) => {
             const category = categoriesMap.get(sheet.category);
             return (
-              <div
+              <motion.div
                 key={sheet.id}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{
+                  delay: index * 0.04,
+                  duration: 0.3,
+                  ease: [0.25, 0.1, 0.25, 1]
+                }}
+                whileTap={{ scale: 0.98 }}
                 onClick={() => setSelectedSheet(sheet)}
                 style={{
                   display: 'flex',
@@ -846,7 +942,6 @@ const RepertorioScreen = () => {
                   background: 'var(--bg-secondary)',
                   borderRadius: '12px',
                   cursor: 'pointer',
-                  transition: 'all 0.2s ease',
                   border: '1px solid transparent'
                 }}
               >
@@ -955,7 +1050,7 @@ const RepertorioScreen = () => {
                     </button>
                   )}
                 </div>
-              </div>
+              </motion.div>
             );
           })}
         </div>

@@ -3,6 +3,8 @@
 
 import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useParams } from 'react-router-dom';
+import { AnimatePresence } from 'framer-motion';
+import PageTransition from '@components/common/PageTransition';
 import { useAuth } from '@contexts/AuthContext';
 import { useUI } from '@contexts/UIContext';
 import { useData } from '@contexts/DataContext';
@@ -165,12 +167,13 @@ const UserLayout = ({ children }) => {
 
   return (
     <DesktopLayout activeTab={activeTab}>
-      <Suspense fallback={<PageLoader />}>
-        {/* Wrapper com animacao de transicao baseado na rota */}
-        <div key={location.pathname} className="page-transition">
-          {children}
-        </div>
-      </Suspense>
+      <AnimatePresence mode="wait">
+        <Suspense fallback={<PageLoader />}>
+          <PageTransition key={location.pathname}>
+            {children}
+          </PageTransition>
+        </Suspense>
+      </AnimatePresence>
       <BottomNav activeTab={activeTab} />
     </DesktopLayout>
   );

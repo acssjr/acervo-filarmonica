@@ -49,7 +49,16 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          'react-vendor': ['react', 'react-dom']
+          // Core React - carrega sempre
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          // Animações - carrega sempre (transições de página)
+          'animations': ['framer-motion'],
+          // PDF viewer - lazy loaded
+          'pdf-viewer': ['react-pdf', 'pdfjs-dist'],
+          // Lottie - lazy loaded
+          'lottie': ['lottie-react'],
+          // Ícones
+          'icons': ['lucide-react']
         }
       }
     }
