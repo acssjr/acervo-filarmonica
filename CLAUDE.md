@@ -58,7 +58,10 @@ Isso cria as tabelas e insere dados de teste:
 ### Playwright
 - Sempre que for usar o playwright para logar no aplicativo, escrever a senha toda de uma vez em vez de pedir permissao para digitar um caractere de cada vez
 
-### Qualidade de Codigo
+### Git Workflow
+- **NUNCA commitar direto na main** - sempre criar branch e abrir PR
+- Branch protection ativo: requer PR + status checks passando
+- Criar branch com prefixo: `feat/`, `fix/`, `chore/`, `docs/`
 - Seguir Conventional Commits: `feat:`, `fix:`, `chore:`, etc.
 - Rodar `npm run lint:worker` e `npm run lint` antes de commits
 - Commitlint valida mensagens automaticamente no hook
