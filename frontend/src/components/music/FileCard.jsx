@@ -33,13 +33,9 @@ const FileCard = memo(({ sheet, category, isFavorite, onToggleFavorite, index = 
       whileTap={{ scale: 0.98 }}
       onClick={handleCardClick}
     >
-      <motion.div
-        className={styles.thumbnail}
-        layoutId={`sheet-icon-${sheet.id}`}
-        transition={{ type: 'spring', stiffness: 350, damping: 30 }}
-      >
+      <div className={styles.thumbnail}>
         <CategoryIcon categoryId={category?.id} size={24} color="#D4AF37" />
-      </motion.div>
+      </div>
 
       <div className={styles.info}>
         <h4 className={styles.title}>{sheet.title}</h4>

@@ -254,9 +254,7 @@ const SheetDetailModal = () => {
           }} />
 
           <div style={{ display: 'flex', gap: '14px', alignItems: 'flex-start', position: 'relative', zIndex: 1 }}>
-            <motion.div
-              layoutId={`sheet-icon-${selectedSheet.id}`}
-              transition={{ type: 'spring', stiffness: 350, damping: 30 }}
+            <div
               style={{
                 width: '56px',
                 height: '56px',
@@ -270,7 +268,7 @@ const SheetDetailModal = () => {
               }}
             >
               <CategoryIcon categoryId={category?.id} size={26} color="var(--accent)" />
-            </motion.div>
+            </div>
 
             <div style={{ flex: 1, minWidth: 0 }}>
               <h2

@@ -41,7 +41,7 @@ const FeaturedSheets = ({ sheets, onToggleFavorite, favorites }) => {
   // Para a animação quando o usuário interage
   const stopAnimation = useCallback(() => {
     if (!hasInteracted) {
-      // Captura a posição atual da animação
+      // Captura a posição atual da animação e converte para scroll
       if (innerRef.current && scrollRef.current) {
         const computedStyle = window.getComputedStyle(innerRef.current);
         const transform = computedStyle.transform;
@@ -49,6 +49,10 @@ const FeaturedSheets = ({ sheets, onToggleFavorite, favorites }) => {
         if (transform && transform !== 'none') {
           const matrix = new DOMMatrix(transform);
           const currentX = matrix.m41;
+          // Remove a animação primeiro
+          innerRef.current.style.animation = 'none';
+          innerRef.current.style.transform = 'none';
+          // Aplica o scroll na posição equivalente
           scrollRef.current.scrollLeft = Math.abs(currentX);
         }
       }
@@ -127,6 +131,7 @@ const FeaturedSheets = ({ sheets, onToggleFavorite, favorites }) => {
           scrollbarWidth: 'none',
           msOverflowStyle: 'none',
           cursor: isDesktop ? 'grab' : 'default',
+          // Evita elastic overscroll (arrastar para fora)
           overscrollBehaviorX: 'contain',
           // Fade suave nas bordas usando mask-image (apenas durante animação e no modo escuro)
           maskImage: (!hasInteracted && theme === 'dark') ? 'linear-gradient(to right, transparent 0%, black 5%, black 95%, transparent 100%)' : 'none',
@@ -144,7 +149,8 @@ const FeaturedSheets = ({ sheets, onToggleFavorite, favorites }) => {
               : 'none'
           }}
         >
-          {(hasInteracted || featuredSheets.length <= 2 ? featuredSheets : duplicatedSheets).map((sheet, index) => (
+          {/* Sempre usa cards duplicados para scroll infinito */}
+          {(featuredSheets.length > 2 ? duplicatedSheets : featuredSheets).map((sheet, index) => (
             <FeaturedCard
               key={`${sheet.id}-${index}`}
               sheet={sheet}
