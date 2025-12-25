@@ -129,8 +129,8 @@ const HomeHeader = ({ userName, instrument, actions }) => {
             </div>
           </div>
 
-          {/* Contador do próximo ensaio ou badge de recesso */}
-          {modoRecesso ? (
+          {/* Contador do próximo ensaio ou badge de recesso (apenas mobile) */}
+          {!isDesktop && (modoRecesso ? (
             <div style={{
               display: 'flex',
               alignItems: 'center',
@@ -152,7 +152,7 @@ const HomeHeader = ({ userName, instrument, actions }) => {
                 EM RECESSO
               </div>
             </div>
-          ) : !isDesktop && (() => {
+          ) : (() => {
             const rehearsalInfo = getNextRehearsal();
             return rehearsalInfo.isNow ? (
               <div style={{
@@ -229,7 +229,7 @@ const HomeHeader = ({ userName, instrument, actions }) => {
                 </div>
               </div>
             );
-          })()}
+          })())}
         </div>
 
         {/* Actions no desktop */}
