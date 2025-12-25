@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react';
 import { useUI } from '@contexts/UIContext';
 import { getNextRehearsal } from '@hooks/useNextRehearsal';
+import { API } from '@services/api';
 import HeaderActions from './HeaderActions';
 import LogoBadge from './LogoBadge';
 
@@ -11,11 +12,16 @@ const HomeHeader = ({ userName, instrument, actions }) => {
   const { theme } = useUI();
   const isDark = theme === 'dark';
   const [isDesktop, setIsDesktop] = useState(typeof window !== 'undefined' ? window.innerWidth >= 1024 : false);
+  const [modoRecesso, setModoRecesso] = useState(false);
 
   useEffect(() => {
     const handleResize = () => setIsDesktop(window.innerWidth >= 1024);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  useEffect(() => {
+    API.getModoRecesso().then(res => setModoRecesso(res.ativo));
   }, []);
 
   return (
@@ -123,8 +129,30 @@ const HomeHeader = ({ userName, instrument, actions }) => {
             </div>
           </div>
 
-          {/* Contador do próximo ensaio - apenas mobile */}
-          {!isDesktop && (() => {
+          {/* Contador do próximo ensaio ou badge de recesso */}
+          {modoRecesso ? (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              marginTop: '12px'
+            }}>
+              <div style={{
+                background: 'linear-gradient(135deg, #D4AF37 0%, #B8860B 100%)',
+                color: '#3D1518',
+                fontSize: '12px',
+                fontFamily: 'Outfit, sans-serif',
+                fontWeight: '700',
+                padding: '6px 14px',
+                borderRadius: '8px',
+                textTransform: 'uppercase',
+                letterSpacing: '1px',
+                boxShadow: '0 2px 8px rgba(212, 175, 55, 0.3)'
+              }}>
+                EM RECESSO
+              </div>
+            </div>
+          ) : !isDesktop && (() => {
             const rehearsalInfo = getNextRehearsal();
             return rehearsalInfo.isNow ? (
               <div style={{

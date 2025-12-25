@@ -1,7 +1,7 @@
 // ===== ADMIN CONFIG =====
 // Configurações do admin
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@contexts/AuthContext';
 import { useUI } from '@contexts/UIContext';
 import { useNotifications } from '@contexts/NotificationContext';
@@ -16,6 +16,27 @@ const AdminConfig = () => {
   const [showChangePin, setShowChangePin] = useState(false);
   const [showAboutModal, setShowAboutModal] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [modoRecesso, setModoRecesso] = useState(false);
+  const [loadingRecesso, setLoadingRecesso] = useState(true);
+
+  useEffect(() => {
+    API.getModoRecesso().then(res => {
+      setModoRecesso(res.ativo);
+      setLoadingRecesso(false);
+    });
+  }, []);
+
+  const handleToggleRecesso = async () => {
+    const novoValor = !modoRecesso;
+    setModoRecesso(novoValor);
+    try {
+      await API.setModoRecesso(novoValor);
+      showToast(novoValor ? 'Modo recesso ativado' : 'Modo recesso desativado');
+    } catch {
+      setModoRecesso(!novoValor);
+      showToast('Erro ao atualizar configuração', 'error');
+    }
+  };
 
   const handleLogout = () => {
     API.logout();
@@ -230,6 +251,82 @@ const AdminConfig = () => {
               <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
             </svg>
             Alterar PIN
+          </button>
+        </div>
+      </div>
+
+      {/* Configurações do Sistema */}
+      <div style={{
+        background: 'var(--bg-secondary)',
+        borderRadius: '16px',
+        padding: '20px',
+        marginBottom: '20px',
+        border: '1px solid var(--border)'
+      }}>
+        <h3 style={{
+          fontSize: '16px',
+          fontWeight: '600',
+          marginBottom: '16px',
+          color: 'var(--text-primary)',
+          fontFamily: 'Outfit, sans-serif',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px'
+        }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+          </svg>
+          Configurações do Sistema
+        </h3>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: '12px 0'
+        }}>
+          <div>
+            <div style={{
+              color: 'var(--text-primary)',
+              fontWeight: '500',
+              marginBottom: '4px',
+              fontFamily: 'Outfit, sans-serif'
+            }}>
+              Modo Recesso
+            </div>
+            <div style={{
+              fontSize: '13px',
+              color: 'var(--text-muted)',
+              fontFamily: 'Outfit, sans-serif'
+            }}>
+              Substitui o contador de ensaio por &ldquo;EM RECESSO&rdquo;
+            </div>
+          </div>
+          <button
+            onClick={handleToggleRecesso}
+            disabled={loadingRecesso}
+            style={{
+              width: '52px',
+              height: '28px',
+              borderRadius: '14px',
+              border: 'none',
+              background: modoRecesso ? '#D4AF37' : 'var(--border)',
+              position: 'relative',
+              cursor: loadingRecesso ? 'wait' : 'pointer',
+              transition: 'background 0.2s',
+              opacity: loadingRecesso ? 0.5 : 1
+            }}
+          >
+            <div style={{
+              width: '22px',
+              height: '22px',
+              borderRadius: '50%',
+              background: '#fff',
+              position: 'absolute',
+              top: '3px',
+              left: modoRecesso ? '27px' : '3px',
+              transition: 'left 0.2s',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+            }} />
           </button>
         </div>
       </div>
