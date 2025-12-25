@@ -507,6 +507,25 @@ export const API = {
       url += `&partituras=${partituraIds.join(',')}`;
     }
     return url;
+  },
+
+  // ============ CONFIGURAÇÕES ============
+
+  async getModoRecesso() {
+    try {
+      const result = await fetch(`${API_BASE_URL}/api/config/recesso`);
+      if (!result.ok) return { ativo: false };
+      return await result.json();
+    } catch {
+      return { ativo: false };
+    }
+  },
+
+  async setModoRecesso(ativo) {
+    return this.request('/api/config/recesso', {
+      method: 'PUT',
+      body: JSON.stringify({ ativo })
+    });
   }
 };
 

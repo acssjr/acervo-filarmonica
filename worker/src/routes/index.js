@@ -13,6 +13,7 @@ import { setupUsuarioRoutes } from './usuarioRoutes.js';
 import { setupPerfilRoutes } from './perfilRoutes.js';
 import { setupPartituraRoutes } from './partituraRoutes.js';
 import { setupRepertorioRoutes } from './repertorioRoutes.js';
+import { setupConfigRoutes } from './configRoutes.js';
 
 /**
  * Cria e configura o router com todas as rotas da aplicação
@@ -35,6 +36,7 @@ export function createRouter() {
   setupPerfilRoutes(router);
   setupPartituraRoutes(router);
   setupRepertorioRoutes(router);
+  setupConfigRoutes(router);
 
   return router;
 }

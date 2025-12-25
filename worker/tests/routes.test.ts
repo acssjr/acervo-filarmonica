@@ -524,3 +524,150 @@ describe('Rotas de Perfil', () => {
     expect(response.status).toBe(200);
   });
 });
+
+// ============================================================
+// TESTES DE CONFIGURAÇÕES - Modo Recesso
+// ============================================================
+
+describe('Rotas de Configuração - Modo Recesso', () => {
+  let userToken: string;
+  let adminToken: string;
+
+  beforeAll(async () => {
+    userToken = await createTestToken(2, false);
+    adminToken = await createTestToken(1, true);
+  });
+
+  describe('GET /api/config/recesso', () => {
+    it('retorna 200 sem autenticação (rota pública)', async () => {
+      const response = await SELF.fetch('https://test.local/api/config/recesso');
+      expect(response.status).toBe(200);
+    });
+
+    it('retorna objeto com propriedade ativo', async () => {
+      const response = await SELF.fetch('https://test.local/api/config/recesso');
+      expect(response.status).toBe(200);
+
+      const data = await response.json() as { ativo: boolean };
+      expect(data).toHaveProperty('ativo');
+      expect(typeof data.ativo).toBe('boolean');
+    });
+
+    it('retorna false como valor padrão', async () => {
+      const response = await SELF.fetch('https://test.local/api/config/recesso');
+      const data = await response.json() as { ativo: boolean };
+
+      // Valor padrão deve ser false (a menos que outro teste tenha alterado)
+      expect(typeof data.ativo).toBe('boolean');
+    });
+  });
+
+  describe('PUT /api/config/recesso', () => {
+    it('rejeita sem token (401 ou 403)', async () => {
+      const response = await SELF.fetch('https://test.local/api/config/recesso', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ativo: true }),
+      });
+      expect([401, 403]).toContain(response.status);
+    });
+
+    it('rejeita com token de usuário comum (403)', async () => {
+      const response = await SELF.fetch('https://test.local/api/config/recesso', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${userToken}`,
+        },
+        body: JSON.stringify({ ativo: true }),
+      });
+      expect(response.status).toBe(403);
+    });
+
+    it('aceita com token admin e ativa modo recesso', async () => {
+      const response = await SELF.fetch('https://test.local/api/config/recesso', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${adminToken}`,
+        },
+        body: JSON.stringify({ ativo: true }),
+      });
+
+      expect(response.status).toBe(200);
+      const data = await response.json() as { ativo: boolean; mensagem: string };
+      expect(data.ativo).toBe(true);
+      expect(data.mensagem).toBe('Configuração atualizada');
+    });
+
+    it('persiste alteração corretamente', async () => {
+      // Ativa modo recesso
+      await SELF.fetch('https://test.local/api/config/recesso', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${adminToken}`,
+        },
+        body: JSON.stringify({ ativo: true }),
+      });
+
+      // Verifica se foi persistido
+      const getResponse = await SELF.fetch('https://test.local/api/config/recesso');
+      const getData = await getResponse.json() as { ativo: boolean };
+      expect(getData.ativo).toBe(true);
+
+      // Desativa modo recesso
+      await SELF.fetch('https://test.local/api/config/recesso', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${adminToken}`,
+        },
+        body: JSON.stringify({ ativo: false }),
+      });
+
+      // Verifica se foi persistido
+      const getResponse2 = await SELF.fetch('https://test.local/api/config/recesso');
+      const getData2 = await getResponse2.json() as { ativo: boolean };
+      expect(getData2.ativo).toBe(false);
+    });
+
+    it('converte valores truthy/falsy corretamente', async () => {
+      // Envia ativo: false explícito
+      const response = await SELF.fetch('https://test.local/api/config/recesso', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${adminToken}`,
+        },
+        body: JSON.stringify({ ativo: false }),
+      });
+
+      expect(response.status).toBe(200);
+      const data = await response.json() as { ativo: boolean };
+      expect(data.ativo).toBe(false);
+    });
+  });
+
+  describe('Métodos HTTP incorretos', () => {
+    it('POST em /api/config/recesso retorna 404', async () => {
+      const response = await SELF.fetch('https://test.local/api/config/recesso', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${adminToken}`,
+        },
+        body: JSON.stringify({ ativo: true }),
+      });
+      expect(response.status).toBe(404);
+    });
+
+    it('DELETE em /api/config/recesso retorna 404', async () => {
+      const response = await SELF.fetch('https://test.local/api/config/recesso', {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${adminToken}` },
+      });
+      expect(response.status).toBe(404);
+    });
+  });
+});

@@ -564,6 +564,144 @@ describe('API Service', () => {
     });
   });
 
+  // ============ MODO RECESSO ============
+
+  describe('Modo Recesso', () => {
+    describe('getModoRecesso()', () => {
+      it('retorna ativo: false quando API retorna sucesso', async () => {
+        global.fetch = jest.fn().mockResolvedValue({
+          ok: true,
+          json: async () => ({ ativo: false })
+        });
+
+        const result = await API.getModoRecesso();
+
+        expect(result).toEqual({ ativo: false });
+        expect(global.fetch).toHaveBeenCalledWith(
+          expect.stringContaining('/api/config/recesso')
+        );
+      });
+
+      it('retorna ativo: true quando modo recesso esta ativado', async () => {
+        global.fetch = jest.fn().mockResolvedValue({
+          ok: true,
+          json: async () => ({ ativo: true })
+        });
+
+        const result = await API.getModoRecesso();
+
+        expect(result).toEqual({ ativo: true });
+      });
+
+      it('retorna ativo: false em caso de erro de rede', async () => {
+        global.fetch = jest.fn().mockRejectedValue(new Error('Network error'));
+
+        const result = await API.getModoRecesso();
+
+        expect(result).toEqual({ ativo: false });
+      });
+
+      it('retorna ativo: false quando resposta nao e ok', async () => {
+        global.fetch = jest.fn().mockResolvedValue({
+          ok: false,
+          status: 500
+        });
+
+        const result = await API.getModoRecesso();
+
+        expect(result).toEqual({ ativo: false });
+      });
+
+      it('nao requer autenticacao (nao usa this.request)', async () => {
+        // getModoRecesso usa fetch diretamente, nao this.request
+        // Isso significa que nao precisa de token
+        mockStorage.get.mockReturnValue(null);
+
+        global.fetch = jest.fn().mockResolvedValue({
+          ok: true,
+          json: async () => ({ ativo: false })
+        });
+
+        await API.getModoRecesso();
+
+        // Verifica que fetch foi chamado sem header Authorization
+        const fetchCall = global.fetch.mock.calls[0];
+        expect(fetchCall[1]).toBeUndefined(); // Nao passa options, entao nao tem Authorization
+      });
+    });
+
+    describe('setModoRecesso()', () => {
+      beforeEach(() => {
+        mockStorage.get.mockImplementation((key) => {
+          if (key === 'authToken') return 'admin-token';
+          if (key === 'tokenExpiresAt') return Date.now() + (60 * 60 * 1000);
+          return null;
+        });
+      });
+
+      it('faz PUT com ativo: true', async () => {
+        global.fetch = createMockFetch({ data: { ativo: true, mensagem: 'Configuração atualizada' } });
+
+        await API.setModoRecesso(true);
+
+        expect(global.fetch).toHaveBeenCalledWith(
+          expect.stringContaining('/api/config/recesso'),
+          expect.objectContaining({
+            method: 'PUT',
+            body: JSON.stringify({ ativo: true })
+          })
+        );
+      });
+
+      it('faz PUT com ativo: false', async () => {
+        global.fetch = createMockFetch({ data: { ativo: false, mensagem: 'Configuração atualizada' } });
+
+        await API.setModoRecesso(false);
+
+        expect(global.fetch).toHaveBeenCalledWith(
+          expect.stringContaining('/api/config/recesso'),
+          expect.objectContaining({
+            method: 'PUT',
+            body: JSON.stringify({ ativo: false })
+          })
+        );
+      });
+
+      it('retorna resposta da API', async () => {
+        global.fetch = createMockFetch({ data: { ativo: true, mensagem: 'Configuração atualizada' } });
+
+        const result = await API.setModoRecesso(true);
+
+        expect(result).toEqual({ ativo: true, mensagem: 'Configuração atualizada' });
+      });
+
+      it('lanca erro quando nao autorizado (403)', async () => {
+        global.fetch = jest.fn().mockResolvedValue({
+          ok: false,
+          status: 403,
+          json: async () => ({ error: 'Acesso negado' })
+        });
+
+        await expect(API.setModoRecesso(true)).rejects.toThrow('Acesso negado');
+      });
+
+      it('inclui header Authorization', async () => {
+        global.fetch = createMockFetch({ data: { ativo: true } });
+
+        await API.setModoRecesso(true);
+
+        expect(global.fetch).toHaveBeenCalledWith(
+          expect.anything(),
+          expect.objectContaining({
+            headers: expect.objectContaining({
+              'Authorization': 'Bearer admin-token'
+            })
+          })
+        );
+      });
+    });
+  });
+
   // ============ CHANGE PIN ============
 
   describe('changePin()', () => {
