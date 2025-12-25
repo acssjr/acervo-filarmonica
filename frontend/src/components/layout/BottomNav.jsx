@@ -62,6 +62,7 @@ const BottomNav = ({ activeTab }) => {
           return (
             <motion.button
               key={tab.id}
+              data-walkthrough="search"
               aria-label={tab.label}
               className={styles.centerButton}
               onClick={() => navigate(tab.path)}
@@ -81,6 +82,7 @@ const BottomNav = ({ activeTab }) => {
         return (
           <motion.button
             key={tab.id}
+            data-nav={tab.id}
             aria-label={tab.label}
             aria-current={isActive ? 'page' : undefined}
             className={`${styles.tabButton} ${isActive ? styles.active : styles.inactive}`}

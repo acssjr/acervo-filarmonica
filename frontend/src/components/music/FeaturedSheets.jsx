@@ -90,7 +90,7 @@ const FeaturedSheets = ({ sheets, onToggleFavorite, favorites }) => {
     : featuredSheets;
 
   return (
-    <div style={{ marginBottom: '32px', width: '100%', overflow: 'visible' }}>
+    <div data-walkthrough="featured" style={{ marginBottom: '32px', width: '100%', overflow: 'visible' }}>
       {/* Header */}
       <div style={{
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',

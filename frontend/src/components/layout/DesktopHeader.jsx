@@ -298,7 +298,7 @@ const DesktopHeader = () => {
           maxWidth: '400px',
           position: 'relative'
         }}>
-          <div className="search-bar" role="search" style={{ padding: '10px 16px' }}>
+          <div data-walkthrough="search" className="search-bar" role="search" style={{ padding: '10px 16px' }}>
             <svg className="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <circle cx="11" cy="11" r="8" />
               <path d="m21 21-4.35-4.35" />

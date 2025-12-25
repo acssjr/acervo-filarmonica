@@ -26,6 +26,7 @@ const FileCard = memo(({ sheet, category, isFavorite, onToggleFavorite, index = 
 
   return (
     <motion.div
+      data-walkthrough="sheet-card"
       className={`file-card ${styles.card}`}
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
@@ -43,6 +44,7 @@ const FileCard = memo(({ sheet, category, isFavorite, onToggleFavorite, index = 
       </div>
 
       <button
+        data-walkthrough="favorite-btn"
         aria-label={isFavorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
         title={isFavorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
         className={`${styles.favButton} ${isFavorite ? styles.active : styles.inactive}`}
