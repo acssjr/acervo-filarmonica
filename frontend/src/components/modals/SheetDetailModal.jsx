@@ -378,6 +378,7 @@ const SheetDetailModal = () => {
             {isMaestro && !hasGrade && !loadingPartes ? (
               /* Botão desabilitado quando não há grade */
               <button
+                data-walkthrough="quick-download"
                 disabled
                 aria-label="Grade não disponível"
                 style={{
@@ -412,6 +413,7 @@ const SheetDetailModal = () => {
               </button>
             ) : (
               <button
+                data-walkthrough="quick-download"
                 onClick={() => download.handleSelectInstrument(isMaestro ? 'Grade' : userInstrument)}
                 aria-label={isMaestro ? 'Baixar grade' : `Baixar partitura para ${userInstrument}`}
                 disabled={loadingPartes}
@@ -448,26 +450,28 @@ const SheetDetailModal = () => {
             )}
 
             {/* Seletor de Outros Instrumentos */}
-            <InstrumentSelector
-              isOpen={showInstrumentPicker}
-              instruments={availableInstruments}
-              userInstrument={userInstrument}
-              isMaestro={isMaestro}
-              downloading={download.downloading}
-              canShare={download.canShareFiles()}
-              shareCart={shareCart.filter(item => item.sheetId === selectedSheet.id)}
-              onToggle={() => setShowInstrumentPicker(!showInstrumentPicker)}
-              onSelectInstrument={download.handleSelectParteEspecifica}
-              onPrintInstrument={download.handlePrintInstrument}
-              onViewInstrument={download.handleViewInstrument}
-              onShareInstrument={download.handleShareInstrument}
-              onAddToCart={handleAddToCart}
-              onRemoveFromCart={removeFromShareCart}
-            />
+            <div data-walkthrough="instrument-selector">
+              <InstrumentSelector
+                isOpen={showInstrumentPicker}
+                instruments={availableInstruments}
+                userInstrument={userInstrument}
+                isMaestro={isMaestro}
+                downloading={download.downloading}
+                canShare={download.canShareFiles()}
+                shareCart={shareCart.filter(item => item.sheetId === selectedSheet.id)}
+                onToggle={() => setShowInstrumentPicker(!showInstrumentPicker)}
+                onSelectInstrument={download.handleSelectParteEspecifica}
+                onPrintInstrument={download.handlePrintInstrument}
+                onViewInstrument={download.handleViewInstrument}
+                onShareInstrument={download.handleShareInstrument}
+                onAddToCart={handleAddToCart}
+                onRemoveFromCart={removeFromShareCart}
+              />
+            </div>
           </div>
 
           {/* Botoes Imprimir, Compartilhar e Favoritar */}
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div data-walkthrough="sheet-options" style={{ display: 'flex', gap: '8px' }}>
             <button
               onClick={() => download.handlePrintInstrument(isMaestro ? 'Grade' : userInstrument)}
               disabled={download.downloading || loadingPartes || (isMaestro && !hasGrade)}

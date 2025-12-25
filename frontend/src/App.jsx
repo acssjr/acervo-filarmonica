@@ -19,6 +19,9 @@ import ShareCartModal from '@components/modals/ShareCartModal';
 import UpdateNotification from '@components/common/UpdateNotification';
 import ShareCartFAB from '@components/common/ShareCartFAB';
 
+// Onboarding - renderizado no nivel do App para ficar acima dos modals
+import { UserWalkthrough, useUserWalkthrough } from '@components/onboarding';
+
 // Login - carregado sempre (primeira tela)
 import LoginScreen from '@screens/LoginScreen';
 
@@ -197,6 +200,17 @@ const ComposerWithSlug = () => {
   return <ComposersScreen composerSlugFromUrl={slug} />;
 };
 
+// Walkthrough global - renderizado no nivel do App para ficar acima dos modals
+const GlobalUserWalkthrough = () => {
+  const [showWalkthrough, setShowWalkthrough] = useUserWalkthrough();
+  return (
+    <UserWalkthrough
+      isOpen={showWalkthrough}
+      onClose={() => setShowWalkthrough(false)}
+    />
+  );
+};
+
 // App Content - uses context and router
 const AppContent = () => {
   const { toast, clearToast } = useUI();
@@ -326,6 +340,9 @@ const AppContent = () => {
       <UpdateNotification />
 
       {toast && <Toast message={toast.message} type={toast.type} onClose={clearToast} />}
+
+      {/* User Walkthrough - DEVE ser o ultimo para ficar acima de tudo */}
+      <GlobalUserWalkthrough />
     </>
   );
 };

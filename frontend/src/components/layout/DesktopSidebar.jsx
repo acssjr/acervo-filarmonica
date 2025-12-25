@@ -177,6 +177,7 @@ const DesktopSidebar = ({ activeTab }) => {
           {navItems.map(item => (
             <SidebarNavItem
               key={item.id}
+              data-sidebar={item.id}
               icon={item.icon}
               label={item.label}
               isActive={activeTab === item.id}

@@ -1,7 +1,7 @@
 // ===== SIDEBAR NAV ITEM =====
 // Item de navegacao da sidebar
 
-const SidebarNavItem = ({ icon: Icon, label, isActive, collapsed, onClick, danger = false }) => {
+const SidebarNavItem = ({ icon: Icon, label, isActive, collapsed, onClick, danger = false, 'data-sidebar': dataSidebar }) => {
   // Cores para item de perigo (logout)
   const dangerColor = 'rgba(239, 68, 68, 0.8)';
   const dangerHoverColor = 'rgba(239, 68, 68, 1)';
@@ -12,6 +12,7 @@ const SidebarNavItem = ({ icon: Icon, label, isActive, collapsed, onClick, dange
       title={collapsed ? label : ''}
       aria-label={label}
       aria-current={isActive ? 'page' : undefined}
+      data-sidebar={dataSidebar}
       style={{
         width: '100%',
         display: 'flex',

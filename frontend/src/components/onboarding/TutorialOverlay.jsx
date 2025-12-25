@@ -2,6 +2,7 @@
 // Componente de onboarding com spotlight para guiar usuários
 
 import { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import Storage from '@services/storage';
 
 const STORAGE_KEY = 'tutorial_admin_partituras_completed';
@@ -53,15 +54,26 @@ const TUTORIAL_STEPS = [
   }
 ];
 
-const TutorialOverlay = ({ isOpen, onClose, onExpandFirst, onCollapseFirst }) => {
+const TutorialOverlay = ({
+  isOpen,
+  onClose,
+  onExpandFirst,
+  onCollapseFirst,
+  steps = TUTORIAL_STEPS,
+  storageKey = STORAGE_KEY,
+  onStepChange,
+  finalButtonText = 'Finalizar',
+  allowMobile = false
+}) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [targetRect, setTargetRect] = useState(null);
   const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
+  const [tooltipWidth, setTooltipWidth] = useState(360);
   const [isAnimating, setIsAnimating] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [highlightNextButton, setHighlightNextButton] = useState(false);
 
-  const step = TUTORIAL_STEPS[currentStep];
+  const step = steps[currentStep];
 
   // Detecta se é mobile
   useEffect(() => {
@@ -72,12 +84,12 @@ const TutorialOverlay = ({ isOpen, onClose, onExpandFirst, onCollapseFirst }) =>
   }, []);
 
   // Calcula posição do tooltip baseado no elemento alvo
-  const calculateTooltipPosition = useCallback((rect, preferredPosition) => {
-    if (!rect) return { top: 0, left: 0 };
+  const calculateTooltipPosition = useCallback((rect, preferredPosition, mobile = false) => {
+    if (!rect) return { top: 0, left: 0, tooltipWidth: 360 };
 
-    const SPACING = 20;
-    const TOOLTIP_WIDTH = 360;
-    const TOOLTIP_HEIGHT_ESTIMATE = 320; // Aumentado para incluir checkbox
+    const SPACING = mobile ? 12 : 20;
+    const TOOLTIP_WIDTH = mobile ? Math.min(320, window.innerWidth - 32) : 360;
+    const TOOLTIP_HEIGHT_ESTIMATE = mobile ? 280 : 320;
 
     let top, left;
     let actualPosition = preferredPosition;
@@ -122,7 +134,7 @@ const TutorialOverlay = ({ isOpen, onClose, onExpandFirst, onCollapseFirst }) =>
     }
 
     // Ajusta para não sair da viewport
-    const padding = 20;
+    const padding = mobile ? 16 : 20;
     if (left < padding) left = padding;
     if (left + TOOLTIP_WIDTH > window.innerWidth - padding) {
       left = window.innerWidth - TOOLTIP_WIDTH - padding;
@@ -132,18 +144,26 @@ const TutorialOverlay = ({ isOpen, onClose, onExpandFirst, onCollapseFirst }) =>
       top = window.innerHeight - TOOLTIP_HEIGHT_ESTIMATE - padding;
     }
 
-    return { top, left };
+    return { top, left, tooltipWidth: TOOLTIP_WIDTH };
   }, []);
 
   // Atualiza posição do elemento alvo (com scroll automático se necessário)
-  const updateTargetPosition = useCallback(() => {
+  // Suporta retry para elementos que demoram a renderizar (ex: modal)
+  const updateTargetPosition = useCallback((retryCount = 0) => {
     if (!step) return;
 
     const targetElement = document.querySelector(step.targetSelector);
+
+    // Se elemento não encontrado e ainda temos retries, tenta novamente após delay
+    if (!targetElement && retryCount < 10) {
+      setTimeout(() => updateTargetPosition(retryCount + 1), 200);
+      return;
+    }
+
     if (targetElement) {
       // Verifica se o elemento está visível na viewport
       const rect = targetElement.getBoundingClientRect();
-      const MARGIN = 100; // Margem extra para garantir que o tooltip também caiba
+      const MARGIN = isMobile ? 60 : 100; // Margem menor para mobile
 
       const isElementVisible = (
         rect.top >= MARGIN &&
@@ -181,19 +201,23 @@ const TutorialOverlay = ({ isOpen, onClose, onExpandFirst, onCollapseFirst }) =>
           // Atualiza o rect após o scroll
           const newRect = targetElement.getBoundingClientRect();
           setTargetRect(newRect);
-          setTooltipPosition(calculateTooltipPosition(newRect, step.position));
+          const pos = calculateTooltipPosition(newRect, step.position, isMobile);
+          setTooltipPosition({ top: pos.top, left: pos.left });
+          setTooltipWidth(pos.tooltipWidth);
         }, 500);
       } else {
         // Elemento já visível, apenas atualiza posição
         setTargetRect(rect);
-        setTooltipPosition(calculateTooltipPosition(rect, step.position));
+        const pos = calculateTooltipPosition(rect, step.position, isMobile);
+        setTooltipPosition({ top: pos.top, left: pos.left });
+        setTooltipWidth(pos.tooltipWidth);
       }
     }
-  }, [step, calculateTooltipPosition]);
+  }, [step, calculateTooltipPosition, isMobile]);
 
   // Efeito para atualizar posição quando muda o passo
   useEffect(() => {
-    if (!isOpen || isMobile) return;
+    if (!isOpen || (isMobile && !allowMobile)) return;
 
     setIsAnimating(true);
 
@@ -212,7 +236,7 @@ const TutorialOverlay = ({ isOpen, onClose, onExpandFirst, onCollapseFirst }) =>
 
     const timer = setTimeout(() => setIsAnimating(false), 400);
     return () => clearTimeout(timer);
-  }, [isOpen, currentStep, step, updateTargetPosition, onExpandFirst, onCollapseFirst, isMobile]);
+  }, [isOpen, currentStep, step, updateTargetPosition, onExpandFirst, onCollapseFirst, isMobile, allowMobile]);
 
   // Listener para resize
   useEffect(() => {
@@ -228,7 +252,7 @@ const TutorialOverlay = ({ isOpen, onClose, onExpandFirst, onCollapseFirst }) =>
 
   // Bloqueia scroll durante tutorial (em todos os elementos)
   useEffect(() => {
-    if (isOpen && !isMobile) {
+    if (isOpen && (!isMobile || allowMobile)) {
       // Bloqueia scroll no body
       document.body.style.overflow = 'hidden';
       document.documentElement.style.overflow = 'hidden';
@@ -257,47 +281,59 @@ const TutorialOverlay = ({ isOpen, onClose, onExpandFirst, onCollapseFirst }) =>
         window.removeEventListener('touchmove', preventScroll);
       };
     }
-  }, [isOpen, isMobile]);
+  }, [isOpen, isMobile, allowMobile]);
 
   const handleNext = () => {
-    if (currentStep === TUTORIAL_STEPS.length - 1) {
+    if (currentStep === steps.length - 1) {
       handleFinish();
       return;
     }
-    setCurrentStep(prev => prev + 1);
+    const nextStep = currentStep + 1;
+
+    // PRIMEIRO atualiza o step para que o walkthrough mostre o passo correto
+    setCurrentStep(nextStep);
+
+    // DEPOIS executa a ação (como abrir modal) com delay para o state atualizar
+    setTimeout(() => {
+      onStepChange?.(nextStep, steps[nextStep]);
+    }, 150);
   };
 
   const handlePrevious = () => {
     if (currentStep > 0) {
-      setCurrentStep(prev => prev - 1);
+      const prevStep = currentStep - 1;
+      onStepChange?.(prevStep, steps[prevStep]);
+      setTimeout(() => setCurrentStep(prevStep), 100);
     }
   };
 
   const handleFinish = () => {
     // Sempre salva preferência ao finalizar - não mostra novamente
-    Storage.set(STORAGE_KEY, true);
+    Storage.set(storageKey, true);
     setCurrentStep(0);
     onClose();
   };
 
   const handleSkip = () => {
     // Também salva preferência ao pular - não mostra novamente
-    Storage.set(STORAGE_KEY, true);
+    Storage.set(storageKey, true);
     setCurrentStep(0);
     onClose();
   };
 
-  // Não renderiza em mobile ou se não estiver aberto
-  if (!isOpen || !step || isMobile) return null;
+  // Não renderiza em mobile (exceto se allowMobile) ou se não estiver aberto
+  if (!isOpen || !step || (isMobile && !allowMobile)) return null;
 
   const padding = step.highlightPadding || 12;
 
-  return (
+  // Usa Portal para renderizar direto no body, garantindo que fique acima de todos os modais
+  return createPortal(
     <div style={{
       position: 'fixed',
       inset: 0,
-      zIndex: 10000,
-      pointerEvents: 'auto'
+      zIndex: 99999,
+      pointerEvents: 'auto',
+      isolation: 'isolate'
     }}>
       {/* Overlay escuro - destaca botão próximo ao clicar */}
       <div
@@ -348,12 +384,12 @@ const TutorialOverlay = ({ isOpen, onClose, onExpandFirst, onCollapseFirst }) =>
           position: 'absolute',
           top: tooltipPosition.top,
           left: tooltipPosition.left,
-          width: '360px',
+          width: tooltipWidth,
           background: '#fff',
-          borderRadius: '16px',
-          padding: '28px',
+          borderRadius: isMobile ? '12px' : '16px',
+          padding: isMobile ? '20px' : '28px',
           boxShadow: '0 25px 50px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.05)',
-          zIndex: 10001,
+          zIndex: 100000,
           opacity: isAnimating ? 0 : 1,
           transform: isAnimating ? 'translateY(12px) scale(0.98)' : 'translateY(0) scale(1)',
           transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
@@ -364,10 +400,10 @@ const TutorialOverlay = ({ isOpen, onClose, onExpandFirst, onCollapseFirst }) =>
         {/* Indicador de progresso */}
         <div style={{
           display: 'flex',
-          gap: '6px',
-          marginBottom: '20px'
+          gap: isMobile ? '4px' : '6px',
+          marginBottom: isMobile ? '14px' : '20px'
         }}>
-          {TUTORIAL_STEPS.map((_, i) => (
+          {steps.map((_, i) => (
             <div
               key={i}
               style={{
@@ -385,19 +421,19 @@ const TutorialOverlay = ({ isOpen, onClose, onExpandFirst, onCollapseFirst }) =>
 
         {/* Contador de passos */}
         <div style={{
-          fontSize: '12px',
+          fontSize: isMobile ? '11px' : '12px',
           fontWeight: '700',
           color: '#D4AF37',
-          marginBottom: '8px',
+          marginBottom: isMobile ? '6px' : '8px',
           letterSpacing: '1px',
           textTransform: 'uppercase'
         }}>
-          Passo {currentStep + 1} de {TUTORIAL_STEPS.length}
+          Passo {currentStep + 1} de {steps.length}
         </div>
 
         {/* Título */}
         <h3 style={{
-          fontSize: '20px',
+          fontSize: isMobile ? '17px' : '20px',
           fontWeight: '700',
           color: '#1a1a2e',
           marginBottom: '4px',
@@ -421,10 +457,10 @@ const TutorialOverlay = ({ isOpen, onClose, onExpandFirst, onCollapseFirst }) =>
         {/* Descrição com HTML */}
         <p
           style={{
-            fontSize: '14px',
-            lineHeight: '1.7',
+            fontSize: isMobile ? '13px' : '14px',
+            lineHeight: isMobile ? '1.5' : '1.7',
             color: '#555',
-            marginBottom: '24px'
+            marginBottom: isMobile ? '18px' : '24px'
           }}
           dangerouslySetInnerHTML={{ __html: step.description }}
         />
@@ -432,15 +468,15 @@ const TutorialOverlay = ({ isOpen, onClose, onExpandFirst, onCollapseFirst }) =>
         {/* Botões de navegação */}
         <div style={{
           display: 'flex',
-          gap: '10px'
+          gap: isMobile ? '8px' : '10px'
         }}>
           {currentStep > 0 && (
             <button
               onClick={handlePrevious}
               style={{
                 flex: 1,
-                padding: '14px 16px',
-                borderRadius: '10px',
+                padding: isMobile ? '12px 14px' : '14px 16px',
+                borderRadius: isMobile ? '8px' : '10px',
                 background: '#f5f5f5',
                 border: 'none',
                 color: '#666',
@@ -472,8 +508,8 @@ const TutorialOverlay = ({ isOpen, onClose, onExpandFirst, onCollapseFirst }) =>
             style={{
               flex: currentStep > 0 ? 1 : 'auto',
               minWidth: currentStep > 0 ? 'auto' : '100%',
-              padding: '14px 24px',
-              borderRadius: '10px',
+              padding: isMobile ? '12px 18px' : '14px 24px',
+              borderRadius: isMobile ? '8px' : '10px',
               background: 'linear-gradient(135deg, #D4AF37 0%, #B8860B 100%)',
               border: 'none',
               color: '#fff',
@@ -505,9 +541,9 @@ const TutorialOverlay = ({ isOpen, onClose, onExpandFirst, onCollapseFirst }) =>
               }
             }}
           >
-            {currentStep === TUTORIAL_STEPS.length - 1 ? (
+            {currentStep === steps.length - 1 ? (
               <>
-                Finalizar
+                {finalButtonText}
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <polyline points="20 6 9 17 4 12"/>
                 </svg>
@@ -577,7 +613,8 @@ const TutorialOverlay = ({ isOpen, onClose, onExpandFirst, onCollapseFirst }) =>
           }
         }
       `}</style>
-    </div>
+    </div>,
+    document.body
   );
 };
 

@@ -88,7 +88,7 @@ const HomeScreen = () => {
           onClick={() => navigate('/generos')}>Ver Todos</button>
       </div>
 
-      <div style={{ padding: '0 20px', marginBottom: '24px' }}>
+      <div data-walkthrough="categories" style={{ padding: '0 20px', marginBottom: '24px' }}>
         <div className="categories-grid" style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
@@ -255,6 +255,7 @@ const HomeScreen = () => {
           Acervo Digital de Partituras • Versão {PROFILE_ABOUT_CONFIG.infoCards[0].value}
         </p>
       </div>
+
     </div>
   );
 };
