@@ -106,6 +106,16 @@ const STATEMENTS = [
     ordem INTEGER DEFAULT 0
   )`,
 
+  // Configurações globais (modo recesso, etc)
+  `CREATE TABLE IF NOT EXISTS configuracoes (
+    chave TEXT PRIMARY KEY,
+    valor TEXT NOT NULL,
+    atualizado_em DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`,
+
+  // Valor padrão para modo recesso
+  `INSERT OR IGNORE INTO configuracoes (chave, valor) VALUES ('modo_recesso', 'false')`,
+
   // View de estatísticas
   `CREATE VIEW IF NOT EXISTS v_estatisticas AS
   SELECT
