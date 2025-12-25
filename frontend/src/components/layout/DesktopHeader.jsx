@@ -12,6 +12,7 @@ import ThemeSelector from '@components/common/ThemeSelector';
 import AdminToggle from '@components/common/AdminToggle';
 import { getNextRehearsal } from '@hooks/useNextRehearsal';
 import { levenshtein } from '@utils/search';
+import { API } from '@services/api';
 
 // Normaliza texto para busca (estilo YouTube)
 const normalize = (str) => {
@@ -54,6 +55,11 @@ const DesktopHeader = () => {
   const { unreadCount } = useNotifications();
   const [searchQuery, setSearchQuery] = useState('');
   const [showResults, setShowResults] = useState(false);
+  const [modoRecesso, setModoRecesso] = useState(false);
+
+  useEffect(() => {
+    API.getModoRecesso().then(res => setModoRecesso(res.ativo));
+  }, []);
 
   // Busca fuzzy nos sheets com transliteracao - TODAS as palavras devem ser encontradas
   const searchResults = useMemo(() => {
@@ -187,8 +193,28 @@ const DesktopHeader = () => {
             {new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}
           </span>
 
-          {/* Contador do próximo ensaio */}
-          {rehearsalInfo.isNow ? (
+          {/* Contador do próximo ensaio ou badge de recesso */}
+          {modoRecesso ? (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              background: 'linear-gradient(135deg, #D4AF37 0%, #B8860B 100%)',
+              padding: '4px 12px',
+              borderRadius: '8px'
+            }}>
+              <span style={{
+                fontFamily: 'Outfit, sans-serif',
+                fontSize: '12px',
+                fontWeight: '700',
+                color: '#3D1518',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px'
+              }}>
+                Em Recesso
+              </span>
+            </div>
+          ) : rehearsalInfo.isNow ? (
             <div style={{
               display: 'flex',
               alignItems: 'center',
