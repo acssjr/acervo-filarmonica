@@ -9,7 +9,7 @@ info:
 servers:
   - url: http://localhost:8787
     description: Desenvolvimento local
-  - url: https://api.partituras25.com
+  - url: https://api.partituras.app
     description: Produção
 
 tags:

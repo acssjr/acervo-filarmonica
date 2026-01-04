@@ -119,7 +119,7 @@ worker/
 
 // Dominios permitidos para CORS
 export const ALLOWED_ORIGINS = [
-  'https://partituras25.com',
+  'https://partituras.app',
   'https://acervo-filarmonica.pages.dev',
   'https://acervo.filarmonica25marco.org.br',
   'http://localhost:5173',

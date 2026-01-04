@@ -33,6 +33,11 @@ coverage/
 
 # Claude
 .claude/
+.auto-claude/
+
+# Secretos
+.env
+.dev.vars
 
 # Playwright
 /test-results/

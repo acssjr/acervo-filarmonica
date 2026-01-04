@@ -9,12 +9,12 @@
 <br/>
 
 [![Versão](https://img.shields.io/badge/versão-2.8.0-722F37?style=for-the-badge&labelColor=D4AF37)](https://github.com/acssjr/acervo-filarmonica)
-[![Status](https://img.shields.io/badge/status-em%20produção-success?style=for-the-badge)](https://partituras25.com)
+[![Status](https://img.shields.io/badge/status-em%20produção-success?style=for-the-badge)](https://partituras.app)
 [![CI](https://img.shields.io/github/actions/workflow/status/acssjr/acervo-filarmonica/ci.yml?style=for-the-badge&label=CI&logo=github)](https://github.com/acssjr/acervo-filarmonica/actions)
 
 <br/>
 
-[**Acessar Sistema**](https://partituras25.com)
+[**Acessar Sistema**](https://partituras.app)
 
 <br/>
 
@@ -328,7 +328,7 @@ Push/PR -> Lint -> Jest (216+) -> E2E Mocked (8) -> Build -> Deploy
 
 | Ambiente | Frontend | API |
 |----------|----------|-----|
-| **Produção** | https://partituras25.com | https://api.partituras25.com |
+| **Produção** | https://partituras.app | https://api.partituras.app |
 | **Local** | http://localhost:5173 | http://localhost:8787 |
 
 ---
@@ -445,7 +445,7 @@ Isso cria as tabelas e insere usuários de teste para desenvolvimento local.
 - Domain Services separados por responsabilidade
 
 **Novo Domínio**
-- Migração para `partituras25.com` e `api.partituras25.com`
+- Migração para `partituras.app` e `api.partituras.app` (Anteriormente `partituras25.com`)
 - Configuração de rotas customizadas no Cloudflare
 
 **Melhorias de UX**

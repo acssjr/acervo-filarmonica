@@ -7,13 +7,14 @@ import { useAuth } from '@contexts/AuthContext';
 import { useData } from '@contexts/DataContext';
 import { useIsMobile } from '@hooks/useResponsive';
 import { API } from '@services/api';
-import { formatTimeAgo, getAtividadeInfo } from '@utils/formatters';
+// import { formatTimeAgo, getAtividadeInfo } from '@utils/formatters';
 import HomeHeader from '@components/common/HomeHeader';
 import HeaderActions from '@components/common/HeaderActions';
 import FeaturedSheets from '@components/music/FeaturedSheets';
 import CategoryCard from '@components/music/CategoryCard';
 import FileCard from '@components/music/FileCard';
 import ComposerCarousel from '@components/music/ComposerCarousel';
+import PresenceStats from '@components/stats/PresenceStats';
 import { PROFILE_ABOUT_CONFIG } from '@components/modals/AboutModal/changelog/profileChangelog';
 
 const HomeScreen = () => {
@@ -21,7 +22,7 @@ const HomeScreen = () => {
   const { user } = useAuth();
   const { sheets, favorites, toggleFavorite, categories, categoriesMap } = useData();
   const isMobile = useIsMobile();
-  const [atividades, setAtividades] = useState([]);
+  const [_atividades, setAtividades] = useState([]);
 
   // Memoiza contagem por categoria (evita O(n) * categorias em cada render)
   const categoryCounts = useMemo(() => {
@@ -34,8 +35,14 @@ const HomeScreen = () => {
 
   const getCategoryCount = (catId) => categoryCounts[catId] || 0;
 
+  // Gêneros principais para exibição na home
+  const mainGenres = useMemo(() => {
+    const mainIds = ['dobrados', 'marchas', 'arranjos', 'fantasias'];
+    return categories.filter(cat => mainIds.includes(cat.id));
+  }, [categories]);
+
   // Memoiza total de downloads
-  const totalDownloads = useMemo(() =>
+  const _totalDownloads = useMemo(() =>
     sheets.reduce((acc, s) => acc + (s.downloads || 0), 0),
   [sheets]);
 
@@ -95,12 +102,15 @@ const HomeScreen = () => {
           gap: '12px',
           width: '100%'
         }}>
-          {categories.slice(0, 4).map((cat, i) => (
+          {mainGenres.map((cat, i) => (
             <CategoryCard key={cat.id} category={cat} count={getCategoryCount(cat.id)} index={i}
               onClick={() => navigate(`/acervo/${cat.id}`)} />
           ))}
         </div>
       </div>
+
+      {/* Secao de Compositores - Carrossel apenas no mobile */}
+      {isMobile && <ComposerCarousel composers={topComposers} />}
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 20px', marginBottom: '12px' }}>
         <h2 style={{ fontFamily: "Outfit, sans-serif", fontSize: '18px', fontWeight: '700' }}>Partituras Populares</h2>
@@ -121,124 +131,9 @@ const HomeScreen = () => {
         ))}
       </div>
 
-      {/* Secao de Compositores - Carrossel apenas no mobile */}
-      {isMobile && <ComposerCarousel composers={topComposers} />}
-
-      {/* Seção de Estatísticas */}
+      {/* Seção de Presença */}
       <div style={{ padding: '32px 20px' }}>
-        <h2 style={{ fontFamily: "Outfit, sans-serif", fontSize: '18px', fontWeight: '700', marginBottom: '16px' }}>
-          Estatísticas do Acervo
-        </h2>
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(2, 1fr)',
-          gap: '12px'
-        }}>
-          <div style={{
-            background: 'var(--bg-card)',
-            border: '1px solid var(--border)',
-            borderRadius: '16px',
-            padding: '20px',
-            textAlign: 'center'
-          }}>
-            <p style={{ fontSize: '32px', fontWeight: '800', color: 'var(--primary)', fontFamily: 'Outfit, sans-serif' }}>
-              {sheets.length}
-            </p>
-            <p style={{ fontSize: '13px', color: 'var(--text-muted)', fontFamily: 'Outfit, sans-serif' }}>
-              Partituras
-            </p>
-          </div>
-          <div style={{
-            background: 'var(--bg-card)',
-            border: '1px solid var(--border)',
-            borderRadius: '16px',
-            padding: '20px',
-            textAlign: 'center'
-          }}>
-            <p style={{ fontSize: '32px', fontWeight: '800', color: '#D4AF37', fontFamily: 'Outfit, sans-serif' }}>
-              {favorites.length}
-            </p>
-            <p style={{ fontSize: '13px', color: 'var(--text-muted)', fontFamily: 'Outfit, sans-serif' }}>
-              Favoritos
-            </p>
-          </div>
-          <div style={{
-            background: 'var(--bg-card)',
-            border: '1px solid var(--border)',
-            borderRadius: '16px',
-            padding: '20px',
-            textAlign: 'center'
-          }}>
-            <p style={{ fontSize: '32px', fontWeight: '800', color: '#43B97F', fontFamily: 'Outfit, sans-serif' }}>
-              {categories.length}
-            </p>
-            <p style={{ fontSize: '13px', color: 'var(--text-muted)', fontFamily: 'Outfit, sans-serif' }}>
-              Gêneros
-            </p>
-          </div>
-          <div style={{
-            background: 'var(--bg-card)',
-            border: '1px solid var(--border)',
-            borderRadius: '16px',
-            padding: '20px',
-            textAlign: 'center'
-          }}>
-            <p style={{ fontSize: '32px', fontWeight: '800', color: '#5B8DEF', fontFamily: 'Outfit, sans-serif' }}>
-              {totalDownloads}
-            </p>
-            <p style={{ fontSize: '13px', color: 'var(--text-muted)', fontFamily: 'Outfit, sans-serif' }}>
-              Downloads
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Seção de Atividade Recente */}
-      <div style={{ padding: '0 20px 32px' }}>
-        <h2 style={{ fontFamily: "Outfit, sans-serif", fontSize: '18px', fontWeight: '700', marginBottom: '16px' }}>
-          Atividade Recente
-        </h2>
-        <div style={{
-          background: 'var(--bg-card)',
-          border: '1px solid var(--border)',
-          borderRadius: '16px',
-          overflow: 'hidden'
-        }}>
-          {atividades.length === 0 ? (
-            <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '14px' }}>
-              Nenhuma atividade recente
-            </div>
-          ) : (
-            atividades.slice(0, 5).map((atividade, index, arr) => {
-              const info = getAtividadeInfo(atividade.tipo);
-              return (
-                <div key={atividade.id || index} style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '14px',
-                  padding: '14px 16px',
-                  borderBottom: index < arr.length - 1 ? '1px solid var(--border)' : 'none'
-                }}>
-                  <div style={{
-                    width: '8px',
-                    height: '8px',
-                    borderRadius: '50%',
-                    background: info.color,
-                    flexShrink: 0
-                  }} />
-                  <div style={{ flex: 1 }}>
-                    <p style={{ fontSize: '14px', fontFamily: 'Outfit, sans-serif', color: 'var(--text-primary)', marginBottom: '2px' }}>
-                      {info.action}
-                    </p>
-                    <p style={{ fontSize: '12px', fontFamily: 'Outfit, sans-serif', color: 'var(--text-muted)' }}>
-                      {atividade.titulo} {atividade.detalhes && `• ${atividade.detalhes}`} • {formatTimeAgo(atividade.criado_em)}
-                    </p>
-                  </div>
-                </div>
-              );
-            })
-          )}
-        </div>
+        <PresenceStats />
       </div>
 
       {/* Footer informativo */}

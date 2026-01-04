@@ -526,6 +526,52 @@ export const API = {
       method: 'PUT',
       body: JSON.stringify({ ativo })
     });
+  },
+
+  // ============ PRESENÇA ============
+
+  async getMinhaPresenca() {
+    return this.request('/api/presenca/minhas');
+  },
+
+  async registrarPresencas(dataEnsaio, usuariosIds) {
+    return this.request('/api/presenca', {
+      method: 'POST',
+      body: JSON.stringify({
+        data_ensaio: dataEnsaio,
+        usuarios_ids: usuariosIds
+      })
+    });
+  },
+
+  async getTodasPresencas() {
+    return this.request('/api/presenca/todas');
+  },
+
+  // ============ ENSAIOS ============
+
+  async getPartiturasEnsaio(dataEnsaio) {
+    return this.request(`/api/ensaios/${dataEnsaio}/partituras`);
+  },
+
+  async addPartituraEnsaio(dataEnsaio, partituraId) {
+    return this.request(`/api/ensaios/${dataEnsaio}/partituras`, {
+      method: 'POST',
+      body: JSON.stringify({ partitura_id: partituraId })
+    });
+  },
+
+  async removePartituraEnsaio(dataEnsaio, id) {
+    return this.request(`/api/ensaios/${dataEnsaio}/partituras/${id}`, {
+      method: 'DELETE'
+    });
+  },
+
+  async reorderPartiturasEnsaio(dataEnsaio, ordens) {
+    return this.request(`/api/ensaios/${dataEnsaio}/partituras/reorder`, {
+      method: 'PUT',
+      body: JSON.stringify({ ordens })
+    });
   }
 };
 

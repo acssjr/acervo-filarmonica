@@ -25,6 +25,7 @@ const FeaturedSheets = ({ sheets, onToggleFavorite, favorites }) => {
   const scrollRef = useRef(null);
   const innerRef = useRef(null);
   const [hasInteracted, setHasInteracted] = useState(false);
+  const inactivityTimerRef = useRef(null);
 
   useEffect(() => {
     const handleResize = () => setIsDesktop(window.innerWidth >= 1024);
@@ -38,27 +39,44 @@ const FeaturedSheets = ({ sheets, onToggleFavorite, favorites }) => {
     return featured.slice(0, 8);
   }, [sheets]);
 
-  // Para a animação quando o usuário interage
+  // Para a animação quando o usuário interage e agenda retomada
   const stopAnimation = useCallback(() => {
-    if (!hasInteracted) {
-      // Captura a posição atual da animação e converte para scroll
-      if (innerRef.current && scrollRef.current) {
-        const computedStyle = window.getComputedStyle(innerRef.current);
-        const transform = computedStyle.transform;
+    // Captura a posição atual da animação e converte para scroll
+    if (innerRef.current && scrollRef.current) {
+      const computedStyle = window.getComputedStyle(innerRef.current);
+      const transform = computedStyle.transform;
 
-        if (transform && transform !== 'none') {
-          const matrix = new DOMMatrix(transform);
-          const currentX = matrix.m41;
-          // Remove a animação primeiro
-          innerRef.current.style.animation = 'none';
-          innerRef.current.style.transform = 'none';
-          // Aplica o scroll na posição equivalente
-          scrollRef.current.scrollLeft = Math.abs(currentX);
-        }
+      if (transform && transform !== 'none') {
+        const matrix = new DOMMatrix(transform);
+        const currentX = matrix.m41;
+        // Remove a animação primeiro
+        innerRef.current.style.animation = 'none';
+        innerRef.current.style.transform = 'none';
+        // Aplica o scroll na posição equivalente
+        scrollRef.current.scrollLeft = Math.abs(currentX);
       }
-      setHasInteracted(true);
     }
-  }, [hasInteracted]);
+    setHasInteracted(true);
+
+    // Limpa timer anterior
+    if (inactivityTimerRef.current) {
+      clearTimeout(inactivityTimerRef.current);
+    }
+
+    // Retoma animação após 5 segundos de inatividade
+    inactivityTimerRef.current = setTimeout(() => {
+      setHasInteracted(false);
+    }, 5000);
+  }, []);
+
+  // Limpa timer ao desmontar
+  useEffect(() => {
+    return () => {
+      if (inactivityTimerRef.current) {
+        clearTimeout(inactivityTimerRef.current);
+      }
+    };
+  }, []);
 
   // Handlers memoizados para evitar re-renders
   const handleMouseDown = useCallback((e) => {
@@ -102,14 +120,6 @@ const FeaturedSheets = ({ sheets, onToggleFavorite, favorites }) => {
           </h2>
           <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Partituras em estudo</p>
         </div>
-        {!hasInteracted && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--text-muted)', fontSize: '12px' }}>
-            <span>Arraste</span>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M5 12h14M12 5l7 7-7 7"/>
-            </svg>
-          </div>
-        )}
       </div>
 
       {/* Cards - Scroll fluido com fade nas bordas */}

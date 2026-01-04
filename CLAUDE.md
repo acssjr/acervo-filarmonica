@@ -232,7 +232,7 @@ localhost:5173          localhost:8787              .wrangler/state/
 | Ambiente | Frontend | API |
 |----------|----------|-----|
 | Local | http://localhost:5173 | http://localhost:8787 |
-| Producao | https://partituras25.com | https://api.partituras25.com |
+| Producao | https://partituras.app | https://api.partituras.app |
 
 ### Arquitetura do Worker (Backend)
 

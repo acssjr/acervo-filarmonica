@@ -138,16 +138,16 @@ const HomeHeader = ({ userName, instrument, actions }) => {
               marginTop: '12px'
             }}>
               <div style={{
-                background: 'linear-gradient(135deg, #D4AF37 0%, #B8860B 100%)',
+                background: '#D4AF37',
                 color: '#3D1518',
-                fontSize: '12px',
+                fontSize: '10px',
                 fontFamily: 'Outfit, sans-serif',
                 fontWeight: '700',
-                padding: '6px 14px',
+                padding: '5px 10px',
                 borderRadius: '8px',
                 textTransform: 'uppercase',
-                letterSpacing: '1px',
-                boxShadow: '0 2px 8px rgba(212, 175, 55, 0.3)'
+                letterSpacing: '0.5px',
+                whiteSpace: 'nowrap'
               }}>
                 EM RECESSO
               </div>
