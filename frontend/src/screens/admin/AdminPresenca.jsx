@@ -94,7 +94,7 @@ const AdminPresenca = () => {
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
 
-    let dataAtual = new Date(hoje);
+    const dataAtual = new Date(hoje);
 
     // Procurar a última segunda ou quarta que já passou
     while (true) {
@@ -168,7 +168,7 @@ const AdminPresenca = () => {
 
   useEffect(() => {
     loadData();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Carregar partituras quando data mudar
@@ -176,7 +176,6 @@ const AdminPresenca = () => {
     if (dataEnsaio) {
       loadPartiturasEnsaio(dataEnsaio);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dataEnsaio]);
 
   // Toggle seleção individual
@@ -955,7 +954,7 @@ const AdminPresenca = () => {
                   }}>
                     {(() => {
                       try {
-                        const [ano, mes, dia] = ensaio.data.split('-');
+                        const [, , dia] = ensaio.data.split('-');
                         return dia || '?';
                       } catch {
                         return '?';
@@ -972,7 +971,7 @@ const AdminPresenca = () => {
                   }}>
                     {(() => {
                       try {
-                        const [ano, mes, dia] = ensaio.data.split('-');
+                        const [, mes] = ensaio.data.split('-');
                         const meses = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
                         return meses[parseInt(mes) - 1] || '?';
                       } catch {
