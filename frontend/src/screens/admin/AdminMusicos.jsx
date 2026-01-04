@@ -19,6 +19,7 @@ const AdminMusicos = () => {
   const [showModal, setShowModal] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [showResetPin, setShowResetPin] = useState(null);
+  const [failedImages, setFailedImages] = useState(new Set());
 
   const loadData = async () => {
     setLoading(true);
@@ -221,10 +222,17 @@ const AdminMusicos = () => {
                   justifyContent: 'center',
                   boxShadow: `0 2px 8px ${COLORS_RGBA.gold.bg30}`
                 }}>
-                  {user.foto_url ? (
+                  {user.foto_url && !failedImages.has(user.id) ? (
                     <img
                       src={user.foto_url}
                       alt={user.nome}
+                      onError={() => {
+                        setFailedImages(prev => {
+                          const newSet = new Set(prev);
+                          newSet.add(user.id);
+                          return newSet;
+                        });
+                      }}
                       style={{
                         width: '100%',
                         height: '100%',
