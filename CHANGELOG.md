@@ -7,6 +7,25 @@ e este projeto adere ao [Versionamento Semantico](https://semver.org/lang/pt-BR/
 
 ---
 
+## [2.9.1] - 2026-01-03
+### Migração de Domínio
+**Objetivo:** Alterar todos os domínios de `partituras25.com` para `partituras.app`.
+
+### Alterado
+- **wrangler.toml**: Rotas customizadas apontando para `api.partituras.app`
+- **worker**: `ALLOWED_ORIGINS` atualizado para aceitar `https://partituras.app`
+- **frontend**: `API_BASE_URL` alterado para `https://api.partituras.app`
+- **Docs**: README, CLAUDE.md e especificações atualizadas.
+
+---
+
+## [2.9.0] - 2025-12-18
+### Melhorias de UI e Scroll do Carrossel
+- Remoção de `layoutId` para evitar animações indesejadas
+- Correção do scroll infinito no carrossel de destaques
+
+---
+
 ## [2.6.0] - 2025-12-09
 
 ### Arquitetura Modular do Backend e Novo Dominio

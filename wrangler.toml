@@ -30,10 +30,10 @@ bucket_name = "acervo-pdfs"
 ENVIRONMENT = "production"
 JWT_SECRET = "acervo-jwt-2e8dc4fb-4f78-45fe-filarmonica25marco"
 
-# Rota customizada para o dominio api.partituras25.com
+# Rota customizada para o dominio api.partituras.app
 [[routes]]
-pattern = "api.partituras25.com/*"
-zone_id = "35bcbcf34f3540cf480ab66c29041845"
+pattern = "api.partituras.app/*"
+zone_id = "9a59e2df96e219410b375b7546ea781c"
 
 # ============================================================
 # COMANDOS ÚTEIS

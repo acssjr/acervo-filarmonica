@@ -8,7 +8,7 @@ const API_TARGET = process.env.VITE_API_TARGET || 'prod'
 
 const apiTargets = {
   local: 'http://localhost:8787',
-  prod: 'https://api.partituras25.com'
+  prod: 'https://api.partituras.app'
 }
 
 if (API_TARGET === 'prod') {

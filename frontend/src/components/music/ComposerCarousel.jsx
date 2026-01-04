@@ -2,7 +2,7 @@
 // Carrossel de compositores com glassmorphism para mobile
 // Exibe os 3 principais compositores em cards hero com auto-scroll
 
-import { useState, useRef, useCallback, useMemo } from 'react';
+import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 // Fotos dos compositores (caminhos locais - WebP otimizado)
@@ -21,6 +21,7 @@ const ComposerCarousel = ({ composers = [] }) => {
   const scrollRef = useRef(null);
   const innerRef = useRef(null);
   const [hasInteracted, setHasInteracted] = useState(false);
+  const inactivityTimerRef = useRef(null);
 
   // Pega os 3 principais compositores (priorizando os da lista)
   const topComposers = useMemo(() => {
@@ -41,26 +42,43 @@ const ComposerCarousel = ({ composers = [] }) => {
     ? [...topComposers, ...topComposers]
     : topComposers;
 
-  // Para a animacao quando o usuario interage
+  // Para a animacao quando o usuario interage e agenda retomada
   const stopAnimation = useCallback(() => {
-    if (!hasInteracted) {
-      if (innerRef.current && scrollRef.current) {
-        const computedStyle = window.getComputedStyle(innerRef.current);
-        const transform = computedStyle.transform;
-        if (transform && transform !== 'none') {
-          const matrix = new DOMMatrix(transform);
-          const currentX = matrix.m41;
-          scrollRef.current.scrollLeft = Math.abs(currentX);
-        }
+    if (innerRef.current && scrollRef.current) {
+      const computedStyle = window.getComputedStyle(innerRef.current);
+      const transform = computedStyle.transform;
+      if (transform && transform !== 'none') {
+        const matrix = new DOMMatrix(transform);
+        const currentX = matrix.m41;
+        scrollRef.current.scrollLeft = Math.abs(currentX);
       }
-      setHasInteracted(true);
     }
-  }, [hasInteracted]);
+    setHasInteracted(true);
+
+    // Limpa timer anterior
+    if (inactivityTimerRef.current) {
+      clearTimeout(inactivityTimerRef.current);
+    }
+
+    // Retoma animação após 5 segundos de inatividade
+    inactivityTimerRef.current = setTimeout(() => {
+      setHasInteracted(false);
+    }, 5000);
+  }, []);
+
+  // Limpa timer ao desmontar
+  useEffect(() => {
+    return () => {
+      if (inactivityTimerRef.current) {
+        clearTimeout(inactivityTimerRef.current);
+      }
+    };
+  }, []);
 
   if (topComposers.length === 0) return null;
 
   return (
-    <div style={{ padding: '32px 0 0' }}>
+    <div style={{ padding: '24px 0 0' }}>
       {/* Header */}
       <div style={{
         display: 'flex',
@@ -226,24 +244,6 @@ const ComposerCarousel = ({ composers = [] }) => {
           })}
         </div>
       </div>
-
-      {/* Indicador de arraste */}
-      {!hasInteracted && (
-        <div style={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          gap: '4px',
-          color: 'var(--text-muted)',
-          fontSize: '12px',
-          marginTop: '8px'
-        }}>
-          <span>Arraste</span>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M5 12h14M12 5l7 7-7 7"/>
-          </svg>
-        </div>
-      )}
     </div>
   );
 };

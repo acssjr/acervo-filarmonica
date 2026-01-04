@@ -10,7 +10,7 @@ describe('getNextRehearsal', () => {
   const mockDate = (dayOfWeek, hour, minute = 0) => {
     // Dias: 0=dom, 1=seg, 2=ter, 3=qua, 4=qui, 5=sex, 6=sab
     const RealDate = global.Date;
-    const baseDate = new Date('2024-01-01T00:00:00'); // Segunda-feira
+    const baseDate = new Date('2024-01-01T00:00:00Z'); // Segunda-feira
 
     // Ajusta para o dia da semana desejado
     const daysToAdd = (dayOfWeek - baseDate.getDay() + 7) % 7;

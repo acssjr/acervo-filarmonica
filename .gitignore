@@ -33,6 +33,10 @@ coverage/
 
 # Claude
 .claude/
+.auto-claude/
+
+# Secretos
+.env
 
 # Playwright
 /test-results/

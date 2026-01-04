@@ -182,7 +182,8 @@ const DesktopHeader = () => {
           display: 'flex',
           flexDirection: 'column',
           gap: '4px',
-          minWidth: '200px'
+          minWidth: '200px',
+          alignItems: 'flex-start'
         }}>
           <span style={{
             fontFamily: 'Outfit, sans-serif',
@@ -196,23 +197,19 @@ const DesktopHeader = () => {
           {/* Contador do próximo ensaio ou badge de recesso */}
           {modoRecesso ? (
             <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              background: 'linear-gradient(135deg, #D4AF37 0%, #B8860B 100%)',
-              padding: '4px 12px',
-              borderRadius: '8px'
+              background: '#D4AF37',
+              color: '#3D1518',
+              fontSize: '10px',
+              fontFamily: 'Outfit, sans-serif',
+              fontWeight: '700',
+              padding: '5px 10px',
+              borderRadius: '8px',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px',
+              whiteSpace: 'nowrap',
+              display: 'inline-block'
             }}>
-              <span style={{
-                fontFamily: 'Outfit, sans-serif',
-                fontSize: '12px',
-                fontWeight: '700',
-                color: '#3D1518',
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px'
-              }}>
-                Em Recesso
-              </span>
+              EM RECESSO
             </div>
           ) : rehearsalInfo.isNow ? (
             <div style={{

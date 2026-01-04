@@ -16,6 +16,7 @@ import AdminPartituras from './AdminPartituras';
 import AdminCategorias from './AdminCategorias';
 import AdminRepertorio from './AdminRepertorio';
 import AdminConfig from './AdminConfig';
+import AdminPresenca from './AdminPresenca';
 
 const AdminApp = () => {
   const navigate = useNavigate();
@@ -93,6 +94,7 @@ const AdminApp = () => {
     { id: 'partituras', icon: 'music', label: 'Partituras' },
     { id: 'repertorio', icon: 'repertorio', label: 'Repertório' },
     { id: 'categorias', icon: 'folder', label: 'Categorias' },
+    { id: 'presenca', icon: 'check-circle', label: 'Presença' },
     { id: 'config', icon: 'settings', label: 'Configurações' },
   ];
 
@@ -143,6 +145,12 @@ const AdminApp = () => {
           <line x1="3" y1="12" x2="3.01" y2="12"/>
           <line x1="3" y1="18" x2="3.01" y2="18"/>
         </svg>
+      ),
+      'check-circle': (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+          <polyline points="22 4 12 14.01 9 11.01"/>
+        </svg>
       )
     };
     return icons[type] || icons.music;
@@ -155,6 +163,7 @@ const AdminApp = () => {
       case 'partituras': return <AdminPartituras />;
       case 'repertorio': return <AdminRepertorio />;
       case 'categorias': return <AdminCategorias />;
+      case 'presenca': return <AdminPresenca />;
       case 'config': return <AdminConfig />;
       default: return <AdminDashboard />;
     }
