@@ -19,6 +19,7 @@ const AdminMusicos = () => {
   const [showModal, setShowModal] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [showResetPin, setShowResetPin] = useState(null);
+  const [failedImages, setFailedImages] = useState(new Set());
 
   const loadData = async () => {
     setLoading(true);
@@ -108,10 +109,10 @@ const AdminMusicos = () => {
           marginBottom: '8px'
         }}>
           <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-            <circle cx="9" cy="7" r="4"/>
-            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
           </svg>
           Músicos
         </h1>
@@ -142,7 +143,7 @@ const AdminMusicos = () => {
           }}
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
           </svg>
           Novo Músico
         </button>
@@ -152,8 +153,8 @@ const AdminMusicos = () => {
       <div style={{ marginBottom: '24px' }}>
         <div className="search-bar" style={{ maxWidth: '100%' }}>
           <svg className="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="11" cy="11" r="8"/>
-            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
           <input
             type="text"
@@ -164,7 +165,7 @@ const AdminMusicos = () => {
           {search && (
             <button className="clear-btn" onClick={() => setSearch('')}>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
               </svg>
             </button>
           )}
@@ -209,6 +210,10 @@ const AdminMusicos = () => {
                 <div style={{
                   width: '52px',
                   height: '52px',
+                  minWidth: '52px',
+                  minHeight: '52px',
+                  flexShrink: 0,
+                  aspectRatio: '1 / 1',
                   borderRadius: '50%',
                   background: `linear-gradient(145deg, ${COLORS.gold.primary} 0%, ${COLORS.gold.darkest} 100%)`,
                   padding: '3px',
@@ -217,21 +222,41 @@ const AdminMusicos = () => {
                   justifyContent: 'center',
                   boxShadow: `0 2px 8px ${COLORS_RGBA.gold.bg30}`
                 }}>
-                  <div style={{
-                    width: '100%',
-                    height: '100%',
-                    borderRadius: '50%',
-                    background: `linear-gradient(145deg, ${COLORS.wine.primary} 0%, ${COLORS.wine.dark} 100%)`,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '20px',
-                    color: COLORS.text.cream,
-                    fontWeight: '600',
-                    fontFamily: 'Outfit, sans-serif'
-                  }}>
-                    {user.nome?.charAt(0)?.toUpperCase() || '?'}
-                  </div>
+                  {user.foto_url && !failedImages.has(user.id) ? (
+                    <img
+                      src={user.foto_url}
+                      alt={user.nome}
+                      onError={() => {
+                        setFailedImages(prev => {
+                          const newSet = new Set(prev);
+                          newSet.add(user.id);
+                          return newSet;
+                        });
+                      }}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        borderRadius: '50%',
+                        objectFit: 'cover'
+                      }}
+                    />
+                  ) : (
+                    <div style={{
+                      width: '100%',
+                      height: '100%',
+                      borderRadius: '50%',
+                      background: `linear-gradient(145deg, ${COLORS.wine.primary} 0%, ${COLORS.wine.dark} 100%)`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '20px',
+                      color: COLORS.text.cream,
+                      fontWeight: '600',
+                      fontFamily: 'Outfit, sans-serif'
+                    }}>
+                      {user.nome?.charAt(0)?.toUpperCase() || '?'}
+                    </div>
+                  )}
                 </div>
                 <div>
                   <div style={{ fontWeight: '600', color: 'var(--text-primary)', marginBottom: '2px', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
@@ -277,8 +302,8 @@ const AdminMusicos = () => {
                   justifyContent: 'center'
                 }}>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                   </svg>
                 </button>
                 {/* Botão de resetar PIN - oculto para super admin (@admin) */}
@@ -296,8 +321,8 @@ const AdminMusicos = () => {
                     justifyContent: 'center'
                   }}>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                      <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                     </svg>
                   </button>
                 )}
@@ -317,12 +342,12 @@ const AdminMusicos = () => {
                   }}>
                     {user.ativo ? (
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <circle cx="12" cy="12" r="10"/>
-                        <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+                        <circle cx="12" cy="12" r="10" />
+                        <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
                       </svg>
                     ) : (
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="20 6 9 17 4 12"/>
+                        <polyline points="20 6 9 17 4 12" />
                       </svg>
                     )}
                   </button>
