@@ -629,13 +629,13 @@ const AdminPresenca = () => {
                         color: 'var(--text-primary)',
                         marginBottom: '2px'
                       }}>
-                        {usuario.nome_completo}
+                        {usuario.nome}
                       </div>
                       <div style={{
                         fontSize: '13px',
                         color: 'var(--text-muted)'
                       }}>
-                        {usuario.instrumento}
+                        {usuario.instrumento_nome}
                       </div>
                     </div>
                   </label>

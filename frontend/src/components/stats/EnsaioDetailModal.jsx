@@ -33,7 +33,7 @@ const EnsaioDetailModal = ({ ensaio, isOpen, onClose }) => {
   if (!ensaio) return null;
 
   // Formatar data
-  const data = new Date(ensaio.data_ensaio + 'T00:00:00');
+  const data = new Date(ensaio.data_ensaio + 'T00:00:00Z');
   const dataFormatada = data.toLocaleDateString('pt-BR', {
     day: '2-digit',
     month: 'long',

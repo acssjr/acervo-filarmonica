@@ -49,7 +49,7 @@ const AttendanceCalendar = ({ ensaios = [], onEnsaioClick }) => {
       >
         {ensaios.map((ensaio) => {
           // Formatar data
-          const data = new Date(ensaio.data_ensaio + 'T00:00:00');
+          const data = new Date(ensaio.data_ensaio + 'T00:00:00Z');
           const dia = data.getDate();
           const diaSemana = ensaio.dia_semana || data.toLocaleDateString('pt-BR', { weekday: 'short' });
           const presente = ensaio.usuario_presente === 1;

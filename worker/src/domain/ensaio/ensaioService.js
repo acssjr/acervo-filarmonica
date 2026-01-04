@@ -32,17 +32,11 @@ export async function getPartiturasEnsaio(env, dataEnsaio) {
  * @returns {Promise<Object>} - Resultado da operação
  */
 export async function addPartituraEnsaio(env, dataEnsaio, partituraId, adminId) {
-  // Buscar próxima ordem
-  const maxOrdem = await env.DB.prepare(`
-    SELECT COALESCE(MAX(ordem), -1) + 1 as next_ordem
-    FROM ensaios_partituras WHERE data_ensaio = ?
-  `).bind(dataEnsaio).first();
-
   try {
     await env.DB.prepare(`
       INSERT INTO ensaios_partituras (data_ensaio, partitura_id, ordem, criado_por)
-      VALUES (?, ?, ?, ?)
-    `).bind(dataEnsaio, partituraId, maxOrdem.next_ordem, adminId).run();
+      SELECT ?, ?, COALESCE((SELECT MAX(ordem) FROM ensaios_partituras WHERE data_ensaio = ?), -1) + 1, ?
+    `).bind(dataEnsaio, partituraId, dataEnsaio, adminId).run();
 
     return { sucesso: true };
   } catch (error) {

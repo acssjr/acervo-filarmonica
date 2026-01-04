@@ -3,6 +3,7 @@
 
 import { authMiddleware, adminMiddleware } from '../middleware/index.js';
 import * as PresencaService from '../domain/presenca/presencaService.js';
+import { jsonResponse, errorResponse } from '../infrastructure/response/helpers.js';
 
 /**
  * Configura rotas de presença
@@ -13,13 +14,10 @@ export function setupPresencaRoutes(router) {
   router.get('/api/presenca/minhas', async (request, env, params, context) => {
     try {
       const data = await PresencaService.getPresencaUsuario(env, context.user.id);
-      return Response.json(data);
+      return jsonResponse(data, 200, request);
     } catch (error) {
       console.error('Erro ao buscar presença:', error);
-      return Response.json(
-        { erro: 'Erro ao buscar presença' },
-        { status: 500 }
-      );
+      return errorResponse('Erro ao buscar presença', 500, request);
     }
   }, [authMiddleware]);
 
@@ -30,17 +28,11 @@ export function setupPresencaRoutes(router) {
 
       // Validações
       if (!data_ensaio) {
-        return Response.json(
-          { erro: 'Data do ensaio é obrigatória' },
-          { status: 400 }
-        );
+        return errorResponse('Data do ensaio é obrigatória', 400, request);
       }
 
       if (!usuarios_ids || !Array.isArray(usuarios_ids) || usuarios_ids.length === 0) {
-        return Response.json(
-          { erro: 'Lista de usuários é obrigatória' },
-          { status: 400 }
-        );
+        return errorResponse('Lista de usuários é obrigatória', 400, request);
       }
 
       const result = await PresencaService.registrarPresencas(
@@ -50,22 +42,16 @@ export function setupPresencaRoutes(router) {
         context.user.id
       );
 
-      return Response.json(result);
+      return jsonResponse(result, 200, request);
     } catch (error) {
       console.error('Erro ao registrar presenças:', error);
 
       // Se erro de validação (data futura), retornar 400
       if (error.message.includes('Data não pode ser futura')) {
-        return Response.json(
-          { erro: error.message },
-          { status: 400 }
-        );
+        return errorResponse(error.message, 400, request);
       }
 
-      return Response.json(
-        { erro: 'Erro ao registrar presenças' },
-        { status: 500 }
-      );
+      return errorResponse('Erro ao registrar presenças', 500, request);
     }
   }, [authMiddleware, adminMiddleware]);
 
@@ -73,13 +59,10 @@ export function setupPresencaRoutes(router) {
   router.get('/api/presenca/todas', async (request, env, _params, _context) => {
     try {
       const data = await PresencaService.getTodasPresencas(env);
-      return Response.json(data);
+      return jsonResponse(data, 200, request);
     } catch (error) {
       console.error('Erro ao buscar presenças:', error);
-      return Response.json(
-        { erro: 'Erro ao buscar presenças' },
-        { status: 500 }
-      );
+      return errorResponse('Erro ao buscar presenças', 500, request);
     }
   }, [authMiddleware, adminMiddleware]);
 }

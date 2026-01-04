@@ -37,7 +37,6 @@ coverage/
 
 # Secretos
 .env
-.dev.vars
 
 # Playwright
 /test-results/

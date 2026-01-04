@@ -8,7 +8,7 @@
 
 <br/>
 
-[![Versão](https://img.shields.io/badge/versão-2.8.0-722F37?style=for-the-badge&labelColor=D4AF37)](https://github.com/acssjr/acervo-filarmonica)
+[![Versão](https://img.shields.io/badge/versão-2.9.1-722F37?style=for-the-badge&labelColor=D4AF37)](https://github.com/acssjr/acervo-filarmonica)
 [![Status](https://img.shields.io/badge/status-em%20produção-success?style=for-the-badge)](https://partituras.app)
 [![CI](https://img.shields.io/github/actions/workflow/status/acssjr/acervo-filarmonica/ci.yml?style=for-the-badge&label=CI&logo=github)](https://github.com/acssjr/acervo-filarmonica/actions)
 

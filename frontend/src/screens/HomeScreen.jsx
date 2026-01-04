@@ -37,14 +37,25 @@ const HomeScreen = () => {
 
   // Gêneros principais para exibição na home
   const mainGenres = useMemo(() => {
-    const mainIds = ['dobrados', 'marchas', 'arranjos', 'fantasias'];
-    return categories.filter(cat => mainIds.includes(cat.id));
+    const desiredIds = ['dobrados', 'marchas', 'arranjos', 'fantasias'];
+    const filtered = desiredIds
+      .map(id => categories.find(cat => cat.id === id))
+      .filter(Boolean);
+
+    // Se não encontrou as categorias esperadas, loga aviso e usa fallback
+    if (filtered.length === 0 && categories.length > 0) {
+      const missing = desiredIds.filter(id => !categories.find(cat => cat.id === id));
+      console.warn(`[HomeScreen] Categorias principais não encontradas: ${missing.join(', ')}. Usando as primeiras ${Math.min(categories.length, 4)} categorias como fallback.`);
+      return categories.slice(0, 4);
+    }
+
+    return filtered;
   }, [categories]);
 
   // Memoiza total de downloads
   const _totalDownloads = useMemo(() =>
     sheets.reduce((acc, s) => acc + (s.downloads || 0), 0),
-  [sheets]);
+    [sheets]);
 
   const recentSheets = useMemo(() => [...sheets].sort((a, b) => (b.downloads || 0) - (a.downloads || 0)).slice(0, 6), [sheets]);
 
