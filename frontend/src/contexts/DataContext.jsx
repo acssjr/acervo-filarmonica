@@ -157,22 +157,33 @@ export const DataProvider = ({ children }) => {
     const token = Storage.get('authToken', null);
 
     setFavorites(prev => {
-      const isFavorito = prev.includes(id);
-      const newFavorites = isFavorito ? prev.filter(f => f !== id) : [...prev, id];
+      const wasFavorito = prev.includes(id);
+      const newFavorites = wasFavorito ? prev.filter(f => f !== id) : [...prev, id];
 
       // Fire and forget - API sync em background
       if (USE_API && token) {
-        const apiCall = isFavorito ? API.removeFavorito(id) : API.addFavorito(id);
+        const apiCall = wasFavorito ? API.removeFavorito(id) : API.addFavorito(id);
         apiCall.catch(error => {
-          // Reverte em caso de erro
-          setFavorites(prevState => isFavorito ? [...prevState, id] : prevState.filter(f => f !== id));
+          // Rollback inteligente: verifica estado atual antes de reverter
+          // Evita rollback incorreto em caso de toggles rápidos
+          setFavorites(currentState => {
+            const isCurrentlyFavorito = currentState.includes(id);
+            const expectedState = !wasFavorito; // Estado esperado apos toggle
+
+            // So reverte se estado atual e o esperado (toggle nao foi sobrescrito)
+            if (isCurrentlyFavorito === expectedState) {
+              return wasFavorito ? [...currentState, id] : currentState.filter(f => f !== id);
+            }
+            // Estado ja foi alterado por outro toggle, nao reverte
+            return currentState;
+          });
           console.error('Erro ao sincronizar favorito:', error);
         });
       }
 
       return newFavorites;
     });
-  }, []); // Sem dependências!
+  }, []); // Sem dependencias - usa functional updates
 
   const addSheet = useCallback((sheet) => {
     setSheets(prev => [...prev, sheet]);
