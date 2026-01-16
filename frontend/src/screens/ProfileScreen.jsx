@@ -9,7 +9,7 @@ import { Icons } from '@constants/icons';
 import { Storage } from '@services/storage';
 import Header from '@components/common/Header';
 import ChangePinModal from '@components/modals/ChangePinModal';
-import { AboutModal, PROFILE_CHANGELOG, PROFILE_LEGACY_VERSIONS, PROFILE_ABOUT_CONFIG } from '@components/modals';
+import { AboutModal, PROFILE_CHANGELOG, PROFILE_LEGACY_VERSIONS, PROFILE_ABOUT_CONFIG } from '@components/modals/AboutModal';
 
 const ProfileScreen = () => {
   const { user, setUser } = useAuth();

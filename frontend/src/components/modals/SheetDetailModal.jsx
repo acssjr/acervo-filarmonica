@@ -3,7 +3,7 @@
 // Suporta URL compartilhavel: /acervo/:categoria/:id
 // Refatorado: extraido componentes e hook de download
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@contexts/AuthContext';
@@ -12,9 +12,11 @@ import { useData } from '@contexts/DataContext';
 import { Icons } from '@constants/icons';
 import { API } from '@services/api';
 import CategoryIcon from '@components/common/CategoryIcon';
+import { useMediaQuery } from '@hooks/useMediaQuery';
 import { useSheetDownload, findParteExata } from '@hooks/useSheetDownload';
 import { PartePicker, DownloadConfirm, InstrumentSelector } from './sheet';
-import PDFViewerModal from './PDFViewerModal';
+
+const PDFViewerModal = lazy(() => import('./PDFViewerModal'));
 
 const SheetDetailModal = () => {
   const navigate = useNavigate();
@@ -24,7 +26,7 @@ const SheetDetailModal = () => {
   const { favorites, toggleFavorite, categoriesMap, instrumentNames } = useData();
 
   // Estado local
-  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
+  const isDesktop = useMediaQuery('(min-width: 1024px)');
   const [showInstrumentPicker, setShowInstrumentPicker] = useState(false);
   const [partes, setPartes] = useState([]);
   const [loadingPartes, setLoadingPartes] = useState(false);
@@ -53,13 +55,6 @@ const SheetDetailModal = () => {
       showToast('Parte não encontrada', 'error');
     }
   }, [selectedSheet, partes, addToShareCart, showToast]);
-
-  // Detectar desktop
-  useEffect(() => {
-    const handleResize = () => setIsDesktop(window.innerWidth >= 1024);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
 
   // Travar scroll do body quando modal estiver aberto
   useEffect(() => {
@@ -175,18 +170,20 @@ const SheetDetailModal = () => {
       />
 
       {/* Visualizador de PDF embutido */}
-      <PDFViewerModal
-        isOpen={download.pdfViewer.isOpen}
-        pdfUrl={download.pdfViewer.url}
-        title={`${download.pdfViewer.title} - ${download.pdfViewer.instrument}`}
-        onClose={download.closePdfViewer}
-        onDownload={() => {
-          // Abre em nova aba como fallback
-          if (download.pdfViewer.url) {
-            window.open(download.pdfViewer.url, '_blank');
-          }
-        }}
-      />
+      <Suspense fallback={<div className="flex items-center justify-center p-8">Carregando visualizador...</div>}>
+        <PDFViewerModal
+          isOpen={download.pdfViewer.isOpen}
+          pdfUrl={download.pdfViewer.url}
+          title={`${download.pdfViewer.title} - ${download.pdfViewer.instrument}`}
+          onClose={download.closePdfViewer}
+          onDownload={() => {
+            // Abre em nova aba como fallback
+            if (download.pdfViewer.url) {
+              window.open(download.pdfViewer.url, '_blank');
+            }
+          }}
+        />
+      </Suspense>
 
       {/* Modal Principal */}
       <motion.div

@@ -2,7 +2,7 @@
 // Tela de compositores com fotos e glassmorphism
 // Suporta navegacao via URL: /compositores, /compositores/:slug
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useData } from '@contexts/DataContext';
 import { slugify } from '@utils/slugify';
@@ -10,19 +10,139 @@ import { slugify } from '@utils/slugify';
 // Compositores prioritários (ordem de importância para a banda) - definido fora do componente para estabilidade
 const PRIORITY_ORDER = ['Estevam Moura', 'Tertuliano Santos', 'Amando Nobre', 'Heráclio Guerreiro'];
 
+// Fotos dos compositores (caminhos locais - WebP otimizado)
+const COMPOSER_PHOTOS = {
+  'Estevam Moura': '/assets/images/compositores/estevam-moura.webp',
+  'Tertuliano Santos': '/assets/images/compositores/tertuliano-santos.webp',
+  'Amando Nobre': '/assets/images/compositores/amando-nobre.webp',
+  'Heráclio Guerreiro': '/assets/images/compositores/heraclio-guerreiro.webp'
+};
+
+// Componente de Card do Compositor com Glassmorphism (extraído para evitar recriação)
+const ComposerCard = memo(function ComposerCard({ composer, featured = false, onSelect }) {
+  const hasPhoto = COMPOSER_PHOTOS[composer.name];
+  const photoUrl = hasPhoto || `https://ui-avatars.com/api/?name=${encodeURIComponent(composer.name)}&size=400&background=2a2a38&color=D4AF37&bold=true&font-size=0.4`;
+
+  return (
+    <button
+      onClick={() => onSelect(composer.name)}
+      style={{
+        position: 'relative',
+        width: '100%',
+        height: featured ? '160px' : '120px',
+        borderRadius: '12px',
+        overflow: 'hidden',
+        border: 'none',
+        cursor: 'pointer',
+        background: 'var(--bg-card)',
+        transition: 'transform 0.3s ease, box-shadow 0.3s ease'
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.transform = 'translateY(-4px)';
+        e.currentTarget.style.boxShadow = '0 12px 40px rgba(0,0,0,0.3)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.transform = 'translateY(0)';
+        e.currentTarget.style.boxShadow = 'none';
+      }}
+    >
+      {/* Imagem de fundo com zoom out */}
+      <div style={{
+        position: 'absolute',
+        inset: '-15%',
+        backgroundImage: `url(${photoUrl})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center 25%',
+        filter: 'brightness(0.9)'
+      }} />
+
+      {/* Gradiente escuro na parte inferior */}
+      <div style={{
+        position: 'absolute',
+        inset: 0,
+        background: 'linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.6) 40%, transparent 70%)'
+      }} />
+
+      {/* Badge de destaque */}
+      {featured && (
+        <div style={{
+          position: 'absolute',
+          top: '8px',
+          right: '8px',
+          padding: '3px 8px',
+          background: 'rgba(212, 175, 55, 0.9)',
+          borderRadius: '20px',
+          fontSize: '9px',
+          fontWeight: '600',
+          color: '#1a1a1a',
+          fontFamily: 'Outfit, sans-serif',
+          textTransform: 'uppercase',
+          letterSpacing: '0.5px'
+        }}>
+          Destaque
+        </div>
+      )}
+
+      {/* Conteúdo com Glassmorphism */}
+      <div style={{
+        position: 'absolute',
+        bottom: '0',
+        left: '0',
+        right: '0',
+        padding: '8px 10px',
+        background: 'rgba(255, 255, 255, 0.1)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
+        borderTop: '1px solid rgba(255, 255, 255, 0.15)',
+        textAlign: 'left'
+      }}>
+        <h3 style={{
+          fontFamily: 'Outfit, sans-serif',
+          fontSize: featured ? '13px' : '12px',
+          fontWeight: '600',
+          color: '#fff',
+          marginBottom: '1px',
+          textShadow: '0 1px 3px rgba(0,0,0,0.4)',
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          lineHeight: '1.3'
+        }}>
+          {composer.name}
+        </h3>
+        <p style={{
+          fontFamily: 'Outfit, sans-serif',
+          fontSize: '10px',
+          color: 'rgba(255, 255, 255, 0.75)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '3px',
+          lineHeight: '1.2'
+        }}>
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M9 18V5l12-2v13" />
+            <circle cx="6" cy="18" r="3" />
+            <circle cx="18" cy="16" r="3" />
+          </svg>
+          {composer.count} {composer.count === 1 ? 'partitura' : 'partituras'}
+        </p>
+      </div>
+    </button>
+  );
+}, (prevProps, nextProps) => {
+  // Comparação customizada para evitar re-renders desnecessários
+  return (
+    prevProps.composer.name === nextProps.composer.name &&
+    prevProps.composer.count === nextProps.composer.count &&
+    prevProps.featured === nextProps.featured
+  );
+});
+
 const ComposersScreen = ({ composerSlugFromUrl }) => {
   const navigate = useNavigate();
   const { sheets, setSelectedComposer, setSelectedCategory } = useData();
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('count'); // 'count' ou 'alpha'
-
-  // Fotos dos compositores (caminhos locais - WebP otimizado)
-  const composerPhotos = {
-    'Estevam Moura': '/assets/images/compositores/estevam-moura.webp',
-    'Tertuliano Santos': '/assets/images/compositores/tertuliano-santos.webp',
-    'Amando Nobre': '/assets/images/compositores/amando-nobre.webp',
-    'Heráclio Guerreiro': '/assets/images/compositores/heraclio-guerreiro.webp'
-  };
 
   // Calcular compositores com contagem
   const composersWithCount = useMemo(() => {
@@ -100,124 +220,11 @@ const ComposersScreen = ({ composerSlugFromUrl }) => {
     return [...others].sort((a, b) => b.count - a.count);
   }, [filteredComposers, sortBy]);
 
-  const handleSelectComposer = (composerName) => {
+  const handleSelectComposer = useCallback((composerName) => {
     setSelectedComposer(composerName);
     setSelectedCategory(null);
     navigate('/acervo');
-  };
-
-  // Componente de Card do Compositor com Glassmorphism
-  const ComposerCard = ({ composer, featured = false }) => {
-    const hasPhoto = composerPhotos[composer.name];
-    const photoUrl = hasPhoto || `https://ui-avatars.com/api/?name=${encodeURIComponent(composer.name)}&size=400&background=2a2a38&color=D4AF37&bold=true&font-size=0.4`;
-
-    return (
-      <button
-        onClick={() => handleSelectComposer(composer.name)}
-        style={{
-          position: 'relative',
-          width: '100%',
-          height: featured ? '160px' : '120px',
-          borderRadius: '12px',
-          overflow: 'hidden',
-          border: 'none',
-          cursor: 'pointer',
-          background: 'var(--bg-card)',
-          transition: 'transform 0.3s ease, box-shadow 0.3s ease'
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.transform = 'translateY(-4px)';
-          e.currentTarget.style.boxShadow = '0 12px 40px rgba(0,0,0,0.3)';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.transform = 'translateY(0)';
-          e.currentTarget.style.boxShadow = 'none';
-        }}
-      >
-        {/* Imagem de fundo com zoom out */}
-        <div style={{
-          position: 'absolute',
-          inset: '-15%',
-          backgroundImage: `url(${photoUrl})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center 25%',
-          filter: 'brightness(0.9)'
-        }} />
-
-        {/* Gradiente escuro na parte inferior */}
-        <div style={{
-          position: 'absolute',
-          inset: 0,
-          background: 'linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.6) 40%, transparent 70%)'
-        }} />
-
-        {/* Badge de destaque */}
-        {featured && (
-          <div style={{
-            position: 'absolute',
-            top: '8px',
-            right: '8px',
-            padding: '3px 8px',
-            background: 'rgba(212, 175, 55, 0.9)',
-            borderRadius: '20px',
-            fontSize: '9px',
-            fontWeight: '600',
-            color: '#1a1a1a',
-            fontFamily: 'Outfit, sans-serif',
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px'
-          }}>
-            Destaque
-          </div>
-        )}
-
-        {/* Conteúdo com Glassmorphism */}
-        <div style={{
-          position: 'absolute',
-          bottom: '0',
-          left: '0',
-          right: '0',
-          padding: '8px 10px',
-          background: 'rgba(255, 255, 255, 0.1)',
-          backdropFilter: 'blur(12px)',
-          WebkitBackdropFilter: 'blur(12px)',
-          borderTop: '1px solid rgba(255, 255, 255, 0.15)',
-          textAlign: 'left'
-        }}>
-          <h3 style={{
-            fontFamily: 'Outfit, sans-serif',
-            fontSize: featured ? '13px' : '12px',
-            fontWeight: '600',
-            color: '#fff',
-            marginBottom: '1px',
-            textShadow: '0 1px 3px rgba(0,0,0,0.4)',
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            lineHeight: '1.3'
-          }}>
-            {composer.name}
-          </h3>
-          <p style={{
-            fontFamily: 'Outfit, sans-serif',
-            fontSize: '10px',
-            color: 'rgba(255, 255, 255, 0.75)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '3px',
-            lineHeight: '1.2'
-          }}>
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M9 18V5l12-2v13" />
-              <circle cx="6" cy="18" r="3" />
-              <circle cx="18" cy="16" r="3" />
-            </svg>
-            {composer.count} {composer.count === 1 ? 'partitura' : 'partituras'}
-          </p>
-        </div>
-      </button>
-    );
-  };
+  }, [setSelectedComposer, setSelectedCategory, navigate]);
 
   return (
     <div className="screen-container" style={{ padding: '24px', maxWidth: '1400px', margin: '0 auto' }}>
@@ -318,7 +325,7 @@ const ComposersScreen = ({ composerSlugFromUrl }) => {
                 gap: '12px'
               }}>
                 {featuredComposers.map(comp => (
-                  <ComposerCard key={comp.name} composer={comp} featured />
+                  <ComposerCard key={comp.name} composer={comp} featured onSelect={handleSelectComposer} />
                 ))}
               </div>
             </div>
@@ -394,7 +401,9 @@ const ComposersScreen = ({ composerSlugFromUrl }) => {
                 background: 'var(--bg-card)',
                 borderRadius: '12px',
                 border: '1px solid var(--border)',
-                overflow: 'hidden'
+                overflow: 'hidden',
+                contentVisibility: 'auto',
+                containIntrinsicSize: '0 1500px'
               }}>
                 {(searchQuery ? filteredComposers.filter(c => !PRIORITY_ORDER.includes(c.name)) : otherComposers).map((comp, index, arr) => (
                   <button

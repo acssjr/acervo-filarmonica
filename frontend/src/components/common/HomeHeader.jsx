@@ -5,20 +5,15 @@ import { useState, useEffect } from 'react';
 import { useUI } from '@contexts/UIContext';
 import { getNextRehearsal } from '@hooks/useNextRehearsal';
 import { API } from '@services/api';
+import { useMediaQuery } from '@hooks/useMediaQuery';
 import HeaderActions from './HeaderActions';
 import LogoBadge from './LogoBadge';
 
 const HomeHeader = ({ userName, instrument, actions }) => {
   const { theme } = useUI();
   const isDark = theme === 'dark';
-  const [isDesktop, setIsDesktop] = useState(typeof window !== 'undefined' ? window.innerWidth >= 1024 : false);
+  const isDesktop = useMediaQuery('(min-width: 1024px)');
   const [modoRecesso, setModoRecesso] = useState(false);
-
-  useEffect(() => {
-    const handleResize = () => setIsDesktop(window.innerWidth >= 1024);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
 
   useEffect(() => {
     API.getModoRecesso().then(res => setModoRecesso(res.ativo));

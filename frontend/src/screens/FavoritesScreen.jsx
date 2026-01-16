@@ -27,7 +27,11 @@ const FavoritesScreen = () => {
           subtitle="Toque no coracao para adicionar"
         />
       ) : (
-        <div className="files-grid" style={{ padding: '0 20px' }}>
+        <div className="files-grid" style={{
+          padding: '0 20px',
+          contentVisibility: 'auto',
+          containIntrinsicSize: '0 2000px'
+        }}>
           {favoriteSheets.map(sheet => (
             <FileCard
               key={sheet.id}

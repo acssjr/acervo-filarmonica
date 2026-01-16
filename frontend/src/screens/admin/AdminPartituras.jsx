@@ -1,7 +1,7 @@
 // ===== ADMIN PARTITURAS =====
 // Gerenciamento de partituras com expansao inline e preview de PDF
 
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
 
 // Flag para debug - remover em produção
 const DEBUG_TUTORIAL = false;
@@ -10,12 +10,13 @@ import { API } from '@services/api';
 import CategoryIcon from '@components/common/CategoryIcon';
 import { PartesGridSkeleton } from '@components/common/Skeleton';
 import UploadPastaModal from './components/UploadPastaModal';
-import PDFViewerModal from '@components/modals/PDFViewerModal';
-import ImportacaoLoteModal from '@components/modals/ImportacaoLoteModal';
 import TutorialOverlay, { useTutorial } from '@components/onboarding/TutorialOverlay';
 import RepertorioSelectorModal from '@components/modals/RepertorioSelectorModal';
 import Storage from '@services/storage';
 import { API_BASE_URL } from '@constants/api';
+
+const PDFViewerModal = lazy(() => import('@components/modals/PDFViewerModal'));
+const ImportacaoLoteModal = lazy(() => import('@components/modals/ImportacaoLoteModal'));
 
 // Helper para detectar instrumento pelo nome do arquivo
 const detectInstrumento = (filename) => {
@@ -379,17 +380,17 @@ const AdminPartituras = () => {
   const loadRepertorios = async () => {
     setLoadingRepertorios(true);
     try {
-      const reps = await API.getRepertorios();
+      const [reps, repDetails] = await Promise.all([
+        API.getRepertorios(),
+        API.getRepertorioAtivo().catch(() => null)
+      ]);
       setRepertorios(reps || []);
       const active = reps?.find(r => r.ativo === 1);
       setRepertorioAtivo(active || null);
 
-      // Se tem repertório ativo, carregar suas partituras
-      if (active) {
-        const repDetails = await API.getRepertorioAtivo();
-        if (repDetails?.partituras) {
-          setPartiturasInRepertorio(new Set(repDetails.partituras.map(p => p.id)));
-        }
+      // Se tem repertório ativo e conseguiu carregar detalhes, atualizar partituras
+      if (active && repDetails?.partituras) {
+        setPartiturasInRepertorio(new Set(repDetails.partituras.map(p => p.id)));
       } else {
         setPartiturasInRepertorio(new Set());
       }
@@ -667,7 +668,7 @@ const AdminPartituras = () => {
       formData.append('arquivo', file);
       await API.replacePartePartitura(partituraId, parteId, formData);
       showToast('Parte substituida com sucesso!');
-      loadPartes(partituraId);
+      await loadPartes(partituraId);
     } catch (err) {
       showToast(err.message || 'Erro ao substituir parte', 'error');
     } finally {
@@ -682,8 +683,10 @@ const AdminPartituras = () => {
     try {
       await API.deletePartePartitura(partituraId, parteId);
       showToast('Parte removida com sucesso!');
-      loadPartes(partituraId);
-      loadData();
+      await Promise.all([
+        loadPartes(partituraId),
+        loadData()
+      ]);
     } catch (err) {
       showToast(err.message || 'Erro ao remover parte', 'error');
     } finally {
@@ -704,8 +707,10 @@ const AdminPartituras = () => {
       formData.append('instrumento', instrumento);
       await API.addPartePartitura(partituraId, formData);
       showToast(`Parte "${instrumento}" adicionada!`);
-      loadPartes(partituraId);
-      loadData();
+      await Promise.all([
+        loadPartes(partituraId),
+        loadData()
+      ]);
     } catch (err) {
       showToast(err.message || 'Erro ao adicionar parte', 'error');
     } finally {
@@ -1567,28 +1572,32 @@ const AdminPartituras = () => {
       />
 
       {/* Modal de Importação em Lote */}
-      <ImportacaoLoteModal
-        isOpen={showImportacaoLote}
-        onClose={() => setShowImportacaoLote(false)}
-        onSuccess={() => {
-          loadData();
-        }}
-        onOpenUploadPasta={() => {
-          setShowImportacaoLote(false);
-          // TODO: Abrir UploadPastaModal com dados pré-preenchidos
-          setShowUploadModal(true);
-        }}
-        initialItems={droppedItems}
-      />
+      <Suspense fallback={null}>
+        <ImportacaoLoteModal
+          isOpen={showImportacaoLote}
+          onClose={() => setShowImportacaoLote(false)}
+          onSuccess={() => {
+            loadData();
+          }}
+          onOpenUploadPasta={() => {
+            setShowImportacaoLote(false);
+            // TODO: Abrir UploadPastaModal com dados pré-preenchidos
+            setShowUploadModal(true);
+          }}
+          initialItems={droppedItems}
+        />
+      </Suspense>
 
       {/* Modal de Visualizacao de PDF */}
-      <PDFViewerModal
-        isOpen={showPDFModal}
-        onClose={closePreview}
-        pdfUrl={previewParte?.blobUrl}
-        title={previewParte?.instrumento || 'Visualizador de PDF'}
-        onDownload={() => previewParte?.blobUrl && window.open(previewParte.blobUrl, '_blank')}
-      />
+      <Suspense fallback={null}>
+        <PDFViewerModal
+          isOpen={showPDFModal}
+          onClose={closePreview}
+          pdfUrl={previewParte?.blobUrl}
+          title={previewParte?.instrumento || 'Visualizador de PDF'}
+          onDownload={() => previewParte?.blobUrl && window.open(previewParte.blobUrl, '_blank')}
+        />
+      </Suspense>
 
       {/* Tutorial de Onboarding */}
       <TutorialOverlay

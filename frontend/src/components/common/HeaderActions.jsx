@@ -1,23 +1,17 @@
 // ===== HEADER ACTIONS =====
 // Ações do header (tema + notificações) - apenas mobile
 
-import { useState, useEffect } from 'react';
 import { useUI } from '@contexts/UIContext';
 import { useNotifications } from '@contexts/NotificationContext';
 import { Icons } from '@constants/icons';
+import { useMediaQuery } from '@hooks/useMediaQuery';
 import ThemeSelector from './ThemeSelector';
 import AdminToggle from './AdminToggle';
 
 const HeaderActions = ({ inDarkHeader = false }) => {
   const { setShowNotifications } = useUI();
   const { unreadCount } = useNotifications();
-  const [isDesktop, setIsDesktop] = useState(typeof window !== 'undefined' ? window.innerWidth >= 1024 : false);
-
-  useEffect(() => {
-    const handleResize = () => setIsDesktop(window.innerWidth >= 1024);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  const isDesktop = useMediaQuery('(min-width: 1024px)');
 
   // No desktop, não mostra nada (já está na sidebar)
   if (isDesktop) return null;

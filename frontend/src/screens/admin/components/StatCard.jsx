@@ -1,16 +1,10 @@
 // ===== STAT CARD =====
 // Card de estatistica para o dashboard
 
-import { useState, useEffect } from 'react';
+import { useMediaQuery } from '@hooks/useMediaQuery';
 
 const StatCard = ({ icon, label, value, color, loading }) => {
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-
-  useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 768);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  const isMobile = useMediaQuery('(max-width: 767px)');
 
   const StatIcon = ({ type, iconColor }) => {
     const size = isMobile ? 18 : 22;

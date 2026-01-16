@@ -2,7 +2,7 @@
 // Gerencia dados de partituras, categorias, instrumentos e favoritos
 // Separado para evitar re-renders quando UI muda
 
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import Storage from '@services/storage';
 import { API, USE_API } from '@services/api';
 import { CATEGORIES as FALLBACK_CATEGORIES } from '@constants/categories';
@@ -127,10 +127,14 @@ export const DataProvider = ({ children }) => {
   useEffect(() => { Storage.set('instruments', instruments); }, [instruments]);
 
   // Helper: cria map de categorias para lookup O(1)
-  const categoriesMap = new Map(categories.map(cat => [cat.id, cat]));
+  const categoriesMap = useMemo(() => {
+    return new Map(categories.map(cat => [cat.id, cat]));
+  }, [categories]);
 
   // Helper: lista de nomes de instrumentos para uso em selects
-  const instrumentNames = instruments.map(i => i.nome);
+  const instrumentNames = useMemo(() => {
+    return instruments.map(i => i.nome);
+  }, [instruments]);
 
   // Carrega favoritos do usuario apos login
   const loadUserFavorites = useCallback(async () => {
@@ -150,24 +154,36 @@ export const DataProvider = ({ children }) => {
   }, []);
 
   const toggleFavorite = useCallback(async (id) => {
-    const isFavorito = favorites.includes(id);
-    setFavorites(prev => isFavorito ? prev.filter(f => f !== id) : [...prev, id]);
-
     const token = Storage.get('authToken', null);
-    if (USE_API && token) {
-      try {
-        if (isFavorito) {
-          await API.removeFavorito(id);
-        } else {
-          await API.addFavorito(id);
-        }
-      } catch (error) {
-        // Reverte em caso de erro
-        setFavorites(prev => isFavorito ? [...prev, id] : prev.filter(f => f !== id));
-        console.error('Erro ao sincronizar favorito:', error);
+
+    setFavorites(prev => {
+      const wasFavorito = prev.includes(id);
+      const newFavorites = wasFavorito ? prev.filter(f => f !== id) : [...prev, id];
+
+      // Fire and forget - API sync em background
+      if (USE_API && token) {
+        const apiCall = wasFavorito ? API.removeFavorito(id) : API.addFavorito(id);
+        apiCall.catch(error => {
+          // Rollback inteligente: verifica estado atual antes de reverter
+          // Evita rollback incorreto em caso de toggles rápidos
+          setFavorites(currentState => {
+            const isCurrentlyFavorito = currentState.includes(id);
+            const expectedState = !wasFavorito; // Estado esperado apos toggle
+
+            // So reverte se estado atual e o esperado (toggle nao foi sobrescrito)
+            if (isCurrentlyFavorito === expectedState) {
+              return wasFavorito ? [...currentState, id] : currentState.filter(f => f !== id);
+            }
+            // Estado ja foi alterado por outro toggle, nao reverte
+            return currentState;
+          });
+          console.error('Erro ao sincronizar favorito:', error);
+        });
       }
-    }
-  }, [favorites]);
+
+      return newFavorites;
+    });
+  }, []); // Sem dependencias - usa functional updates
 
   const addSheet = useCallback((sheet) => {
     setSheets(prev => [...prev, sheet]);

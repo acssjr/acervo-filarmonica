@@ -2,21 +2,42 @@
 // Layout principal do painel administrativo
 // Suporta navegacao via URL: /admin, /admin/:secao
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '@contexts/AuthContext';
 import { useUI } from '@contexts/UIContext';
 import { API } from '@services/api';
 import ThemeSelector from '@components/common/ThemeSelector';
 import AdminToggle from '@components/common/AdminToggle';
+import { useMediaQuery } from '@hooks/useMediaQuery';
 import AdminContext from './AdminContext';
-import AdminDashboard from './AdminDashboard';
-import AdminMusicos from './AdminMusicos';
-import AdminPartituras from './AdminPartituras';
-import AdminCategorias from './AdminCategorias';
-import AdminRepertorio from './AdminRepertorio';
-import AdminConfig from './AdminConfig';
-import AdminPresenca from './AdminPresenca';
+
+const AdminDashboard = lazy(() => import('./AdminDashboard'));
+const AdminMusicos = lazy(() => import('./AdminMusicos'));
+const AdminPartituras = lazy(() => import('./AdminPartituras'));
+const AdminCategorias = lazy(() => import('./AdminCategorias'));
+const AdminRepertorio = lazy(() => import('./AdminRepertorio'));
+const AdminConfig = lazy(() => import('./AdminConfig'));
+const AdminPresenca = lazy(() => import('./AdminPresenca'));
+
+const SectionLoader = () => (
+  <div style={{
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: '400px',
+    width: '100%'
+  }}>
+    <div style={{
+      width: '32px',
+      height: '32px',
+      border: '3px solid var(--border)',
+      borderTop: '3px solid #D4AF37',
+      borderRadius: '50%',
+      animation: 'spin 0.8s linear infinite'
+    }} />
+  </div>
+);
 
 const AdminApp = () => {
   const navigate = useNavigate();
@@ -26,7 +47,7 @@ const AdminApp = () => {
   const [loading, setLoading] = useState(true);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const isMobile = useMediaQuery('(max-width: 767px)');
   const { logout } = useAuth();
   const { themeMode, setThemeMode } = useUI();
 
@@ -36,16 +57,10 @@ const AdminApp = () => {
     navigate('/login', { replace: true });
   };
 
-  // Detecta mudanca de tamanho da tela
+  // Fecha menu mobile quando sai do modo mobile
   useEffect(() => {
-    const handleResize = () => {
-      const mobile = window.innerWidth < 768;
-      setIsMobile(mobile);
-      if (!mobile) setMobileMenuOpen(false);
-    };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+    if (!isMobile) setMobileMenuOpen(false);
+  }, [isMobile]);
 
   const loadStats = async () => {
     try {
@@ -589,7 +604,9 @@ const AdminApp = () => {
 
           {/* Conteudo */}
           <div style={{ flex: 1, overflow: 'auto' }}>
-            {renderContent()}
+            <Suspense fallback={<SectionLoader />}>
+              {renderContent()}
+            </Suspense>
           </div>
         </main>
       </div>

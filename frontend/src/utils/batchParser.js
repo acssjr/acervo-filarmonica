@@ -260,22 +260,27 @@ export const processarLote = async (items, categorias = [], partiturasExistentes
     }
   }
 
-  // Calcula estatísticas
-  const estatisticas = {
-    total: pastas.length,
-    prontas: pastas.filter(p => p.status === 'ready').length,
-    atencao: pastas.filter(p => p.status === 'attention').length,
-    problemas: pastas.filter(p => p.status === 'problem').length,
-    totalArquivos: pastas.reduce((acc, p) => acc + p.arquivos.length, 0),
-    instrumentosReconhecidos: pastas.reduce(
-      (acc, p) => acc + p.arquivos.filter(a => a.reconhecido).length,
-      0
-    ),
-    instrumentosNaoReconhecidos: pastas.reduce(
-      (acc, p) => acc + p.arquivos.filter(a => !a.reconhecido).length,
-      0
-    )
-  };
+  // Calcula estatísticas em um único loop
+  const estatisticas = pastas.reduce((acc, pasta) => {
+    acc.total++;
+    if (pasta.status === 'ready') acc.prontas++;
+    else if (pasta.status === 'attention') acc.atencao++;
+    else if (pasta.status === 'problem') acc.problemas++;
+
+    acc.totalArquivos += pasta.arquivos.length;
+    acc.instrumentosReconhecidos += pasta.arquivos.filter(a => a.reconhecido).length;
+    acc.instrumentosNaoReconhecidos += pasta.arquivos.filter(a => !a.reconhecido).length;
+
+    return acc;
+  }, {
+    total: 0,
+    prontas: 0,
+    atencao: 0,
+    problemas: 0,
+    totalArquivos: 0,
+    instrumentosReconhecidos: 0,
+    instrumentosNaoReconhecidos: 0
+  });
 
   return { pastas, estatisticas };
 };
@@ -319,22 +324,27 @@ export const processarFileList = async (fileList, categorias = [], partiturasExi
     }
   }
 
-  // Calcula estatísticas
-  const estatisticas = {
-    total: pastas.length,
-    prontas: pastas.filter(p => p.status === 'ready').length,
-    atencao: pastas.filter(p => p.status === 'attention').length,
-    problemas: pastas.filter(p => p.status === 'problem').length,
-    totalArquivos: pastas.reduce((acc, p) => acc + p.arquivos.length, 0),
-    instrumentosReconhecidos: pastas.reduce(
-      (acc, p) => acc + p.arquivos.filter(a => a.reconhecido).length,
-      0
-    ),
-    instrumentosNaoReconhecidos: pastas.reduce(
-      (acc, p) => acc + p.arquivos.filter(a => !a.reconhecido).length,
-      0
-    )
-  };
+  // Calcula estatísticas em um único loop
+  const estatisticas = pastas.reduce((acc, pasta) => {
+    acc.total++;
+    if (pasta.status === 'ready') acc.prontas++;
+    else if (pasta.status === 'attention') acc.atencao++;
+    else if (pasta.status === 'problem') acc.problemas++;
+
+    acc.totalArquivos += pasta.arquivos.length;
+    acc.instrumentosReconhecidos += pasta.arquivos.filter(a => a.reconhecido).length;
+    acc.instrumentosNaoReconhecidos += pasta.arquivos.filter(a => !a.reconhecido).length;
+
+    return acc;
+  }, {
+    total: 0,
+    prontas: 0,
+    atencao: 0,
+    problemas: 0,
+    totalArquivos: 0,
+    instrumentosReconhecidos: 0,
+    instrumentosNaoReconhecidos: 0
+  });
 
   return { pastas, estatisticas };
 };

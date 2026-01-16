@@ -10,6 +10,9 @@ import CategoryIcon from '@components/common/CategoryIcon';
 import useDebounce from '@hooks/useDebounce';
 import { levenshtein } from '@utils/search';
 
+// Regex hoisted para evitar criação repetida dentro do loop
+const WHITESPACE_REGEX = /\s+/;
+
 const SearchScreen = () => {
   const navigate = useNavigate();
   const { sheets, favorites, toggleFavorite, categoriesMap } = useData();
@@ -29,7 +32,7 @@ const SearchScreen = () => {
       .replace(/[ºª°]/g, '') // Remove indicadores ordinais
       .replace(/n[°º.]?\s*/gi, 'n') // "nº ", "n° " → "n"
       .replace(/\./g, ' ') // Pontos viram espaços
-      .replace(/\s+/g, ' ') // Colapsa espaços múltiplos
+      .replace(WHITESPACE_REGEX, ' ') // Colapsa espaços múltiplos
       .trim();
   };
 
@@ -69,103 +72,118 @@ const SearchScreen = () => {
 
     const query = normalize(debouncedQuery);
     const queryTranslit = transliterate(query); // "ninfas" fica "ninfas"
-    const queryWords = query.split(/\s+/).filter(w => w.length > 0);
+    const queryWords = query.split(WHITESPACE_REGEX).filter(w => w.length > 0);
     const queryWordsTranslit = queryWords.map(w => transliterate(w));
 
-    return sheets
-      .map(sheet => {
-        const titleNorm = normalize(sheet.title);
-        const titleTranslit = transliterate(titleNorm); // "nymphas" -> "ninfas"
-        const composerNorm = normalize(sheet.composer);
-        const composerTranslit = transliterate(composerNorm);
-        const category = categoriesMap.get(sheet.category);
-        const categoryNorm = normalize(category?.name || '');
+    // Combinar map + filter + sort em um único loop para melhor performance
+    const results = [];
 
-        let score = 0;
+    for (const sheet of sheets) {
+      const titleNorm = normalize(sheet.title);
+      const titleTranslit = transliterate(titleNorm); // "nymphas" -> "ninfas"
+      const composerNorm = normalize(sheet.composer);
+      const composerTranslit = transliterate(composerNorm);
+      const category = categoriesMap.get(sheet.category);
+      const categoryNorm = normalize(category?.name || '');
 
-        // Busca pela query completa (normal e transliterada)
-        if (titleNorm.startsWith(query)) score += 100;
-        else if (titleNorm.includes(query)) score += 50;
-        else if (titleTranslit.startsWith(queryTranslit)) score += 95; // Match transliterado
-        else if (titleTranslit.includes(queryTranslit)) score += 45;
+      let score = 0;
 
-        if (composerNorm.startsWith(query)) score += 80;
-        else if (composerNorm.includes(query)) score += 40;
-        else if (composerTranslit.startsWith(queryTranslit)) score += 75;
-        else if (composerTranslit.includes(queryTranslit)) score += 35;
+      // Busca pela query completa (normal e transliterada)
+      if (titleNorm.startsWith(query)) score += 100;
+      else if (titleNorm.includes(query)) score += 50;
+      else if (titleTranslit.startsWith(queryTranslit)) score += 95; // Match transliterado
+      else if (titleTranslit.includes(queryTranslit)) score += 45;
 
-        if (categoryNorm.startsWith(query)) score += 60;
-        else if (categoryNorm.includes(query)) score += 30;
+      if (composerNorm.startsWith(query)) score += 80;
+      else if (composerNorm.includes(query)) score += 40;
+      else if (composerTranslit.startsWith(queryTranslit)) score += 75;
+      else if (composerTranslit.includes(queryTranslit)) score += 35;
 
-        // Busca por palavras individuais - TODAS devem ser encontradas
-        const wordMatches = queryWords.map((word, idx) => {
-          if (word.length < 1) return { found: true, score: 0 }; // Ignora palavras vazias
-          const wordTranslit = queryWordsTranslit[idx];
-          let wordScore = 0;
-          let found = false;
+      if (categoryNorm.startsWith(query)) score += 60;
+      else if (categoryNorm.includes(query)) score += 30;
 
+      // Busca por palavras individuais - TODAS devem ser encontradas
+      let allWordsFound = true;
+      let wordScoreSum = 0;
+
+      for (let idx = 0; idx < queryWords.length; idx++) {
+        const word = queryWords[idx];
+        if (word.length < 1) continue; // Ignora palavras vazias
+
+        const wordTranslit = queryWordsTranslit[idx];
+        let wordScore = 0;
+        let found = false;
+
+        // Match exato
+        if (titleNorm.includes(word)) {
+          wordScore += 25;
+          found = true;
+        } else if (titleTranslit.includes(wordTranslit)) {
+          wordScore += 22;
+          found = true;
+        } else if (composerNorm.includes(word)) {
+          wordScore += 20;
+          found = true;
+        } else if (composerTranslit.includes(wordTranslit)) {
+          wordScore += 18;
+          found = true;
+        } else if (categoryNorm.includes(word)) {
+          wordScore += 15;
+          found = true;
+        }
+
+        // Fuzzy match apenas se não encontrou exato
+        if (!found) {
           // Combina título + compositor + categoria para busca
           const searchText = `${titleNorm} ${composerNorm} ${categoryNorm}`;
+          const allWords = searchText.split(WHITESPACE_REGEX);
 
-          // Match exato
-          if (titleNorm.includes(word)) {
-            wordScore += 25;
-            found = true;
-          } else if (titleTranslit.includes(wordTranslit)) {
-            wordScore += 22;
-            found = true;
-          } else if (composerNorm.includes(word)) {
-            wordScore += 20;
-            found = true;
-          } else if (composerTranslit.includes(wordTranslit)) {
-            wordScore += 18;
-            found = true;
-          } else if (categoryNorm.includes(word)) {
-            wordScore += 15;
-            found = true;
-          }
-
-          // Fuzzy match apenas se não encontrou exato
-          if (!found) {
-            const allWords = searchText.split(/\s+/);
-            for (const tw of allWords) {
-              const dist = levenshtein(word, tw);
-              if (dist <= 1) { // Tolerância mais baixa (era 2)
-                wordScore += (10 - dist * 5);
-                found = true;
-                break;
-              }
+          for (const tw of allWords) {
+            const dist = levenshtein(word, tw);
+            if (dist <= 1) { // Tolerância mais baixa (era 2)
+              wordScore += (10 - dist * 5);
+              found = true;
+              break;
             }
           }
-
-          return { found, score: wordScore };
-        });
-
-        // TODAS as palavras devem ser encontradas
-        const allWordsFound = wordMatches.every(m => m.found);
-        if (!allWordsFound) {
-          return { ...sheet, score: 0, category }; // Não mostra se faltou alguma palavra
         }
 
-        // Soma scores das palavras
-        wordMatches.forEach(m => { score += m.score; });
-
-        // Bonus se todas encontradas (já está garantido acima)
-        if (queryWords.length > 1) {
-          score += 30;
+        if (!found) {
+          allWordsFound = false;
+          break; // Early exit se alguma palavra não foi encontrada
         }
 
-        // Fuzzy match para query completa
-        const titleDist = levenshtein(query, titleNorm.slice(0, query.length));
-        const composerDist = levenshtein(query, composerNorm.slice(0, query.length));
+        wordScoreSum += wordScore;
+      }
 
-        if (titleDist <= 2) score += (20 - titleDist * 5);
-        if (composerDist <= 2) score += (15 - composerDist * 5);
+      // Se alguma palavra não foi encontrada, pular esta partitura
+      if (!allWordsFound) continue;
 
-        return { ...sheet, score, category };
-      })
-      .filter(sheet => sheet.score > 0)
-      .sort((a, b) => b.score - a.score);
+      // Soma scores das palavras
+      score += wordScoreSum;
+
+      // Bonus se todas palavras encontradas (múltiplas palavras)
+      if (queryWords.length > 1) {
+        score += 30;
+      }
+
+      // Fuzzy match para query completa
+      const titleDist = levenshtein(query, titleNorm.slice(0, query.length));
+      const composerDist = levenshtein(query, composerNorm.slice(0, query.length));
+
+      if (titleDist <= 2) score += (20 - titleDist * 5);
+      if (composerDist <= 2) score += (15 - composerDist * 5);
+
+      // Apenas adicionar se score > 0 (combina filter no loop)
+      if (score > 0) {
+        results.push({ ...sheet, score, category });
+      }
+    }
+
+    // Sort uma única vez no final
+    results.sort((a, b) => b.score - a.score);
+
+    return results;
     // eslint-disable-next-line react-hooks/exhaustive-deps -- categoriesMap é estável após carregamento inicial
   }, [debouncedQuery, sheets]);
 
@@ -290,7 +308,11 @@ const SearchScreen = () => {
             {searchResults.length} resultado{searchResults.length !== 1 ? 's' : ''} encontrado{searchResults.length !== 1 ? 's' : ''}
           </p>
 
-          <div style={{ padding: '0 20px' }}>
+          <div style={{
+            padding: '0 20px',
+            contentVisibility: 'auto',
+            containIntrinsicSize: '0 2000px'
+          }}>
             {searchResults.map((sheet, index) => (
               <div
                 key={sheet.id}

@@ -7,6 +7,7 @@ import { useAuth } from '@contexts/AuthContext';
 import { API } from '@services/api';
 import { BREAKPOINTS } from '@constants/config';
 import { formatTimeAgo, getAtividadeInfo } from '@utils/formatters';
+import { useMediaQuery } from '@hooks/useMediaQuery';
 import StatCard from './components/StatCard';
 import QuickActionButton from './components/QuickActionButton';
 
@@ -14,14 +15,7 @@ const AdminDashboard = () => {
   const { stats, loading } = useAdmin();
   const { user } = useAuth();
   const [atividades, setAtividades] = useState([]);
-  const [isMobile, setIsMobile] = useState(window.innerWidth < BREAKPOINTS.mobile);
-
-  // Detecta mudança de tamanho
-  useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < BREAKPOINTS.mobile);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  const isMobile = useMediaQuery(`(max-width: ${BREAKPOINTS.mobile - 1}px)`);
 
   // Carrega atividades
   useEffect(() => {

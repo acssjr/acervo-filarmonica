@@ -2,20 +2,14 @@
 // Botao flutuante para acessar o carrinho de compartilhamento
 // Mostra apenas quando ha itens no carrinho
 
-import { useState, useEffect } from 'react';
 import { useUI } from '@contexts/UIContext';
 import { Icons } from '@constants/icons';
+import { useMediaQuery } from '@hooks/useMediaQuery';
 import useAnimatedVisibility from '@hooks/useAnimatedVisibility';
 
 const ShareCartFAB = () => {
   const { shareCart, setShowShareCart } = useUI();
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-
-  useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 768);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  const isMobile = useMediaQuery('(max-width: 767px)');
 
   // Animacao de entrada/saida
   const { shouldRender, isExiting } = useAnimatedVisibility(shareCart.length > 0, 200);

@@ -2,9 +2,9 @@
 // Componente de selecao de instrumento para download/impressao/compartilhamento
 // NOTA: Lista de instrumentos agora vem do DataContext (API com fallback)
 
-import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { Icons } from '@constants/icons';
+import { useMediaQuery } from '@hooks/useMediaQuery';
 
 const InstrumentSelector = ({
   isOpen,
@@ -22,13 +22,7 @@ const InstrumentSelector = ({
   onAddToCart,
   onRemoveFromCart
 }) => {
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-
-  useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 768);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  const isMobile = useMediaQuery('(max-width: 767px)');
   // Determina qual instrumento destacar
   const highlightedInstrument = isMaestro ? 'Grade' : userInstrument;
 

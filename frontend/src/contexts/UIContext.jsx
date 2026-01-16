@@ -63,13 +63,18 @@ export const UIProvider = ({ children }) => {
 
   // Atualiza tema quando muda preferencia do sistema
   useEffect(() => {
-    const updateTheme = () => setTheme(getEffectiveTheme());
+    const updateTheme = () => {
+      const effectiveTheme = themeMode === 'system'
+        ? window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+        : themeMode;
+      setTheme(effectiveTheme);
+    };
     updateTheme();
 
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     mediaQuery.addEventListener('change', updateTheme);
     return () => mediaQuery.removeEventListener('change', updateTheme);
-  }, [themeMode, getEffectiveTheme]);
+  }, [themeMode]);
 
   // Aplica tema ao documento
   useEffect(() => {

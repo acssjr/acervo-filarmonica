@@ -33,9 +33,9 @@ const PDFViewerModal = ({
 
   // Dimensoes da tela para responsividade
   const [screenSize, setScreenSize] = useState({
-    width: window.innerWidth,
-    height: window.innerHeight,
-    isLandscape: window.innerWidth > window.innerHeight
+    width: typeof window !== 'undefined' ? window.innerWidth : 0,
+    height: typeof window !== 'undefined' ? window.innerHeight : 0,
+    isLandscape: typeof window !== 'undefined' ? window.innerWidth > window.innerHeight : false
   });
 
   // Detectar mudanca de orientacao/tamanho da tela
@@ -48,30 +48,23 @@ const PDFViewerModal = ({
       });
     };
 
-    const handleResize = () => {
-      updateScreenSize();
-    };
-
     // orientationchange precisa de um delay porque as dimensoes
     // nao estao atualizadas imediatamente apos o evento
     const handleOrientationChange = () => {
-      // Atualiza imediatamente
       updateScreenSize();
-      // E novamente apos um delay para garantir
       setTimeout(updateScreenSize, 100);
       setTimeout(updateScreenSize, 300);
     };
 
-    window.addEventListener('resize', handleResize);
+    window.addEventListener('resize', updateScreenSize);
     window.addEventListener('orientationchange', handleOrientationChange);
 
-    // Usa screen.orientation API se disponivel
     if (screen.orientation) {
       screen.orientation.addEventListener('change', handleOrientationChange);
     }
 
     return () => {
-      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('resize', updateScreenSize);
       window.removeEventListener('orientationchange', handleOrientationChange);
       if (screen.orientation) {
         screen.orientation.removeEventListener('change', handleOrientationChange);
