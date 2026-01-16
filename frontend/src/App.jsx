@@ -20,7 +20,8 @@ import UpdateNotification from '@components/common/UpdateNotification';
 import ShareCartFAB from '@components/common/ShareCartFAB';
 
 // Onboarding - renderizado no nivel do App para ficar acima dos modals
-import { UserWalkthrough, useUserWalkthrough } from '@components/onboarding';
+import UserWalkthrough from '@components/onboarding/UserWalkthrough';
+import { useUserWalkthrough } from '@components/onboarding/useUserWalkthrough';
 
 // Login - carregado sempre (primeira tela)
 import LoginScreen from '@screens/LoginScreen';

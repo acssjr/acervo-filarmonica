@@ -380,6 +380,21 @@ export const nomesPadrao = {
   'bumbo e pratos': 'Bombo e Pratos'
 };
 
+// Cache para chaves ordenadas (inicializado uma vez)
+let chavesOrdenadasCache = null;
+
+/**
+ * Retorna chaves do nomesPadrao ordenadas por tamanho (maior para menor)
+ * Usa cache para evitar reprocessamento em cada chamada (380+ chaves)
+ * @returns {string[]} Array de chaves ordenadas
+ */
+const getChavesOrdenadas = () => {
+  if (chavesOrdenadasCache === null) {
+    chavesOrdenadasCache = Object.keys(nomesPadrao).sort((a, b) => b.length - a.length);
+  }
+  return chavesOrdenadasCache;
+};
+
 /**
  * Corrige encoding corrompido (UTF-8 lido como Latin-1)
  * Ex: "JoÃ£o" → "João", "BarÃ­tono" → "Barítono"
@@ -534,9 +549,9 @@ export const extrairInstrumento = (nomeArquivo) => {
     return { instrumento: formatarResultado(nomesPadrao[nomeNormalizado]), reconhecido: true };
   }
 
-  // Busca parcial (maior para menor para evitar falsos positivos)
-  const chaves = Object.keys(nomesPadrao).sort((a, b) => b.length - a.length);
-  for (const chave of chaves) {
+  // Busca parcial usando cache otimizado (maior para menor para evitar falsos positivos)
+  const chavesOrdenadas = getChavesOrdenadas();
+  for (const chave of chavesOrdenadas) {
     if (nomeBaseNormalizado.includes(chave) || nomeBaseNormalizado.endsWith(chave)) {
       return { instrumento: formatarResultado(nomesPadrao[chave]), reconhecido: true };
     }

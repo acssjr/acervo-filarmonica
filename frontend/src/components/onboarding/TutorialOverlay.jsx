@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
+import { useMediaQuery } from '@hooks/useMediaQuery';
 import Storage from '@services/storage';
 
 const STORAGE_KEY = 'tutorial_admin_partituras_completed';
@@ -70,18 +71,10 @@ const TutorialOverlay = ({
   const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
   const [tooltipWidth, setTooltipWidth] = useState(360);
   const [isAnimating, setIsAnimating] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+  const isMobile = useMediaQuery('(max-width: 767px)');
   const [highlightNextButton, setHighlightNextButton] = useState(false);
 
   const step = steps[currentStep];
-
-  // Detecta se é mobile
-  useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
 
   // Calcula posição do tooltip baseado no elemento alvo
   const calculateTooltipPosition = useCallback((rect, preferredPosition, mobile = false) => {
@@ -238,14 +231,10 @@ const TutorialOverlay = ({
     return () => clearTimeout(timer);
   }, [isOpen, currentStep, step, updateTargetPosition, onExpandFirst, onCollapseFirst, isMobile, allowMobile]);
 
-  // Listener para resize
+  // Listener para resize (atualiza apenas posição)
   useEffect(() => {
     if (!isOpen) return;
-
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
-      updateTargetPosition();
-    };
+    const handleResize = () => updateTargetPosition();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, [isOpen, updateTargetPosition]);

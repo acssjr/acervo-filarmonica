@@ -3,7 +3,7 @@
 // Suporta navegacao via URL: /acervo, /acervo/:categoria, /acervo/:categoria/:partituraId
 // Categorias carregadas da API via DataContext
 
-import { useMemo, useEffect } from 'react';
+import { useMemo, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@contexts/AuthContext';
 import { useData } from '@contexts/DataContext';
@@ -61,7 +61,20 @@ const LibraryScreen = ({ categoryFromUrl, sheetIdFromUrl }) => {
   }, [sheets, selectedCategory, selectedComposer]);
 
   const currentCategory = categoriesMap.get(selectedCategory);
-  const getCategoryCount = (catId) => sheets.filter(s => s.category === catId).length;
+
+  // Memoiza contagem por categoria (evita O(n) a cada render)
+  const categoryCounts = useMemo(() => {
+    const counts = new Map();
+    for (const sheet of sheets) {
+      const catId = sheet.category;
+      counts.set(catId, (counts.get(catId) || 0) + 1);
+    }
+    return counts;
+  }, [sheets]);
+
+  const getCategoryCount = useCallback((categoryId) => {
+    return categoryCounts.get(categoryId) || 0;
+  }, [categoryCounts]);
 
   const handleBack = () => {
     if (selectedComposer) {
@@ -124,7 +137,11 @@ const LibraryScreen = ({ categoryFromUrl, sheetIdFromUrl }) => {
       ) : filteredSheets.length === 0 ? (
         <EmptyState icon={Icons.Folder} title="Nenhuma partitura encontrada" />
       ) : (
-        <div className="files-grid" style={{ padding: '0 20px' }}>
+        <div className="files-grid" style={{
+          padding: '0 20px',
+          contentVisibility: 'auto',
+          containIntrinsicSize: '0 2000px'
+        }}>
           {filteredSheets.map(sheet => (
             <FileCard
               key={sheet.id}

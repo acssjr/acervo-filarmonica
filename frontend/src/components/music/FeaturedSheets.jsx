@@ -4,6 +4,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useUI } from '@contexts/UIContext';
 import { useData } from '@contexts/DataContext';
+import { useMediaQuery } from '@hooks/useMediaQuery';
 import FeaturedCard from './FeaturedCard';
 
 // Movido para fora do componente (não recria a cada render)
@@ -21,17 +22,11 @@ const CATEGORY_IMAGES = {
 const FeaturedSheets = ({ sheets, onToggleFavorite, favorites }) => {
   const { theme } = useUI();
   const { categoriesMap } = useData();
-  const [isDesktop, setIsDesktop] = useState(typeof window !== 'undefined' ? window.innerWidth >= 1024 : false);
+  const isDesktop = useMediaQuery('(min-width: 1024px)');
   const scrollRef = useRef(null);
   const innerRef = useRef(null);
   const [hasInteracted, setHasInteracted] = useState(false);
   const inactivityTimerRef = useRef(null);
-
-  useEffect(() => {
-    const handleResize = () => setIsDesktop(window.innerWidth >= 1024);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
 
   const featuredSheets = useMemo(() => {
     // Mostra apenas partituras marcadas como destaque

@@ -2,8 +2,9 @@
 // Wrapper reutilizavel para animacoes Lottie
 // Usa importacao estatica conforme recomendado para evitar erros 404
 
-import { useRef, useEffect } from 'react';
-import Lottie from 'lottie-react';
+import { useRef, useEffect, lazy, Suspense } from 'react';
+
+const Lottie = lazy(() => import('lottie-react'));
 
 // Importacao estatica dos arquivos JSON (Metodo 4.2 do guia)
 // O bundler valida a existencia dos arquivos em tempo de compilacao
@@ -106,13 +107,32 @@ const LottieAnimation = ({
       margin: '0 auto',
       ...style
     }}>
-      <Lottie
-        lottieRef={lottieRef}
-        animationData={animation}
-        loop={loop}
-        autoplay={autoplay}
-        style={{ width: '100%', height: '100%' }}
-      />
+      <Suspense fallback={
+        <div style={{
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
+          <div style={{
+            width: '50%',
+            height: '50%',
+            border: '3px solid var(--border)',
+            borderTopColor: '#D4AF37',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite'
+          }} />
+        </div>
+      }>
+        <Lottie
+          lottieRef={lottieRef}
+          animationData={animation}
+          loop={loop}
+          autoplay={autoplay}
+          style={{ width: '100%', height: '100%' }}
+        />
+      </Suspense>
     </div>
   );
 };

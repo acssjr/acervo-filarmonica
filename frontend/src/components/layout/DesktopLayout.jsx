@@ -1,21 +1,15 @@
 // ===== DESKTOP LAYOUT =====
 // Wrapper de layout para desktop com sidebar
 
-import { useState, useEffect } from 'react';
 import { useUI } from '@contexts/UIContext';
 import { BREAKPOINTS } from '@constants/config';
+import { useMediaQuery } from '@hooks/useMediaQuery';
 import DesktopSidebar from './DesktopSidebar';
 import DesktopHeader from './DesktopHeader';
 
 const DesktopLayout = ({ children, activeTab, onTabChange }) => {
-  const [isDesktop, setIsDesktop] = useState(typeof window !== 'undefined' ? window.innerWidth >= BREAKPOINTS.desktop : false);
+  const isDesktop = useMediaQuery(`(min-width: ${BREAKPOINTS.desktop}px)`);
   const { sidebarCollapsed } = useUI();
-
-  useEffect(() => {
-    const handleResize = () => setIsDesktop(window.innerWidth >= BREAKPOINTS.desktop);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
 
   if (!isDesktop) {
     return children;

@@ -3,7 +3,9 @@
 
 import PropTypes from 'prop-types';
 import useLoginForm from '@hooks/useLoginForm';
-import { LoginBackground, LoginHeader, PinInput } from '@components/login';
+import LoginBackground from '@components/login/LoginBackground';
+import LoginHeader from '@components/login/LoginHeader';
+import PinInput from '@components/login/PinInput';
 
 const LoginScreen = ({ onClose, required = false }) => {
   const {
