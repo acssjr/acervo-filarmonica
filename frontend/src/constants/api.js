@@ -6,7 +6,7 @@
 // Em producao: usa URL completa do Cloudflare Workers
 const isLocalhost = typeof window !== 'undefined' &&
   (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-export const API_BASE_URL = isLocalhost ? '' : 'https://api.partituras.app';
+export const API_BASE_URL = isLocalhost ? '' : 'https://acervo-filarmonica-api.acssjr.workers.dev';
 
 // Tempo de expiracao do token (em segundos)
 export const TOKEN_EXPIRY_SECONDS = 24 * 60 * 60; // 24 horas
