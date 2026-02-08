@@ -748,7 +748,7 @@ export default function RepertorioPage() {
           .catch((err: unknown) => console.error("Prefetch instrumentos falhou:", err));
       }
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Erro ao carregar repertorio";
+      const message = err instanceof Error ? err.message : "Erro ao carregar repertório";
       console.error("Erro ao carregar repertorio:", err);
       showToast(message, "error");
       setLoading(false);
@@ -813,9 +813,12 @@ export default function RepertorioPage() {
         if (printWindow) {
           printWindow.onload = () => {
             printWindow.print();
+            URL.revokeObjectURL(blobUrl);
           };
+        } else {
+          URL.revokeObjectURL(blobUrl);
         }
-        showToast("Abrindo impressao...");
+        showToast("Abrindo impressão...");
       } else {
         // Download normal
         const contentDisposition = response.headers.get("Content-Disposition");
@@ -848,7 +851,7 @@ export default function RepertorioPage() {
 
     try {
       await API.removePartituraFromRepertorio(repertorio.id, partituraId);
-      showToast("Partitura removida do repertorio");
+      showToast("Partitura removida do repertório");
       loadRepertorio();
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Erro ao remover";
@@ -874,11 +877,11 @@ export default function RepertorioPage() {
   if (!repertorio) {
     return (
       <div>
-        <Header title="Repertorio" subtitle="Proxima apresentacao" />
+        <Header title="Repertório" subtitle="Próxima apresentação" />
         <EmptyState
           icon={Icons.ListMusic}
-          title="Nenhum repertorio definido"
-          subtitle="O regente ainda nao definiu o repertorio da proxima apresentacao"
+          title="Nenhum repertório definido"
+          subtitle="O regente ainda não definiu o repertório da próxima apresentação"
         />
       </div>
     );
@@ -888,7 +891,7 @@ export default function RepertorioPage() {
     <div>
       <Header
         title={repertorio.nome}
-        subtitle={`${repertorio.partituras?.length || 0} musica${(repertorio.partituras?.length || 0) !== 1 ? "s" : ""}`}
+        subtitle={`${repertorio.partituras?.length || 0} música${(repertorio.partituras?.length || 0) !== 1 ? "s" : ""}`}
       />
 
       {/* Acoes */}
@@ -940,7 +943,7 @@ export default function RepertorioPage() {
       {sheets.length === 0 ? (
         <EmptyState
           icon={Icons.Music}
-          title="Repertorio vazio"
+          title="Repertório vazio"
           subtitle="Nenhuma partitura adicionada ainda"
         />
       ) : (
@@ -1055,7 +1058,7 @@ export default function RepertorioPage() {
                   {user?.is_admin && (
                     <button
                       onClick={(e) => { e.stopPropagation(); handleRemoveFromRepertorio(sheet.id); }}
-                      title="Remover do repertorio"
+                      title="Remover do repertório"
                       style={{
                         width: "32px",
                         height: "32px",

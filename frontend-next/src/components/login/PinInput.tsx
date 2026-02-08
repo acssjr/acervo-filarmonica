@@ -22,6 +22,7 @@ const PinInput = ({
   onPinChange,
   onKeyDown,
   onFocus,
+  disabled,
 }: PinInputProps) => {
   const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
     e.target.style.borderColor = 'rgba(212, 175, 55, 0.5)';
@@ -37,7 +38,7 @@ const PinInput = ({
   };
 
   return (
-    <div style={{ marginBottom: '20px' }}>
+    <div style={{ marginBottom: '20px', opacity: disabled ? 0.5 : 1, transition: 'opacity 0.2s ease' }}>
       <label style={{
         display: 'flex',
         alignItems: 'center',
@@ -71,7 +72,7 @@ const PinInput = ({
             value={digit}
             onChange={e => onPinChange(index, e.target.value)}
             onKeyDown={e => onKeyDown(index, e)}
-            disabled={isLoading}
+            disabled={isLoading || disabled}
             style={{
               width: '56px',
               minWidth: '56px',

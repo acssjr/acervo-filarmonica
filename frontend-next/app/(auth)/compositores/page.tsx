@@ -278,9 +278,8 @@ const ComposersPage = () => {
   );
 
   // Lista de compositores exibida na secao "Outros"
-  const displayedOthers = searchQuery
-    ? filteredComposers.filter((c) => !PRIORITY_ORDER.includes(c.name))
-    : otherComposers;
+  // otherComposers ja filtra de filteredComposers e aplica sorting
+  const displayedOthers = otherComposers;
 
   const sortButtonStyle = (active: boolean): CSSProperties => ({
     padding: "5px 10px",

@@ -4,6 +4,7 @@
 // Tela de perfil do usuario com todas as funcionalidades
 
 import { useState, useEffect, useRef, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@contexts/AuthContext";
 import { useUI } from "@contexts/UIContext";
 import { useNotifications } from "@contexts/NotificationContext";
@@ -96,6 +97,7 @@ const SettingItem = ({ icon, label, value, onClick, rightElement, danger }: Sett
 // -- Main component --
 
 export default function PerfilPage() {
+  const router = useRouter();
   const { user, setUser } = useAuth();
   const { showToast } = useUI();
   const { clearNotifications } = useNotifications();
@@ -132,7 +134,13 @@ export default function PerfilPage() {
       const base64 = event.target?.result as string;
       setProfilePhoto(base64);
       if (user) {
-        Storage.set(`profilePhoto_${user.id}`, base64);
+        try {
+          Storage.set(`profilePhoto_${user.id}`, base64);
+        } catch {
+          // QuotaExceededError — foto atualizada na UI mas nao persiste
+          showToast("Foto muito grande para salvar localmente", "error");
+          return;
+        }
       }
       showToast("Foto atualizada!");
     };
@@ -155,6 +163,7 @@ export default function PerfilPage() {
     clearNotifications();
     setUser(null);
     showToast("Voce saiu da conta");
+    router.push("/login");
   };
 
   if (!user) {
@@ -201,7 +210,7 @@ export default function PerfilPage() {
 
   return (
     <div>
-      <Header title="Perfil" subtitle="Configuracoes da conta" />
+      <Header title="Perfil" subtitle="Configurações da conta" />
 
       {/* Foto e Info Principal */}
       <div style={{ padding: "20px", display: "flex", flexDirection: "column", alignItems: "center" }}>
@@ -359,7 +368,7 @@ export default function PerfilPage() {
 
         <SettingItem
           icon={<Icons.User />}
-          label="Informacoes Pessoais"
+          label="Informações Pessoais"
           value={user.instrumento}
           onClick={() => showToast("Em breve!")}
         />

@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useUI } from "@contexts/UIContext";
 import { Icons } from "@constants/icons";
+import { useMediaQuery } from "@hooks/useMediaQuery";
 
 interface ThemeSelectorProps {
   inDarkHeader?: boolean;
@@ -14,7 +15,7 @@ const ThemeSelector = ({ inDarkHeader = false, compact = false, inline = false }
   const { themeMode, setThemeMode } = useUI();
   const [isOpen, setIsOpen] = useState(false);
   const selectorRef = useRef<HTMLDivElement>(null);
-  const isMobile = typeof window !== 'undefined' ? window.innerWidth < 768 : false;
+  const isMobile = useMediaQuery('(max-width: 767px)');
 
   const options = [
     { id: 'light' as const, label: 'Claro', icon: Icons.Sun },

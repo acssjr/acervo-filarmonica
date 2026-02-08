@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@contexts/AuthContext";
 import { useData } from "@contexts/DataContext";
 import { useIsMobile } from "@hooks/useResponsive";
-import { API } from "@lib/api";
+
 import HomeHeader from "@components/common/HomeHeader";
 import HeaderActions from "@components/common/HeaderActions";
 import FeaturedSheets from "@components/music/FeaturedSheets";
@@ -20,7 +20,6 @@ export default function HomePage() {
   const { user } = useAuth();
   const { sheets, favorites, toggleFavorite, categories, categoriesMap } = useData();
   const isMobile = useIsMobile();
-  const [, setAtividades] = useState<unknown[]>([]);
 
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -65,19 +64,6 @@ export default function HomePage() {
       .sort((a, b) => b.count - a.count)
       .slice(0, 6);
   }, [sheets]);
-
-  useEffect(() => {
-    if (!user) return;
-    const loadAtividades = async () => {
-      try {
-        const data = await API.getMinhasAtividades();
-        setAtividades(data || []);
-      } catch {
-        // Silencioso - atividades não são críticas
-      }
-    };
-    loadAtividades();
-  }, [user]);
 
   return (
     <div style={{ width: "100%", overflow: "visible" }}>

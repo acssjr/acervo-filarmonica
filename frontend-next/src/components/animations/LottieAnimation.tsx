@@ -4,7 +4,7 @@
 // Wrapper reutilizavel para animacoes Lottie
 // Usa next/dynamic para evitar SSR (lottie-react precisa de browser APIs)
 
-import { useRef, useEffect, CSSProperties } from 'react';
+import { CSSProperties } from 'react';
 import dynamic from 'next/dynamic';
 
 // Import lottie-react com SSR desabilitado
@@ -82,27 +82,15 @@ const LottieAnimation = ({
   style = {},
   onComplete
 }: LottieAnimationProps) => {
-  const lottieRef = useRef(null);
-
   // Determina os dados da animacao: prop direta ou pelo nome
   const animation = animationData || (name ? ANIMATIONS[name] : undefined);
 
-  // Callback de conclusao
-  useEffect(() => {
-    const lottieInstance = lottieRef.current as HTMLElement | null;
-    if (onComplete && lottieInstance) {
-      const handleComplete = () => {
-        if (!loop) {
-          onComplete();
-        }
-      };
-
-      lottieInstance.addEventListener('complete', handleComplete);
-      return () => {
-        lottieInstance?.removeEventListener('complete', handleComplete);
-      };
+  // Callback de conclusao via prop do lottie-react
+  const handleLottieComplete = () => {
+    if (!loop && onComplete) {
+      onComplete();
     }
-  }, [loop, onComplete]);
+  };
 
   // Se nao encontrar a animacao, mostra fallback
   if (!animation) {
@@ -121,10 +109,10 @@ const LottieAnimation = ({
       ...style
     }}>
       <Lottie
-        lottieRef={lottieRef}
         animationData={animation}
         loop={loop}
         autoplay={autoplay}
+        onComplete={handleLottieComplete}
         style={{ width: '100%', height: '100%' }}
       />
     </div>

@@ -3,7 +3,7 @@
 // ===== ADMIN PRESENCA =====
 // Gerenciamento de presencas em ensaios + partituras tocadas
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useUI } from "@contexts/UIContext";
 import { API } from "@lib/api";
 import { COLORS } from "@constants/colors";
@@ -321,7 +321,7 @@ const AdminPresenca = () => {
   };
 
   // Carregar partituras do ensaio selecionado
-  const loadPartiturasEnsaio = async (data: string) => {
+  const loadPartiturasEnsaio = useCallback(async (data: string) => {
     try {
       const result = await API.getPartiturasEnsaio(data);
       setPartiturasEnsaio(result.partituras || []);
@@ -329,7 +329,7 @@ const AdminPresenca = () => {
       console.error("Erro ao carregar partituras do ensaio:", error);
       setPartiturasEnsaio([]);
     }
-  };
+  }, []);
 
   useEffect(() => {
     loadData();
@@ -341,7 +341,7 @@ const AdminPresenca = () => {
     if (dataEnsaio) {
       loadPartiturasEnsaio(dataEnsaio);
     }
-  }, [dataEnsaio]);
+  }, [dataEnsaio, loadPartiturasEnsaio]);
 
   // Toggle selecao individual
   const toggleUsuario = (usuarioId: number) => {
@@ -373,7 +373,7 @@ const AdminPresenca = () => {
   // Marcar presenca
   const handleMarcarPresenca = async () => {
     if (selecionados.length === 0) {
-      showToast("Selecione pelo menos um musico", "warning");
+      showToast("Selecione pelo menos um músico", "warning");
       return;
     }
 
@@ -386,7 +386,7 @@ const AdminPresenca = () => {
         : selecionados;
 
     if (idsParaRegistrar.length === 0) {
-      showToast("Nenhum musico presente para registrar", "warning");
+      showToast("Nenhum músico presente para registrar", "warning");
       return;
     }
 
@@ -395,7 +395,7 @@ const AdminPresenca = () => {
       await API.registrarPresencas(dataEnsaio, idsParaRegistrar);
 
       showToast(
-        `Presenca registrada: ${idsParaRegistrar.length} musico${idsParaRegistrar.length !== 1 ? "s" : ""}`,
+        `Presença registrada: ${idsParaRegistrar.length} músico${idsParaRegistrar.length !== 1 ? "s" : ""}`,
         "success"
       );
 
@@ -405,7 +405,7 @@ const AdminPresenca = () => {
     } catch (error: unknown) {
       console.error("Erro ao marcar presenca:", error);
       const message =
-        error instanceof Error ? error.message : "Erro ao marcar presenca";
+        error instanceof Error ? error.message : "Erro ao marcar presença";
       showToast(message, "error");
     } finally {
       setSubmitting(false);
@@ -526,7 +526,7 @@ const AdminPresenca = () => {
             letterSpacing: "-0.5px",
           }}
         >
-          Controle de Presenca
+          Controle de Presença
         </h1>
         <p
           style={{
@@ -536,7 +536,7 @@ const AdminPresenca = () => {
             lineHeight: "1.5",
           }}
         >
-          Registre a presenca dos musicos e gerencie as partituras tocadas nos
+          Registre a presença dos músicos e gerencie as partituras tocadas nos
           ensaios
         </p>
       </div>
@@ -732,7 +732,7 @@ const AdminPresenca = () => {
                   margin: 0,
                 }}
               >
-                Musicos ({contadorTexto})
+                Músicos ({contadorTexto})
               </h2>
             </div>
 
@@ -816,7 +816,7 @@ const AdminPresenca = () => {
                   fontSize: "14px",
                 }}
               >
-                Nenhum musico cadastrado
+                Nenhum músico cadastrado
               </div>
             ) : (
               usuarios.map((usuario) => {

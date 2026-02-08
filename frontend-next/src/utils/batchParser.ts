@@ -314,9 +314,10 @@ const calcularEstatisticas = (pastas: Pasta[]): Estatisticas => {
 
 /**
  * Processa um lote de arquivos arrastados e retorna as partituras detectadas
+ * Aceita DataTransferItemList ou array de FileSystemEntry (entries ja extraidas)
  */
 export const processarLote = async (
-  items: DataTransferItemList,
+  items: DataTransferItemList | FileSystemEntry[],
   categorias: Categoria[] = [],
   partiturasExistentes: unknown[] = [],
   onProgress: ((info: ProgressInfo) => void) | null = null
@@ -324,11 +325,20 @@ export const processarLote = async (
   const allFiles: FileInfo[] = [];
 
   // Le todas as entradas de diretorio
-  for (let i = 0; i < items.length; i++) {
-    const entry = items[i].webkitGetAsEntry?.();
-    if (entry) {
+  if (Array.isArray(items)) {
+    // Entries ja extraidas (seguro apos o evento de drop)
+    for (const entry of items) {
       const files = await readDirectoryRecursively(entry, '');
       allFiles.push(...files);
+    }
+  } else {
+    // DataTransferItemList (deve ser chamado durante o evento)
+    for (let i = 0; i < items.length; i++) {
+      const entry = items[i].webkitGetAsEntry?.();
+      if (entry) {
+        const files = await readDirectoryRecursively(entry, '');
+        allFiles.push(...files);
+      }
     }
   }
 

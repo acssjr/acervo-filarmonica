@@ -85,7 +85,8 @@ interface ImportacaoLoteModalProps {
   onClose: () => void;
   onSuccess?: () => void;
   onOpenUploadPasta?: (pasta: Pasta) => void;
-  initialItems?: DataTransferItemList | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  initialEntries?: any[] | null;
 }
 
 const ImportacaoLoteModal = ({
@@ -93,7 +94,7 @@ const ImportacaoLoteModal = ({
   onClose,
   onSuccess,
   onOpenUploadPasta,
-  initialItems,
+  initialEntries,
 }: ImportacaoLoteModalProps) => {
   const { showToast } = useUI();
 
@@ -125,29 +126,30 @@ const ImportacaoLoteModal = ({
   const [uploadResultados, setUploadResultados] = useState<UploadResultados | null>(null);
   const [funnyPhraseIndex, setFunnyPhraseIndex] = useState(0);
 
-  // Frases engracadas para mostrar durante o upload
+  // Frases engraçadas para mostrar durante o upload
   const funnyPhrases = [
-    "Adicionando os ultimos detalhes...",
-    "Refinando a visualizacao das partituras...",
-    "Escrevendo o proximo Dobrado Tusca...",
-    "Removendo o Dobrado Ludgero da proxima apresentacao...",
+    "Adicionando os últimos detalhes...",
+    "Refinando a visualização das partituras...",
+    "Escrevendo o próximo Dobrado Tusca...",
+    "Removendo o Dobrado Ludgero da próxima apresentação...",
     "Ratando a primeira nota de Preta Pretinha...",
-    "Esperando Joao Viana voltar do banheiro...",
+    "Esperando João Viana voltar do banheiro...",
     "Deixando Julielson menos durinho no pandeiro...",
-    "Afinando os pistoes virtuais...",
+    "Afinando os pistões virtuais...",
     "Procurando a partitura perdida do saxofone...",
-    "Ajustando o compasso que ninguem acerta...",
-    "Adicionando mais uma fermata so de sacanagem...",
-    "Verificando se o bombardino esta acordado...",
+    "Ajustando o compasso que ninguém acerta...",
+    "Adicionando mais uma fermata só de sacanagem...",
+    "Verificando se o bombardino está acordado...",
     "Calibrando o volume da tuba...",
-    "Inserindo pausas estrategicas para o cafe...",
-    "Convencendo o maestro que esta tudo certo...",
+    "Inserindo pausas estratégicas para o café...",
+    "Convencendo o maestro que está tudo certo...",
     "Organizando as estantes de partitura...",
   ];
 
   // UI
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const feedbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Handler para abrir o seletor de pasta
   const handleClickToSelect = () => {
@@ -175,6 +177,10 @@ const ImportacaoLoteModal = ({
   // Reset ao fechar
   useEffect(() => {
     if (!isOpen) {
+      if (feedbackTimeoutRef.current !== null) {
+        clearTimeout(feedbackTimeoutRef.current);
+        feedbackTimeoutRef.current = null;
+      }
       setModalState(STATES.SELECTION);
       setPastas([]);
       setEstatisticas(null);
@@ -200,14 +206,14 @@ const ImportacaoLoteModal = ({
   // Processa items pre-carregados (drag & drop global)
   useEffect(() => {
     const processInitialItems = async () => {
-      if (!isOpen || !initialItems || initialItems.length === 0 || categorias.length === 0) return;
+      if (!isOpen || !initialEntries || initialEntries.length === 0 || categorias.length === 0) return;
       if (modalState !== STATES.SELECTION) return;
 
       setModalState(STATES.ANALYZING);
 
       try {
         const { pastas: pastasAnalisadas, estatisticas: stats } = await processarLote(
-          initialItems,
+          initialEntries,
           categorias,
           partiturasExistentes,
           setAnalyzeProgress
@@ -223,7 +229,8 @@ const ImportacaoLoteModal = ({
         setEstatisticas(stats);
 
         setModalState(STATES.FEEDBACK);
-        setTimeout(() => {
+        feedbackTimeoutRef.current = setTimeout(() => {
+          feedbackTimeoutRef.current = null;
           setModalState(STATES.REVIEW);
         }, 2500);
       } catch (err) {
@@ -235,7 +242,7 @@ const ImportacaoLoteModal = ({
 
     processInitialItems();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, initialItems, categorias, partiturasExistentes]);
+  }, [isOpen, initialEntries, categorias, partiturasExistentes]);
 
   // Handlers de Drag & Drop
   const handleDragEnter = (e: DragEvent) => {

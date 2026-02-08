@@ -322,8 +322,17 @@ export default function LoginPage() {
             )}
 
             {/* Lembrar-me */}
-            <label
+            <div
+              role="checkbox"
+              aria-checked={rememberMe}
+              tabIndex={0}
               onClick={toggleRememberMe}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  toggleRememberMe();
+                }
+              }}
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -360,7 +369,7 @@ export default function LoginPage() {
               >
                 Lembrar meu acesso
               </span>
-            </label>
+            </div>
           </div>
 
           {/* Footer */}

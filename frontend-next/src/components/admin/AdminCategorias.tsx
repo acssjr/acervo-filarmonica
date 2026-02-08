@@ -96,9 +96,9 @@ const AdminCategorias = () => {
       setShowModal(false);
       setEditingCategoria(null);
       setNome("");
-      loadData();
+      await loadData();
     } catch (e: unknown) {
-      showToast((e as Error).message, "error");
+      showToast(e instanceof Error ? e.message : "Erro desconhecido", "error");
     }
     setSaving(false);
   };
@@ -108,9 +108,9 @@ const AdminCategorias = () => {
     try {
       await API.deleteCategoria(id);
       showToast("Categoria removida!");
-      loadData();
+      await loadData();
     } catch (e: unknown) {
-      showToast((e as Error).message, "error");
+      showToast(e instanceof Error ? e.message : "Erro desconhecido", "error");
     }
   };
 
@@ -141,7 +141,7 @@ const AdminCategorias = () => {
           Categorias
         </h1>
         <p style={{ color: "var(--text-muted)", fontSize: "14px" }}>
-          Gerencie os generos musicais
+          Gerencie os gêneros musicais
         </p>
       </div>
 

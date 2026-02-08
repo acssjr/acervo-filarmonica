@@ -87,12 +87,12 @@ const ThemeIcon = ({ mode }: { mode: string }) => {
 // ===== MENU ITEMS =====
 const menuItems = [
   { id: "dashboard", icon: "dashboard", label: "Dashboard" },
-  { id: "musicos", icon: "users", label: "Musicos" },
+  { id: "musicos", icon: "users", label: "Músicos" },
   { id: "partituras", icon: "music", label: "Partituras" },
-  { id: "repertorio", icon: "repertorio", label: "Repertorio" },
+  { id: "repertorio", icon: "repertorio", label: "Repertório" },
   { id: "categorias", icon: "folder", label: "Categorias" },
-  { id: "presenca", icon: "check-circle", label: "Presenca" },
-  { id: "config", icon: "settings", label: "Configuracoes" },
+  { id: "presenca", icon: "check-circle", label: "Presença" },
+  { id: "config", icon: "settings", label: "Configurações" },
 ];
 
 // ===== HELPER: derive active section from pathname =====
@@ -178,8 +178,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     setThemeMode(modes[nextIndex]);
   }, [themeMode, setThemeMode]);
 
-  // Don't render admin UI for non-admin users
-  if (user && !user.is_admin) {
+  // Don't render admin UI while user is loading or for non-admin users
+  if (!user || !user.is_admin) {
     return null;
   }
 
@@ -249,7 +249,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   overflow: "hidden",
                 }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src="/assets/images/ui/brasao-256x256.png" alt="Brasao" style={{ width: "75%", height: "75%", objectFit: "contain" }} />
+                  <img src="/assets/images/ui/brasao-256x256.png" alt="Brasão" style={{ width: "75%", height: "75%", objectFit: "contain" }} />
                 </div>
               </div>
               <span style={{ fontWeight: "600", color: "var(--text-primary)", fontSize: "14px" }}>Painel Admin</span>
@@ -342,12 +342,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     overflow: "hidden",
                   }}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src="/assets/images/ui/brasao-256x256.png" alt="Brasao" style={{ width: "75%", height: "75%", objectFit: "contain" }} />
+                    <img src="/assets/images/ui/brasao-256x256.png" alt="Brasão" style={{ width: "75%", height: "75%", objectFit: "contain" }} />
                   </div>
                 </div>
                 {(!sidebarCollapsed || isMobile) && (
                   <div>
-                    <div style={{ fontWeight: "700", color: "#F4E4BC", fontSize: "14px", fontFamily: "Outfit, sans-serif" }}>S.F. 25 de Marco</div>
+                    <div style={{ fontWeight: "700", color: "#F4E4BC", fontSize: "14px", fontFamily: "Outfit, sans-serif" }}>S.F. 25 de Março</div>
                     <div style={{ fontSize: "11px", color: "#D4AF37", fontFamily: "Outfit, sans-serif" }}>PAINEL ADMIN</div>
                   </div>
                 )}

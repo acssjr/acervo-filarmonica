@@ -7,7 +7,7 @@ interface SearchBarProps {
   onClear?: () => void;
 }
 
-const SearchBar = ({ value, onChange, placeholder }: SearchBarProps) => (
+const SearchBar = ({ value, onChange, placeholder, onClear }: SearchBarProps) => (
   <div style={{ padding: "0 20px", marginBottom: "20px" }}>
     <div className="search-bar" role="search">
       <svg className="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -23,7 +23,7 @@ const SearchBar = ({ value, onChange, placeholder }: SearchBarProps) => (
         autoComplete="off"
       />
       {value && (
-        <button className="clear-btn" onClick={() => onChange("")} aria-label="Limpar busca">
+        <button className="clear-btn" onClick={() => { onChange(""); onClear?.(); }} aria-label="Limpar busca">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
           </svg>

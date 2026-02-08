@@ -57,17 +57,20 @@ const UsuarioFormModal = ({ usuario, instrumentos, onSave, onClose }: UsuarioFor
     if (!usuario && (!username.trim() || !pin || pin.length !== 4)) return;
 
     setSaving(true);
-    const data: Record<string, unknown> = {
-      nome: nome.trim(),
-      instrumento_id: instrumentoId || null,
-      admin: isAdmin,
-    };
-    if (!usuario) {
-      data.username = username.trim().toLowerCase();
-      data.pin = pin;
+    try {
+      const data: Record<string, unknown> = {
+        nome: nome.trim(),
+        instrumento_id: instrumentoId || null,
+        admin: isAdmin,
+      };
+      if (!usuario) {
+        data.username = username.trim().toLowerCase();
+        data.pin = pin;
+      }
+      await onSave(data);
+    } finally {
+      setSaving(false);
     }
-    await onSave(data);
-    setSaving(false);
   };
 
   const gerarUsername = () => {
@@ -114,7 +117,7 @@ const UsuarioFormModal = ({ usuario, instrumentos, onSave, onClose }: UsuarioFor
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "28px" }}>
           <h2 style={{ fontSize: "22px", fontWeight: "600", color: "var(--text-primary)", margin: 0, fontFamily: "Outfit, sans-serif" }}>
-            {usuario ? "Editar Musico" : "Novo Musico"}
+            {usuario ? "Editar Músico" : "Novo Músico"}
           </h2>
           <button onClick={onClose} style={{
             width: "32px",
@@ -418,7 +421,7 @@ const UsuarioFormModal = ({ usuario, instrumentos, onSave, onClose }: UsuarioFor
           />
           <div>
             <span style={{ color: "var(--text-primary)", fontWeight: "500", fontSize: "14px", fontFamily: "Outfit, sans-serif" }}>
-              Este musico e administrador
+              Este músico é administrador
             </span>
             <p style={{ fontSize: "12px", color: "var(--text-muted)", margin: "4px 0 0 0", fontFamily: "Outfit, sans-serif" }}>
               Tera acesso ao painel de gerenciamento
@@ -457,7 +460,7 @@ const UsuarioFormModal = ({ usuario, instrumentos, onSave, onClose }: UsuarioFor
             transition: "all 0.15s",
             fontFamily: "Outfit, sans-serif",
           }}>
-            {saving ? "Salvando..." : (usuario ? "Salvar Alteracoes" : "Cadastrar Musico")}
+            {saving ? "Salvando..." : (usuario ? "Salvar Alterações" : "Cadastrar Músico")}
           </button>
         </div>
       </div>

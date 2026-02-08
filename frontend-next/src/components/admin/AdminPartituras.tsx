@@ -5,8 +5,6 @@
 
 import { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
 
-// Flag para debug - remover em producao
-const DEBUG_TUTORIAL = false;
 import { useUI } from '@/contexts/UIContext';
 import { API } from '@/lib/api';
 import CategoryIcon from '@/components/common/CategoryIcon';
@@ -65,9 +63,9 @@ interface FileSystemEntryLike {
   isFile: boolean;
   isDirectory: boolean;
   name: string;
-  file: (callback: (file: File) => void) => void;
+  file: (successCallback: (file: File) => void, errorCallback?: (err: unknown) => void) => void;
   createReader: () => {
-    readEntries: (callback: (entries: FileSystemEntryLike[]) => void) => void;
+    readEntries: (successCallback: (entries: FileSystemEntryLike[]) => void, errorCallback?: (err: unknown) => void) => void;
   };
 }
 
@@ -123,7 +121,7 @@ const AdminPartituras = () => {
   // Estado para drag & drop global na tela
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [droppedFiles, setDroppedFiles] = useState<DroppedFiles | null>(null);
-  const [droppedItems, setDroppedItems] = useState<DataTransferItemList | null>(null);
+  const [droppedEntries, setDroppedEntries] = useState<FileSystemEntryLike[] | null>(null);
   const dragCounterRef = useRef(0);
 
   // Estado para expansao inline
@@ -221,7 +219,6 @@ const AdminPartituras = () => {
   useEffect(() => {
     if (showTutorial) {
       tutorialWasShown.current = true;
-      if (DEBUG_TUTORIAL) console.warn('[Tutorial] Marcado como mostrado');
     }
   }, [showTutorial]);
 
@@ -251,7 +248,13 @@ const AdminPartituras = () => {
   const readAllEntriesRecursively = async (entry: FileSystemEntryLike, path: string = ''): Promise<File[]> => {
     const files: File[] = [];
     if (entry.isFile) {
-      const file = await new Promise<File>((resolve) => entry.file(resolve));
+      const file = await new Promise<File>((resolve, reject) => {
+        try {
+          entry.file(resolve, reject);
+        } catch (err) {
+          reject(err);
+        }
+      });
       Object.defineProperty(file, 'webkitRelativePath', {
         value: path + file.name,
         writable: false
@@ -259,7 +262,7 @@ const AdminPartituras = () => {
       files.push(file);
     } else if (entry.isDirectory) {
       const reader = entry.createReader();
-      const entries = await new Promise<FileSystemEntryLike[]>((resolve) => {
+      const entries = await new Promise<FileSystemEntryLike[]>((resolve, reject) => {
         const allEntries: FileSystemEntryLike[] = [];
         const readEntries = () => {
           reader.readEntries((results: FileSystemEntryLike[]) => {
@@ -269,7 +272,7 @@ const AdminPartituras = () => {
               allEntries.push(...results);
               readEntries();
             }
-          });
+          }, reject);
         };
         readEntries();
       });
@@ -354,7 +357,7 @@ const AdminPartituras = () => {
 
       if (subFolders.length > 0 && !hasPDFsInRoot) {
         // Tem subpastas e nao tem PDFs na raiz -> Importacao em Lote
-        setDroppedItems(items);
+        setDroppedEntries(folderEntries);
         setShowImportacaoLote(true);
       } else if (hasPDFsInRoot) {
         // Tem PDFs na raiz -> Upload de Pasta simples
@@ -374,7 +377,7 @@ const AdminPartituras = () => {
       }
     } else {
       // Multiplas pastas soltas -> Importacao em Lote
-      setDroppedItems(items);
+      setDroppedEntries(folderEntries);
       setShowImportacaoLote(true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -405,7 +408,7 @@ const AdminPartituras = () => {
 
   useEffect(() => {
     if (!showImportacaoLote) {
-      setDroppedItems(null);
+      setDroppedEntries(null);
     }
   }, [showImportacaoLote]);
 
@@ -505,7 +508,7 @@ const AdminPartituras = () => {
 
     try {
       await API.removePartituraFromRepertorio(repertorioId, partituraId);
-      showToast('Removida do repertorio');
+      showToast('Removida do repertório');
     } catch (err: unknown) {
       // Reverte em caso de erro
       setPartiturasInRepertorio(prev => new Set([...prev, partituraId]));
@@ -518,7 +521,7 @@ const AdminPartituras = () => {
   const createRepertorioAndAdd = async (nome: string) => {
     try {
       const result = await API.createRepertorio({ nome, ativo: true });
-      showToast('Repertorio criado!');
+      showToast('Repertório criado!');
 
       // Recarregar repertorios
       await loadRepertorios();
@@ -526,14 +529,18 @@ const AdminPartituras = () => {
       // Adicionar partitura ao novo repertorio
       if (selectedPartituraForRepertorio && result.id) {
         await API.addPartituraToRepertorio(result.id, selectedPartituraForRepertorio.id);
-        setPartiturasInRepertorio(new Set([selectedPartituraForRepertorio.id]));
+        setPartiturasInRepertorio(prev => {
+          const updated = new Set(prev);
+          updated.add(selectedPartituraForRepertorio.id);
+          return updated;
+        });
         showToast(`"${selectedPartituraForRepertorio.titulo}" adicionada!`);
       }
 
       setShowRepertorioModal(false);
       setSelectedPartituraForRepertorio(null);
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Erro ao criar repertorio';
+      const message = err instanceof Error ? err.message : 'Erro ao criar repertório';
       showToast(message, 'error');
       throw err;
     }
@@ -571,22 +578,10 @@ const AdminPartituras = () => {
 
     const tutorialCompleted = Storage.get('tutorial_admin_partituras_completed', false);
 
-    if (DEBUG_TUTORIAL) {
-      console.warn('[Tutorial] Check pendingAction:', {
-        loading,
-        tutorialCompleted,
-        showTutorial,
-        tutorialPending,
-        tutorialWasShown: tutorialWasShown.current,
-        pendingAction
-      });
-    }
-
     const tutorialClosedThisSession = tutorialWasShown.current && !showTutorial && !tutorialPending;
     const canExecute = !loading && (tutorialCompleted || tutorialClosedThisSession);
 
     if (canExecute) {
-      if (DEBUG_TUTORIAL) console.warn('[Tutorial] Executando acao pendente:', pendingAction);
       if (pendingAction === 'openUploadModal') {
         setShowUploadModal(true);
       }
@@ -897,7 +892,7 @@ const AdminPartituras = () => {
             <svg className="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
             </svg>
-            <input type="text" placeholder="Buscar por titulo ou compositor..." value={search} onChange={e => setSearch(e.target.value)} />
+            <input type="text" placeholder="Buscar por título ou compositor..." value={search} onChange={e => setSearch(e.target.value)} />
             {search && (
               <button className="clear-btn" onClick={() => setSearch('')}>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -1012,7 +1007,7 @@ const AdminPartituras = () => {
                           <button onClick={() => toggleDestaque(p)} title={p.destaque === 1 ? 'Remover destaque' : 'Destacar'} className="btn-icon-hover" style={{ width: '36px', height: '36px', borderRadius: '10px', background: p.destaque === 1 ? 'linear-gradient(135deg, #D4AF37 0%, #B8860B 100%)' : 'var(--bg-primary)', border: p.destaque === 1 ? 'none' : '1px solid var(--border)', color: p.destaque === 1 ? '#fff' : 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             <svg width="16" height="16" viewBox="0 0 24 24" fill={p.destaque === 1 ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
                           </button>
-                          <button onClick={() => openRepertorioModal(p)} title={partiturasInRepertorio.has(p.id) ? 'Remover do Repertorio' : 'Adicionar ao Repertorio'} className="btn-purple-hover" style={{ width: '36px', height: '36px', borderRadius: '10px', background: partiturasInRepertorio.has(p.id) ? 'linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%)' : 'rgba(155, 89, 182, 0.1)', border: partiturasInRepertorio.has(p.id) ? 'none' : '1px solid rgba(155, 89, 182, 0.3)', color: partiturasInRepertorio.has(p.id) ? '#fff' : '#9b59b6', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <button onClick={() => openRepertorioModal(p)} title={partiturasInRepertorio.has(p.id) ? 'Remover do Repertório' : 'Adicionar ao Repertório'} className="btn-purple-hover" style={{ width: '36px', height: '36px', borderRadius: '10px', background: partiturasInRepertorio.has(p.id) ? 'linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%)' : 'rgba(155, 89, 182, 0.1)', border: partiturasInRepertorio.has(p.id) ? 'none' : '1px solid rgba(155, 89, 182, 0.3)', color: partiturasInRepertorio.has(p.id) ? '#fff' : '#9b59b6', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             {partiturasInRepertorio.has(p.id) ? (
                               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                             ) : (
@@ -1109,7 +1104,7 @@ const AdminPartituras = () => {
       <UploadPastaModal isOpen={showUploadModal} onClose={() => setShowUploadModal(false)} onSuccess={() => { loadData(); setShowUploadModal(false); }} categorias={categorias} initialFiles={droppedFiles} />
 
       <Suspense fallback={null}>
-        <ImportacaoLoteModal isOpen={showImportacaoLote} onClose={() => setShowImportacaoLote(false)} onSuccess={() => { loadData(); }} onOpenUploadPasta={() => { setShowImportacaoLote(false); setShowUploadModal(true); }} initialItems={droppedItems} />
+        <ImportacaoLoteModal isOpen={showImportacaoLote} onClose={() => setShowImportacaoLote(false)} onSuccess={() => { loadData(); }} onOpenUploadPasta={() => { setShowImportacaoLote(false); setShowUploadModal(true); }} initialEntries={droppedEntries} />
       </Suspense>
 
       <Suspense fallback={null}>

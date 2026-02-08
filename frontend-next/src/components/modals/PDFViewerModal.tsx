@@ -277,6 +277,16 @@ const PDFViewerModal = ({
     };
   }, [isOpen]);
 
+  // Cancela requestAnimationFrame pendente ao desmontar ou fechar
+  useEffect(() => {
+    return () => {
+      if (rafId.current !== null) {
+        cancelAnimationFrame(rafId.current);
+        rafId.current = null;
+      }
+    };
+  }, []);
+
   // Handler para fechar ao clicar no backdrop (area escura)
   const handleBackdropClick = useCallback(
     (e: React.MouseEvent) => {
@@ -288,11 +298,20 @@ const PDFViewerModal = ({
   );
 
   const { shouldRender, isExiting } = useAnimatedVisibility(isOpen, 200);
+  const modalContainerRef = useRef<HTMLDivElement>(null);
+
+  // Auto-focus para que keyboard events (Escape, setas, zoom) funcionem imediatamente
+  useEffect(() => {
+    if (shouldRender && !isExiting) {
+      modalContainerRef.current?.focus();
+    }
+  }, [shouldRender, isExiting]);
 
   if (!shouldRender) return null;
 
   return (
     <div
+      ref={modalContainerRef}
       style={{
         position: "fixed",
         inset: 0,
@@ -300,6 +319,7 @@ const PDFViewerModal = ({
         display: "flex",
         flexDirection: "column",
         background: "rgba(0, 0, 0, 0.92)",
+        outline: "none",
         animation: isExiting
           ? "fadeOut 0.2s ease forwards"
           : "fadeIn 0.2s ease",
@@ -430,7 +450,7 @@ const PDFViewerModal = ({
             <button
               onClick={goToNextPage}
               disabled={pageNumber >= (numPages || 1)}
-              title="Proxima pagina (→)"
+              title="Próxima página (→)"
               style={{
                 width: "32px",
                 height: "32px",

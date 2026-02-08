@@ -65,13 +65,14 @@ const AdminRepertorio = () => {
   >({});
 
   const loadRepertorios = async () => {
+    if (loading) return;
     setLoading(true);
     try {
       const data = await API.getRepertorios();
       setRepertorios(data || []);
     } catch (err: unknown) {
       const message =
-        err instanceof Error ? err.message : "Erro ao carregar repertorios";
+        err instanceof Error ? err.message : "Erro ao carregar repertórios";
       showToast(message, "error");
     }
     setLoading(false);
@@ -107,7 +108,7 @@ const AdminRepertorio = () => {
 
   const handleSave = async () => {
     if (!form.nome.trim()) {
-      showToast("Nome e obrigatorio", "error");
+      showToast("Nome é obrigatório", "error");
       return;
     }
 
@@ -115,10 +116,10 @@ const AdminRepertorio = () => {
     try {
       if (editingRepertorio) {
         await API.updateRepertorio(editingRepertorio.id, form);
-        showToast("Repertorio atualizado!");
+        showToast("Repertório atualizado!");
       } else {
         await API.createRepertorio(form);
-        showToast("Repertorio criado!");
+        showToast("Repertório criado!");
       }
       closeModal();
       loadRepertorios();
@@ -131,11 +132,11 @@ const AdminRepertorio = () => {
   };
 
   const handleDelete = async (id: number) => {
-    if (!window.confirm("Excluir este repertorio?")) return;
+    if (!window.confirm("Excluir este repertório?")) return;
 
     try {
       await API.deleteRepertorio(id);
-      showToast("Repertorio excluido!");
+      showToast("Repertório excluído!");
       loadRepertorios();
     } catch (err: unknown) {
       const message =
@@ -147,7 +148,7 @@ const AdminRepertorio = () => {
   const handleDuplicate = async (id: number) => {
     try {
       await API.duplicarRepertorio(id);
-      showToast("Repertorio duplicado!");
+      showToast("Repertório duplicado!");
       loadRepertorios();
     } catch (err: unknown) {
       const message =
@@ -159,7 +160,7 @@ const AdminRepertorio = () => {
   const handleActivate = async (rep: Repertorio) => {
     try {
       await API.updateRepertorio(rep.id, { ...rep, ativo: true });
-      showToast("Repertorio ativado!");
+      showToast("Repertório ativado!");
       loadRepertorios();
     } catch (err: unknown) {
       const message =
@@ -250,7 +251,7 @@ const AdminRepertorio = () => {
               margin: 0,
             }}
           >
-            Repertorio
+            Repertório
           </h1>
           <p
             style={{
@@ -259,7 +260,7 @@ const AdminRepertorio = () => {
               margin: "4px 0 0",
             }}
           >
-            Gerencie os repertorios das apresentacoes
+            Gerencie os repertórios das apresentações
           </p>
         </div>
         <button
@@ -283,7 +284,7 @@ const AdminRepertorio = () => {
           <div style={{ width: "16px", height: "16px" }}>
             <Icons.Plus />
           </div>
-          Novo Repertorio
+          Novo Repertório
         </button>
       </div>
 
@@ -320,7 +321,7 @@ const AdminRepertorio = () => {
                   background: "#2ecc71",
                 }}
               />
-              Repertorio Ativo
+              Repertório Ativo
             </h2>
 
             {activeRepertorio ? (
@@ -347,7 +348,7 @@ const AdminRepertorio = () => {
                   color: "var(--text-muted)",
                 }}
               >
-                <p>Nenhum repertorio ativo</p>
+                <p>Nenhum repertório ativo</p>
                 <button
                   onClick={openCreateModal}
                   className="btn-secondary-hover"
@@ -361,7 +362,7 @@ const AdminRepertorio = () => {
                     cursor: "pointer",
                   }}
                 >
-                  Criar Repertorio
+                  Criar Repertório
                 </button>
               </div>
             )}
@@ -465,8 +466,8 @@ const AdminRepertorio = () => {
                 }}
               >
                 {editingRepertorio
-                  ? "Editar Repertorio"
-                  : "Novo Repertorio"}
+                  ? "Editar Repertório"
+                  : "Novo Repertório"}
               </h3>
             </div>
 
@@ -594,7 +595,7 @@ const AdminRepertorio = () => {
                       color: "var(--text-primary)",
                     }}
                   >
-                    Definir como repertorio ativo
+                    Definir como repertório ativo
                   </span>
                 </label>
                 <p
@@ -605,7 +606,7 @@ const AdminRepertorio = () => {
                     marginLeft: "30px",
                   }}
                 >
-                  O repertorio atual sera arquivado
+                  O repertório atual será arquivado
                 </p>
               </div>
             </div>
@@ -806,7 +807,7 @@ const RepertorioCard = ({
           {!isActive && onActivate && (
             <button
               onClick={onActivate}
-              title="Ativar repertorio"
+              title="Ativar repertório"
               className="btn-success-hover"
               style={{
                 width: "32px",
@@ -943,7 +944,7 @@ const RepertorioCard = ({
               marginBottom: "12px",
             }}
           >
-            Musicas do repertorio
+            Músicas do repertório
           </p>
           {!partituras ? (
             <p style={{ color: "var(--text-muted)", fontSize: "14px" }}>
