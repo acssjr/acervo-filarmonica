@@ -108,7 +108,7 @@ const RepertorioSelectorModal = ({
                   color: "var(--text-primary)",
                 }}
               >
-                {hasRepertorios ? "Adicionar ao Repertorio" : "Criar Repertorio"}
+                {hasRepertorios ? "Adicionar ao Repertório" : "Criar Repertório"}
               </h3>
               {partituraTitulo && (
                 <p
@@ -198,7 +198,7 @@ const RepertorioSelectorModal = ({
                         color: "var(--text-primary)",
                       }}
                     >
-                      Nenhum repertorio encontrado
+                      Nenhum repertório encontrado
                     </p>
                     <p
                       style={{
@@ -207,7 +207,7 @@ const RepertorioSelectorModal = ({
                         color: "var(--text-muted)",
                       }}
                     >
-                      Crie um repertorio para organizar suas partituras por apresentacao.
+                      Crie um repertório para organizar suas partituras por apresentação.
                     </p>
                   </div>
                 </div>
@@ -223,7 +223,7 @@ const RepertorioSelectorModal = ({
                     marginBottom: "8px",
                   }}
                 >
-                  Nome do Repertorio
+                  Nome do Repertório
                 </label>
                 <input
                   type="text"
@@ -332,7 +332,7 @@ const RepertorioSelectorModal = ({
                       marginBottom: "8px",
                     }}
                   >
-                    Repertorio Ativo
+                    Repertório Ativo
                   </p>
                   <button
                     onClick={() => onSelect(activeRepertorio)}
@@ -402,7 +402,7 @@ const RepertorioSelectorModal = ({
                       marginBottom: "8px",
                     }}
                   >
-                    Outros Repertorios
+                    Outros Repertórios
                   </p>
                   <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                     {repertorios
@@ -500,7 +500,7 @@ const RepertorioSelectorModal = ({
                   <line x1="12" y1="5" x2="12" y2="19" />
                   <line x1="5" y1="12" x2="19" y2="12" />
                 </svg>
-                Criar Novo Repertorio
+                Criar Novo Repertório
               </button>
             </div>
           )}

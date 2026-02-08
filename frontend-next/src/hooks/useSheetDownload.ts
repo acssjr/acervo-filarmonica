@@ -302,7 +302,7 @@ export const useSheetDownload = ({
         setConfirmInstrument(instrumento);
         setSelectedParte(parte);
       } else {
-        showToast("Parte nao encontrada", "error");
+        showToast("Parte não encontrada", "error");
       }
     },
     [partes, showToast]
@@ -366,7 +366,7 @@ export const useSheetDownload = ({
       setDownloading(true);
 
       showToast(
-        `Preparando impressao "${selectedSheet.title}" - ${parte.instrumento}...`
+        `Preparando impressão "${selectedSheet.title}" - ${parte.instrumento}...`
       );
 
       try {
@@ -388,18 +388,18 @@ export const useSheetDownload = ({
               printWindow.print();
             };
           }
-          showToast("Abrindo impressao...");
+          showToast("Abrindo impressão...");
         } else {
           const error = await response.json().catch(() => ({}));
           showToast(
             (error as { error?: string }).error ||
-              "Erro ao preparar impressao",
+              "Erro ao preparar impressão",
             "error"
           );
         }
       } catch (e) {
         console.error("Erro na impressao:", e);
-        showToast("Erro ao preparar impressao", "error");
+        showToast("Erro ao preparar impressão", "error");
       }
 
       setDownloading(false);
@@ -415,7 +415,7 @@ export const useSheetDownload = ({
       const correspondentes = findPartesCorrespondentes(instrument, partes);
 
       if (correspondentes.length === 0) {
-        showToast("Parte nao encontrada para impressao", "error");
+        showToast("Parte não encontrada para impressão", "error");
       } else if (correspondentes.length === 1) {
         printParte(correspondentes[0]);
       } else {
@@ -500,7 +500,7 @@ export const useSheetDownload = ({
       const correspondentes = findPartesCorrespondentes(instrument, partes);
 
       if (correspondentes.length === 0) {
-        showToast("Parte nao encontrada", "error");
+        showToast("Parte não encontrada", "error");
       } else if (correspondentes.length === 1) {
         viewParte(correspondentes[0]);
       } else {
@@ -595,7 +595,7 @@ export const useSheetDownload = ({
       const correspondentes = findPartesCorrespondentes(instrument, partes);
 
       if (correspondentes.length === 0) {
-        showToast("Parte nao encontrada para compartilhar", "error");
+        showToast("Parte não encontrada para compartilhar", "error");
       } else if (correspondentes.length === 1) {
         shareParte(correspondentes[0]);
       } else {

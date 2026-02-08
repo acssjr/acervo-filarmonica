@@ -26,7 +26,7 @@ export default function FavoritosPage() {
         <EmptyState
           icon={(props) => Icons.Heart(props ?? {})}
           title="Nenhum favorito ainda"
-          subtitle="Toque no coracao para adicionar"
+          subtitle="Toque no coração para adicionar"
         />
       ) : (
         <div

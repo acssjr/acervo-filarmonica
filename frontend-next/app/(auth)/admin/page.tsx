@@ -46,7 +46,7 @@ export default function AdminDashboardPage() {
       {/* Header com saudacao */}
       <div style={{ marginBottom: isMobile ? "20px" : "32px" }}>
         <div style={{ fontSize: "14px", color: "var(--text-secondary)", marginBottom: "4px", fontFamily: "Outfit, sans-serif" }}>
-          Ola,
+          Olá,
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "8px", flexWrap: "wrap" }}>
           <h1 style={{
@@ -77,7 +77,7 @@ export default function AdminDashboardPage() {
           </span>
         </div>
         <p style={{ color: "var(--text-secondary)", fontFamily: "Outfit, sans-serif", margin: 0 }}>
-          Acervo Digital - Sociedade Filarmonica 25 de Marco
+          Acervo Digital - Sociedade Filarmônica 25 de Março
         </p>
       </div>
 
@@ -88,7 +88,7 @@ export default function AdminDashboardPage() {
         gap: isMobile ? "12px" : "16px",
         marginBottom: isMobile ? "20px" : "32px",
       }}>
-        <StatCard icon="users" label="Musicos Ativos" value={stats.musicos_ativos || 0} color="#D4AF37" loading={loading} />
+        <StatCard icon="users" label="Músicos Ativos" value={stats.musicos_ativos || 0} color="#D4AF37" loading={loading} />
         <StatCard icon="music" label="Partituras" value={stats.total_partituras || 0} color="#3498db" loading={loading} />
         <StatCard icon="download" label="Downloads" value={stats.total_downloads || 0} color="#27ae60" loading={loading} />
         <StatCard icon="folder" label="Categorias" value={stats.total_categorias || 0} color="#9b59b6" loading={loading} />
@@ -115,10 +115,10 @@ export default function AdminDashboardPage() {
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
           </svg>
-          Acoes Rapidas
+          Ações Rápidas
         </h2>
         <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
-          <QuickActionButton icon="users" label="Novo Musico" onClick={() => navigateToSection("musicos")} />
+          <QuickActionButton icon="users" label="Novo Músico" onClick={() => navigateToSection("musicos")} />
           <QuickActionButton icon="upload" label="Nova Pasta" onClick={() => navigateToSection("partituras")} />
           <QuickActionButton icon="folder" label="Nova Categoria" onClick={() => navigateToSection("categorias")} />
         </div>

@@ -44,7 +44,7 @@ const AdminConfig = () => {
       );
     } catch {
       setModoRecesso(!novoValor);
-      showToast("Erro ao atualizar configuracao", "error");
+      showToast("Erro ao atualizar configuração", "error");
     }
   };
 
@@ -544,7 +544,7 @@ const AdminConfig = () => {
             <strong>Acervo Digital</strong> v
             {PROFILE_ABOUT_CONFIG.infoCards[0].value}
           </p>
-          <p>Sociedade Filarmonica 25 de Marco</p>
+          <p>Sociedade Filarmônica 25 de Março</p>
           <p>Fundada em 1868 - Feira de Santana, BA</p>
         </div>
       </button>

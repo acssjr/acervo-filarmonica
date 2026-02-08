@@ -37,7 +37,7 @@ const DesktopSidebar = ({ activeTab }: DesktopSidebarProps) => {
 
   const navItems = [
     { id: 'home', path: '/', icon: Icons.Home, label: 'Inicio' },
-    { id: 'repertorio', path: '/repertorio', icon: Icons.ListMusic, label: 'Repertorio' },
+    { id: 'repertorio', path: '/repertorio', icon: Icons.ListMusic, label: 'Repertório' },
     { id: 'favorites', path: '/favoritos', icon: Icons.Heart, label: 'Favoritos' }
   ];
 
@@ -83,7 +83,7 @@ const DesktopSidebar = ({ activeTab }: DesktopSidebarProps) => {
         </nav>
         {!sidebarCollapsed && (
           <div style={{ padding: '0 12px' }}>
-            <SidebarSection title="Generos" items={categoriesWithCount} selectedId={selectedCategory} showCount onItemClick={handleCategoryClick} onHeaderClick={handleViewAllGenres} onViewAllClick={handleViewAllGenres} />
+            <SidebarSection title="Gêneros" items={categoriesWithCount} selectedId={selectedCategory} showCount onItemClick={handleCategoryClick} onHeaderClick={handleViewAllGenres} onViewAllClick={handleViewAllGenres} />
             <SidebarSection title="Compositores" items={displayComposers} selectedId={selectedComposer} onItemClick={handleComposerClick} onHeaderClick={handleViewAllComposers} onViewAllClick={handleViewAllComposers} />
           </div>
         )}

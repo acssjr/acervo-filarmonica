@@ -242,7 +242,7 @@ const SearchPage = () => {
           </div>
           <input
             type="text"
-            placeholder="Titulo, compositor ou genero..."
+            placeholder="Título, compositor ou gênero..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             autoFocus
@@ -319,7 +319,7 @@ const SearchPage = () => {
               opacity: 0.7,
             }}
           >
-            Busque por titulo, compositor ou genero
+            Busque por título, compositor ou gênero
           </p>
         </div>
       )}

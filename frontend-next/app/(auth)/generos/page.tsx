@@ -26,8 +26,8 @@ export default function GenerosPage() {
   return (
     <div>
       <Header
-        title="Generos"
-        subtitle={`${categories.length} generos musicais`}
+        title="Gêneros"
+        subtitle={`${categories.length} gêneros musicais`}
       />
 
       <div style={{ padding: "0 20px" }}>

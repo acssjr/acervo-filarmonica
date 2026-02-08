@@ -61,7 +61,6 @@ type UploadPhase = 'idle' | 'preparing' | 'uploading' | 'processing' | 'complete
 
 const UploadPastaModal = ({ isOpen, onClose, onSuccess, initialFiles }: UploadPastaModalProps) => {
   const { showToast } = useUI();
-  const [, setFiles] = useState<File[]>([]);
   const [folderName, setFolderName] = useState('');
   const [parsedData, setParsedData] = useState<ParsedFile[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
@@ -75,23 +74,23 @@ const UploadPastaModal = ({ isOpen, onClose, onSuccess, initialFiles }: UploadPa
   const [errorMessage, setErrorMessage] = useState('');
   const [funnyPhraseIndex, setFunnyPhraseIndex] = useState(0);
 
-  // Frases engracadas para mostrar durante o upload
+  // Frases engraçadas para mostrar durante o upload
   const funnyPhrases = [
-    'Adicionando os ultimos detalhes...',
-    'Refinando a visualizacao das partituras...',
-    'Escrevendo o proximo Dobrado Tusca...',
-    'Removendo o Dobrado Ludgero da proxima apresentacao...',
+    'Adicionando os últimos detalhes...',
+    'Refinando a visualização das partituras...',
+    'Escrevendo o próximo Dobrado Tusca...',
+    'Removendo o Dobrado Ludgero da próxima apresentação...',
     'Ratando a primeira nota de Preta Pretinha...',
-    'Esperando Joao Viana voltar do banheiro...',
+    'Esperando João Viana voltar do banheiro...',
     'Deixando Julielson menos durinho no pandeiro...',
-    'Afinando os pistoes virtuais...',
+    'Afinando os pistões virtuais...',
     'Procurando a partitura perdida do saxofone...',
-    'Ajustando o compasso que ninguem acerta...',
-    'Adicionando mais uma fermata so de sacanagem...',
-    'Verificando se o bombardino esta acordado...',
+    'Ajustando o compasso que ninguém acerta...',
+    'Adicionando mais uma fermata só de sacanagem...',
+    'Verificando se o bombardino está acordado...',
     'Calibrando o volume da tuba...',
-    'Inserindo pausas estrategicas para o cafe...',
-    'Convencendo o maestro que esta tudo certo...',
+    'Inserindo pausas estratégicas para o café...',
+    'Convencendo o maestro que está tudo certo...',
     'Organizando as estantes de partitura...'
   ];
 
@@ -133,7 +132,6 @@ const UploadPastaModal = ({ isOpen, onClose, onSuccess, initialFiles }: UploadPa
   // Reset ao fechar
   useEffect(() => {
     if (!isOpen) {
-      setFiles([]);
       setFolderName('');
       setParsedData([]);
       setTitulo('');
@@ -162,8 +160,6 @@ const UploadPastaModal = ({ isOpen, onClose, onSuccess, initialFiles }: UploadPa
       showToast('Nenhum arquivo PDF encontrado na pasta', 'error');
       return;
     }
-
-    setFiles(pdfFiles);
 
     const pathParts = folderPath.split('/');
     const pastaName = pathParts.length > 0 ? pathParts[0] : 'Pasta sem nome';
@@ -291,7 +287,7 @@ const UploadPastaModal = ({ isOpen, onClose, onSuccess, initialFiles }: UploadPa
 
   // Upload
   const handleUpload = async () => {
-    if (!titulo.trim()) { showToast('Titulo e obrigatorio', 'error'); return; }
+    if (!titulo.trim()) { showToast('Título é obrigatório', 'error'); return; }
     if (!categoria) { showToast('Categoria e obrigatoria', 'error'); return; }
     if (parsedData.length === 0) { showToast('Nenhum arquivo para enviar', 'error'); return; }
 

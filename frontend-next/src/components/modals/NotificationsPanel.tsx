@@ -171,7 +171,7 @@ const NotificationsPanel = () => {
               color: "var(--text-primary)",
             }}
           >
-            Notificacoes
+            Notificações
           </h3>
           {notifications.some((n) => !n.read) && (
             <button

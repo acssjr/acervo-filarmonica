@@ -32,7 +32,7 @@ const LogoBadge = ({ size = 38, variant = "dark", style = {} }: LogoBadgeProps) 
     }}>
       <img
         src="/assets/images/ui/brasao-256x256.png"
-        alt="Brasao Filarmonica 25 de Marco"
+        alt="Brasão Filarmônica 25 de Março"
         style={{ width: "100%", height: "100%", objectFit: "contain" }}
       />
     </div>

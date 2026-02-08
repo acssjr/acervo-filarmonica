@@ -64,7 +64,7 @@ const generateSampleData = (): Sheet[] => [
   { id: "1", title: "Verde e Branco", composer: "Estevam Moura", category: "dobrados", year: 1940, downloads: 567, featured: true },
   { id: "2", title: "Magnata", composer: "Estevam Moura", category: "dobrados", year: 1945, downloads: 489, featured: true },
   { id: "3", title: "Tusca", composer: "Estevam Moura", category: "dobrados", year: 1942, downloads: 423, featured: false },
-  { id: "4", title: "Dois Coracoes", composer: "Pedro Salgado", category: "dobrados", year: 1935, downloads: 512, featured: true },
+  { id: "4", title: "Dois Corações", composer: "Pedro Salgado", category: "dobrados", year: 1935, downloads: 512, featured: true },
   { id: "5", title: "Os Corujas", composer: "Heraclio Guerreiro", category: "dobrados", year: 1920, downloads: 298, featured: true },
 ];
 

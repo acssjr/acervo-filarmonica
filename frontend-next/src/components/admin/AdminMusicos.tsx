@@ -80,10 +80,10 @@ const AdminMusicos = () => {
     try {
       if (editingUser) {
         await API.updateUsuario(editingUser.id, data);
-        showToast("Musico atualizado!");
+        showToast("Músico atualizado!");
       } else {
         await API.createUsuario(data);
-        showToast("Musico cadastrado!");
+        showToast("Músico cadastrado!");
       }
       setShowModal(false);
       setEditingUser(null);
@@ -106,7 +106,7 @@ const AdminMusicos = () => {
   const handleToggleAtivo = async (user: Usuario) => {
     try {
       await API.updateUsuario(user.id, { ativo: !user.ativo });
-      showToast(user.ativo ? "Musico desativado" : "Musico reativado");
+      showToast(user.ativo ? "Músico desativado" : "Músico reativado");
       loadData();
     } catch (e: unknown) {
       showToast((e as Error).message, "error");
@@ -134,7 +134,7 @@ const AdminMusicos = () => {
             <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
             <path d="M16 3.13a4 4 0 0 1 0 7.75" />
           </svg>
-          Musicos
+          Músicos
         </h1>
         <p style={{ color: "var(--text-muted)", fontSize: "14px" }}>
           Gerencie os membros da filarmonica
@@ -165,7 +165,7 @@ const AdminMusicos = () => {
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
             <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
           </svg>
-          Novo Musico
+          Novo Músico
         </button>
       </div>
 
@@ -178,7 +178,7 @@ const AdminMusicos = () => {
           </svg>
           <input
             type="text"
-            placeholder="Buscar musico pelo nome ou instrumento..."
+            placeholder="Buscar músico pelo nome ou instrumento..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />

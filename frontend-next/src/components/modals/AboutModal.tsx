@@ -51,10 +51,10 @@ export const PROFILE_CHANGELOG: ChangelogVersion[] = [
     isCurrent: true,
     items: [
       { bold: "Compartilhar:", text: "Envie partituras via WhatsApp direto do app" },
-      { bold: "Carrinho:", text: "Selecione varias partituras e baixe todas de uma vez" },
+      { bold: "Carrinho:", text: "Selecione várias partituras e baixe todas de uma vez" },
       { bold: "PDF:", text: "Pinch-to-zoom suave no visualizador de partituras" },
-      { bold: "PWA:", text: "Icones e favicon para instalar como app" },
-      { bold: "Atualizacao:", text: "Notificacao quando houver nova versao disponivel" },
+      { bold: "PWA:", text: "Ícones e favicon para instalar como app" },
+      { bold: "Atualização:", text: "Notificação quando houver nova versão disponível" },
       { bold: "Busca:", text: "Resultados mais precisos (exige todas as palavras)" },
       { bold: "Instrumentos:", text: "Matching inteligente de tonalidades e vozes" },
     ],
@@ -62,29 +62,29 @@ export const PROFILE_CHANGELOG: ChangelogVersion[] = [
   {
     version: "2.8.0",
     items: [
-      { bold: "Repertorio:", text: "Sistema completo de download em lote e impressao" },
+      { bold: "Repertório:", text: "Sistema completo de download em lote e impressão" },
       { bold: "Download:", text: "Lista de instrumentos agora mostra todos os instrumentos reais das partituras" },
-      { bold: "UI:", text: "Animacoes de hover nos botoes administrativos" },
-      { bold: "UX:", text: "Botao de repertorio com resposta instantanea (UI otimista)" },
-      { bold: "Admin:", text: "Modal para selecionar/criar repertorio ao adicionar partitura" },
+      { bold: "UI:", text: "Animações de hover nos botões administrativos" },
+      { bold: "UX:", text: "Botão de repertório com resposta instantânea (UI otimista)" },
+      { bold: "Admin:", text: "Modal para selecionar/criar repertório ao adicionar partitura" },
     ],
   },
   {
     version: "2.4.0",
     items: [
       { bold: "Super Admin:", text: "Protecao total do administrador master" },
-      { bold: "Musicos:", text: "Badge Admin para identificar administradores" },
-      { bold: "Login:", text: "Animacao de equalizer musical no carregamento" },
-      { bold: "Seguranca:", text: "Super admin oculto da lista de musicos" },
+      { bold: "Músicos:", text: "Badge Admin para identificar administradores" },
+      { bold: "Login:", text: "Animação de equalizer musical no carregamento" },
+      { bold: "Segurança:", text: "Super admin oculto da lista de músicos" },
       { bold: "Fix:", text: "Corrigido bug de zeros aparecendo nos nomes" },
     ],
   },
   {
     version: "2.3.3",
     items: [
-      { bold: "Admin Toggle:", text: "Botao para alternar entre modo usuario e admin" },
-      { bold: "Maestro:", text: "Deteccao correta de maestro/regente para download de grade" },
-      { bold: "Download:", text: "Botao desabilitado quando grade nao disponivel" },
+      { bold: "Admin Toggle:", text: "Botão para alternar entre modo usuário e admin" },
+      { bold: "Maestro:", text: "Detecção correta de maestro/regente para download de grade" },
+      { bold: "Download:", text: "Botão desabilitado quando grade não disponível" },
       { bold: "Testes:", text: "214 testes automatizados passando" },
       { bold: "CI/CD:", text: "Pipeline GitHub Actions para testes e build" },
     ],
@@ -92,75 +92,75 @@ export const PROFILE_CHANGELOG: ChangelogVersion[] = [
   {
     version: "2.3.0",
     items: [
-      { bold: "Notificacoes:", text: "Sistema real de notificacoes de novas partituras" },
+      { bold: "Notificações:", text: "Sistema real de notificações de novas partituras" },
       { bold: "Compositores:", text: "Carrossel de compositores em destaque na home" },
-      { bold: "Compositores:", text: "Tela dedicada com cards e lista alfabetica" },
-      { bold: "Busca:", text: "Transliteracao para grafias antigas (nymphas -> ninfas)" },
-      { bold: "UI:", text: "Badge de notificacoes redesenhado" },
-      { text: "Correcoes de acentuacao em toda interface" },
+      { bold: "Compositores:", text: "Tela dedicada com cards e lista alfabética" },
+      { bold: "Busca:", text: "Transliteração para grafias antigas (nymphas -> ninfas)" },
+      { bold: "UI:", text: "Badge de notificações redesenhado" },
+      { text: "Correções de acentuação em toda interface" },
     ],
   },
   {
     version: "2.2.0",
     items: [
       { bold: "Arquitetura:", text: "Contexts separados (Auth, UI, Data, Notifications)" },
-      { bold: "Performance:", text: "Re-renders isolados por dominio" },
+      { bold: "Performance:", text: "Re-renders isolados por domínio" },
       { text: "30+ componentes migrados para nova arquitetura" },
     ],
   },
   {
     version: "2.1.0",
     items: [
-      { bold: "Seguranca:", text: "JWT com expiracao de 24h" },
-      { bold: "Seguranca:", text: "Senhas criptografadas com PBKDF2" },
-      { bold: "Seguranca:", text: "Rate limiting contra ataques" },
-      { bold: "Admin:", text: "Redirecionamento automatico" },
+      { bold: "Segurança:", text: "JWT com expiração de 24h" },
+      { bold: "Segurança:", text: "Senhas criptografadas com PBKDF2" },
+      { bold: "Segurança:", text: "Rate limiting contra ataques" },
+      { bold: "Admin:", text: "Redirecionamento automático" },
       { text: "Toggle de tema no header admin" },
     ],
   },
   {
     version: "2.0.0",
     items: [
-      { text: "Upload de pasta com multiplas partes" },
-      { text: "Deteccao automatica de instrumentos" },
+      { text: "Upload de pasta com múltiplas partes" },
+      { text: "Detecção automática de instrumentos" },
       { text: "Gerenciamento de partes no admin" },
-      { text: "Seletor de partes multiplas no download" },
+      { text: "Seletor de partes múltiplas no download" },
       { text: "Download direto ao selecionar instrumento" },
-      { text: "Secao Em Destaque so com marcados" },
-      { text: "Correcao de bugs e melhorias gerais" },
+      { text: "Seção Em Destaque só com marcados" },
+      { text: "Correção de bugs e melhorias gerais" },
     ],
   },
   {
     version: "1.5.0",
     items: [
       { text: "Modal Sobre com changelog" },
-      { text: "Validacao PIN nao pode ser igual ao anterior" },
-      { text: "Espacamento entre cards no mobile" },
+      { text: "Validação PIN não pode ser igual ao anterior" },
+      { text: "Espaçamento entre cards no mobile" },
     ],
   },
   {
     version: "1.4.0",
     items: [
-      { text: "Perfil completo: foto, edicao de nome" },
-      { text: "Alteracao de PIN em 3 etapas" },
+      { text: "Perfil completo: foto, edição de nome" },
+      { text: "Alteração de PIN em 3 etapas" },
       { text: "Contato via WhatsApp" },
-      { text: "Tema mobile: clique direto cicla opcoes" },
+      { text: "Tema mobile: clique direto cicla opções" },
     ],
   },
   {
     version: "1.3.0",
     items: [
-      { text: "Login com usuario + PIN de 4 digitos" },
+      { text: "Login com usuário + PIN de 4 dígitos" },
       { text: "Auto-login ao completar PIN" },
-      { text: "Opcao Lembrar meu acesso" },
-      { text: "Otimizacao mobile para teclado virtual" },
+      { text: "Opção Lembrar meu acesso" },
+      { text: "Otimização mobile para teclado virtual" },
     ],
   },
   {
     version: "1.2.0",
     items: [
       { text: "Tema: Claro, Escuro, Sistema" },
-      { text: "Contador de proximo ensaio" },
+      { text: "Contador de próximo ensaio" },
       { text: "Tela de login com glassmorphism" },
     ],
   },
@@ -177,14 +177,14 @@ export const PROFILE_CHANGELOG: ChangelogVersion[] = [
     items: [
       { text: "Layout desktop com sidebar" },
       { text: "Toggle sidebar (260px - 72px)" },
-      { text: "Filtros por genero e compositor" },
+      { text: "Filtros por gênero e compositor" },
       { text: "Grid responsivo de cards" },
     ],
   },
 ];
 
 export const PROFILE_LEGACY_VERSIONS: Record<string, string> = {
-  "0.9": "Notificacoes",
+  "0.9": "Notificações",
   "0.8": "Header Home",
   "0.7": "Cards em destaque",
   "0.6": "Favoritos, busca fuzzy",
@@ -192,14 +192,14 @@ export const PROFILE_LEGACY_VERSIONS: Record<string, string> = {
   "0.4": "Painel Admin",
   "0.3": "Busca",
   "0.2": "Acervo",
-  "0.1": "Versao inicial",
+  "0.1": "Versão inicial",
 };
 
 export const PROFILE_ABOUT_CONFIG: AboutConfig = {
-  subtitle: "Sociedade Filarmonica 25 de Marco",
+  subtitle: "Sociedade Filarmônica 25 de Março",
   maxWidth: 420,
   infoCards: [
-    { label: "Versao", value: "2.9.0" },
+    { label: "Versão", value: "2.9.0" },
     { label: "Tecnologias", value: "React \u2022 JS \u2022 CSS" },
     { label: "Por", value: "Antonio Jr.", isHighlighted: true },
   ],
@@ -219,46 +219,46 @@ export const ADMIN_CHANGELOG: ChangelogVersion[] = [
       { bold: "Testes:", text: "Suite completa com Vitest + Playwright E2E" },
       { bold: "PDF:", text: "Visualizador com pinch-to-zoom suave" },
       { bold: "Instrumentos:", text: "Matching inteligente de tonalidades e vozes" },
-      { bold: "Carrinho:", text: "Botao flutuante visivel em todos navegadores" },
+      { bold: "Carrinho:", text: "Botão flutuante visível em todos navegadores" },
     ],
   },
   {
     version: "2.8.0",
     items: [
-      { bold: "Repertorio:", text: "Modal para selecionar/criar repertorio ao adicionar partitura" },
-      { bold: "UI:", text: "Animacoes de hover nos botoes (escala + sombra)" },
-      { bold: "UX:", text: "Botao de repertorio com resposta instantanea (UI otimista)" },
+      { bold: "Repertório:", text: "Modal para selecionar/criar repertório ao adicionar partitura" },
+      { bold: "UI:", text: "Animações de hover nos botões (escala + sombra)" },
+      { bold: "UX:", text: "Botão de repertório com resposta instantânea (UI otimista)" },
       { bold: "Fix:", text: "Lista de instrumentos agora mostra todos os instrumentos reais" },
     ],
   },
   {
     version: "2.1.0",
     items: [
-      { bold: "Seguranca:", text: "Autenticacao JWT com expiracao de 24h" },
-      { bold: "Seguranca:", text: "Senhas criptografadas com PBKDF2" },
-      { bold: "Seguranca:", text: "Rate limiting para protecao contra ataques" },
-      { bold: "Admin:", text: "Redirecionamento automatico para /admin" },
+      { bold: "Segurança:", text: "Autenticação JWT com expiração de 24h" },
+      { bold: "Segurança:", text: "Senhas criptografadas com PBKDF2" },
+      { bold: "Segurança:", text: "Rate limiting para proteção contra ataques" },
+      { bold: "Admin:", text: "Redirecionamento automático para /admin" },
       { bold: "Admin:", text: "Toggle de tema movido para o header" },
-      { bold: "UX:", text: "Sessao expira com aviso ao usuario" },
-      { text: "Melhorias de performance e correcoes de bugs" },
+      { bold: "UX:", text: "Sessão expira com aviso ao usuário" },
+      { text: "Melhorias de performance e correções de bugs" },
     ],
   },
   {
     version: "2.0.0",
     items: [
-      { text: "Upload de pasta com multiplas partes" },
-      { text: "Deteccao automatica de instrumentos" },
+      { text: "Upload de pasta com múltiplas partes" },
+      { text: "Detecção automática de instrumentos" },
       { text: "Gerenciamento de partes no admin" },
       { text: "Sistema de favoritos sincronizado" },
-      { text: "Correcao de bugs e melhorias gerais" },
+      { text: "Correção de bugs e melhorias gerais" },
     ],
   },
   {
     version: "1.0.0",
     items: [
       { text: "Painel administrativo completo" },
-      { text: "Dashboard com estatisticas" },
-      { text: "Gerenciamento de musicos" },
+      { text: "Dashboard com estatísticas" },
+      { text: "Gerenciamento de músicos" },
       { text: "Gerenciamento de partituras" },
       { text: "Gerenciamento de categorias" },
     ],
@@ -269,11 +269,11 @@ export const ADMIN_ABOUT_CONFIG: AboutConfig = {
   subtitle: "Painel Administrativo",
   maxWidth: 480,
   infoCards: [
-    { label: "Versao", value: "2.9.0" },
+    { label: "Versão", value: "2.9.0" },
     { label: "Backend", value: "Cloudflare Workers" },
     { label: "Dev", value: "Antonio Jr.", isHighlighted: true },
   ],
-  footerText: "S.F. 25 de Marco \u2022 Feira de Santana, BA \u2022 Fundada em 1868",
+  footerText: "S.F. 25 de Março \u2022 Feira de Santana, BA \u2022 Fundada em 1868",
   showLegacyVersions: false,
 };
 
@@ -349,7 +349,7 @@ export function AboutModal({
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/assets/images/ui/brasao-256x256.png"
-              alt="Brasao"
+              alt="Brasão"
               style={{ width: "100%", height: "100%", objectFit: "contain" }}
             />
           </div>

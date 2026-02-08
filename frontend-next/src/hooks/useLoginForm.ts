@@ -173,7 +173,7 @@ const useLoginForm = ({ onClose }: UseLoginFormOptions) => {
               username: result.user.username,
               nome: result.user.nome,
               is_admin: result.user.admin,
-              instrumento: result.user.instrumento_nome || 'Musico',
+              instrumento: result.user.instrumento_nome || 'Músico',
               instrumento_id: result.user.instrumento_id,
               foto_url: result.user.foto_url
             };

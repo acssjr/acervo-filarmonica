@@ -18,7 +18,7 @@ export const DESKTOP_WALKTHROUGH_STEPS: WalkthroughStep[] = [
     id: 'search',
     targetSelector: '[data-walkthrough="search"]',
     title: 'Busque partituras',
-    description: 'Digite o nome da obra, compositor ou genero para encontrar rapidamente.',
+    description: 'Digite o nome da obra, compositor ou gênero para encontrar rapidamente.',
     position: 'bottom',
     highlightPadding: 12
   },
@@ -33,7 +33,7 @@ export const DESKTOP_WALKTHROUGH_STEPS: WalkthroughStep[] = [
   {
     id: 'categories',
     targetSelector: '[data-walkthrough="categories"]',
-    title: 'Generos musicais',
+    title: 'Gêneros musicais',
     description: 'Explore por categoria: dobrados, marchas, valsas e muito mais.',
     position: 'bottom',
     highlightPadding: 12
@@ -42,7 +42,7 @@ export const DESKTOP_WALKTHROUGH_STEPS: WalkthroughStep[] = [
     id: 'favorite-btn',
     targetSelector: '[data-walkthrough="favorite-btn"]',
     title: 'Favorite suas partituras',
-    description: 'Clique no coracao para salvar e acessar depois rapidamente.',
+    description: 'Clique no coração para salvar e acessar depois rapidamente.',
     position: 'left',
     highlightPadding: 8
   },
@@ -91,7 +91,7 @@ export const DESKTOP_WALKTHROUGH_STEPS: WalkthroughStep[] = [
   {
     id: 'nav-repertorio',
     targetSelector: '[data-sidebar="repertorio"]',
-    title: 'Repertorio',
+    title: 'Repertório',
     description: 'Veja as colecoes organizadas para ensaios e apresentacoes.',
     position: 'right',
     highlightPadding: 8
@@ -111,7 +111,7 @@ export const MOBILE_WALKTHROUGH_STEPS: WalkthroughStep[] = [
   {
     id: 'categories',
     targetSelector: '[data-walkthrough="categories"]',
-    title: 'Generos musicais',
+    title: 'Gêneros musicais',
     description: 'Explore por categoria: dobrados, marchas, valsas e muito mais.',
     position: 'top',
     highlightPadding: 8
@@ -120,7 +120,7 @@ export const MOBILE_WALKTHROUGH_STEPS: WalkthroughStep[] = [
     id: 'favorite-btn',
     targetSelector: '[data-walkthrough="favorite-btn"]',
     title: 'Favorite suas partituras',
-    description: 'Toque no coracao para salvar e acessar depois rapidamente.',
+    description: 'Toque no coração para salvar e acessar depois rapidamente.',
     position: 'top',
     highlightPadding: 12
   },
@@ -161,7 +161,7 @@ export const MOBILE_WALKTHROUGH_STEPS: WalkthroughStep[] = [
     id: 'nav-buscar',
     targetSelector: '[data-walkthrough="search"]',
     title: 'Busque partituras',
-    description: 'Toque aqui para buscar por nome, compositor ou genero.',
+    description: 'Toque aqui para buscar por nome, compositor ou gênero.',
     position: 'top',
     highlightPadding: 12,
     action: 'closeModal'
@@ -177,7 +177,7 @@ export const MOBILE_WALKTHROUGH_STEPS: WalkthroughStep[] = [
   {
     id: 'nav-repertorio',
     targetSelector: '[data-nav="repertorio"]',
-    title: 'Repertorio',
+    title: 'Repertório',
     description: 'Veja as colecoes organizadas para ensaios e apresentacoes.',
     position: 'top',
     highlightPadding: 12

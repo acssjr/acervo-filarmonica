@@ -101,7 +101,7 @@ const HomeHeader = ({ userName, instrument, actions }: HomeHeaderProps) => {
                 fontFamily: "Outfit, sans-serif", fontSize: "14px", fontWeight: "700",
                 color: "#F4E4BC", marginBottom: "1px", lineHeight: "1.2",
               }}>
-                S.F. 25 de Marco
+                S.F. 25 de Março
               </h2>
               <p style={{
                 fontFamily: "Outfit, sans-serif", fontSize: "9px", fontWeight: "600",

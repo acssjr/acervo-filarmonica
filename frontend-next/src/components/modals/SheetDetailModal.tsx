@@ -67,7 +67,7 @@ const SheetDetailModal = () => {
         });
         showToast(`${parte.instrumento} adicionado ao carrinho`);
       } else {
-        showToast("Parte nao encontrada", "error");
+        showToast("Parte não encontrada", "error");
       }
     },
     [selectedSheet, partes, addToShareCart, showToast]
@@ -539,7 +539,7 @@ const SheetDetailModal = () => {
                   <button
                     data-walkthrough="quick-download"
                     disabled
-                    aria-label="Grade nao disponivel"
+                    aria-label="Grade não disponível"
                     style={{
                       width: "100%",
                       padding: "12px 14px",

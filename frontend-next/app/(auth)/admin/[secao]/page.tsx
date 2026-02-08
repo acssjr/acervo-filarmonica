@@ -71,7 +71,7 @@ export default function AdminSectionPage() {
           fontFamily: "Outfit, sans-serif",
           color: "var(--text-secondary)",
         }}>
-          Secao nao encontrada
+          Seção não encontrada
         </div>
       );
   }
