@@ -3,12 +3,64 @@
 
 import { useState, useEffect } from 'react';
 
+const ToggleOption = ({ checked, onChange, color, title, description }) => (
+  <label style={{
+    display: 'flex',
+    alignItems: 'center',
+    gap: '14px',
+    cursor: 'pointer',
+    padding: '16px',
+    background: checked ? `${color}1a` : 'var(--bg-primary)',
+    borderRadius: '12px',
+    marginBottom: '28px',
+    border: checked ? `1.5px solid ${color}4d` : '1.5px solid var(--border)',
+    transition: 'all 0.2s'
+  }}>
+    <div style={{
+      width: '44px',
+      height: '24px',
+      borderRadius: '12px',
+      background: checked ? color : 'var(--border)',
+      position: 'relative',
+      transition: 'background 0.2s',
+      flexShrink: 0
+    }}>
+      <div style={{
+        position: 'absolute',
+        top: '2px',
+        left: checked ? '22px' : '2px',
+        width: '20px',
+        height: '20px',
+        borderRadius: '10px',
+        background: '#fff',
+        boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+        transition: 'left 0.2s ease'
+      }} />
+    </div>
+    <input
+      type="checkbox"
+      checked={checked}
+      onChange={onChange}
+      style={{ display: 'none' }}
+    />
+    <div>
+      <span style={{ color: 'var(--text-primary)', fontWeight: '500', fontSize: '14px', fontFamily: 'Outfit, sans-serif' }}>
+        {title}
+      </span>
+      <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '4px 0 0 0', fontFamily: 'Outfit, sans-serif' }}>
+        {description}
+      </p>
+    </div>
+  </label>
+);
+
 const UsuarioFormModal = ({ usuario, instrumentos, onSave, onClose }) => {
   const [nome, setNome] = useState(usuario?.nome || '');
   const [username, setUsername] = useState(usuario?.username || '');
   const [pin, setPin] = useState('');
   const [instrumentoId, setInstrumentoId] = useState(usuario?.instrumento_id || '');
   const [isAdmin, setIsAdmin] = useState(usuario?.admin || false);
+  const [isConvidado, setIsConvidado] = useState(usuario?.convidado || false);
   const [saving, setSaving] = useState(false);
   const [showInstrumentoDropdown, setShowInstrumentoDropdown] = useState(false);
   const [instrumentoSearch, setInstrumentoSearch] = useState('');
@@ -37,7 +89,8 @@ const UsuarioFormModal = ({ usuario, instrumentos, onSave, onClose }) => {
     const data = {
       nome: nome.trim(),
       instrumento_id: instrumentoId || null,
-      admin: isAdmin
+      admin: isAdmin,
+      convidado: isConvidado
     };
     if (!usuario) {
       data.username = username.trim().toLowerCase();
@@ -118,7 +171,7 @@ const UsuarioFormModal = ({ usuario, instrumentos, onSave, onClose }) => {
         </label>
         <input
           type="text"
-          placeholder="Ex: Joao da Silva Santos"
+          placeholder="Ex: João da Silva Santos"
           value={nome}
           onChange={e => setNome(e.target.value)}
           style={{
@@ -233,7 +286,7 @@ const UsuarioFormModal = ({ usuario, instrumentos, onSave, onClose }) => {
             </div>
 
             <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '-12px', marginBottom: '20px', fontFamily: 'Outfit, sans-serif' }}>
-              Campos gerados automaticamente. Clique nos icones para regenerar.
+              Campos gerados automaticamente. Clique nos ícones para regenerar.
             </p>
           </>
         )}
@@ -352,56 +405,23 @@ const UsuarioFormModal = ({ usuario, instrumentos, onSave, onClose }) => {
           )}
         </div>
 
-        {/* Checkbox Administrador - Estilizado */}
-        <label style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '14px',
-          cursor: 'pointer',
-          padding: '16px',
-          background: isAdmin ? 'rgba(212, 175, 55, 0.1)' : 'var(--bg-primary)',
-          borderRadius: '12px',
-          marginBottom: '28px',
-          border: isAdmin ? '1.5px solid rgba(212, 175, 55, 0.3)' : '1.5px solid var(--border)',
-          transition: 'all 0.2s'
-        }}>
-          {/* Toggle Switch */}
-          <div style={{
-            width: '44px',
-            height: '24px',
-            borderRadius: '12px',
-            background: isAdmin ? '#D4AF37' : 'var(--border)',
-            position: 'relative',
-            transition: 'background 0.2s',
-            flexShrink: 0
-          }}>
-            <div style={{
-              position: 'absolute',
-              top: '2px',
-              left: isAdmin ? '22px' : '2px',
-              width: '20px',
-              height: '20px',
-              borderRadius: '10px',
-              background: '#fff',
-              boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-              transition: 'left 0.2s ease'
-            }} />
-          </div>
-          <input
-            type="checkbox"
-            checked={isAdmin}
-            onChange={e => setIsAdmin(e.target.checked)}
-            style={{ display: 'none' }}
-          />
-          <div>
-            <span style={{ color: 'var(--text-primary)', fontWeight: '500', fontSize: '14px', fontFamily: 'Outfit, sans-serif' }}>
-              Este músico é administrador
-            </span>
-            <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '4px 0 0 0', fontFamily: 'Outfit, sans-serif' }}>
-              Terá acesso ao painel de gerenciamento
-            </p>
-          </div>
-        </label>
+        {/* Toggle Administrador */}
+        <ToggleOption
+          checked={isAdmin}
+          onChange={e => { setIsAdmin(e.target.checked); if (e.target.checked) setIsConvidado(false); }}
+          color="#D4AF37"
+          title="Este músico é administrador"
+          description="Terá acesso ao painel de gerenciamento"
+        />
+
+        {/* Toggle Convidado */}
+        <ToggleOption
+          checked={isConvidado}
+          onChange={e => { setIsConvidado(e.target.checked); if (e.target.checked) setIsAdmin(false); }}
+          color="#3498db"
+          title="Músico convidado"
+          description="Convidados não aparecem na lista de presença"
+        />
 
         {/* Botoes */}
         <div style={{ display: 'flex', gap: '12px' }}>

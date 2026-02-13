@@ -1,13 +1,25 @@
 // ===== STREAK BAR =====
 // Barra vertical compacta mostrando streak de presença
-// SVG apenas, sem emojis
+// Ícone Flame (lucide-react) com CSS animations
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { Flame } from 'lucide-react';
 import styles from './PresenceStats.module.css';
 
 const StreakBar = ({ streak = 0, percentual = 0 }) => {
   const [count, setCount] = useState(0);
+  const active = streak > 0;
+
+  // Tamanho do fogo escala com o streak (min 28, max 44)
+  const fireSize = Math.min(28 + streak * 2, 44);
+
+  // Cor intensifica com o streak
+  const fireColor = !active
+    ? '#666'
+    : streak >= 10 ? '#FFD700'
+    : streak >= 5 ? '#FF8C00'
+    : '#D4AF37';
 
   // Animação de contagem (0 → streak)
   useEffect(() => {
@@ -16,7 +28,7 @@ const StreakBar = ({ streak = 0, percentual = 0 }) => {
       return;
     }
 
-    const duration = 1000; // 1 segundo
+    const duration = 1000;
     const steps = 30;
     const increment = streak / steps;
     const interval = duration / steps;
@@ -45,8 +57,15 @@ const StreakBar = ({ streak = 0, percentual = 0 }) => {
       {/* Número do streak */}
       <div className={styles.streakNumber}>{count}</div>
 
-      {/* Label */}
-      <div className={styles.streakLabel}>Sequência</div>
+      {/* Ícone de fogo */}
+      <div className={`${styles.fireContainer} ${active ? styles.fireActive : styles.fireInactive}`}>
+        <Flame
+          size={fireSize}
+          color={fireColor}
+          fill={active ? fireColor : 'none'}
+          strokeWidth={active ? 1.5 : 2}
+        />
+      </div>
 
       {/* Barra de progresso vertical */}
       <div className={styles.streakProgressContainer}>
@@ -57,26 +76,6 @@ const StreakBar = ({ streak = 0, percentual = 0 }) => {
           transition={{ duration: 1.2, ease: 'easeOut' }}
         />
       </div>
-
-      {/* Ícone Fire SVG */}
-      <svg
-        width="24"
-        height="24"
-        viewBox="0 0 24 24"
-        fill="none"
-        className={styles.streakIcon}
-      >
-        <path
-          d="M12 2C10 6 9 9 9 12C9 15.31 11.69 18 15 18C15.34 18 15.67 17.97 16 17.92C15.38 19.73 13.82 21 12 21C9.24 21 7 18.76 7 16C7 13 8 10 12 2Z"
-          fill="url(#fireGradient)"
-        />
-        <defs>
-          <linearGradient id="fireGradient" x1="7" y1="2" x2="16" y2="21" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stopColor="#D4AF37" />
-            <stop offset="100%" stopColor="#F4E4BC" />
-          </linearGradient>
-        </defs>
-      </svg>
     </motion.div>
   );
 };

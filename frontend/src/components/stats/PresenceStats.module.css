@@ -60,14 +60,47 @@
   filter: drop-shadow(0 2px 8px rgba(212, 175, 55, 0.3));
 }
 
-.streakLabel {
-  font-family: 'Outfit', sans-serif;
-  font-size: 11px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.7);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  text-align: center;
+/* ===== FIRE ICON ===== */
+.fireContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.fireActive {
+  animation: fireFlicker 1.5s ease-in-out infinite, fireGlow 2s ease-in-out infinite;
+}
+
+.fireInactive {
+  opacity: 0.35;
+  filter: grayscale(1);
+}
+
+@keyframes fireFlicker {
+  0%, 100% {
+    transform: scale(1) rotate(0deg);
+  }
+  25% {
+    transform: scale(1.05) rotate(-2deg);
+  }
+  50% {
+    transform: scale(0.97) rotate(1deg);
+  }
+  75% {
+    transform: scale(1.03) rotate(-1deg);
+  }
+}
+
+@keyframes fireGlow {
+  0%, 100% {
+    filter: drop-shadow(0 0 4px rgba(255, 200, 0, 0.4))
+           drop-shadow(0 0 8px rgba(212, 175, 55, 0.2));
+  }
+  50% {
+    filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.7))
+           drop-shadow(0 0 16px rgba(212, 175, 55, 0.4));
+  }
 }
 
 /* Barra de progresso vertical */
@@ -89,9 +122,6 @@
   box-shadow: 0 0 8px rgba(212, 175, 55, 0.5);
 }
 
-.streakIcon {
-  filter: drop-shadow(0 2px 4px rgba(212, 175, 55, 0.4));
-}
 
 /* ===== ATTENDANCE CALENDAR (FLEX-GROW) ===== */
 .calendarSection {
@@ -106,6 +136,15 @@
   font-size: 16px;
   font-weight: 700;
   color: var(--text-primary);
+}
+
+.calendarMonth {
+  font-family: 'Outfit', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .calendarGrid {

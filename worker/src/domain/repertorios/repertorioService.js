@@ -10,7 +10,7 @@ import { registrarAtividade } from '../atividades/index.js';
 export async function getRepertorioAtivo(request, env) {
   const repertorio = await env.DB.prepare(`
     SELECT r.*,
-           (SELECT COUNT(*) FROM repertorio_partituras WHERE repertorio_id = r.id) as total_partituras,
+           (SELECT COUNT(*) FROM repertorio_partituras rp JOIN partituras p ON rp.partitura_id = p.id WHERE rp.repertorio_id = r.id AND p.ativo = 1) as total_partituras,
            u.nome as criado_por_nome
     FROM repertorios r
     LEFT JOIN usuarios u ON r.criado_por = u.id
@@ -45,7 +45,7 @@ export async function getRepertorioAtivo(request, env) {
 export async function getRepertorio(id, request, env) {
   const repertorio = await env.DB.prepare(`
     SELECT r.*,
-           (SELECT COUNT(*) FROM repertorio_partituras WHERE repertorio_id = r.id) as total_partituras,
+           (SELECT COUNT(*) FROM repertorio_partituras rp JOIN partituras p ON rp.partitura_id = p.id WHERE rp.repertorio_id = r.id AND p.ativo = 1) as total_partituras,
            u.nome as criado_por_nome
     FROM repertorios r
     LEFT JOIN usuarios u ON r.criado_por = u.id
@@ -79,7 +79,7 @@ export async function getRepertorio(id, request, env) {
 export async function listRepertorios(request, env) {
   const result = await env.DB.prepare(`
     SELECT r.*,
-           (SELECT COUNT(*) FROM repertorio_partituras WHERE repertorio_id = r.id) as total_partituras,
+           (SELECT COUNT(*) FROM repertorio_partituras rp JOIN partituras p ON rp.partitura_id = p.id WHERE rp.repertorio_id = r.id AND p.ativo = 1) as total_partituras,
            u.nome as criado_por_nome
     FROM repertorios r
     LEFT JOIN usuarios u ON r.criado_por = u.id

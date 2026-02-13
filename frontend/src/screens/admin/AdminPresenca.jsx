@@ -1,11 +1,12 @@
 // ===== ADMIN PRESENÇA =====
 // Gerenciamento de presenças em ensaios + partituras tocadas
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useUI } from '@contexts/UIContext';
 import { API } from '@services/api';
 import { COLORS } from '@constants/colors';
 import { UserListSkeleton } from '@components/common/Skeleton';
+import CustomCheckbox from '@components/common/CustomCheckbox';
 
 // ===== SVG ICONS MODERNOS =====
 const CalendarIcon = ({ size = 20, color = 'currentColor' }) => (
@@ -85,6 +86,377 @@ const PlusIcon = ({ size = 20, color = 'currentColor' }) => (
   </svg>
 );
 
+const ChevronDownIcon = ({ size = 16, color = 'currentColor' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="6 9 12 15 18 9" />
+  </svg>
+);
+
+// ===== CUSTOM DATE PICKER =====
+const MESES_PT = [
+  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+];
+const DIAS_SEMANA_PT = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+const DIAS_SEMANA_FULL = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+
+const ChevronLeft = ({ size = 20, color = 'currentColor' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="15 18 9 12 15 6" />
+  </svg>
+);
+
+const ChevronRight = ({ size = 20, color = 'currentColor' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="9 18 15 12 9 6" />
+  </svg>
+);
+
+const formatDatePt = (dateStr) => {
+  if (!dateStr) return '';
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const d = new Date(year, month - 1, day);
+  const diaSemana = DIAS_SEMANA_FULL[d.getDay()];
+  const mes = MESES_PT[month - 1].toLowerCase();
+  return `${diaSemana}, ${day} de ${mes} de ${year}`;
+};
+
+const DatePickerCalendar = ({ value, onChange, max }) => {
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef(null);
+
+  const selectedParts = value ? value.split('-').map(Number) : null;
+  const [viewYear, setViewYear] = useState(selectedParts ? selectedParts[0] : new Date().getFullYear());
+  const [viewMonth, setViewMonth] = useState(selectedParts ? selectedParts[1] - 1 : new Date().getMonth());
+
+  const maxDate = max ? new Date(max + 'T00:00:00') : null;
+  const todayStr = new Date().toISOString().split('T')[0];
+
+  // Close on outside click
+  useEffect(() => {
+    const handler = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setOpen(false);
+      }
+    };
+    if (open) {
+      document.addEventListener('mousedown', handler);
+      return () => document.removeEventListener('mousedown', handler);
+    }
+  }, [open]);
+
+  const goToPrevMonth = useCallback(() => {
+    setViewMonth(prev => {
+      if (prev === 0) {
+        setViewYear(y => y - 1);
+        return 11;
+      }
+      return prev - 1;
+    });
+  }, []);
+
+  const goToNextMonth = useCallback(() => {
+    setViewMonth(prev => {
+      if (prev === 11) {
+        setViewYear(y => y + 1);
+        return 0;
+      }
+      return prev + 1;
+    });
+  }, []);
+
+  const handleSelect = useCallback((dateStr) => {
+    onChange(dateStr);
+    setOpen(false);
+  }, [onChange]);
+
+  // Build calendar grid
+  const firstDayOfMonth = new Date(viewYear, viewMonth, 1).getDay();
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+  const daysInPrevMonth = new Date(viewYear, viewMonth, 0).getDate();
+
+  const cells = [];
+  // Leading days from previous month
+  for (let i = firstDayOfMonth - 1; i >= 0; i--) {
+    const day = daysInPrevMonth - i;
+    const m = viewMonth === 0 ? 12 : viewMonth;
+    const y = viewMonth === 0 ? viewYear - 1 : viewYear;
+    cells.push({ day, dateStr: `${y}-${String(m).padStart(2, '0')}-${String(day).padStart(2, '0')}`, outside: true });
+  }
+  // Current month days
+  for (let day = 1; day <= daysInMonth; day++) {
+    const dateStr = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    cells.push({ day, dateStr, outside: false });
+  }
+  // Trailing days to fill last row
+  const remaining = 7 - (cells.length % 7);
+  if (remaining < 7) {
+    for (let day = 1; day <= remaining; day++) {
+      const m = viewMonth === 11 ? 1 : viewMonth + 2;
+      const y = viewMonth === 11 ? viewYear + 1 : viewYear;
+      cells.push({ day, dateStr: `${y}-${String(m).padStart(2, '0')}-${String(day).padStart(2, '0')}`, outside: true });
+    }
+  }
+
+  // Check if next month nav should be disabled
+  const nextMonthDisabled = maxDate && new Date(viewYear, viewMonth + 1, 1) > maxDate;
+
+  return (
+    <div ref={containerRef} style={{ position: 'relative' }}>
+      {/* Trigger button */}
+      <button
+        type="button"
+        onClick={() => setOpen(prev => !prev)}
+        style={{
+          width: '100%',
+          padding: '14px 16px',
+          background: 'var(--bg)',
+          border: `1px solid ${open ? '#D4AF37' : 'var(--border)'}`,
+          borderRadius: '10px',
+          color: 'var(--text-primary)',
+          fontFamily: 'Outfit, sans-serif',
+          fontSize: '15px',
+          cursor: 'pointer',
+          transition: 'border-color 0.2s',
+          textAlign: 'left',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px'
+        }}
+      >
+        <CalendarIcon size={18} color="#D4AF37" />
+        <span style={{ flex: 1 }}>
+          {value ? formatDatePt(value) : 'Selecionar data'}
+        </span>
+        <ChevronRight size={16} color="var(--text-muted)" />
+      </button>
+
+      {/* Calendar dropdown */}
+      {open && (
+        <div style={{
+          position: 'absolute',
+          top: 'calc(100% + 8px)',
+          left: 0,
+          zIndex: 100,
+          background: 'var(--bg-card)',
+          border: '1px solid var(--border)',
+          borderRadius: '12px',
+          padding: '16px',
+          boxShadow: '0 12px 40px rgba(0,0,0,0.4)',
+          minWidth: '300px',
+          animation: 'dpFadeIn 0.15s ease-out'
+        }}>
+          {/* Month/Year header */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: '16px'
+          }}>
+            <button
+              type="button"
+              onClick={goToPrevMonth}
+              style={{
+                background: 'var(--bg)',
+                border: '1px solid var(--border)',
+                borderRadius: '8px',
+                padding: '6px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'var(--text-primary)',
+                transition: 'border-color 0.2s'
+              }}
+            >
+              <ChevronLeft size={18} />
+            </button>
+            <span style={{
+              fontFamily: 'Outfit, sans-serif',
+              fontSize: '15px',
+              fontWeight: '700',
+              color: 'var(--text-primary)'
+            }}>
+              {MESES_PT[viewMonth]} {viewYear}
+            </span>
+            <button
+              type="button"
+              onClick={goToNextMonth}
+              disabled={nextMonthDisabled}
+              style={{
+                background: 'var(--bg)',
+                border: '1px solid var(--border)',
+                borderRadius: '8px',
+                padding: '6px',
+                cursor: nextMonthDisabled ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: nextMonthDisabled ? 'var(--text-muted)' : 'var(--text-primary)',
+                opacity: nextMonthDisabled ? 0.4 : 1,
+                transition: 'border-color 0.2s'
+              }}
+            >
+              <ChevronRight size={18} />
+            </button>
+          </div>
+
+          {/* Day-of-week headers */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(7, 1fr)',
+            gap: '2px',
+            marginBottom: '4px'
+          }}>
+            {DIAS_SEMANA_PT.map(d => (
+              <div key={d} style={{
+                textAlign: 'center',
+                fontFamily: 'Outfit, sans-serif',
+                fontSize: '12px',
+                fontWeight: '600',
+                color: 'var(--text-muted)',
+                padding: '4px 0',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px'
+              }}>
+                {d}
+              </div>
+            ))}
+          </div>
+
+          {/* Calendar grid */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(7, 1fr)',
+            gap: '2px'
+          }}>
+            {cells.map((cell, idx) => {
+              const isSelected = cell.dateStr === value;
+              const isToday = cell.dateStr === todayStr;
+              const cellDate = new Date(cell.dateStr + 'T00:00:00');
+              const isDisabled = cell.outside || (maxDate && cellDate > maxDate);
+              const dayOfWeek = cellDate.getDay();
+              const isRehearsalDay = !cell.outside && (dayOfWeek === 1 || dayOfWeek === 3);
+
+              let bg = 'transparent';
+              let color = cell.outside ? 'var(--text-muted)' : 'var(--text-primary)';
+              let border = '2px solid transparent';
+              let fontWeight = '500';
+              let opacity = isDisabled && !cell.outside ? 0.35 : cell.outside ? 0.3 : 1;
+
+              if (isSelected) {
+                bg = '#D4AF37';
+                color = '#1a1a1a';
+                fontWeight = '700';
+                opacity = 1;
+              } else if (isToday && !cell.outside) {
+                border = '2px solid #D4AF37';
+                fontWeight = '600';
+              } else if (isRehearsalDay && !isDisabled) {
+                bg = 'rgba(212, 175, 55, 0.1)';
+                fontWeight = '600';
+              }
+
+              return (
+                <button
+                  key={idx}
+                  type="button"
+                  disabled={isDisabled}
+                  onClick={() => !isDisabled && handleSelect(cell.dateStr)}
+                  style={{
+                    width: '100%',
+                    aspectRatio: '1',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: bg,
+                    color,
+                    border,
+                    borderRadius: '8px',
+                    fontFamily: 'Outfit, sans-serif',
+                    fontSize: '14px',
+                    fontWeight,
+                    cursor: isDisabled ? 'default' : 'pointer',
+                    opacity,
+                    transition: 'all 0.15s',
+                    padding: 0
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isDisabled && !isSelected) {
+                      e.currentTarget.style.background = 'rgba(212, 175, 55, 0.2)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isDisabled && !isSelected) {
+                      e.currentTarget.style.background = bg;
+                    }
+                  }}
+                >
+                  {cell.day}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Legend */}
+          <div style={{
+            display: 'flex',
+            gap: '16px',
+            marginTop: '12px',
+            paddingTop: '12px',
+            borderTop: '1px solid var(--border)',
+            justifyContent: 'center'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <div style={{
+                width: '10px', height: '10px', borderRadius: '3px',
+                background: 'rgba(212, 175, 55, 0.1)',
+                border: '1px solid rgba(212, 175, 55, 0.3)'
+              }} />
+              <span style={{
+                fontFamily: 'Outfit, sans-serif',
+                fontSize: '11px',
+                color: 'var(--text-muted)'
+              }}>Dia de ensaio</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <div style={{
+                width: '10px', height: '10px', borderRadius: '3px',
+                border: '2px solid #D4AF37'
+              }} />
+              <span style={{
+                fontFamily: 'Outfit, sans-serif',
+                fontSize: '11px',
+                color: 'var(--text-muted)'
+              }}>Hoje</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Keyframe for fade-in */}
+      <style>{`
+        @keyframes dpFadeIn {
+          from { opacity: 0; transform: translateY(-4px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
+    </div>
+  );
+};
+
+// ===== FAMÍLIA DE INSTRUMENTOS =====
+const FAMILIA_CONFIG = {
+  Madeiras: { color: '#27ae60' },
+  Metais: { color: '#D4AF37' },
+  Percussão: { color: '#9b59b6' },
+  Outros: { color: '#3498db' }
+};
+
+const getFamiliaColor = (familia) => {
+  return FAMILIA_CONFIG[familia]?.color || FAMILIA_CONFIG.Outros.color;
+};
+
 const AdminPresenca = () => {
   const { showToast } = useUI();
   const [usuarios, setUsuarios] = useState([]);
@@ -122,12 +494,13 @@ const AdminPresenca = () => {
   const [submitting, setSubmitting] = useState(false);
   const [historico, setHistorico] = useState([]);
   const [modoMarcacao, setModoMarcacao] = useState('ausentes'); // 'presentes' ou 'ausentes'
+  const [mostrarTodoHistorico, setMostrarTodoHistorico] = useState(false);
+  const [agruparPorFamilia, setAgruparPorFamilia] = useState(false);
 
   // Estado para gestão de partituras
   const [partituras, setPartituras] = useState([]);
   const [partiturasEnsaio, setPartiturasEnsaio] = useState([]);
   const [buscaPartitura, setBuscaPartitura] = useState('');
-  const [loadingPartituras, setLoadingPartituras] = useState(false);
 
   // Estado para edição/exclusão
   const [ensaioEditando, setEnsaioEditando] = useState(null);
@@ -143,11 +516,11 @@ const AdminPresenca = () => {
         API.getPartituras()
       ]);
 
-      // Filtrar apenas músicos ativos (excluir admins)
-      const musicos = (users || []).filter(u => u.admin === 0 && u.ativo === 1);
+      // Filtrar músicos ativos (excluir convidados, inativos e conta admin do sistema)
+      const musicos = (users || []).filter(u => u.ativo === 1 && u.convidado !== 1 && u.username !== 'admin');
       setUsuarios(musicos);
       setHistorico(presencas?.ensaios || []);
-      setPartituras(todasPartituras?.partituras || []);
+      setPartituras(todasPartituras || []);
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
       showToast('Erro ao carregar dados', 'error');
@@ -240,34 +613,48 @@ const AdminPresenca = () => {
     }
   };
 
-  // Adicionar partitura ao ensaio
+  // Adicionar partitura ao ensaio (optimistic)
   const handleAdicionarPartitura = async (partituraId) => {
+    const partitura = partituras.find(p => p.id === partituraId);
+    if (!partitura) return;
+
+    // Optimistic: adiciona imediatamente ao state
+    const novaOrdem = partiturasEnsaio.length + 1;
+    const optimistic = {
+      partitura_id: partituraId,
+      titulo: partitura.titulo,
+      compositor: partitura.compositor,
+      ordem: novaOrdem,
+      _optimistic: true
+    };
+    setPartiturasEnsaio(prev => [...prev, optimistic]);
+    setBuscaPartitura('');
+
     try {
-      setLoadingPartituras(true);
       await API.addPartituraEnsaio(dataEnsaio, partituraId);
-      showToast('Partitura adicionada', 'success');
-      await loadPartiturasEnsaio(dataEnsaio);
-      setBuscaPartitura('');
+      // Sincroniza com o servidor para obter dados completos
+      loadPartiturasEnsaio(dataEnsaio);
     } catch (error) {
-      console.error('Erro ao adicionar partitura:', error);
+      // Rollback: remove a partitura adicionada
+      setPartiturasEnsaio(prev => prev.filter(p => !(p.partitura_id === partituraId && p._optimistic)));
       showToast(error.message || 'Erro ao adicionar partitura', 'error');
-    } finally {
-      setLoadingPartituras(false);
     }
   };
 
-  // Remover partitura do ensaio
+  // Remover partitura do ensaio (optimistic)
   const handleRemoverPartitura = async (id) => {
+    // Optimistic: remove imediatamente do state
+    const removida = partiturasEnsaio.find(p => p.partitura_id === id);
+    setPartiturasEnsaio(prev => prev.filter(p => p.partitura_id !== id));
+
     try {
-      setLoadingPartituras(true);
       await API.removePartituraEnsaio(dataEnsaio, id);
-      showToast('Partitura removida', 'success');
-      await loadPartiturasEnsaio(dataEnsaio);
     } catch (error) {
-      console.error('Erro ao remover partitura:', error);
+      // Rollback: restaura a partitura removida
+      if (removida) {
+        setPartiturasEnsaio(prev => [...prev, removida].sort((a, b) => a.ordem - b.ordem));
+      }
       showToast(error.message || 'Erro ao remover partitura', 'error');
-    } finally {
-      setLoadingPartituras(false);
     }
   };
 
@@ -325,17 +712,127 @@ const AdminPresenca = () => {
     }
   }, [modoMarcacao, selecionados.length, usuarios.length]);
 
+  // Agrupar músicos por família de instrumento
+  const gruposPorFamilia = useMemo(() => {
+    const grupos = {};
+    const ordemFamilias = ['Madeiras', 'Metais', 'Percussão', 'Outros'];
+
+    usuarios.forEach(u => {
+      const familia = u.instrumento_familia || 'Outros';
+      if (!grupos[familia]) {
+        grupos[familia] = [];
+      }
+      grupos[familia].push(u);
+    });
+
+    // Ordenar músicos dentro de cada grupo por nome
+    Object.keys(grupos).forEach(familia => {
+      grupos[familia].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+    });
+
+    // Retornar na ordem definida
+    return ordemFamilias
+      .filter(f => grupos[f] && grupos[f].length > 0)
+      .map(f => ({ familia: f, musicos: grupos[f] }));
+  }, [usuarios]);
+
+  // Histórico limitado
+  const historicoExibido = useMemo(() => {
+    if (mostrarTodoHistorico) return historico;
+    return historico.slice(0, 5);
+  }, [historico, mostrarTodoHistorico]);
+
   if (loading) return <UserListSkeleton />;
 
+  const accentColor = modoMarcacao === 'presentes' ? COLORS.success.primary : '#E85A4F';
+
+  const renderMusicoRow = (usuario, familiaColor) => {
+    const isSelected = selecionados.includes(usuario.id);
+
+    return (
+      <label
+        key={usuario.id}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          padding: '10px 16px',
+          paddingLeft: isSelected ? '13px' : '16px',
+          borderBottom: '1px solid var(--border)',
+          borderLeft: isSelected ? `3px solid ${accentColor}` : '3px solid transparent',
+          background: isSelected ? `${accentColor}08` : 'transparent',
+          cursor: 'pointer',
+          transition: 'all 0.15s',
+          fontFamily: 'Outfit, sans-serif'
+        }}
+        onMouseEnter={(e) => {
+          if (!isSelected) e.currentTarget.style.background = 'rgba(212,175,55, 0.04)';
+        }}
+        onMouseLeave={(e) => {
+          if (!isSelected) e.currentTarget.style.background = 'transparent';
+        }}
+      >
+        <CustomCheckbox
+          checked={isSelected}
+          onChange={() => toggleUsuario(usuario.id)}
+          accentColor={accentColor}
+          size={20}
+        />
+        {/* Avatar */}
+        <div style={{
+          width: '36px',
+          height: '36px',
+          borderRadius: '50%',
+          background: familiaColor,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontFamily: 'Outfit, sans-serif',
+          fontWeight: '700',
+          fontSize: '14px',
+          color: '#FFFFFF',
+          flexShrink: 0
+        }}>
+          {usuario.nome.charAt(0).toUpperCase()}
+        </div>
+        {/* Nome + Badge */}
+        <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{
+            fontSize: '14px',
+            fontWeight: '600',
+            color: 'var(--text-primary)',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap'
+          }}>
+            {usuario.nome}
+          </span>
+          <span style={{
+            fontSize: '11px',
+            padding: '2px 8px',
+            borderRadius: '12px',
+            background: `${familiaColor}1F`,
+            color: familiaColor,
+            fontWeight: '600',
+            flexShrink: 0,
+            whiteSpace: 'nowrap'
+          }}>
+            {usuario.instrumento_nome}
+          </span>
+        </div>
+      </label>
+    );
+  };
+
   return (
-    <div style={{ padding: '40px 32px', maxWidth: '1400px', margin: '0 auto' }}>
+    <div className="screen-container" style={{ padding: '40px 32px', maxWidth: '1400px', margin: '0 auto' }}>
       {/* Header */}
-      <div style={{ marginBottom: '48px' }}>
+      <div style={{ marginBottom: '32px' }}>
         <h1 style={{
           fontFamily: 'Outfit, sans-serif',
-          fontSize: '32px',
+          fontSize: '28px',
           fontWeight: '700',
-          marginBottom: '12px',
+          marginBottom: '8px',
           color: 'var(--text-primary)',
           letterSpacing: '-0.5px'
         }}>
@@ -343,7 +840,7 @@ const AdminPresenca = () => {
         </h1>
         <p style={{
           fontFamily: 'Outfit, sans-serif',
-          fontSize: '16px',
+          fontSize: '14px',
           color: 'var(--text-muted)',
           lineHeight: '1.5'
         }}>
@@ -351,122 +848,72 @@ const AdminPresenca = () => {
         </p>
       </div>
 
-      {/* Controles Principais */}
+      {/* Toolbar Compacta: Data + Mode Toggle */}
       <div style={{
-        display: 'grid',
-        gridTemplateColumns: '1fr 1fr',
-        gap: '24px',
-        marginBottom: '40px'
+        display: 'flex',
+        alignItems: 'center',
+        gap: '16px',
+        marginBottom: '24px',
+        flexWrap: 'wrap'
       }}>
-        {/* Data do Ensaio */}
-        <div style={{
-          background: 'var(--bg-card)',
-          border: '1px solid var(--border)',
-          borderRadius: '16px',
-          padding: '28px'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-            <CalendarIcon size={24} color="#D4AF37" />
-            <label style={{
-              fontFamily: 'Outfit, sans-serif',
-              fontSize: '16px',
-              fontWeight: '600',
-              color: 'var(--text-primary)'
-            }}>
-              Data do Ensaio
-            </label>
-          </div>
-          <input
-            type="date"
+        {/* DatePicker à esquerda */}
+        <div style={{ flex: 1, minWidth: '280px' }}>
+          <DatePickerCalendar
             value={dataEnsaio}
             max={dataMaxima}
-            onChange={(e) => setDataEnsaio(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '14px 16px',
-              background: 'var(--bg)',
-              border: '1px solid var(--border)',
-              borderRadius: '10px',
-              color: 'var(--text-primary)',
-              fontFamily: 'Outfit, sans-serif',
-              fontSize: '15px',
-              cursor: 'pointer',
-              transition: 'border-color 0.2s',
-              colorScheme: 'dark'
-            }}
+            onChange={setDataEnsaio}
           />
         </div>
 
-        {/* Modo de Marcação */}
+        {/* Segmented Control à direita */}
         <div style={{
-          background: 'var(--bg-card)',
+          display: 'flex',
           border: '1px solid var(--border)',
-          borderRadius: '16px',
-          padding: '28px'
+          borderRadius: '10px',
+          overflow: 'hidden',
+          flexShrink: 0
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-            {modoMarcacao === 'presentes' ? (
-              <CheckCircleIcon size={24} color={COLORS.success} />
-            ) : (
-              <XCircleIcon size={24} color="#E85A4F" />
-            )}
-            <label style={{
+          <button
+            onClick={() => setModoMarcacao('presentes')}
+            style={{
+              padding: '10px 20px',
+              background: modoMarcacao === 'presentes' ? COLORS.success.primary : 'transparent',
+              color: modoMarcacao === 'presentes' ? '#FFFFFF' : 'var(--text-muted)',
+              border: 'none',
+              borderRight: '1px solid var(--border)',
               fontFamily: 'Outfit, sans-serif',
-              fontSize: '16px',
+              fontSize: '13px',
               fontWeight: '600',
-              color: 'var(--text-primary)'
-            }}>
-              Modo de Marcação
-            </label>
-          </div>
-          <div style={{ display: 'flex', gap: '12px' }}>
-            <button
-              onClick={() => setModoMarcacao('presentes')}
-              style={{
-                flex: 1,
-                padding: '14px 20px',
-                background: modoMarcacao === 'presentes' ? COLORS.success : 'var(--bg)',
-                color: modoMarcacao === 'presentes' ? '#FFFFFF' : 'var(--text-primary)',
-                border: `2px solid ${modoMarcacao === 'presentes' ? COLORS.success : 'var(--border)'}`,
-                borderRadius: '10px',
-                fontFamily: 'Outfit, sans-serif',
-                fontSize: '14px',
-                fontWeight: '600',
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px'
-              }}
-            >
-              <CheckCircleIcon size={18} />
-              Presentes
-            </button>
-            <button
-              onClick={() => setModoMarcacao('ausentes')}
-              style={{
-                flex: 1,
-                padding: '14px 20px',
-                background: modoMarcacao === 'ausentes' ? '#E85A4F' : 'var(--bg)',
-                color: modoMarcacao === 'ausentes' ? '#FFFFFF' : 'var(--text-primary)',
-                border: `2px solid ${modoMarcacao === 'ausentes' ? '#E85A4F' : 'var(--border)'}`,
-                borderRadius: '10px',
-                fontFamily: 'Outfit, sans-serif',
-                fontSize: '14px',
-                fontWeight: '600',
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px'
-              }}
-            >
-              <XCircleIcon size={18} />
-              Ausentes
-            </button>
-          </div>
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            <CheckCircleIcon size={15} />
+            Presentes
+          </button>
+          <button
+            onClick={() => setModoMarcacao('ausentes')}
+            style={{
+              padding: '10px 20px',
+              background: modoMarcacao === 'ausentes' ? '#E85A4F' : 'transparent',
+              color: modoMarcacao === 'ausentes' ? '#FFFFFF' : 'var(--text-muted)',
+              border: 'none',
+              fontFamily: 'Outfit, sans-serif',
+              fontSize: '13px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            <XCircleIcon size={15} />
+            Ausentes
+          </button>
         </div>
       </div>
 
@@ -474,98 +921,117 @@ const AdminPresenca = () => {
       <div style={{
         display: 'grid',
         gridTemplateColumns: '1fr 1fr',
-        gap: '24px',
-        marginBottom: '40px'
+        gap: '16px',
+        marginBottom: '24px'
       }}>
         {/* Seção: Músicos */}
         <div style={{
           background: 'var(--bg-card)',
           border: '1px solid var(--border)',
           borderRadius: '16px',
-          padding: '28px'
+          overflow: 'hidden',
+          position: 'relative',
+          display: 'flex',
+          flexDirection: 'column'
         }}>
           {/* Header da Seção */}
-          <div style={{ marginBottom: '24px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
-              <UsersIcon size={24} color="#D4AF37" />
+          <div style={{
+            padding: '16px 20px',
+            borderBottom: '1px solid var(--border)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '10px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <UsersIcon size={20} color="#D4AF37" />
               <h2 style={{
                 fontFamily: 'Outfit, sans-serif',
-                fontSize: '18px',
-                fontWeight: '600',
+                fontSize: '15px',
+                fontWeight: '700',
                 color: 'var(--text-primary)',
                 margin: 0
               }}>
-                Músicos ({contadorTexto})
+                Músicos
               </h2>
+              <span style={{
+                fontFamily: 'Outfit, sans-serif',
+                fontSize: '12px',
+                color: 'var(--text-muted)',
+                fontWeight: '500'
+              }}>
+                {contadorTexto}
+              </span>
             </div>
 
-            {/* Botões de Controle */}
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            {/* Botões de Controle Compactos */}
+            <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
               <button
-                onClick={marcarTodos}
+                onClick={() => setAgruparPorFamilia(prev => !prev)}
                 style={{
-                  padding: '8px 14px',
-                  background: 'var(--bg)',
-                  color: 'var(--text-primary)',
-                  border: '1px solid var(--border)',
-                  borderRadius: '8px',
+                  padding: '4px 10px',
+                  background: agruparPorFamilia ? 'rgba(212, 175, 55, 0.15)' : 'transparent',
+                  color: agruparPorFamilia ? '#D4AF37' : 'var(--text-muted)',
+                  border: `1px solid ${agruparPorFamilia ? 'rgba(212, 175, 55, 0.4)' : 'var(--border)'}`,
+                  borderRadius: '6px',
                   fontFamily: 'Outfit, sans-serif',
-                  fontSize: '13px',
-                  fontWeight: '500',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s'
-                }}
-              >
-                Marcar Todos
-              </button>
-              <button
-                onClick={desmarcarTodos}
-                style={{
-                  padding: '8px 14px',
-                  background: 'var(--bg)',
-                  color: 'var(--text-primary)',
-                  border: '1px solid var(--border)',
-                  borderRadius: '8px',
-                  fontFamily: 'Outfit, sans-serif',
-                  fontSize: '13px',
-                  fontWeight: '500',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s'
-                }}
-              >
-                Limpar
-              </button>
-              <button
-                onClick={inverterSelecao}
-                style={{
-                  padding: '8px 14px',
-                  background: 'var(--bg)',
-                  color: 'var(--text-primary)',
-                  border: '1px solid var(--border)',
-                  borderRadius: '8px',
-                  fontFamily: 'Outfit, sans-serif',
-                  fontSize: '13px',
+                  fontSize: '12px',
                   fontWeight: '500',
                   cursor: 'pointer',
                   transition: 'all 0.2s',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '6px'
+                  gap: '4px'
                 }}
               >
-                <RefreshIcon size={14} />
-                Inverter
+                Por seção
               </button>
+              <div style={{ width: '1px', height: '16px', background: 'var(--border)' }} />
+              {[
+                { label: 'Todos', onClick: marcarTodos },
+                { label: 'Limpar', onClick: desmarcarTodos },
+                { label: 'Inverter', onClick: inverterSelecao, icon: <RefreshIcon size={12} /> }
+              ].map(btn => (
+                <button
+                  key={btn.label}
+                  onClick={btn.onClick}
+                  style={{
+                    padding: '4px 10px',
+                    background: 'transparent',
+                    color: 'var(--text-muted)',
+                    border: '1px solid var(--border)',
+                    borderRadius: '6px',
+                    fontFamily: 'Outfit, sans-serif',
+                    fontSize: '12px',
+                    fontWeight: '500',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = '#D4AF37';
+                    e.currentTarget.style.color = 'var(--text-primary)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--border)';
+                    e.currentTarget.style.color = 'var(--text-muted)';
+                  }}
+                >
+                  {btn.icon}
+                  {btn.label}
+                </button>
+              ))}
             </div>
           </div>
 
-          {/* Lista de Músicos */}
+          {/* Lista de Músicos agrupada */}
           <div style={{
-            maxHeight: '500px',
+            maxHeight: '520px',
             overflowY: 'auto',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '8px'
+            flex: 1
           }}>
             {usuarios.length === 0 ? (
               <div style={{
@@ -577,72 +1043,105 @@ const AdminPresenca = () => {
               }}>
                 Nenhum músico cadastrado
               </div>
-            ) : (
-              usuarios.map((usuario) => {
-                const isSelected = selecionados.includes(usuario.id);
-                const accentColor = modoMarcacao === 'presentes' ? COLORS.success : '#E85A4F';
+            ) : agruparPorFamilia ? (
+              gruposPorFamilia.map(({ familia, musicos }) => {
+                const familiaColor = getFamiliaColor(familia);
+                const selecionadosNoGrupo = musicos.filter(m => selecionados.includes(m.id)).length;
 
                 return (
-                  <label
-                    key={usuario.id}
-                    className="usuario-item"
-                    style={{
+                  <div key={familia}>
+                    {/* Header do grupo */}
+                    <div style={{
+                      padding: '8px 20px',
+                      background: 'var(--bg)',
+                      borderBottom: '1px solid var(--border)',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '14px',
-                      padding: '14px 16px',
-                      background: isSelected ? `${accentColor}10` : 'var(--bg)',
-                      border: `1px solid ${isSelected ? accentColor : 'var(--border)'}`,
-                      borderRadius: '10px',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      fontFamily: 'Outfit, sans-serif'
-                    }}
-                    onMouseEnter={(e) => {
-                      if (!isSelected) {
-                        e.currentTarget.style.background = `${accentColor}05`;
-                        e.currentTarget.style.borderColor = accentColor;
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!isSelected) {
-                        e.currentTarget.style.background = 'var(--bg)';
-                        e.currentTarget.style.borderColor = 'var(--border)';
-                      }
-                    }}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={isSelected}
-                      onChange={() => toggleUsuario(usuario.id)}
-                      style={{
-                        width: '18px',
-                        height: '18px',
-                        accentColor: accentColor,
-                        cursor: 'pointer'
-                      }}
-                    />
-                    <div style={{ flex: 1 }}>
+                      gap: '8px'
+                    }}>
                       <div style={{
-                        fontSize: '15px',
-                        fontWeight: '600',
-                        color: 'var(--text-primary)',
-                        marginBottom: '2px'
+                        width: '8px',
+                        height: '8px',
+                        borderRadius: '50%',
+                        background: familiaColor,
+                        flexShrink: 0
+                      }} />
+                      <span style={{
+                        fontFamily: 'Outfit, sans-serif',
+                        fontSize: '12px',
+                        fontWeight: '700',
+                        color: 'var(--text-muted)',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.5px',
+                        flex: 1
                       }}>
-                        {usuario.nome}
-                      </div>
-                      <div style={{
-                        fontSize: '13px',
-                        color: 'var(--text-muted)'
+                        {familia}
+                      </span>
+                      <span style={{
+                        fontFamily: 'Outfit, sans-serif',
+                        fontSize: '11px',
+                        color: 'var(--text-muted)',
+                        fontWeight: '500'
                       }}>
-                        {usuario.instrumento_nome}
-                      </div>
+                        {selecionadosNoGrupo}/{musicos.length}
+                      </span>
                     </div>
-                  </label>
+
+                    {/* Músicos do grupo */}
+                    {musicos.map((usuario) => renderMusicoRow(usuario, getFamiliaColor(usuario.instrumento_familia || 'Outros')))}
+                  </div>
                 );
               })
+            ) : (
+              [...usuarios].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')).map((usuario) =>
+                renderMusicoRow(usuario, getFamiliaColor(usuario.instrumento_familia || 'Outros'))
+              )
             )}
           </div>
+
+          {/* Sticky action bar */}
+          {selecionados.length > 0 && (
+            <div style={{
+              position: 'sticky',
+              bottom: 0,
+              padding: '12px 16px',
+              background: 'var(--bg-card)',
+              borderTop: '1px solid var(--border)',
+              backdropFilter: 'blur(12px)',
+              animation: 'stickyBarIn 0.2s ease-out'
+            }}>
+              <button
+                onClick={handleMarcarPresenca}
+                disabled={submitting}
+                className="btn-primary-hover"
+                style={{
+                  width: '100%',
+                  padding: '12px 16px',
+                  background: accentColor,
+                  color: '#FFFFFF',
+                  border: 'none',
+                  borderRadius: '10px',
+                  fontFamily: 'Outfit, sans-serif',
+                  fontSize: '14px',
+                  fontWeight: '700',
+                  cursor: submitting ? 'not-allowed' : 'pointer',
+                  opacity: submitting ? 0.7 : 1,
+                  transition: 'all 0.2s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '10px'
+                }}
+              >
+                {modoMarcacao === 'presentes' ? (
+                  <CheckCircleIcon size={18} />
+                ) : (
+                  <XCircleIcon size={18} />
+                )}
+                {submitting ? 'Registrando...' : `Marcar ${contadorTexto}`}
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Seção: Partituras Tocadas */}
@@ -650,36 +1149,48 @@ const AdminPresenca = () => {
           background: 'var(--bg-card)',
           border: '1px solid var(--border)',
           borderRadius: '16px',
-          padding: '28px'
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column'
         }}>
           {/* Header da Seção */}
-          <div style={{ marginBottom: '24px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-              <MusicIcon size={24} color="#D4AF37" />
+          <div style={{
+            padding: '16px 20px',
+            borderBottom: '1px solid var(--border)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+              <MusicIcon size={20} color="#D4AF37" />
               <h2 style={{
                 fontFamily: 'Outfit, sans-serif',
-                fontSize: '18px',
-                fontWeight: '600',
+                fontSize: '15px',
+                fontWeight: '700',
                 color: 'var(--text-primary)',
                 margin: 0
               }}>
-                Partituras Tocadas ({partiturasEnsaio.length})
+                Partituras Tocadas
               </h2>
+              <span style={{
+                fontFamily: 'Outfit, sans-serif',
+                fontSize: '12px',
+                color: 'var(--text-muted)',
+                fontWeight: '500'
+              }}>
+                {partiturasEnsaio.length}
+              </span>
             </div>
 
             {/* Campo de Busca */}
             <div style={{ position: 'relative' }}>
-              <SearchIcon
-                size={18}
-                color="#D4AF37"
-                style={{
-                  position: 'absolute',
-                  left: '14px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  pointerEvents: 'none'
-                }}
-              />
+              <div style={{
+                position: 'absolute',
+                left: '14px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                pointerEvents: 'none',
+                display: 'flex'
+              }}>
+                <SearchIcon size={16} color="#D4AF37" />
+              </div>
               <input
                 type="text"
                 placeholder="Buscar partitura..."
@@ -687,13 +1198,13 @@ const AdminPresenca = () => {
                 onChange={(e) => setBuscaPartitura(e.target.value)}
                 style={{
                   width: '100%',
-                  padding: '12px 16px 12px 44px',
+                  padding: '10px 16px 10px 40px',
                   background: 'var(--bg)',
                   border: '1px solid var(--border)',
-                  borderRadius: '10px',
+                  borderRadius: '8px',
                   color: 'var(--text-primary)',
                   fontFamily: 'Outfit, sans-serif',
-                  fontSize: '14px'
+                  fontSize: '13px'
                 }}
               />
             </div>
@@ -701,16 +1212,17 @@ const AdminPresenca = () => {
             {/* Resultados da Busca */}
             {buscaPartitura.trim() && (
               <div style={{
-                marginTop: '12px',
+                marginTop: '8px',
                 maxHeight: '200px',
                 overflowY: 'auto',
                 border: '1px solid var(--border)',
-                borderRadius: '10px',
-                background: 'var(--bg)'
+                borderRadius: '8px',
+                background: 'var(--bg)',
+                overflow: 'hidden'
               }}>
                 {partiturasFiltered.length === 0 ? (
                   <div style={{
-                    padding: '20px',
+                    padding: '16px',
                     textAlign: 'center',
                     color: 'var(--text-muted)',
                     fontSize: '13px',
@@ -723,10 +1235,9 @@ const AdminPresenca = () => {
                     <button
                       key={p.id}
                       onClick={() => handleAdicionarPartitura(p.id)}
-                      disabled={loadingPartituras}
                       style={{
                         width: '100%',
-                        padding: '12px 16px',
+                        padding: '10px 16px',
                         background: 'transparent',
                         border: 'none',
                         borderBottom: '1px solid var(--border)',
@@ -736,21 +1247,30 @@ const AdminPresenca = () => {
                         display: 'flex',
                         alignItems: 'center',
                         gap: '10px',
-                        transition: 'background 0.2s'
+                        transition: 'background 0.15s'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = 'rgba(212,175,55,0.06)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'transparent';
                       }}
                     >
-                      <PlusIcon size={16} color="#D4AF37" />
-                      <div style={{ flex: 1 }}>
+                      <PlusIcon size={14} color="#D4AF37" />
+                      <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{
-                          fontSize: '14px',
+                          fontSize: '13px',
                           fontWeight: '600',
                           color: 'var(--text-primary)',
-                          marginBottom: '2px'
+                          marginBottom: '1px',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap'
                         }}>
                           {p.titulo}
                         </div>
                         <div style={{
-                          fontSize: '12px',
+                          fontSize: '11px',
                           color: 'var(--text-muted)'
                         }}>
                           {p.compositor}
@@ -767,9 +1287,7 @@ const AdminPresenca = () => {
           <div style={{
             maxHeight: '400px',
             overflowY: 'auto',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '8px'
+            flex: 1
           }}>
             {partiturasEnsaio.length === 0 ? (
               <div style={{
@@ -784,28 +1302,38 @@ const AdminPresenca = () => {
             ) : (
               partiturasEnsaio.map((p, index) => (
                 <div
-                  key={p.id}
+                  key={p.id || p.partitura_id}
+                  className="partitura-row"
                   style={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: '14px',
-                    padding: '14px 16px',
-                    background: 'var(--bg)',
-                    border: '1px solid var(--border)',
-                    borderRadius: '10px',
-                    fontFamily: 'Outfit, sans-serif'
+                    padding: '12px 16px',
+                    borderBottom: '1px solid var(--border)',
+                    fontFamily: 'Outfit, sans-serif',
+                    transition: 'background 0.15s'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(212,175,55,0.04)';
+                    const btn = e.currentTarget.querySelector('.remove-btn');
+                    if (btn) btn.style.opacity = '1';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'transparent';
+                    const btn = e.currentTarget.querySelector('.remove-btn');
+                    if (btn) btn.style.opacity = '0';
                   }}
                 >
                   <div style={{
-                    width: '32px',
-                    height: '32px',
+                    width: '28px',
+                    height: '28px',
                     borderRadius: '8px',
                     background: 'linear-gradient(145deg, #D4AF37, #F4E4BC)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     fontWeight: '700',
-                    fontSize: '14px',
+                    fontSize: '12px',
                     color: '#3D1011',
                     flexShrink: 0
                   }}>
@@ -813,10 +1341,10 @@ const AdminPresenca = () => {
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{
-                      fontSize: '15px',
+                      fontSize: '14px',
                       fontWeight: '600',
                       color: 'var(--text-primary)',
-                      marginBottom: '2px',
+                      marginBottom: '1px',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                       whiteSpace: 'nowrap'
@@ -824,7 +1352,7 @@ const AdminPresenca = () => {
                       {p.titulo}
                     </div>
                     <div style={{
-                      fontSize: '13px',
+                      fontSize: '12px',
                       color: 'var(--text-muted)',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
@@ -834,21 +1362,23 @@ const AdminPresenca = () => {
                     </div>
                   </div>
                   <button
-                    onClick={() => handleRemoverPartitura(p.id)}
-                    disabled={loadingPartituras}
+                    className="remove-btn"
+                    onClick={() => handleRemoverPartitura(p.partitura_id)}
                     style={{
-                      padding: '8px',
+                      padding: '6px',
                       background: 'transparent',
                       border: 'none',
                       cursor: 'pointer',
-                      color: 'var(--text-muted)',
-                      transition: 'color 0.2s',
+                      color: '#E85A4F',
+                      opacity: 0,
+                      transition: 'opacity 0.15s',
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'center'
+                      justifyContent: 'center',
+                      borderRadius: '6px'
                     }}
                   >
-                    <TrashIcon size={18} />
+                    <TrashIcon size={16} />
                   </button>
                 </div>
               ))
@@ -857,46 +1387,14 @@ const AdminPresenca = () => {
         </div>
       </div>
 
-      {/* Botão de Ação Principal */}
-      <button
-        onClick={handleMarcarPresenca}
-        disabled={submitting || selecionados.length === 0}
-        style={{
-          width: '100%',
-          padding: '18px 24px',
-          background: modoMarcacao === 'presentes' ? COLORS.success : '#E85A4F',
-          color: '#FFFFFF',
-          border: 'none',
-          borderRadius: '12px',
-          fontFamily: 'Outfit, sans-serif',
-          fontSize: '16px',
-          fontWeight: '700',
-          cursor: submitting || selecionados.length === 0 ? 'not-allowed' : 'pointer',
-          opacity: submitting || selecionados.length === 0 ? 0.5 : 1,
-          transition: 'all 0.2s',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: '12px',
-          marginBottom: '48px'
-        }}
-      >
-        {modoMarcacao === 'presentes' ? (
-          <CheckCircleIcon size={22} />
-        ) : (
-          <XCircleIcon size={22} />
-        )}
-        {submitting ? 'Registrando...' : `Marcar ${contadorTexto}`}
-      </button>
-
       {/* Histórico de Ensaios */}
       <div>
         <h2 style={{
           fontFamily: 'Outfit, sans-serif',
-          fontSize: '24px',
+          fontSize: '20px',
           fontWeight: '700',
           color: 'var(--text-primary)',
-          marginBottom: '24px',
+          marginBottom: '16px',
           letterSpacing: '-0.3px'
         }}>
           Ensaios Anteriores
@@ -917,27 +1415,39 @@ const AdminPresenca = () => {
           </div>
         ) : (
           <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '16px'
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border)',
+            borderRadius: '16px',
+            overflow: 'hidden'
           }}>
-            {historico.map((ensaio) => (
+            {historicoExibido.map((ensaio, index) => (
               <div
                 key={ensaio.data}
+                className="historico-row"
                 style={{
-                  background: 'var(--bg-card)',
-                  border: '1px solid var(--border)',
-                  borderRadius: '16px',
-                  padding: '24px 28px',
+                  padding: '14px 20px',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '20px'
+                  gap: '14px',
+                  borderBottom: index < historicoExibido.length - 1 ? '1px solid var(--border)' : 'none',
+                  transition: 'background 0.15s'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(212,175,55,0.04)';
+                  const btns = e.currentTarget.querySelector('.hist-actions');
+                  if (btns) btns.style.opacity = '1';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'transparent';
+                  const btns = e.currentTarget.querySelector('.hist-actions');
+                  if (btns) btns.style.opacity = '0';
                 }}
               >
+                {/* Date badge compacto */}
                 <div style={{
-                  width: '56px',
-                  height: '56px',
-                  borderRadius: '12px',
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '10px',
                   background: 'linear-gradient(145deg, #D4AF37, #F4E4BC)',
                   display: 'flex',
                   flexDirection: 'column',
@@ -946,7 +1456,7 @@ const AdminPresenca = () => {
                   flexShrink: 0
                 }}>
                   <div style={{
-                    fontSize: '20px',
+                    fontSize: '16px',
                     fontWeight: '800',
                     color: '#3D1011',
                     fontFamily: 'Outfit, sans-serif',
@@ -962,12 +1472,12 @@ const AdminPresenca = () => {
                     })()}
                   </div>
                   <div style={{
-                    fontSize: '10px',
+                    fontSize: '9px',
                     fontWeight: '600',
                     color: '#3D1011',
                     fontFamily: 'Outfit, sans-serif',
                     textTransform: 'uppercase',
-                    marginTop: '2px'
+                    marginTop: '1px'
                   }}>
                     {(() => {
                       try {
@@ -983,74 +1493,137 @@ const AdminPresenca = () => {
 
                 <div style={{ flex: 1 }}>
                   <div style={{
-                    fontSize: '17px',
-                    fontWeight: '700',
+                    fontSize: '14px',
+                    fontWeight: '600',
                     color: 'var(--text-primary)',
                     fontFamily: 'Outfit, sans-serif',
-                    marginBottom: '6px'
+                    marginBottom: '3px'
                   }}>
                     {ensaio.data_formatada}
                   </div>
                   <div style={{
                     display: 'flex',
-                    gap: '16px',
-                    fontSize: '14px',
+                    gap: '12px',
+                    fontSize: '12px',
                     color: 'var(--text-muted)',
                     fontFamily: 'Outfit, sans-serif'
                   }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <UsersIcon size={16} />
-                      {ensaio.total_presentes} presente{ensaio.total_presentes !== 1 ? 's' : ''}
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <UsersIcon size={13} />
+                      {ensaio.total_presentes}
                     </span>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <MusicIcon size={16} />
-                      {ensaio.total_partituras} música{ensaio.total_partituras !== 1 ? 's' : ''}
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <MusicIcon size={13} />
+                      {ensaio.total_partituras}
                     </span>
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '8px' }}>
+                <div
+                  className="hist-actions"
+                  style={{
+                    display: 'flex',
+                    gap: '4px',
+                    opacity: 0,
+                    transition: 'opacity 0.15s'
+                  }}
+                >
                   <button
                     onClick={() => handleEditarEnsaio(ensaio)}
                     style={{
-                      padding: '10px 18px',
+                      padding: '6px 12px',
                       background: 'var(--bg)',
-                      color: 'var(--text-primary)',
+                      color: 'var(--text-muted)',
                       border: '1px solid var(--border)',
-                      borderRadius: '10px',
+                      borderRadius: '6px',
                       fontFamily: 'Outfit, sans-serif',
-                      fontSize: '14px',
-                      fontWeight: '600',
+                      fontSize: '12px',
+                      fontWeight: '500',
                       cursor: 'pointer',
-                      transition: 'all 0.2s',
+                      transition: 'all 0.15s',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '8px'
+                      gap: '4px'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = '#D4AF37';
+                      e.currentTarget.style.color = 'var(--text-primary)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = 'var(--border)';
+                      e.currentTarget.style.color = 'var(--text-muted)';
                     }}
                   >
-                    <EditIcon size={16} />
+                    <EditIcon size={13} />
                     Editar
                   </button>
                   <button
                     onClick={() => handleExcluirEnsaio(ensaio)}
                     style={{
-                      padding: '10px',
+                      padding: '6px',
                       background: 'var(--bg)',
-                      color: '#E85A4F',
+                      color: 'var(--text-muted)',
                       border: '1px solid var(--border)',
-                      borderRadius: '10px',
+                      borderRadius: '6px',
                       cursor: 'pointer',
-                      transition: 'all 0.2s',
+                      transition: 'all 0.15s',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center'
                     }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = '#E85A4F';
+                      e.currentTarget.style.color = '#E85A4F';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = 'var(--border)';
+                      e.currentTarget.style.color = 'var(--text-muted)';
+                    }}
                   >
-                    <TrashIcon size={18} />
+                    <TrashIcon size={14} />
                   </button>
                 </div>
               </div>
             ))}
+
+            {/* Ver mais */}
+            {historico.length > 5 && (
+              <button
+                onClick={() => setMostrarTodoHistorico(prev => !prev)}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  background: 'transparent',
+                  border: 'none',
+                  borderTop: '1px solid var(--border)',
+                  color: '#D4AF37',
+                  fontFamily: 'Outfit, sans-serif',
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'background 0.15s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(212,175,55,0.06)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'transparent';
+                }}
+              >
+                <ChevronDownIcon
+                  size={14}
+                  color="#D4AF37"
+                />
+                {mostrarTodoHistorico
+                  ? 'Ver menos'
+                  : `Ver mais ${historico.length - 5} ensaio${historico.length - 5 !== 1 ? 's' : ''}`
+                }
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -1106,7 +1679,7 @@ const AdminPresenca = () => {
               onClick={() => setModalEdicaoAberto(false)}
               style={{
                 padding: '12px 24px',
-                background: COLORS.primary,
+                background: COLORS.gold.primary,
                 color: '#FFFFFF',
                 border: 'none',
                 borderRadius: '8px',
@@ -1121,6 +1694,14 @@ const AdminPresenca = () => {
           </div>
         </div>
       )}
+
+      {/* Keyframes */}
+      <style>{`
+        @keyframes stickyBarIn {
+          from { transform: translateY(8px); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
+        }
+      `}</style>
     </div>
   );
 };

@@ -8,8 +8,8 @@ import { jsonResponse, errorResponse, generateSalt, hashPin } from '../../infras
  */
 export async function getUsuarios(request, env) {
   const result = await env.DB.prepare(`
-    SELECT u.id, u.username, u.nome, u.admin, u.ativo, u.instrumento_id, u.foto_url, u.criado_em, u.ultimo_acesso,
-           i.nome as instrumento_nome
+    SELECT u.id, u.username, u.nome, u.admin, u.ativo, u.instrumento_id, u.foto_url, u.convidado, u.criado_em, u.ultimo_acesso,
+           i.nome as instrumento_nome, i.familia as instrumento_familia
     FROM usuarios u
     LEFT JOIN instrumentos i ON u.instrumento_id = i.id
     ORDER BY u.nome ASC
@@ -25,8 +25,8 @@ export async function getUsuarios(request, env) {
  */
 export async function getUsuario(id, request, env) {
   const user = await env.DB.prepare(`
-    SELECT u.id, u.username, u.nome, u.admin, u.ativo, u.instrumento_id, u.foto_url, u.criado_em, u.ultimo_acesso,
-           i.nome as instrumento_nome
+    SELECT u.id, u.username, u.nome, u.admin, u.ativo, u.instrumento_id, u.foto_url, u.convidado, u.criado_em, u.ultimo_acesso,
+           i.nome as instrumento_nome, i.familia as instrumento_familia
     FROM usuarios u
     LEFT JOIN instrumentos i ON u.instrumento_id = i.id
     WHERE u.id = ?
@@ -45,7 +45,7 @@ export async function getUsuario(id, request, env) {
  * Extraido de: worker/index.js linhas 1391-1440
  */
 export async function createUsuario(request, env) {
-  const { username, nome, pin, instrumento_id, admin: isAdmin } = await request.json();
+  const { username, nome, pin, instrumento_id, admin: isAdmin, convidado } = await request.json();
 
   if (!username || !nome || !pin) {
     return errorResponse('Campos obrigatórios: username, nome, pin', 400, request);
@@ -72,15 +72,16 @@ export async function createUsuario(request, env) {
   const hash = await hashPin(pin, salt);
 
   const result = await env.DB.prepare(`
-    INSERT INTO usuarios (username, nome, pin_hash, pin_salt, instrumento_id, admin)
-    VALUES (?, ?, ?, ?, ?, ?)
+    INSERT INTO usuarios (username, nome, pin_hash, pin_salt, instrumento_id, admin, convidado)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
   `).bind(
     username,
     nome,
     hash,
     salt,
     instrumento_id || null,
-    isAdmin ? 1 : 0
+    isAdmin ? 1 : 0,
+    convidado ? 1 : 0
   ).run();
 
   return jsonResponse({
@@ -108,7 +109,7 @@ export async function updateUsuario(id, request, env, admin) {
     }
   }
 
-  const { nome, pin, instrumento_id, admin: isAdmin, ativo } = await request.json();
+  const { nome, pin, instrumento_id, admin: isAdmin, ativo, convidado } = await request.json();
 
   const updates = [];
   const params = [];
@@ -141,6 +142,11 @@ export async function updateUsuario(id, request, env, admin) {
   if (ativo !== undefined) {
     updates.push('ativo = ?');
     params.push(ativo ? 1 : 0);
+  }
+
+  if (convidado !== undefined) {
+    updates.push('convidado = ?');
+    params.push(convidado ? 1 : 0);
   }
 
   if (updates.length === 0) {
