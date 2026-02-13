@@ -93,7 +93,7 @@ const AdminPartituras = () => {
   // Estado para modal de edição
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editingPartitura, setEditingPartitura] = useState(null);
-  const [editForm, setEditForm] = useState({ titulo: '', compositor: '', categoria_id: '' });
+  const [editForm, setEditForm] = useState({ titulo: '', compositor: '', arranjador: '', categoria_id: '' });
   const [savingEdit, setSavingEdit] = useState(false);
 
   // Estado para repertório
@@ -110,6 +110,7 @@ const AdminPartituras = () => {
     setEditForm({
       titulo: partitura.titulo || '',
       compositor: partitura.compositor || '',
+      arranjador: partitura.arranjador || '',
       categoria_id: partitura.categoria_id || ''
     });
     setEditModalOpen(true);
@@ -118,7 +119,7 @@ const AdminPartituras = () => {
   const closeEditModal = () => {
     setEditModalOpen(false);
     setEditingPartitura(null);
-    setEditForm({ titulo: '', compositor: '', categoria_id: '' });
+    setEditForm({ titulo: '', compositor: '', arranjador: '', categoria_id: '' });
   };
 
   const saveEditModal = async () => {
@@ -130,6 +131,7 @@ const AdminPartituras = () => {
         ...editingPartitura,
         titulo: editForm.titulo || editingPartitura.titulo,
         compositor: editForm.compositor || null,
+        arranjador: editForm.arranjador || null,
         categoria_id: editForm.categoria_id || editingPartitura.categoria_id
       };
       await API.updatePartitura(editingPartitura.id, updateData);
@@ -140,6 +142,7 @@ const AdminPartituras = () => {
           ...p,
           titulo: editForm.titulo || p.titulo,
           compositor: editForm.compositor || null,
+          arranjador: editForm.arranjador || null,
           categoria_id: editForm.categoria_id || p.categoria_id
         } : p
       ));
@@ -1786,6 +1789,47 @@ const AdminPartituras = () => {
                   value={editForm.compositor}
                   onChange={(e) => setEditForm(prev => ({ ...prev, compositor: e.target.value }))}
                   placeholder="Nome do compositor"
+                  style={{
+                    width: '100%',
+                    padding: '14px 16px',
+                    borderRadius: '12px',
+                    border: '1.5px solid var(--border)',
+                    background: 'var(--bg-primary)',
+                    color: 'var(--text-primary)',
+                    fontSize: '15px',
+                    fontFamily: 'Outfit, sans-serif',
+                    outline: 'none',
+                    transition: 'border-color 0.2s, box-shadow 0.2s',
+                    boxSizing: 'border-box'
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.borderColor = '#D4AF37';
+                    e.target.style.boxShadow = '0 0 0 3px rgba(212, 175, 55, 0.15)';
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.borderColor = 'var(--border)';
+                    e.target.style.boxShadow = 'none';
+                  }}
+                />
+              </div>
+
+              {/* Campo Arranjador */}
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{
+                  display: 'block',
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  color: 'var(--text-secondary)',
+                  marginBottom: '8px',
+                  fontFamily: 'Outfit, sans-serif'
+                }}>
+                  Arranjador
+                </label>
+                <input
+                  type="text"
+                  value={editForm.arranjador}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, arranjador: e.target.value }))}
+                  placeholder="Nome do arranjador (opcional)"
                   style={{
                     width: '100%',
                     padding: '14px 16px',
