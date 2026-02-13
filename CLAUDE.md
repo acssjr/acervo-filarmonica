@@ -17,62 +17,62 @@ Sistema de gestão de partituras musicais para a Sociedade Filarmônica 25 de Ma
 
 ### Objetividade Profissional
 
-- **Priorizar precisao tecnica sobre validacao emocional**
-- Fornecer informacoes diretas e objetivas sem superlativos desnecessarios
-- Discordar quando necessario, mesmo que nao seja o que o usuario quer ouvir
-- Correcao respeitosa e orientacao objetiva sao mais valiosas que concordancia falsa
+- **Priorizar precisão técnica sobre validação emocional**
+- Fornecer informações diretas e objetivas sem superlativos desnecessários
+- Discordar quando necessário, mesmo que não seja o que o usuário quer ouvir
+- Correção respeitosa e orientação objetiva são mais valiosas que concordância falsa
 - **NUNCA usar frases como:**
-  - "Voce esta absolutamente certo"
+  - "Você está absolutamente certo"
   - "Excelente ideia!"
   - "Perfeito!"
-- Quando houver incerteza, investigar primeiro em vez de confirmar crencas do usuario
+- Quando houver incerteza, investigar primeiro em vez de confirmar crenças do usuário
 
 ### Completar Tarefas 100%
 
 - **NUNCA parar no meio de uma tarefa**
-- **NUNCA alegar que a tarefa e muito grande**
+- **NUNCA alegar que a tarefa é muito grande**
 - **NUNCA dizer que falta tempo ou contexto**
-- O contexto e ilimitado atraves de summarization automatica
-- Continuar trabalhando ate a tarefa estar COMPLETAMENTE feita ou o usuario parar
-- Se encontrar bloqueios, resolver e continuar - nao desistir
+- O contexto é ilimitado através de summarization automática
+- Continuar trabalhando até a tarefa estar COMPLETAMENTE feita ou o usuário parar
+- Se encontrar bloqueios, resolver e continuar - não desistir
 
 ### Evitar Over-Engineering (YAGNI)
 
 - Fazer **APENAS** o que foi pedido, nada mais
-- **NAO adicionar:**
-  - Features extras "por precaucao"
-  - Refatoracoes de codigo adjacente
-  - Tratamento de erros para cenarios impossiveis
-  - Abstracoes "para o futuro"
-  - Docstrings/comentarios em codigo que nao foi alterado
+- **NÃO adicionar:**
+  - Features extras "por precaução"
+  - Refatorações de código adjacente
+  - Tratamento de erros para cenários impossíveis
+  - Abstrações "para o futuro"
+  - Docstrings/comentários em código que não foi alterado
   - Type annotations extras
   - Feature flags ou shims de compatibilidade
-- **3 linhas de codigo similares sao MELHORES que uma abstracao prematura**
-- Bug fix nao precisa limpar codigo ao redor
-- Feature simples nao precisa configurabilidade extra
-- Se algo nao e usado, deletar completamente (sem `_vars`, sem `// removed`)
+- **3 linhas de código similares são MELHORES que uma abstração prematura**
+- Bug fix não precisa limpar código ao redor
+- Feature simples não precisa configurabilidade extra
+- Se algo não é usado, deletar completamente (sem `_vars`, sem `// removed`)
 
 ### Planejamento sem Cronogramas
 
-- Fornecer passos concretos de implementacao
+- Fornecer passos concretos de implementação
 - **NUNCA dar estimativas de tempo:**
-  - NAO: "isso levara 2-3 semanas"
-  - NAO: "podemos fazer isso depois"
-- Focar no QUE precisa ser feito, nao QUANDO
-- Deixar o usuario decidir agendamento
+  - NÃO: "isso levará 2-3 semanas"
+  - NÃO: "podemos fazer isso depois"
+- Focar no QUE precisa ser feito, não QUANDO
+- Deixar o usuário decidir agendamento
 
-### Gestao de Tarefas (TodoWrite)
+### Gestão de Tarefas (TodoWrite)
 
 - Usar TodoWrite **MUITO frequentemente**
-- Marcar tarefas como concluidas **IMEDIATAMENTE** apos terminar
-- **NAO agrupar** multiplas tarefas antes de marcar como concluidas
+- Marcar tarefas como concluídas **IMEDIATAMENTE** após terminar
+- **NÃO agrupar** múltiplas tarefas antes de marcar como concluídas
 - Quebrar tarefas complexas em passos menores
 - Manter apenas UMA tarefa como `in_progress` por vez
 - Se encontrar erros ou bloqueios, manter `in_progress` e criar nova tarefa para resolver
 
 ### Uso de Tools
 
-- **Paralelizar chamadas independentes** - se nao ha dependencia, chamar em paralelo
+- **Paralelizar chamadas independentes** - se não há dependência, chamar em paralelo
 - Usar Task/Explore para buscas abertas no codebase
 - Preferir tools especializados sobre bash:
   - Read em vez de cat/head/tail
@@ -80,14 +80,14 @@ Sistema de gestão de partituras musicais para a Sociedade Filarmônica 25 de Ma
   - Write em vez de echo/heredoc
   - Glob em vez de find
   - Grep em vez de grep/rg
-- **NUNCA ler arquivo que nao existe** - verificar primeiro
-- **NUNCA propor mudancas em codigo que nao leu**
+- **NUNCA ler arquivo que não existe** - verificar primeiro
+- **NUNCA propor mudanças em código que não leu**
 
-### Perguntas ao Usuario
+### Perguntas ao Usuário
 
-- Usar AskUserQuestion quando precisar de clarificacao
-- Ao apresentar opcoes, NAO incluir estimativas de tempo
-- Focar no que cada opcao envolve, nao quanto tempo leva
+- Usar AskUserQuestion quando precisar de clarificação
+- Ao apresentar opções, NÃO incluir estimativas de tempo
+- Focar no que cada opção envolve, não quanto tempo leva
 
 ---
 
@@ -98,10 +98,10 @@ Sistema de gestão de partituras musicais para a Sociedade Filarmônica 25 de Ma
 - **NUNCA commitar direto na main** - sempre criar branch e abrir PR
 - **NUNCA fazer push direto na main** - branch protection ativo
 - **NUNCA atualizar git config**
-- **NUNCA rodar comandos destrutivos** (push --force, hard reset) sem usuario pedir
-- **NUNCA pular hooks** (--no-verify, --no-gpg-sign) sem usuario pedir
-- **NUNCA force push para main/master** - avisar se usuario pedir
-- **NUNCA commitar sem o usuario pedir explicitamente**
+- **NUNCA rodar comandos destrutivos** (push --force, hard reset) sem usuário pedir
+- **NUNCA pular hooks** (--no-verify, --no-gpg-sign) sem usuário pedir
+- **NUNCA force push para main/master** - avisar se usuário pedir
+- **NUNCA commitar sem o usuário pedir explicitamente**
 
 ### Fluxo Correto
 
@@ -120,9 +120,9 @@ Sistema de gestão de partituras musicais para a Sociedade Filarmônica 25 de Ma
 
 ```bash
 git commit -m "$(cat <<'EOF'
-tipo: descricao curta
+tipo: descrição curta
 
-Detalhes adicionais se necessario.
+Detalhes adicionais se necessário.
 
 Generated with [Claude Code](https://claude.com/claude-code)
 
@@ -135,15 +135,15 @@ EOF
 
 - Usar `gh pr create` com formato padronizado
 - Incluir: Summary, Test plan, checklist
-- Template disponivel em `.github/pull_request_template.md`
+- Template disponível em `.github/pull_request_template.md`
 
 ### Git Amend
 
 - **Evitar git commit --amend**
-- SO usar quando TODAS condicoes forem verdadeiras:
-  1. Usuario pediu explicitamente OU commit teve sucesso mas hook modificou arquivos
+- SÓ usar quando TODAS condições forem verdadeiras:
+  1. Usuário pediu explicitamente OU commit teve sucesso mas hook modificou arquivos
   2. HEAD foi criado por Claude nesta conversa (verificar: `git log -1 --format='%an %ae'`)
-  3. Commit NAO foi pushed (verificar: `git status` mostra "Your branch is ahead")
+  3. Commit NÃO foi pushed (verificar: `git status` mostra "Your branch is ahead")
 - Se commit FALHOU ou foi REJEITADO por hook: **NUNCA amend** - criar NOVO commit
 
 ---
@@ -170,11 +170,11 @@ npm run db:init
 
 Isso cria as tabelas e insere dados de teste:
 - **admin** / PIN: 1234 (administrador)
-- **musico** / PIN: 1234 (usuario comum)
+- **musico** / PIN: 1234 (usuário comum)
 
-### Scripts disponiveis (raiz)
+### Scripts disponíveis (raiz)
 
-| Comando | Descricao |
+| Comando | Descrição |
 |---------|-----------|
 | `npm run api` | Inicia backend local (porta 8787) |
 | `npm run db:init` | Cria tabelas + seed inicial |
@@ -184,31 +184,31 @@ Isso cria as tabelas e insere dados de teste:
 | `npm run test:e2e` | Testes E2E (Playwright) |
 | `npm run lint:worker` | ESLint do backend |
 
-### Scripts disponiveis (frontend)
+### Scripts disponíveis (frontend)
 
-| Comando | Descricao |
+| Comando | Descrição |
 |---------|-----------|
 | `npm run dev` | Frontend apontando para LOCAL (8787) |
-| `npm run dev:prod` | Frontend apontando para PRODUCAO (com warning) |
-| `npm run test` | Testes unitarios (Jest) |
+| `npm run dev:prod` | Frontend apontando para PRODUÇÃO (com warning) |
+| `npm run test` | Testes unitários (Jest) |
 | `npm run lint` | ESLint do frontend |
 
 ---
 
-## Regras Especificas do Projeto
+## Regras Específicas do Projeto
 
 ### Ambiente
 
-1. **NUNCA modificar vite.config.js para apontar diretamente para producao**
+1. **NUNCA modificar vite.config.js para apontar diretamente para produção**
 2. **NUNCA rodar comandos wrangler sem --local em desenvolvimento**
-3. Se precisar testar com producao, usar `npm run dev:prod` (temporario)
+3. Se precisar testar com produção, usar `npm run dev:prod` (temporário)
 4. Lembrar que dados locais ficam em `.wrangler/state/`
 
 ### Playwright
 
-- Sempre que for usar o Playwright para logar no aplicativo, escrever a senha toda de uma vez em vez de pedir permissao para digitar um caractere de cada vez
+- Sempre que for usar o Playwright para logar no aplicativo, escrever a senha toda de uma vez em vez de pedir permissão para digitar um caractere de cada vez
 
-### Qualidade de Codigo
+### Qualidade de Código
 
 - Rodar `npm run lint:worker` e `npm run lint` antes de commits
 - Pre-commit hook roda automaticamente:
@@ -220,7 +220,7 @@ Isso cria as tabelas e insere dados de teste:
 
 ## Arquitetura
 
-### Visao Geral
+### Visão Geral
 
 ```
 Frontend (Vite)     ->  Backend (Wrangler Dev)  ->  D1 Local + R2 Local
@@ -232,13 +232,13 @@ localhost:5173          localhost:8787              .wrangler/state/
 | Ambiente | Frontend | API |
 |----------|----------|-----|
 | Local | http://localhost:5173 | http://localhost:8787 |
-| Producao | https://partituras.app | https://api.partituras.app |
+| Produção | https://acervo.filarmonica25demarco.com | https://acervo-filarmonica-api.acssjr.workers.dev |
 
 ### Arquitetura do Worker (Backend)
 
 - **Estrutura hexagonal:** Infrastructure -> Domain -> Routes
 - `worker/src/infrastructure/` - Auth (JWT, hashing), CORS, rate limiting
-- `worker/src/domain/` - Services de negocio (partituras, usuarios, etc)
+- `worker/src/domain/` - Services de negócio (partituras, usuários, etc)
 - `worker/src/routes/` - Handlers HTTP
 - `worker/src/middleware/` - CORS, auth, admin
 
@@ -246,8 +246,8 @@ localhost:5173          localhost:8787              .wrangler/state/
 
 - **React 18 + Vite + React Router 7**
 - `frontend/src/contexts/` - Auth, Data, UI, Notification
-- `frontend/src/components/` - Componentes reutilizaveis
-- `frontend/src/screens/` - Paginas/telas
+- `frontend/src/components/` - Componentes reutilizáveis
+- `frontend/src/screens/` - Páginas/telas
 - `frontend/src/services/` - API client
 - `frontend/src/hooks/` - Custom hooks
 
@@ -255,36 +255,36 @@ localhost:5173          localhost:8787              .wrangler/state/
 
 ## Entidades do Banco de Dados
 
-| Entidade | Descricao |
+| Entidade | Descrição |
 |----------|-----------|
-| `partituras` | Obras musicais (titulo, compositor, categoria, ano) |
+| `partituras` | Obras musicais (título, compositor, categoria, ano) |
 | `partes` | Partes individuais por instrumento de cada partitura |
-| `usuarios` | Musicos e administradores |
+| `usuarios` | Músicos e administradores |
 | `instrumentos` | 27 instrumentos base com variantes de tonalidade |
 | `categorias` | 13 categorias musicais (Dobrados, Marchas, etc) |
-| `repertorios` | Colecoes de partituras para eventos/concertos |
-| `favoritos` | Partituras favoritas de cada usuario |
+| `repertorios` | Coleções de partituras para eventos/concertos |
+| `favoritos` | Partituras favoritas de cada usuário |
 | `atividades` | Log de atividades (uploads, downloads, logins) |
 
 ---
 
-## Seguranca
+## Segurança
 
-| Feature | Implementacao |
+| Feature | Implementação |
 |---------|---------------|
-| Autenticacao | JWT (HS256) com expiracao 24h/30d |
-| Senhas | PBKDF2 (100k iteracoes) com salt |
+| Autenticação | JWT (HS256) com expiração 24h/30d |
+| Senhas | PBKDF2 (100k iterações) com salt |
 | Rate Limiting | 10 requests/min por IP (login) |
-| CORS | Whitelist de dominios permitidos |
-| Super Admin | Protegido, invisivel, imutavel |
+| CORS | Whitelist de domínios permitidos |
+| Super Admin | Protegido, invisível, imutável |
 
 ---
 
-## Checklist Mental (Usar Antes de Cada Acao)
+## Checklist Mental (Usar Antes de Cada Ação)
 
 1. [ ] Estou fazendo APENAS o que foi pedido?
-2. [ ] Li o codigo antes de propor mudancas?
+2. [ ] Li o código antes de propor mudanças?
 3. [ ] Vou criar branch em vez de commitar na main?
-4. [ ] Marquei tarefas concluidas no TodoWrite?
+4. [ ] Marquei tarefas concluídas no TodoWrite?
 5. [ ] Estou evitando over-engineering?
 6. [ ] Completei a tarefa 100%?

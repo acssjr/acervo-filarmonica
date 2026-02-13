@@ -9,12 +9,12 @@
 <br/>
 
 [![Versão](https://img.shields.io/badge/versão-2.9.1-722F37?style=for-the-badge&labelColor=D4AF37)](https://github.com/acssjr/acervo-filarmonica)
-[![Status](https://img.shields.io/badge/status-em%20produção-success?style=for-the-badge)](https://partituras.app)
+[![Status](https://img.shields.io/badge/status-em%20produção-success?style=for-the-badge)](https://acervo.filarmonica25demarco.com)
 [![CI](https://img.shields.io/github/actions/workflow/status/acssjr/acervo-filarmonica/ci.yml?style=for-the-badge&label=CI&logo=github)](https://github.com/acssjr/acervo-filarmonica/actions)
 
 <br/>
 
-[**Acessar Sistema**](https://partituras.app)
+[**Acessar Sistema**](https://acervo.filarmonica25demarco.com)
 
 <br/>
 
@@ -328,7 +328,7 @@ Push/PR -> Lint -> Jest (216+) -> E2E Mocked (8) -> Build -> Deploy
 
 | Ambiente | Frontend | API |
 |----------|----------|-----|
-| **Produção** | https://partituras.app | https://api.partituras.app |
+| **Produção** | https://acervo.filarmonica25demarco.com | https://acervo-filarmonica-api.acssjr.workers.dev |
 | **Local** | http://localhost:5173 | http://localhost:8787 |
 
 ---
@@ -445,8 +445,8 @@ Isso cria as tabelas e insere usuários de teste para desenvolvimento local.
 - Domain Services separados por responsabilidade
 
 **Novo Domínio**
-- Migração para `partituras.app` e `api.partituras.app` (Anteriormente `partituras25.com`)
-- Configuração de rotas customizadas no Cloudflare
+- Migração para `acervo.filarmonica25demarco.com` (Anteriormente `partituras.app`)
+- Configuração de subdomínio via Cloudflare
 
 **Melhorias de UX**
 - Skeleton loading em todas as telas

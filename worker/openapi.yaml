@@ -9,7 +9,7 @@ info:
 servers:
   - url: http://localhost:8787
     description: Desenvolvimento local
-  - url: https://api.partituras.app
+  - url: https://acervo-filarmonica-api.acssjr.workers.dev
     description: Produção
 
 tags:

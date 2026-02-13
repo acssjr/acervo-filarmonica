@@ -8,7 +8,7 @@ const API_TARGET = process.env.VITE_API_TARGET || 'prod'
 
 const apiTargets = {
   local: 'http://localhost:8787',
-  prod: 'https://api.partituras.app'
+  prod: 'https://acervo-filarmonica-api.acssjr.workers.dev'
 }
 
 if (API_TARGET === 'prod') {

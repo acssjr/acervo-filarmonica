@@ -1,7 +1,7 @@
 // worker/src/infrastructure/security/cors.js
 import { ALLOWED_ORIGINS, PAGES_SUBDOMAIN_PATTERN } from '../../config/index.js';
 
-// Verifica se origem e permitida
+// Verifica se origem é permitida
 export function isOriginAllowed(origin) {
   if (!origin) return false;
   if (ALLOWED_ORIGINS.includes(origin)) return true;

@@ -6,7 +6,7 @@ import { http, HttpResponse } from 'msw';
 
 // API_BASE pode ser vazio (localhost) ou a URL de producao
 // MSW precisa interceptar ambos
-const API_BASE_PROD = 'https://api.partituras.app';
+const API_BASE_PROD = 'https://acervo-filarmonica-api.acssjr.workers.dev';
 
 // Helper para criar handler para ambas URLs (relativa e absoluta)
 const createHandler = (method, path, resolver) => {
