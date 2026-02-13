@@ -49,6 +49,7 @@ const STATEMENTS = [
     ativo INTEGER DEFAULT 1,
     instrumento_id TEXT,
     foto_url TEXT,
+    convidado INTEGER DEFAULT 0,
     criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
     ultimo_acesso DATETIME
   )`,
@@ -104,6 +105,27 @@ const STATEMENTS = [
     repertorio_id INTEGER NOT NULL,
     partitura_id INTEGER NOT NULL,
     ordem INTEGER DEFAULT 0
+  )`,
+
+  // Presenças (sincronizado com migration 005)
+  `CREATE TABLE IF NOT EXISTS presencas (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    usuario_id INTEGER NOT NULL,
+    data_ensaio DATE NOT NULL,
+    criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+    criado_por INTEGER,
+    UNIQUE(usuario_id, data_ensaio)
+  )`,
+
+  // Ensaios Partituras (sincronizado com migration 005)
+  `CREATE TABLE IF NOT EXISTS ensaios_partituras (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    data_ensaio DATE NOT NULL,
+    partitura_id INTEGER NOT NULL,
+    ordem INTEGER DEFAULT 0,
+    criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+    criado_por INTEGER,
+    UNIQUE(data_ensaio, partitura_id)
   )`,
 
   // Configurações globais (modo recesso, etc)
