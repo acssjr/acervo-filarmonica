@@ -285,8 +285,18 @@ const SheetDetailModal = () => {
                 fontFamily: 'Outfit, sans-serif',
                 fontSize: '13px',
                 color: 'var(--text-muted)',
-                marginBottom: '6px'
+                marginBottom: selectedSheet.arranger ? '2px' : '6px'
               }}>{selectedSheet.composer}</p>
+              {selectedSheet.arranger && (
+                <p style={{
+                  fontFamily: 'Outfit, sans-serif',
+                  fontSize: '12px',
+                  color: 'var(--text-muted)',
+                  marginBottom: '6px'
+                }}>
+                  Arr: {selectedSheet.arranger}
+                </p>
+              )}
               <span style={{
                 display: 'inline-block',
                 padding: '3px 8px',

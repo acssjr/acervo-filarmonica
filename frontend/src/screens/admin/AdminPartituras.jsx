@@ -1153,7 +1153,7 @@ const AdminPartituras = () => {
                               )}
                             </div>
                             <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
-                              {p.compositor || 'Sem compositor'} • {cat.nome || 'Sem categoria'} {p.ano && `• ${p.ano}`}
+                              {p.compositor || 'Sem compositor'}{p.arranjador && ` · Arr: ${p.arranjador}`} • {cat.nome || 'Sem categoria'} {p.ano && `• ${p.ano}`}
                             </div>
                             <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                               <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>

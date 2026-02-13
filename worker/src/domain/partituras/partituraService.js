@@ -28,8 +28,8 @@ export async function getPartituras(request, env) {
   }
 
   if (busca) {
-    query += ' AND (p.titulo LIKE ? OR p.compositor LIKE ?)';
-    params.push(`%${busca}%`, `%${busca}%`);
+    query += ' AND (p.titulo LIKE ? OR p.compositor LIKE ? OR p.arranjador LIKE ?)';
+    params.push(`%${busca}%`, `%${busca}%`, `%${busca}%`);
   }
 
   if (destaque === '1') {
