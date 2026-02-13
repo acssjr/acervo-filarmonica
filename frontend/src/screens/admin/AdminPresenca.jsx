@@ -1,12 +1,13 @@
 // ===== ADMIN PRESENÇA =====
 // Gerenciamento de presenças em ensaios + partituras tocadas
 
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useUI } from '@contexts/UIContext';
 import { API } from '@services/api';
 import { COLORS } from '@constants/colors';
 import { UserListSkeleton } from '@components/common/Skeleton';
 import CustomCheckbox from '@components/common/CustomCheckbox';
+import EditarEnsaioModal from './modals/EditarEnsaioModal';
 
 // ===== SVG ICONS MODERNOS =====
 const CalendarIcon = ({ size = 20, color = 'currentColor' }) => (
@@ -506,6 +507,11 @@ const AdminPresenca = () => {
   const [ensaioEditando, setEnsaioEditando] = useState(null);
   const [modalEdicaoAberto, setModalEdicaoAberto] = useState(false);
 
+  // Estado para expansão inline de ensaios anteriores
+  const [ensaioExpandido, setEnsaioExpandido] = useState(null);
+  const [detalheEnsaio, setDetalheEnsaio] = useState(null);
+  const [carregandoDetalhe, setCarregandoDetalhe] = useState(false);
+
   // Carregar dados
   const loadData = async () => {
     setLoading(true);
@@ -666,17 +672,34 @@ const AdminPresenca = () => {
 
   // Excluir ensaio
   const handleExcluirEnsaio = async (ensaio) => {
-    if (!confirm(`Excluir ensaio de ${ensaio.data_formatada}?`)) {
+    if (!confirm(`Excluir ensaio de ${formatDatePt(ensaio.data_ensaio)}? Todas as presenças e partituras serão removidas.`)) {
       return;
     }
-
     try {
-      // TODO: Criar endpoint DELETE /api/ensaios/:data para excluir tudo
-      // Por enquanto, vamos mostrar mensagem
-      showToast('Funcionalidade de exclusão será implementada no backend', 'warning');
+      await API.excluirEnsaio(ensaio.data_ensaio);
+      showToast('Ensaio excluído com sucesso', 'success');
+      loadData();
     } catch (error) {
-      console.error('Erro ao excluir ensaio:', error);
-      showToast(error.message || 'Erro ao excluir ensaio', 'error');
+      showToast('Erro ao excluir ensaio', 'error');
+    }
+  };
+
+  // Expandir/colapsar ensaio anterior inline
+  const handleExpandirEnsaio = async (ensaio) => {
+    if (ensaioExpandido === ensaio.data_ensaio) {
+      setEnsaioExpandido(null);
+      setDetalheEnsaio(null);
+      return;
+    }
+    setEnsaioExpandido(ensaio.data_ensaio);
+    setCarregandoDetalhe(true);
+    try {
+      const data = await API.getDetalheEnsaio(ensaio.data_ensaio);
+      setDetalheEnsaio(data);
+    } catch (error) {
+      showToast('Erro ao carregar detalhes', 'error');
+    } finally {
+      setCarregandoDetalhe(false);
     }
   };
 
@@ -1421,169 +1444,248 @@ const AdminPresenca = () => {
             overflow: 'hidden'
           }}>
             {historicoExibido.map((ensaio, index) => (
-              <div
-                key={ensaio.data}
-                className="historico-row"
-                style={{
-                  padding: '14px 20px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '14px',
-                  borderBottom: index < historicoExibido.length - 1 ? '1px solid var(--border)' : 'none',
-                  transition: 'background 0.15s'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'rgba(212,175,55,0.04)';
-                  const btns = e.currentTarget.querySelector('.hist-actions');
-                  if (btns) btns.style.opacity = '1';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'transparent';
-                  const btns = e.currentTarget.querySelector('.hist-actions');
-                  if (btns) btns.style.opacity = '0';
-                }}
-              >
-                {/* Date badge compacto */}
-                <div style={{
-                  width: '40px',
-                  height: '40px',
-                  borderRadius: '10px',
-                  background: 'linear-gradient(145deg, #D4AF37, #F4E4BC)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0
-                }}>
-                  <div style={{
-                    fontSize: '16px',
-                    fontWeight: '800',
-                    color: '#3D1011',
-                    fontFamily: 'Outfit, sans-serif',
-                    lineHeight: 1
-                  }}>
-                    {(() => {
-                      try {
-                        const [, , dia] = ensaio.data.split('-');
-                        return dia || '?';
-                      } catch {
-                        return '?';
-                      }
-                    })()}
-                  </div>
-                  <div style={{
-                    fontSize: '9px',
-                    fontWeight: '600',
-                    color: '#3D1011',
-                    fontFamily: 'Outfit, sans-serif',
-                    textTransform: 'uppercase',
-                    marginTop: '1px'
-                  }}>
-                    {(() => {
-                      try {
-                        const [, mes] = ensaio.data.split('-');
-                        const meses = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
-                        return meses[parseInt(mes) - 1] || '?';
-                      } catch {
-                        return '?';
-                      }
-                    })()}
-                  </div>
-                </div>
-
-                <div style={{ flex: 1 }}>
-                  <div style={{
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: 'var(--text-primary)',
-                    fontFamily: 'Outfit, sans-serif',
-                    marginBottom: '3px'
-                  }}>
-                    {ensaio.data_formatada}
-                  </div>
-                  <div style={{
-                    display: 'flex',
-                    gap: '12px',
-                    fontSize: '12px',
-                    color: 'var(--text-muted)',
-                    fontFamily: 'Outfit, sans-serif'
-                  }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <UsersIcon size={13} />
-                      {ensaio.total_presentes}
-                    </span>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <MusicIcon size={13} />
-                      {ensaio.total_partituras}
-                    </span>
-                  </div>
-                </div>
-
+              <React.Fragment key={ensaio.data_ensaio}>
                 <div
-                  className="hist-actions"
+                  className="historico-row"
+                  onClick={() => handleExpandirEnsaio(ensaio)}
                   style={{
+                    padding: '14px 20px',
                     display: 'flex',
-                    gap: '4px',
-                    opacity: 0,
-                    transition: 'opacity 0.15s'
+                    alignItems: 'center',
+                    gap: '14px',
+                    borderBottom: (ensaioExpandido === ensaio.data_ensaio || index < historicoExibido.length - 1) ? '1px solid var(--border)' : 'none',
+                    transition: 'background 0.15s',
+                    cursor: 'pointer'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(212,175,55,0.04)';
+                    const btns = e.currentTarget.querySelector('.hist-actions');
+                    if (btns) btns.style.opacity = '1';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'transparent';
+                    const btns = e.currentTarget.querySelector('.hist-actions');
+                    if (btns) btns.style.opacity = '0';
                   }}
                 >
-                  <button
-                    onClick={() => handleEditarEnsaio(ensaio)}
-                    style={{
-                      padding: '6px 12px',
-                      background: 'var(--bg)',
-                      color: 'var(--text-muted)',
-                      border: '1px solid var(--border)',
-                      borderRadius: '6px',
+                  {/* Date badge compacto */}
+                  <div style={{
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: '10px',
+                    background: 'linear-gradient(145deg, #D4AF37, #F4E4BC)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0
+                  }}>
+                    <div style={{
+                      fontSize: '16px',
+                      fontWeight: '800',
+                      color: '#3D1011',
                       fontFamily: 'Outfit, sans-serif',
+                      lineHeight: 1
+                    }}>
+                      {(() => {
+                        try {
+                          const [, , dia] = ensaio.data_ensaio.split('-');
+                          return dia || '?';
+                        } catch {
+                          return '?';
+                        }
+                      })()}
+                    </div>
+                    <div style={{
+                      fontSize: '9px',
+                      fontWeight: '600',
+                      color: '#3D1011',
+                      fontFamily: 'Outfit, sans-serif',
+                      textTransform: 'uppercase',
+                      marginTop: '1px'
+                    }}>
+                      {(() => {
+                        try {
+                          const [, mes] = ensaio.data_ensaio.split('-');
+                          const meses = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+                          return meses[parseInt(mes) - 1] || '?';
+                        } catch {
+                          return '?';
+                        }
+                      })()}
+                    </div>
+                  </div>
+
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: 'var(--text-primary)',
+                      fontFamily: 'Outfit, sans-serif',
+                      marginBottom: '4px'
+                    }}>
+                      {formatDatePt(ensaio.data_ensaio)}
+                    </div>
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0',
                       fontSize: '12px',
-                      fontWeight: '500',
-                      cursor: 'pointer',
-                      transition: 'all 0.15s',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = '#D4AF37';
-                      e.currentTarget.style.color = 'var(--text-primary)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = 'var(--border)';
-                      e.currentTarget.style.color = 'var(--text-muted)';
-                    }}
-                  >
-                    <EditIcon size={13} />
-                    Editar
-                  </button>
-                  <button
-                    onClick={() => handleExcluirEnsaio(ensaio)}
-                    style={{
-                      padding: '6px',
-                      background: 'var(--bg)',
                       color: 'var(--text-muted)',
-                      border: '1px solid var(--border)',
-                      borderRadius: '6px',
-                      cursor: 'pointer',
-                      transition: 'all 0.15s',
+                      fontFamily: 'Outfit, sans-serif'
+                    }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <UsersIcon size={13} color="var(--text-muted)" /> {ensaio.total_presencas} músicos
+                      </span>
+                      <span style={{ margin: '0 8px', color: 'var(--border)', fontSize: '11px' }}>|</span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <MusicIcon size={13} color="var(--text-muted)" /> {ensaio.total_partituras} partituras
+                      </span>
+                    </div>
+                  </div>
+
+                  <div
+                    className="hist-actions"
+                    style={{
                       display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = '#E85A4F';
-                      e.currentTarget.style.color = '#E85A4F';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = 'var(--border)';
-                      e.currentTarget.style.color = 'var(--text-muted)';
+                      gap: '4px',
+                      opacity: 0,
+                      transition: 'opacity 0.15s'
                     }}
                   >
-                    <TrashIcon size={14} />
-                  </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleEditarEnsaio(ensaio); }}
+                      style={{
+                        padding: '6px 12px',
+                        background: 'var(--bg)',
+                        color: 'var(--text-muted)',
+                        border: '1px solid var(--border)',
+                        borderRadius: '6px',
+                        fontFamily: 'Outfit, sans-serif',
+                        fontSize: '12px',
+                        fontWeight: '500',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.borderColor = '#D4AF37';
+                        e.currentTarget.style.color = 'var(--text-primary)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--border)';
+                        e.currentTarget.style.color = 'var(--text-muted)';
+                      }}
+                    >
+                      <EditIcon size={13} />
+                      Editar
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleExcluirEnsaio(ensaio); }}
+                      style={{
+                        padding: '6px',
+                        background: 'var(--bg)',
+                        color: 'var(--text-muted)',
+                        border: '1px solid var(--border)',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.borderColor = '#E85A4F';
+                        e.currentTarget.style.color = '#E85A4F';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--border)';
+                        e.currentTarget.style.color = 'var(--text-muted)';
+                      }}
+                    >
+                      <TrashIcon size={14} />
+                    </button>
+                  </div>
                 </div>
-              </div>
+                {ensaioExpandido === ensaio.data_ensaio && (
+                  <div style={{
+                    padding: '16px 20px',
+                    borderBottom: index < historicoExibido.length - 1 ? '1px solid var(--border)' : 'none',
+                    background: 'rgba(212,175,55,0.03)'
+                  }}>
+                    {carregandoDetalhe ? (
+                      <div style={{ textAlign: 'center', padding: '12px', color: 'var(--text-muted)', fontFamily: 'Outfit, sans-serif', fontSize: '13px' }}>
+                        Carregando...
+                      </div>
+                    ) : detalheEnsaio ? (
+                      <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
+                        {/* Presentes column */}
+                        <div style={{ flex: 1, minWidth: '200px' }}>
+                          <div style={{
+                            fontSize: '11px', fontWeight: '600', color: 'var(--text-muted)',
+                            fontFamily: 'Outfit, sans-serif', textTransform: 'uppercase',
+                            letterSpacing: '0.5px', marginBottom: '8px'
+                          }}>
+                            Presentes ({detalheEnsaio.total_presentes})
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            {(detalheEnsaio.presentes || []).map(p => (
+                              <div key={p.usuario_id} style={{
+                                fontSize: '13px', fontFamily: 'Outfit, sans-serif',
+                                color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px'
+                              }}>
+                                <span>{p.nome}</span>
+                                {p.instrumento_nome && (
+                                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                                    {p.instrumento_nome}
+                                  </span>
+                                )}
+                              </div>
+                            ))}
+                            {(detalheEnsaio.presentes || []).length === 0 && (
+                              <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontFamily: 'Outfit, sans-serif' }}>
+                                Nenhum presente
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        {/* Partituras column */}
+                        <div style={{ flex: 1, minWidth: '200px' }}>
+                          <div style={{
+                            fontSize: '11px', fontWeight: '600', color: 'var(--text-muted)',
+                            fontFamily: 'Outfit, sans-serif', textTransform: 'uppercase',
+                            letterSpacing: '0.5px', marginBottom: '8px'
+                          }}>
+                            Partituras ({detalheEnsaio.total_partituras})
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            {(detalheEnsaio.partituras || []).map(p => (
+                              <div key={p.id} style={{
+                                fontSize: '13px', fontFamily: 'Outfit, sans-serif',
+                                color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px'
+                              }}>
+                                <span>{p.titulo}</span>
+                                {p.compositor && (
+                                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                                    {p.compositor}
+                                  </span>
+                                )}
+                              </div>
+                            ))}
+                            {(detalheEnsaio.partituras || []).length === 0 && (
+                              <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontFamily: 'Outfit, sans-serif' }}>
+                                Nenhuma partitura
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                )}
+              </React.Fragment>
             ))}
 
             {/* Ver mais */}
@@ -1628,71 +1730,15 @@ const AdminPresenca = () => {
         )}
       </div>
 
-      {/* Modal de Edição (placeholder) */}
+      {/* Modal de Edição */}
       {modalEdicaoAberto && ensaioEditando && (
-        <div
-          onClick={() => setModalEdicaoAberto(false)}
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'rgba(0, 0, 0, 0.6)',
-            backdropFilter: 'blur(4px)',
-            zIndex: 9999,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '20px'
-          }}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              background: 'var(--bg-card)',
-              border: '1px solid var(--border)',
-              borderRadius: '16px',
-              padding: '32px',
-              maxWidth: '600px',
-              width: '100%'
-            }}
-          >
-            <h3 style={{
-              fontFamily: 'Outfit, sans-serif',
-              fontSize: '20px',
-              fontWeight: '700',
-              color: 'var(--text-primary)',
-              marginBottom: '16px'
-            }}>
-              Editar Ensaio - {ensaioEditando.data_formatada}
-            </h3>
-            <p style={{
-              fontFamily: 'Outfit, sans-serif',
-              fontSize: '14px',
-              color: 'var(--text-muted)',
-              marginBottom: '24px'
-            }}>
-              Funcionalidade de edição será implementada em breve.
-            </p>
-            <button
-              onClick={() => setModalEdicaoAberto(false)}
-              style={{
-                padding: '12px 24px',
-                background: COLORS.gold.primary,
-                color: '#FFFFFF',
-                border: 'none',
-                borderRadius: '8px',
-                fontFamily: 'Outfit, sans-serif',
-                fontSize: '14px',
-                fontWeight: '600',
-                cursor: 'pointer'
-              }}
-            >
-              Fechar
-            </button>
-          </div>
-        </div>
+        <EditarEnsaioModal
+          ensaio={ensaioEditando}
+          usuarios={usuarios}
+          onClose={() => setModalEdicaoAberto(false)}
+          onUpdate={() => loadData()}
+          addNotification={showToast}
+        />
       )}
 
       {/* Keyframes */}

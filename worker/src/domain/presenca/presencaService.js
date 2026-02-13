@@ -216,3 +216,72 @@ export async function getTodasPresencas(env) {
     ensaios: ensaios.results || []
   };
 }
+
+/**
+ * Retorna detalhes de um ensaio específico (presentes + partituras)
+ * @param {Object} env - Cloudflare Worker environment
+ * @param {string} dataEnsaio - Data do ensaio (YYYY-MM-DD)
+ * @returns {Promise<Object>} - Detalhes do ensaio
+ */
+export async function getDetalheEnsaio(env, dataEnsaio) {
+  const presentes = await env.DB.prepare(`
+    SELECT p.id, p.usuario_id, u.nome, u.username, u.instrumento_id,
+           i.nome as instrumento_nome, i.familia as instrumento_familia
+    FROM presencas p
+    JOIN usuarios u ON p.usuario_id = u.id
+    LEFT JOIN instrumentos i ON u.instrumento_id = i.id
+    WHERE p.data_ensaio = ?
+    ORDER BY u.nome
+  `).bind(dataEnsaio).all();
+
+  const partituras = await env.DB.prepare(`
+    SELECT ep.id, ep.partitura_id, p.titulo, p.compositor, c.nome as categoria_nome
+    FROM ensaios_partituras ep
+    JOIN partituras p ON ep.partitura_id = p.id
+    LEFT JOIN categorias c ON p.categoria_id = c.id
+    WHERE ep.data_ensaio = ?
+    ORDER BY p.titulo
+  `).bind(dataEnsaio).all();
+
+  return {
+    data_ensaio: dataEnsaio,
+    presentes: presentes.results,
+    partituras: partituras.results,
+    total_presentes: presentes.results.length,
+    total_partituras: partituras.results.length
+  };
+}
+
+/**
+ * Remove a presença de um usuário em um ensaio
+ * @param {Object} env - Cloudflare Worker environment
+ * @param {string} dataEnsaio - Data do ensaio (YYYY-MM-DD)
+ * @param {number} usuarioId - ID do usuário
+ * @returns {Promise<Object>} - Resultado da operação
+ */
+export async function removerPresenca(env, dataEnsaio, usuarioId) {
+  const result = await env.DB.prepare(
+    'DELETE FROM presencas WHERE data_ensaio = ? AND usuario_id = ?'
+  ).bind(dataEnsaio, usuarioId).run();
+
+  return { sucesso: result.meta.changes > 0 };
+}
+
+/**
+ * Exclui um ensaio completo (presenças + partituras)
+ * @param {Object} env - Cloudflare Worker environment
+ * @param {string} dataEnsaio - Data do ensaio (YYYY-MM-DD)
+ * @returns {Promise<Object>} - Resultado da operação
+ */
+export async function excluirEnsaio(env, dataEnsaio) {
+  const results = await env.DB.batch([
+    env.DB.prepare('DELETE FROM presencas WHERE data_ensaio = ?').bind(dataEnsaio),
+    env.DB.prepare('DELETE FROM ensaios_partituras WHERE data_ensaio = ?').bind(dataEnsaio)
+  ]);
+
+  return {
+    sucesso: true,
+    presencas_removidas: results[0].meta.changes,
+    partituras_removidas: results[1].meta.changes
+  };
+}
