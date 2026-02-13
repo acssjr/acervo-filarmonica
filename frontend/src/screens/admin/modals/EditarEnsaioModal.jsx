@@ -117,7 +117,14 @@ const EditarEnsaioModal = ({ ensaio, usuarios, onClose, onUpdate, addNotificatio
     if (!partitura) return;
     setDetalhe(prev => ({
       ...prev,
-      partituras: [...prev.partituras, { partitura_id: partituraId, titulo: partitura.titulo, compositor: partitura.compositor, categoria_nome: partitura.categoria_nome }],
+      partituras: [...prev.partituras, {
+        id: `optimistic-${Date.now()}`,
+        partitura_id: partituraId,
+        titulo: partitura.titulo,
+        compositor: partitura.compositor,
+        categoria_nome: partitura.categoria_nome,
+        _optimistic: true
+      }],
       total_partituras: prev.total_partituras + 1
     }));
     setPartiturasDisponiveis(prev => prev.filter(p => p.id !== partituraId));

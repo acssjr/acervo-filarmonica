@@ -1,11 +1,7 @@
-import { useRef } from 'react';
 
 const CustomCheckbox = ({ checked, onChange, accentColor = '#D4AF37', size = 22 }) => {
-  const inputRef = useRef(null);
-
   return (
-    <div
-      onClick={() => inputRef.current?.click()}
+    <label
       style={{
         width: size,
         height: size,
@@ -18,15 +14,23 @@ const CustomCheckbox = ({ checked, onChange, accentColor = '#D4AF37', size = 22 
         justifyContent: 'center',
         cursor: 'pointer',
         transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-        flexShrink: 0
+        flexShrink: 0,
+        position: 'relative'
       }}
     >
       <input
-        ref={inputRef}
         type="checkbox"
         checked={checked}
         onChange={onChange}
-        style={{ display: 'none' }}
+        style={{
+          position: 'absolute',
+          width: '1px',
+          height: '1px',
+          overflow: 'hidden',
+          clip: 'rect(0, 0, 0, 0)',
+          whiteSpace: 'nowrap',
+          border: 0
+        }}
       />
       {checked && (
         <svg
@@ -35,7 +39,8 @@ const CustomCheckbox = ({ checked, onChange, accentColor = '#D4AF37', size = 22 
           viewBox="0 0 16 16"
           fill="none"
           style={{
-            animation: 'checkIn 0.15s ease-out'
+            animation: 'checkIn 0.15s ease-out',
+            pointerEvents: 'none'
           }}
         >
           <path
@@ -53,7 +58,7 @@ const CustomCheckbox = ({ checked, onChange, accentColor = '#D4AF37', size = 22 
           to { transform: scale(1); opacity: 1; }
         }
       `}</style>
-    </div>
+    </label>
   );
 };
 

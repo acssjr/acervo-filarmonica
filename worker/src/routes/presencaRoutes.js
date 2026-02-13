@@ -73,7 +73,7 @@ export function setupPresencaRoutes(router) {
       return jsonResponse(resultado, 200, request);
     } catch (error) {
       console.error('Erro ao buscar detalhe do ensaio:', error);
-      return errorResponse(error.message, 500, request);
+      return errorResponse('Erro ao buscar detalhe do ensaio', 500, request);
     }
   }, [authMiddleware, adminMiddleware]);
 
@@ -87,7 +87,7 @@ export function setupPresencaRoutes(router) {
       return jsonResponse(resultado, 200, request);
     } catch (error) {
       console.error('Erro ao remover presença:', error);
-      return errorResponse(error.message, 500, request);
+      return errorResponse('Erro ao remover presença', 500, request);
     }
   }, [authMiddleware, adminMiddleware]);
 
@@ -98,7 +98,7 @@ export function setupPresencaRoutes(router) {
       return jsonResponse(resultado, 200, request);
     } catch (error) {
       console.error('Erro ao excluir ensaio:', error);
-      return errorResponse(error.message, 500, request);
+      return errorResponse('Erro ao excluir ensaio', 500, request);
     }
   }, [authMiddleware, adminMiddleware]);
 }

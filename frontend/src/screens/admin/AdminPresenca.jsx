@@ -113,6 +113,14 @@ const ChevronRight = ({ size = 20, color = 'currentColor' }) => (
   </svg>
 );
 
+const getLocalDateString = () => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 const formatDatePt = (dateStr) => {
   if (!dateStr) return '';
   const [year, month, day] = dateStr.split('-').map(Number);
@@ -131,7 +139,7 @@ const DatePickerCalendar = ({ value, onChange, max }) => {
   const [viewMonth, setViewMonth] = useState(selectedParts ? selectedParts[1] - 1 : new Date().getMonth());
 
   const maxDate = max ? new Date(max + 'T00:00:00') : null;
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = getLocalDateString();
 
   // Close on outside click
   useEffect(() => {
@@ -462,29 +470,30 @@ const AdminPresenca = () => {
   const { showToast } = useUI();
   const [usuarios, setUsuarios] = useState([]);
 
-  // Função para encontrar o último ensaio (última segunda ou quarta que já passou)
   const getUltimoEnsaio = () => {
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
 
     const dataAtual = new Date(hoje);
 
-    // Procurar a última segunda ou quarta que já passou
     while (true) {
       const diaSemana = dataAtual.getDay();
 
-      // Se for segunda (1) ou quarta (3)
       if (diaSemana === 1 || diaSemana === 3) {
-        return dataAtual.toISOString().split('T')[0];
+        const year = dataAtual.getFullYear();
+        const month = String(dataAtual.getMonth() + 1).padStart(2, '0');
+        const day = String(dataAtual.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
       }
 
-      // Voltar 1 dia
       dataAtual.setDate(dataAtual.getDate() - 1);
 
-      // Segurança: não voltar mais de 7 dias
       const diff = Math.abs(hoje - dataAtual) / (1000 * 60 * 60 * 24);
       if (diff > 7) {
-        return hoje.toISOString().split('T')[0];
+        const year = hoje.getFullYear();
+        const month = String(hoje.getMonth() + 1).padStart(2, '0');
+        const day = String(hoje.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
       }
     }
   };
@@ -619,30 +628,25 @@ const AdminPresenca = () => {
     }
   };
 
-  // Adicionar partitura ao ensaio (optimistic)
   const handleAdicionarPartitura = async (partituraId) => {
     const partitura = partituras.find(p => p.id === partituraId);
     if (!partitura) return;
 
-    // Optimistic: adiciona imediatamente ao state
     const novaOrdem = partiturasEnsaio.length + 1;
     const optimistic = {
       partitura_id: partituraId,
       titulo: partitura.titulo,
       compositor: partitura.compositor,
-      ordem: novaOrdem,
-      _optimistic: true
+      ordem: novaOrdem
     };
     setPartiturasEnsaio(prev => [...prev, optimistic]);
     setBuscaPartitura('');
 
     try {
       await API.addPartituraEnsaio(dataEnsaio, partituraId);
-      // Sincroniza com o servidor para obter dados completos
-      loadPartiturasEnsaio(dataEnsaio);
+      await loadPartiturasEnsaio(dataEnsaio);
     } catch (error) {
-      // Rollback: remove a partitura adicionada
-      setPartiturasEnsaio(prev => prev.filter(p => !(p.partitura_id === partituraId && p._optimistic)));
+      await loadPartiturasEnsaio(dataEnsaio);
       showToast(error.message || 'Erro ao adicionar partitura', 'error');
     }
   };
@@ -703,10 +707,8 @@ const AdminPresenca = () => {
     }
   };
 
-  // Data máxima = hoje
   const dataMaxima = useMemo(() => {
-    const hoje = new Date();
-    return hoje.toISOString().split('T')[0];
+    return getLocalDateString();
   }, []);
 
   // Filtrar partituras pela busca
