@@ -71,7 +71,7 @@ Após o deploy, você terá:
 | Serviço | URL |
 |---------|-----|
 | API | `https://acervo-filarmonica-api.SEU_USUARIO.workers.dev` |
-| Frontend | `https://acervo-filarmonica.pages.dev` |
+| Frontend | `https://acervo.filarmonica25demarco.com` |
 
 ---
 

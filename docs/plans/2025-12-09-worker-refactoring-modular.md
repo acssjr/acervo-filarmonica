@@ -1,15 +1,15 @@
-# Refatoracao do Worker para Monolito Modular
+# Refatoração do Worker para Monolito Modular
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** Refatorar o arquivo `worker/index.js` (2014 linhas) em uma arquitetura Monolito Modular seguindo principios de Arquitetura Hexagonal, conforme melhores praticas de 2025.
+**Goal:** Refatorar o arquivo `worker/index.js` (2014 linhas) em uma arquitetura Monolito Modular seguindo princípios de Arquitetura Hexagonal, conforme melhores práticas de 2025.
 
-**Architecture:** Monolito Modular com separacao em camadas: Config, Infrastructure (CORS, JWT, Hashing, Response), Domain (Auth, Partituras, Usuarios, Categorias, Favoritos, Atividades), e Adapters (HTTP Router, Middleware). Seguindo o principio de Portas e Adaptadores onde o Core de negocio nao depende de infraestrutura.
+**Architecture:** Monolito Modular com separação em camadas: Config, Infrastructure (CORS, JWT, Hashing, Response), Domain (Auth, Partituras, Usuários, Categorias, Favoritos, Atividades), e Adapters (HTTP Router, Middleware). Seguindo o princípio de Portas e Adaptadores onde o Core de negócio não depende de infraestrutura.
 
 **Tech Stack:** Cloudflare Workers, D1 Database, R2 Storage, Web Crypto API (JWT HS256, PBKDF2)
 
-**Referencias:**
-- Guia Tecnico Arquitetura Web Moderna 2025 (Capitulo 1: Monolito Modular, Arquitetura Hexagonal)
+**Referências:**
+- Guia Técnico Arquitetura Web Moderna 2025 (Capítulo 1: Monolito Modular, Arquitetura Hexagonal)
 - CLAUDE.md do projeto (ambiente local com wrangler dev)
 
 ---
@@ -18,7 +18,7 @@
 
 ```
 worker/
-├── index.js                    # Entry point (minimo, apenas importa e exporta)
+├── index.js                    # Entry point (mínimo, apenas importa e exporta)
 ├── src/
 │   ├── config/
 │   │   ├── constants.js        # ALLOWED_ORIGINS, JWT config, PBKDF2 config
@@ -99,7 +99,7 @@ worker/
 │       ├── rateLimitMiddleware.js
 │       └── index.js
 │
-└── package.json (se necessario para imports)
+└── package.json (se necessário para imports)
 ```
 
 ---
@@ -167,7 +167,7 @@ git commit -m "refactor(worker): criar modulo config com constantes"
 
 ---
 
-### Task 1.2: Criar modulo de seguranca (CORS e Crypto helpers)
+### Task 1.2: Criar módulo de segurança (CORS e Crypto helpers)
 
 **Files:**
 - Create: `worker/src/infrastructure/security/cors.js`
@@ -269,7 +269,7 @@ git commit -m "refactor(worker): criar modulo security (CORS, crypto helpers)"
 
 ---
 
-### Task 1.3: Criar modulo de autenticacao (JWT e Hashing)
+### Task 1.3: Criar módulo de autenticação (JWT e Hashing)
 
 **Files:**
 - Create: `worker/src/infrastructure/auth/jwt.js`
@@ -416,7 +416,7 @@ git commit -m "refactor(worker): criar modulo auth (JWT, hashing PBKDF2)"
 
 ---
 
-### Task 1.4: Criar modulo de Rate Limiting
+### Task 1.4: Criar módulo de Rate Limiting
 
 **Files:**
 - Create: `worker/src/infrastructure/ratelimit/rateLimiter.js`
@@ -510,7 +510,7 @@ git commit -m "refactor(worker): criar modulo ratelimit"
 
 ---
 
-### Task 1.5: Criar modulo de Response Helpers
+### Task 1.5: Criar módulo de Response Helpers
 
 **Files:**
 - Create: `worker/src/infrastructure/response/helpers.js`
@@ -594,7 +594,7 @@ git commit -m "refactor(worker): criar index da infrastructure"
 
 ## Fase 2: Domain Services
 
-### Task 2.1: Criar Auth Service (verificacao de usuario)
+### Task 2.1: Criar Auth Service (verificação de usuário)
 
 **Files:**
 - Create: `worker/src/domain/auth/authService.js`
@@ -1101,18 +1101,18 @@ git commit -m "refactor(worker): criar favoritos service"
 
 ---
 
-## Fase 3: Router e Integracao (Proximas Tasks)
+## Fase 3: Router e Integração (Próximas Tasks)
 
 ### Task 3.1: Criar Router Class
 
 **Files:**
 - Create: `worker/src/routes/router.js`
 
-**Descricao:** Criar classe Router que suporta:
+**Descrição:** Criar classe Router que suporta:
 - Registro de rotas por method + path
 - Path params (/api/partituras/:id)
 - Middleware pipeline
-- CORS preflight automatico
+- CORS preflight automático
 
 ---
 
@@ -1146,7 +1146,7 @@ git commit -m "refactor(worker): criar favoritos service"
 **Files:**
 - Modify: `worker/index.js`
 
-**Descricao:** Refatorar o index.js principal para:
+**Descrição:** Refatorar o index.js principal para:
 1. Importar router configurado
 2. Delegar fetch handler para router
 3. Manter compatibilidade com wrangler.toml
@@ -1166,25 +1166,25 @@ git commit -m "refactor(worker): criar favoritos service"
 
 ---
 
-## Fase 5: Testes e Validacao
+## Fase 5: Testes e Validação
 
 ### Task 5.1: Testar localmente com wrangler dev
 ### Task 5.2: Rodar testes do frontend
-### Task 5.3: Deploy e validacao em producao
+### Task 5.3: Deploy e validação em produção
 
 ---
 
-## Checklist de Validacao Final
+## Checklist de Validação Final
 
-- [ ] Todas as rotas funcionando identico ao original
-- [ ] JWT login/verificacao funcionando
+- [ ] Todas as rotas funcionando idêntico ao original
+- [ ] JWT login/verificação funcionando
 - [ ] PBKDF2 hash funcionando
 - [ ] Rate limiting funcionando
-- [ ] CORS funcionando para todos dominios
+- [ ] CORS funcionando para todos domínios
 - [ ] Upload de arquivos funcionando
 - [ ] Download de PDFs funcionando
 - [ ] Testes do frontend passando
-- [ ] Build de producao OK
+- [ ] Build de produção OK
 - [ ] Deploy bem sucedido
 
 ---
@@ -1195,4 +1195,4 @@ git commit -m "refactor(worker): criar favoritos service"
 2. **Testar incrementalmente:** Cada fase deve ser testada antes de prosseguir
 3. **Ambiente local:** Usar `npm run api` para testar (conforme CLAUDE.md)
 4. **Commits frequentes:** Um commit por task completada
-5. **Nao quebrar producao:** Testar exaustivamente antes de deploy
+5. **Não quebrar produção:** Testar exaustivamente antes de deploy
