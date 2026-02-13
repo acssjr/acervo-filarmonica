@@ -7,6 +7,7 @@ import { API } from '@services/api';
 import { COLORS, COLORS_RGBA } from '@constants/colors';
 import { LABELS } from '@constants/organization';
 import { UserListSkeleton } from '@components/common/Skeleton';
+import ToggleSwitch from '@components/common/ToggleSwitch';
 import UsuarioFormModal from './modals/UsuarioFormModal';
 import ResetPinModal from './modals/ResetPinModal';
 
@@ -80,6 +81,18 @@ const AdminMusicos = () => {
       setShowResetPin(null);
     } catch (e) {
       showToast(e.message, 'error');
+    }
+  };
+
+  const handleToggleConvidado = async (user) => {
+    const novoValor = user.convidado ? 0 : 1;
+    setUsuarios(prev => prev.map(u => u.id === user.id ? { ...u, convidado: novoValor } : u));
+    try {
+      await API.updateUsuario(user.id, { convidado: novoValor });
+      showToast(novoValor ? `${user.nome} marcado como convidado` : `${user.nome} removido dos convidados`, 'success');
+    } catch (error) {
+      setUsuarios(prev => prev.map(u => u.id === user.id ? { ...u, convidado: user.convidado } : u));
+      showToast('Erro ao atualizar convidado', 'error');
     }
   };
 
@@ -276,6 +289,21 @@ const AdminMusicos = () => {
                         {LABELS.adminBadge}
                       </span>
                     )}
+                    {!!user.convidado && (
+                      <span style={{
+                        fontSize: '10px',
+                        fontWeight: '700',
+                        color: '#3498db',
+                        background: 'rgba(52, 152, 219, 0.15)',
+                        padding: '2px 8px',
+                        borderRadius: '4px',
+                        border: '1px solid rgba(52, 152, 219, 0.3)',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.5px'
+                      }}>
+                        CONVIDADO
+                      </span>
+                    )}
                     {!user.ativo && <span style={{ fontSize: '12px', color: COLORS.error.primary }}>{LABELS.inactive}</span>}
                   </div>
                   <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
@@ -289,6 +317,19 @@ const AdminMusicos = () => {
                 </div>
               </div>
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                {user.username !== 'admin' && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginRight: '12px' }}>
+                    <span style={{ fontSize: '11px', color: user.convidado ? '#3498db' : 'var(--text-muted)', fontFamily: 'Outfit, sans-serif', fontWeight: '500' }}>
+                      Convidado
+                    </span>
+                    <ToggleSwitch
+                      checked={!!user.convidado}
+                      onChange={() => handleToggleConvidado(user)}
+                      color="#3498db"
+                      size="sm"
+                    />
+                  </div>
+                )}
                 <button onClick={() => { setEditingUser(user); setShowModal(true); }} title="Editar" className="btn-icon-hover" style={{
                   width: '40px',
                   height: '40px',

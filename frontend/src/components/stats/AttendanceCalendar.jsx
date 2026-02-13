@@ -52,6 +52,7 @@ const AttendanceCalendar = ({ ensaios = [], onEnsaioClick }) => {
           const data = new Date(ensaio.data_ensaio + 'T00:00:00Z');
           const dia = data.getDate();
           const diaSemana = ensaio.dia_semana || data.toLocaleDateString('pt-BR', { weekday: 'short' });
+          const mes = data.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '');
           const presente = ensaio.usuario_presente === 1;
           const totalPartituras = ensaio.total_partituras || 0;
 
@@ -64,19 +65,8 @@ const AttendanceCalendar = ({ ensaios = [], onEnsaioClick }) => {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              {/* Ícone (checkmark verde ou X cinza) */}
-              <div className={styles.calendarIcon}>
-                {presente ? (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
-                ) : (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                    <line x1="18" y1="6" x2="6" y2="18" />
-                    <line x1="6" y1="6" x2="18" y2="18" />
-                  </svg>
-                )}
-              </div>
+              {/* Mês abreviado */}
+              <div className={styles.calendarMonth}>{mes}</div>
 
               {/* Dia do mês */}
               <div className={styles.calendarDayNumber}>{dia}</div>
@@ -84,6 +74,20 @@ const AttendanceCalendar = ({ ensaios = [], onEnsaioClick }) => {
               {/* Dia da semana */}
               <div className={styles.calendarWeekday}>
                 {diaSemana.slice(0, 3)}
+              </div>
+
+              {/* Ícone (checkmark verde ou X cinza) */}
+              <div className={styles.calendarIcon}>
+                {presente ? (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                ) : (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                )}
               </div>
 
               {/* Badge com número de partituras (se > 0) */}

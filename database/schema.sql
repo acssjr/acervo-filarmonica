@@ -65,6 +65,7 @@ CREATE TABLE IF NOT EXISTS usuarios (
     ativo INTEGER DEFAULT 1,
     instrumento_id TEXT,
     foto_url TEXT,
+    convidado INTEGER DEFAULT 0,
     criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
     ultimo_acesso DATETIME,
     FOREIGN KEY (instrumento_id) REFERENCES instrumentos(id)

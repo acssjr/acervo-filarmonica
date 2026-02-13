@@ -1,0 +1,1 @@
+ALTER TABLE usuarios ADD COLUMN convidado INTEGER DEFAULT 0;

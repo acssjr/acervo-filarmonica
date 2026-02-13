@@ -32,31 +32,27 @@ export async function getPartiturasEnsaio(env, dataEnsaio) {
  * @returns {Promise<Object>} - Resultado da operação
  */
 export async function addPartituraEnsaio(env, dataEnsaio, partituraId, adminId) {
-  try {
-    await env.DB.prepare(`
-      INSERT INTO ensaios_partituras (data_ensaio, partitura_id, ordem, criado_por)
-      SELECT ?, ?, COALESCE((SELECT MAX(ordem) FROM ensaios_partituras WHERE data_ensaio = ?), -1) + 1, ?
-    `).bind(dataEnsaio, partituraId, dataEnsaio, adminId).run();
+  await env.DB.prepare(`
+    INSERT INTO ensaios_partituras (data_ensaio, partitura_id, ordem, criado_por)
+    VALUES (?, ?, COALESCE((SELECT MAX(ordem) FROM ensaios_partituras WHERE data_ensaio = ?), -1) + 1, ?)
+    ON CONFLICT(data_ensaio, partitura_id) DO UPDATE SET
+      ordem = COALESCE((SELECT MAX(ordem) FROM ensaios_partituras WHERE data_ensaio = excluded.data_ensaio), -1) + 1,
+      criado_por = excluded.criado_por
+  `).bind(dataEnsaio, partituraId, dataEnsaio, adminId).run();
 
-    return { sucesso: true };
-  } catch (error) {
-    // Se erro é de UNIQUE constraint, já existe
-    if (error.message.includes('UNIQUE constraint failed')) {
-      throw new Error('Partitura já foi adicionada a este ensaio');
-    }
-    throw error;
-  }
+  return { sucesso: true };
 }
 
 /**
  * Remove uma partitura do ensaio
  * @param {Object} env - Cloudflare Worker environment
- * @param {number} id - ID do registro em ensaios_partituras
+ * @param {string} dataEnsaio - Data do ensaio (YYYY-MM-DD)
+ * @param {number} partituraId - ID da partitura
  * @returns {Promise<Object>} - Resultado da operação
  */
-export async function removePartituraEnsaio(env, id) {
-  await env.DB.prepare(`DELETE FROM ensaios_partituras WHERE id = ?`)
-    .bind(id).run();
+export async function removePartituraEnsaio(env, dataEnsaio, partituraId) {
+  await env.DB.prepare(`DELETE FROM ensaios_partituras WHERE data_ensaio = ? AND partitura_id = ?`)
+    .bind(dataEnsaio, partituraId).run();
   return { sucesso: true };
 }
 

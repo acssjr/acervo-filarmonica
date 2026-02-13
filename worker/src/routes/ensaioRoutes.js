@@ -60,10 +60,10 @@ export function setupEnsaioRoutes(router) {
     }
   }, [authMiddleware, adminMiddleware]);
 
-  // DELETE /api/ensaios/:data/partituras/:id - Remover partitura do ensaio (admin)
-  router.delete('/api/ensaios/:data/partituras/:id', async (request, env, params) => {
+  // DELETE /api/ensaios/:data/partituras/:partituraId - Remover partitura do ensaio (admin)
+  router.delete('/api/ensaios/:data/partituras/:partituraId', async (request, env, params) => {
     try {
-      const result = await EnsaioService.removePartituraEnsaio(env, parseInt(params.id, 10));
+      const result = await EnsaioService.removePartituraEnsaio(env, params.data, parseInt(params.partituraId, 10));
       return Response.json(result);
     } catch (error) {
       console.error('Erro ao remover partitura do ensaio:', error);

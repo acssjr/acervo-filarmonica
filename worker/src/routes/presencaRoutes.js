@@ -65,4 +65,44 @@ export function setupPresencaRoutes(router) {
       return errorResponse('Erro ao buscar presenças', 500, request);
     }
   }, [authMiddleware, adminMiddleware]);
+
+  // GET /api/presenca/:data - Detalhe de um ensaio específico (admin apenas)
+  router.get('/api/presenca/:data', async (request, env, params, _context) => {
+    try {
+      const resultado = await PresencaService.getDetalheEnsaio(env, params.data);
+      return jsonResponse(resultado, 200, request);
+    } catch (error) {
+      console.error('Erro ao buscar detalhe do ensaio:', error);
+      return errorResponse('Erro ao buscar detalhe do ensaio', 500, request);
+    }
+  }, [authMiddleware, adminMiddleware]);
+
+  // DELETE /api/presenca/:data/usuario/:usuarioId - Remover presença individual (admin apenas)
+  router.delete('/api/presenca/:data/usuario/:usuarioId', async (request, env, params, _context) => {
+    try {
+      const usuarioId = parseInt(params.usuarioId, 10);
+      if (!Number.isInteger(usuarioId)) {
+        return errorResponse('ID de usuário inválido', 400, request);
+      }
+      const resultado = await PresencaService.removerPresenca(env, params.data, usuarioId);
+      if (!resultado.sucesso) {
+        return errorResponse('Presença não encontrada', 404, request);
+      }
+      return jsonResponse(resultado, 200, request);
+    } catch (error) {
+      console.error('Erro ao remover presença:', error);
+      return errorResponse('Erro ao remover presença', 500, request);
+    }
+  }, [authMiddleware, adminMiddleware]);
+
+  // DELETE /api/presenca/:data - Excluir ensaio completo (admin apenas)
+  router.delete('/api/presenca/:data', async (request, env, params, _context) => {
+    try {
+      const resultado = await PresencaService.excluirEnsaio(env, params.data);
+      return jsonResponse(resultado, 200, request);
+    } catch (error) {
+      console.error('Erro ao excluir ensaio:', error);
+      return errorResponse('Erro ao excluir ensaio', 500, request);
+    }
+  }, [authMiddleware, adminMiddleware]);
 }

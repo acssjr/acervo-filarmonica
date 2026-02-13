@@ -548,6 +548,22 @@ export const API = {
     return this.request('/api/presenca/todas');
   },
 
+  async getDetalheEnsaio(dataEnsaio) {
+    return this.request(`/api/presenca/${dataEnsaio}`);
+  },
+
+  async removerPresenca(dataEnsaio, usuarioId) {
+    return this.request(`/api/presenca/${dataEnsaio}/usuario/${usuarioId}`, {
+      method: 'DELETE'
+    });
+  },
+
+  async excluirEnsaio(dataEnsaio) {
+    return this.request(`/api/presenca/${dataEnsaio}`, {
+      method: 'DELETE'
+    });
+  },
+
   // ============ ENSAIOS ============
 
   async getPartiturasEnsaio(dataEnsaio) {

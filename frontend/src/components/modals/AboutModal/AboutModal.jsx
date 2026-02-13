@@ -134,7 +134,7 @@ const AboutModal = ({
             textTransform: 'uppercase',
             letterSpacing: '0.5px',
             marginBottom: '12px'
-          }}>Historico de Atualizacoes</p>
+          }}>Histórico de Atualizações</p>
 
           {changelog.map((version, vIndex) => (
             <div key={vIndex} style={{ marginBottom: '16px' }}>
@@ -180,7 +180,7 @@ const AboutModal = ({
                 fontWeight: '600',
                 color: 'var(--text-primary)',
                 marginBottom: '8px'
-              }}>Versoes anteriores</p>
+              }}>Versões anteriores</p>
               <div style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: '1.6' }}>
                 {Object.entries(legacyVersions).map(([ver, desc], index) => (
                   <span key={ver}>
