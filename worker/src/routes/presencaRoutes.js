@@ -80,7 +80,11 @@ export function setupPresencaRoutes(router) {
   // DELETE /api/presenca/:data/usuario/:usuarioId - Remover presença individual (admin apenas)
   router.delete('/api/presenca/:data/usuario/:usuarioId', async (request, env, params, _context) => {
     try {
-      const resultado = await PresencaService.removerPresenca(env, params.data, parseInt(params.usuarioId));
+      const usuarioId = parseInt(params.usuarioId, 10);
+      if (!Number.isInteger(usuarioId)) {
+        return errorResponse('ID de usuário inválido', 400, request);
+      }
+      const resultado = await PresencaService.removerPresenca(env, params.data, usuarioId);
       if (!resultado.sucesso) {
         return errorResponse('Presença não encontrada', 404, request);
       }

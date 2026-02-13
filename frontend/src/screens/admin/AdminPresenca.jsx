@@ -1449,7 +1449,15 @@ const AdminPresenca = () => {
               <React.Fragment key={ensaio.data_ensaio}>
                 <div
                   className="historico-row"
+                  role="button"
+                  tabIndex={0}
                   onClick={() => handleExpandirEnsaio(ensaio)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      if (e.key === ' ') e.preventDefault();
+                      handleExpandirEnsaio(ensaio);
+                    }
+                  }}
                   style={{
                     padding: '14px 20px',
                     display: 'flex',
