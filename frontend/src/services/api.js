@@ -588,6 +588,42 @@ export const API = {
       method: 'PUT',
       body: JSON.stringify({ ordens })
     });
+  },
+
+  // ============ AVISOS ============
+
+  async getAvisos() {
+    return this.request('/api/admin/avisos');
+  },
+
+  async criarAviso(data) {
+    return this.request('/api/admin/avisos', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  },
+
+  async atualizarAviso(id, data) {
+    return this.request(`/api/admin/avisos/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    });
+  },
+
+  async excluirAviso(id) {
+    return this.request(`/api/admin/avisos/${id}`, {
+      method: 'DELETE'
+    });
+  },
+
+  async getAvisosNaoLidos() {
+    return this.request('/api/avisos/nao-lidos');
+  },
+
+  async marcarAvisoLido(id) {
+    return this.request(`/api/avisos/${id}/lido`, {
+      method: 'POST'
+    });
   }
 };
 

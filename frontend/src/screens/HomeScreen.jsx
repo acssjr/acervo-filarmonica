@@ -15,6 +15,7 @@ import CategoryCard from '@components/music/CategoryCard';
 import FileCard from '@components/music/FileCard';
 import ComposerCarousel from '@components/music/ComposerCarousel';
 import PresenceStats from '@components/stats/PresenceStats';
+import AvisoModal from '@components/modals/AvisoModal';
 import { PROFILE_ABOUT_CONFIG } from '@components/modals/AboutModal/changelog/profileChangelog';
 
 const HomeScreen = () => {
@@ -90,6 +91,7 @@ const HomeScreen = () => {
 
   return (
     <div style={{ width: '100%', overflow: 'visible' }}>
+      <AvisoModal />
       <HomeHeader
         userName={user?.name || 'Visitante'}
         instrument={user?.instrument || 'Músico'}
