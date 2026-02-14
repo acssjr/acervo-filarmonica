@@ -1,38 +1,7 @@
 // ===== PRESENCA SERVICE =====
 // Lógica de negócio para controle de presença em ensaios
 
-/**
- * Gera as últimas N datas de ensaio (segundas e quartas)
- * @param {number} quantidade - Número de ensaios a buscar
- * @returns {string[]} - Array de datas no formato YYYY-MM-DD
- */
-function gerarUltimosEnsaios(quantidade = 7) {
-  const ensaios = [];
-  const hoje = new Date();
 
-  // Ajustar para meia-noite UTC para evitar problemas de timezone
-  hoje.setUTCHours(0, 0, 0, 0);
-
-  let dataAtual = new Date(hoje);
-
-  while (ensaios.length < quantidade) {
-    const diaSemana = dataAtual.getUTCDay(); // 0=Dom, 1=Seg, 2=Ter, 3=Qua, 4=Qui, 5=Sex, 6=Sáb
-
-    // Segundas (1) ou Quartas (3)
-    if (diaSemana === 1 || diaSemana === 3) {
-      // Formato YYYY-MM-DD em UTC
-      const ano = dataAtual.getUTCFullYear();
-      const mes = String(dataAtual.getUTCMonth() + 1).padStart(2, '0');
-      const dia = String(dataAtual.getUTCDate()).padStart(2, '0');
-      ensaios.push(`${ano}-${mes}-${dia}`);
-    }
-
-    // Voltar 1 dia
-    dataAtual.setUTCDate(dataAtual.getUTCDate() - 1);
-  }
-
-  return ensaios;
-}
 
 /**
  * Calcula o streak (sequência consecutiva) de presenças de um usuário
@@ -52,32 +21,45 @@ export async function calcularStreak(env, usuarioId) {
 
   const presencasSet = new Set(presencasUsuario.results.map(p => p.data_ensaio));
 
-  // Gerar os últimos 50 ensaios (para calcular streak e percentual)
-  // 50 ensaios = ~6 meses de histórico
-  const ultimosEnsaios = gerarUltimosEnsaios(50);
+  // Buscar os últimos 50 ensaios REAIS registrados no banco
+  // Isso garante que o cálculo seja baseado no calendário real da banda
+  const ultimosEnsaiosResult = await env.DB.prepare(`
+    SELECT DISTINCT data_ensaio
+    FROM presencas
+    ORDER BY data_ensaio DESC
+    LIMIT 50
+  `).all();
+
+  const ultimosEnsaios = (ultimosEnsaiosResult.results || []).map(r => r.data_ensaio);
 
   // Calcular streak: contar ensaios consecutivos com presença a partir do mais recente
   let streak = 0;
+  // IMPORTANTE: O loop deve percorrer os ensaios REAIS em ordem decrescente (mais recente primeiro)
   for (const dataEnsaio of ultimosEnsaios) {
     if (presencasSet.has(dataEnsaio)) {
       streak++;
     } else {
-      break; // Streak quebrou - encontrou primeira falta
+      // Se o usuário não estava presente neste ensaio real, o streak quebra.
+      // (Poderia haver lógica de "recesso" ou "falta justificada" aqui no futuro)
+      break;
     }
   }
 
   // Estatísticas gerais
   const totalPresencas = presencasUsuario.results.length;
-  const totalEnsaios = ultimosEnsaios.length;
-  const percentual = totalEnsaios > 0
-    ? (Array.from(ultimosEnsaios).filter(e => presencasSet.has(e)).length / totalEnsaios) * 100
+  // Total de ensaios considerados para o percentual (limitado aos ultimos 50 ou menos se houver poucos registros)
+  const totalEnsaiosBase = ultimosEnsaios.length;
+
+  // Percentual sobre os últimos N ensaios reais
+  const percentual = totalEnsaiosBase > 0
+    ? (ultimosEnsaios.filter(e => presencasSet.has(e)).length / totalEnsaiosBase) * 100
     : 0;
 
   return {
     streak,
     ultimo_ensaio: presencasUsuario.results[0]?.data_ensaio || null,
     total_presencas: totalPresencas,
-    total_ensaios: totalEnsaios,
+    total_ensaios: totalEnsaiosBase,
     percentual_frequencia: Math.round(percentual * 10) / 10 // 1 casa decimal
   };
 }
@@ -89,13 +71,42 @@ export async function calcularStreak(env, usuarioId) {
  * @returns {Promise<Object>} - Payload completo com streak, histórico, etc
  */
 export async function getPresencaUsuario(env, usuarioId) {
-  // Calcular streak e estatísticas
+  // 1. Buscar os últimos 7 ensaios REAIS registrados no banco
+  // (datas onde houve pelo menos uma presença registrada por qualquer pessoa)
+  const ultimasDatas = await env.DB.prepare(`
+    SELECT DISTINCT data_ensaio
+    FROM presencas
+    ORDER BY data_ensaio DESC
+    LIMIT 100
+  `).all();
+
+  const datasEnsaios = (ultimasDatas.results || []).map(r => r.data_ensaio);
+
+  // Mapear numeração dos ensaios
+  const allRehearsals = await env.DB.prepare(`
+    SELECT DISTINCT data_ensaio FROM presencas ORDER BY data_ensaio ASC
+  `).all();
+
+  const rehearsalMap = new Map();
+  (allRehearsals.results || []).forEach((r, index) => {
+    rehearsalMap.set(r.data_ensaio, index + 1);
+  });
+
+  // Se não houver ensaios, retornar vazio
+  if (datasEnsaios.length === 0) {
+    return {
+      streak: 0,
+      ultimo_ensaio: null,
+      ultimos_ensaios: [],
+      total_presencas: 0,
+      percentual_frequencia: 0
+    };
+  }
+
+  // 2. Calcular streak e estatísticas
   const streakData = await calcularStreak(env, usuarioId);
 
-  // Gerar datas dos últimos 7 ensaios (segundas e quartas)
-  const datasEnsaios = gerarUltimosEnsaios(7);
-
-  // Buscar presenças do usuário nessas datas
+  // 3. Buscar presenças do usuário nessas datas específicas
   const presencasUsuario = await env.DB.prepare(`
     SELECT data_ensaio FROM presencas
     WHERE usuario_id = ? AND data_ensaio IN (${datasEnsaios.map(() => '?').join(',')})
@@ -103,7 +114,7 @@ export async function getPresencaUsuario(env, usuarioId) {
 
   const presencasSet = new Set(presencasUsuario.results.map(p => p.data_ensaio));
 
-  // Buscar contagem de partituras por ensaio
+  // 4. Buscar contagem de partituras por ensaio
   const partiturasPorEnsaio = await env.DB.prepare(`
     SELECT data_ensaio, COUNT(*) as total
     FROM ensaios_partituras
@@ -115,17 +126,18 @@ export async function getPresencaUsuario(env, usuarioId) {
     partiturasPorEnsaio.results.map(p => [p.data_ensaio, p.total])
   );
 
-  // Montar array de ensaios com todas as informações
+  // 5. Montar array de ensaios com todas as informações
   const ultimosEnsaios = datasEnsaios.map(dataEnsaio => {
-    const data = new Date(dataEnsaio + 'T00:00:00Z');
-    const diaSemana = data.getUTCDay();
-    const nomeDia = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][diaSemana];
+    // Adicionar T12:00:00Z para garantir que a data seja interpretada corretamente no dia (evita timezone shift)
+    const data = new Date(dataEnsaio + 'T12:00:00Z');
+    const diaSemana = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][data.getUTCDay()];
 
     return {
       data_ensaio: dataEnsaio,
-      dia_semana: nomeDia,
+      dia_semana: diaSemana,
       usuario_presente: presencasSet.has(dataEnsaio) ? 1 : 0,
-      total_partituras: partiturasMap.get(dataEnsaio) || 0
+      total_partituras: partiturasMap.get(dataEnsaio) || 0,
+      numero_ensaio: rehearsalMap.get(dataEnsaio) || 0
     };
   });
 
@@ -203,17 +215,34 @@ export async function getTodasPresencas(env) {
         WHEN 5 THEN 'Sexta'
         WHEN 6 THEN 'Sábado'
       END as dia_semana,
-      COUNT(DISTINCT p.usuario_id) as total_presencas,
+      COUNT(DISTINCT CASE WHEN i.nome != 'Regente' THEN p.usuario_id END) as total_presencas,
       (SELECT COUNT(*) FROM ensaios_partituras ep
        WHERE ep.data_ensaio = p.data_ensaio) as total_partituras
     FROM presencas p
+    LEFT JOIN usuarios u ON p.usuario_id = u.id
+    LEFT JOIN instrumentos i ON u.instrumento_id = i.id
     GROUP BY p.data_ensaio
     ORDER BY p.data_ensaio DESC
-    LIMIT 30
+    LIMIT 100
   `).all();
 
+  // Mapear numeração dos ensaios
+  const allRehearsals = await env.DB.prepare(`
+    SELECT DISTINCT data_ensaio FROM presencas ORDER BY data_ensaio ASC
+  `).all();
+
+  const rehearsalMap = new Map();
+  (allRehearsals.results || []).forEach((r, index) => {
+    rehearsalMap.set(r.data_ensaio, index + 1);
+  });
+
+  const ensaiosComNumero = (ensaios.results || []).map(ensaio => ({
+    ...ensaio,
+    numero_ensaio: rehearsalMap.get(ensaio.data_ensaio) || 0
+  }));
+
   return {
-    ensaios: ensaios.results || []
+    ensaios: ensaiosComNumero
   };
 }
 

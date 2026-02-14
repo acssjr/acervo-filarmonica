@@ -33,6 +33,7 @@
   padding: 2px;
   background: linear-gradient(145deg, #D4AF37, #F4E4BC, #D4AF37);
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
   animation: borderGlow 2s ease-in-out infinite;
@@ -40,9 +41,12 @@
 }
 
 @keyframes borderGlow {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 0.6;
   }
+
   50% {
     opacity: 1;
   }
@@ -78,28 +82,34 @@
 }
 
 @keyframes fire-flicker {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: scale(1) rotate(0deg);
   }
+
   25% {
     transform: scale(1.05) rotate(-2deg);
   }
+
   50% {
     transform: scale(0.97) rotate(1deg);
   }
+
   75% {
     transform: scale(1.03) rotate(-1deg);
   }
 }
 
 @keyframes fire-glow {
-  0%, 100% {
-    filter: drop-shadow(0 0 4px rgba(255, 200, 0, 0.4))
-           drop-shadow(0 0 8px rgba(212, 175, 55, 0.2));
+
+  0%,
+  100% {
+    filter: drop-shadow(0 0 4px rgba(255, 200, 0, 0.4)) drop-shadow(0 0 8px rgba(212, 175, 55, 0.2));
   }
+
   50% {
-    filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.7))
-           drop-shadow(0 0 16px rgba(212, 175, 55, 0.4));
+    filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.7)) drop-shadow(0 0 16px rgba(212, 175, 55, 0.4));
   }
 }
 
@@ -154,6 +164,7 @@
 }
 
 .calendarDay {
+  position: relative;
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: 12px;
@@ -221,15 +232,15 @@
   right: 4px;
   background: rgba(212, 175, 55, 0.2);
   color: #D4AF37;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
+  padding: 2px 6px;
+  border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: 'Outfit', sans-serif;
   font-size: 9px;
   font-weight: 700;
+  min-width: 18px;
 }
 
 .calendarEmpty {
@@ -260,13 +271,19 @@
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: 16px;
-  width: 90%;
-  max-width: 500px;
-  max-height: 80vh;
+  width: 95%;
+  /* Mobile first width */
+  max-width: 600px;
+  /* Limit width on desktop */
+  max-height: 85vh;
+  /* Increase height slightly */
   overflow: hidden;
-  z-index: 9999;
+  z-index: 10000;
+  /* Ensure it's on top */
   display: flex;
   flex-direction: column;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  /* Add shadow for depth */
 }
 
 .modalHeader {
@@ -429,7 +446,7 @@
 .skeletonBar {
   width: 80px;
   height: 300px;
-  background: linear-gradient(90deg, var(--bg-card) 0%, rgba(255,255,255,0.05) 50%, var(--bg-card) 100%);
+  background: linear-gradient(90deg, var(--bg-card) 0%, rgba(255, 255, 255, 0.05) 50%, var(--bg-card) 100%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
   border-radius: 16px;
@@ -438,7 +455,7 @@
 .skeletonCalendar {
   flex: 1;
   height: 300px;
-  background: linear-gradient(90deg, var(--bg-card) 0%, rgba(255,255,255,0.05) 50%, var(--bg-card) 100%);
+  background: linear-gradient(90deg, var(--bg-card) 0%, rgba(255, 255, 255, 0.05) 50%, var(--bg-card) 100%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
   border-radius: 12px;
@@ -448,6 +465,7 @@
   0% {
     background-position: -200% 0;
   }
+
   100% {
     background-position: 200% 0;
   }
@@ -495,7 +513,8 @@
     bottom: auto;
     left: 0;
     height: 100%;
-    width: auto; /* width será definido pelo framer motion */
+    width: auto;
+    /* width será definido pelo framer motion */
   }
 
   .calendarGrid {
@@ -529,7 +548,7 @@
   }
 
   .calendarGrid {
-    grid-template-columns: repeat(7, 1fr);
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
     gap: 12px;
   }
 
