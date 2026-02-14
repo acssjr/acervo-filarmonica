@@ -1,8 +1,18 @@
 // Changelog completo para o app do usuário (ProfileScreen)
 export const PROFILE_CHANGELOG = [
   {
-    version: '2.9.0',
+    version: '2.9.1',
     isCurrent: true,
+    items: [
+      { bold: 'Livro de Registros:', text: 'Numeração sequencial dos ensaios (#1, #2...) para melhor organização' },
+      { bold: 'Calendário:', text: 'Datas corrigidas (sem pular dia) e visual mais limpo' },
+      { bold: 'Modais:', text: 'Sistema "blindado" que não quebra com zoom e trava o fundo' },
+      { bold: 'Domínio:', text: 'Migração definitiva para acervo.filarmonica25demarco.com' },
+      { bold: 'Avatares:', text: 'Melhor visualização de fotos no mobile' }
+    ]
+  },
+  {
+    version: '2.9.0',
     items: [
       { bold: 'Compartilhar:', text: 'Envie partituras via WhatsApp direto do app' },
       { bold: 'Carrinho:', text: 'Selecione varias partituras e baixe todas de uma vez' },
@@ -155,7 +165,7 @@ export const PROFILE_ABOUT_CONFIG = {
   subtitle: 'Sociedade Filarmonica 25 de Marco',
   maxWidth: 420,
   infoCards: [
-    { label: 'Versao', value: '2.9.0' },
+    { label: 'Versao', value: '2.9.1' },
     { label: 'Tecnologias', value: 'React • JS • CSS' },
     { label: 'Por', value: 'Antonio Jr.', isHighlighted: true }
   ],

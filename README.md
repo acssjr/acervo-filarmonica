@@ -369,6 +369,38 @@ Isso cria as tabelas e insere usuários de teste para desenvolvimento local.
 ## Changelog
 
 <details open>
+<summary><b>v2.9.1</b> - 14 de Fevereiro de 2026</summary>
+
+**Livro de Registros**
+- Sistema de **numeração sequencial** de ensaios (#N) para melhor organização histórica
+- Visualização do número do ensaio no modal e na lista administrativa
+
+**Correções Críticas de UI/UX**
+- **Calendário:** Correção de fuso horário (datas não "pulam" mais) e visual mais limpo
+- **Modais:** Sistema "blindado" via Portal que não quebra com zoom e trava o scroll do fundo
+- **Mobile:** Ajustes na visualização de avatares e fotos de músicos
+- **Domínio:** Migração definitiva para `acervo.filarmonica25demarco.com`
+
+</details>
+
+<details>
+<summary><b>v2.9.0</b> - 25 de Dezembro de 2025</summary>
+
+**Novas Funcionalidades**
+- **Compartilhamento via WhatsApp:** Envie partituras diretamente do app
+- **Carrinho de Download:** Selecione várias partituras e baixe todas de uma vez
+- **Modo Recesso:** Substitui o contador de ensaios por aviso de "EM RECESSO"
+- **Onboarding:** Tutorial interativo para novos usuários
+
+**Melhorias Técnicas**
+- **PDF Viewer:** Pinch-to-zoom suave e aumento do zoom máximo
+- **PWA:** Ícones e favicon para instalação como app nativo
+- **Busca:** Lógica "match all words" para resultados mais precisos
+- **Performance:** Otimizações de renderização e transições de página
+
+</details>
+
+<details>
 <summary><b>v2.8.0</b> - 14 de Dezembro de 2025</summary>
 
 **Sistema de Repertório**
