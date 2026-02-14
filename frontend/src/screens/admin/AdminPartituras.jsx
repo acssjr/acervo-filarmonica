@@ -93,7 +93,7 @@ const AdminPartituras = () => {
   // Estado para modal de edição
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editingPartitura, setEditingPartitura] = useState(null);
-  const [editForm, setEditForm] = useState({ titulo: '', compositor: '', categoria_id: '' });
+  const [editForm, setEditForm] = useState({ titulo: '', compositor: '', arranjador: '', categoria_id: '' });
   const [savingEdit, setSavingEdit] = useState(false);
 
   // Estado para repertório
@@ -110,6 +110,7 @@ const AdminPartituras = () => {
     setEditForm({
       titulo: partitura.titulo || '',
       compositor: partitura.compositor || '',
+      arranjador: partitura.arranjador || '',
       categoria_id: partitura.categoria_id || ''
     });
     setEditModalOpen(true);
@@ -118,7 +119,7 @@ const AdminPartituras = () => {
   const closeEditModal = () => {
     setEditModalOpen(false);
     setEditingPartitura(null);
-    setEditForm({ titulo: '', compositor: '', categoria_id: '' });
+    setEditForm({ titulo: '', compositor: '', arranjador: '', categoria_id: '' });
   };
 
   const saveEditModal = async () => {
@@ -130,6 +131,7 @@ const AdminPartituras = () => {
         ...editingPartitura,
         titulo: editForm.titulo || editingPartitura.titulo,
         compositor: editForm.compositor || null,
+        arranjador: editForm.arranjador || null,
         categoria_id: editForm.categoria_id || editingPartitura.categoria_id
       };
       await API.updatePartitura(editingPartitura.id, updateData);
@@ -140,6 +142,7 @@ const AdminPartituras = () => {
           ...p,
           titulo: editForm.titulo || p.titulo,
           compositor: editForm.compositor || null,
+          arranjador: editForm.arranjador || null,
           categoria_id: editForm.categoria_id || p.categoria_id
         } : p
       ));
@@ -621,7 +624,7 @@ const AdminPartituras = () => {
           xhr.setRequestHeader('Authorization', `Bearer ${token}`);
         }
 
-        xhr.onload = function() {
+        xhr.onload = function () {
           if (xhr.status >= 200 && xhr.status < 300) {
             // Converte arraybuffer para blob e cria URL
             const blob = new Blob([xhr.response], { type: 'application/pdf' });
@@ -639,11 +642,11 @@ const AdminPartituras = () => {
           }
         };
 
-        xhr.onerror = function() {
+        xhr.onerror = function () {
           reject(new Error('Erro de conexao ao carregar PDF'));
         };
 
-        xhr.ontimeout = function() {
+        xhr.ontimeout = function () {
           reject(new Error('Timeout ao carregar PDF'));
         };
 
@@ -726,7 +729,7 @@ const AdminPartituras = () => {
     }
     if (search) {
       results = results.filter(p =>
-        matchesSearch(p.titulo, search) || matchesSearch(p.compositor, search)
+        matchesSearch(p.titulo, search) || matchesSearch(p.compositor, search) || matchesSearch(p.arranjador, search)
       );
     }
     return results.sort((a, b) => a.titulo?.localeCompare(b.titulo, 'pt-BR'));
@@ -802,9 +805,9 @@ const AdminPartituras = () => {
           gap: '10px'
         }}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M9 18V5l12-2v13"/>
-            <circle cx="6" cy="18" r="3"/>
-            <circle cx="18" cy="16" r="3"/>
+            <path d="M9 18V5l12-2v13" />
+            <circle cx="6" cy="18" r="3" />
+            <circle cx="18" cy="16" r="3" />
           </svg>
           Partituras
         </h1>
@@ -834,9 +837,9 @@ const AdminPartituras = () => {
             }}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-              <polyline points="17 8 12 3 7 8"/>
-              <line x1="12" y1="3" x2="12" y2="15"/>
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="17 8 12 3 7 8" />
+              <line x1="12" y1="3" x2="12" y2="15" />
             </svg>
             Upload de Pasta
           </button>
@@ -864,8 +867,8 @@ const AdminPartituras = () => {
             }}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-              <path d="M12 11v6M9 14h6"/>
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+              <path d="M12 11v6M9 14h6" />
             </svg>
             Importar Lote
           </button>
@@ -877,8 +880,8 @@ const AdminPartituras = () => {
         <div style={{ flex: 1, minWidth: '250px' }}>
           <div className="search-bar">
             <svg className="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="11" cy="11" r="8"/>
-              <path d="m21 21-4.35-4.35"/>
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21-4.35-4.35" />
             </svg>
             <input
               type="text"
@@ -889,7 +892,7 @@ const AdminPartituras = () => {
             {search && (
               <button className="clear-btn" onClick={() => setSearch('')}>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                  <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
                 </svg>
               </button>
             )}
@@ -941,7 +944,7 @@ const AdminPartituras = () => {
               transition: 'transform 0.2s',
               flexShrink: 0
             }}>
-              <polyline points="6 9 12 15 18 9"/>
+              <polyline points="6 9 12 15 18 9" />
             </svg>
           </button>
 
@@ -1034,8 +1037,8 @@ const AdminPartituras = () => {
           fontFamily: 'Outfit, sans-serif'
         }}>
           <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ opacity: 0.5, marginBottom: '16px' }}>
-            <circle cx="11" cy="11" r="8"/>
-            <path d="m21 21-4.35-4.35"/>
+            <circle cx="11" cy="11" r="8" />
+            <path d="m21 21-4.35-4.35" />
           </svg>
           <p style={{ margin: 0 }}>Nenhuma partitura encontrada</p>
         </div>
@@ -1116,7 +1119,7 @@ const AdminPartituras = () => {
                               flexShrink: 0
                             }}
                           >
-                            <polyline points="9 18 15 12 9 6"/>
+                            <polyline points="9 18 15 12 9 6" />
                           </svg>
 
                           <div style={{
@@ -1145,26 +1148,26 @@ const AdminPartituras = () => {
                               {p.titulo}
                               {p.destaque === 1 && (
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="#D4AF37" stroke="#D4AF37" strokeWidth="1">
-                                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
                                 </svg>
                               )}
                             </div>
                             <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
-                              {p.compositor || 'Sem compositor'} • {cat.nome || 'Sem categoria'} {p.ano && `• ${p.ano}`}
+                              {p.compositor || 'Sem compositor'}{p.arranjador && ` · Arr: ${p.arranjador}`} • {cat.nome || 'Sem categoria'} {p.ano && `• ${p.ano}`}
                             </div>
                             <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                               <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                                  <polyline points="7 10 12 15 17 10"/>
-                                  <line x1="12" y1="15" x2="12" y2="3"/>
+                                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                  <polyline points="7 10 12 15 17 10" />
+                                  <line x1="12" y1="15" x2="12" y2="3" />
                                 </svg>
                                 {p.downloads || 0}
                               </span>
                               <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                                  <polyline points="14 2 14 8 20 8"/>
+                                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                  <polyline points="14 2 14 8 20 8" />
                                 </svg>
                                 {partesCount[p.id] !== undefined ? partesCount[p.id] : (p.total_partes || '?')} partes
                               </span>
@@ -1187,7 +1190,7 @@ const AdminPartituras = () => {
                             justifyContent: 'center'
                           }}>
                             <svg width="16" height="16" viewBox="0 0 24 24" fill={p.destaque === 1 ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2">
-                              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
                             </svg>
                           </button>
                           <button
@@ -1211,12 +1214,12 @@ const AdminPartituras = () => {
                           >
                             {partiturasInRepertorio.has(p.id) ? (
                               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                <polyline points="20 6 9 17 4 12"/>
+                                <polyline points="20 6 9 17 4 12" />
                               </svg>
                             ) : (
                               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <line x1="12" y1="5" x2="12" y2="19"/>
-                                <line x1="5" y1="12" x2="19" y2="12"/>
+                                <line x1="12" y1="5" x2="12" y2="19" />
+                                <line x1="5" y1="12" x2="19" y2="12" />
                               </svg>
                             )}
                           </button>
@@ -1233,8 +1236,8 @@ const AdminPartituras = () => {
                             justifyContent: 'center'
                           }}>
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                             </svg>
                           </button>
                           <button onClick={() => handleDelete(p.id)} title="Excluir" className="btn-danger-hover" style={{
@@ -1250,8 +1253,8 @@ const AdminPartituras = () => {
                             justifyContent: 'center'
                           }}>
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <polyline points="3 6 5 6 21 6"/>
-                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                              <polyline points="3 6 5 6 21 6" />
+                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
                             </svg>
                           </button>
                         </div>
@@ -1309,13 +1312,13 @@ const AdminPartituras = () => {
                                     }}>
                                       {isLoading ? (
                                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2" style={{ animation: 'spin 1s linear infinite', flexShrink: 0 }}>
-                                          <circle cx="12" cy="12" r="10" strokeOpacity="0.25"/>
-                                          <path d="M12 2a10 10 0 0 1 10 10" strokeLinecap="round"/>
+                                          <circle cx="12" cy="12" r="10" strokeOpacity="0.25" />
+                                          <path d="M12 2a10 10 0 0 1 10 10" strokeLinecap="round" />
                                         </svg>
                                       ) : (
                                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={isViewing ? '#3498db' : '#D4AF37'} strokeWidth="1.5" style={{ flexShrink: 0 }}>
-                                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                                          <polyline points="14 2 14 8 20 8"/>
+                                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                          <polyline points="14 2 14 8 20 8" />
                                         </svg>
                                       )}
                                       <span style={{
@@ -1366,15 +1369,15 @@ const AdminPartituras = () => {
                                       >
                                         {uploading === parte.id ? (
                                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: 'spin 1s linear infinite' }}>
-                                            <circle cx="12" cy="12" r="10" strokeOpacity="0.25"/>
-                                            <path d="M12 2a10 10 0 0 1 10 10" strokeLinecap="round"/>
+                                            <circle cx="12" cy="12" r="10" strokeOpacity="0.25" />
+                                            <path d="M12 2a10 10 0 0 1 10 10" strokeLinecap="round" />
                                           </svg>
                                         ) : (
                                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                            <path d="M17 1l4 4-4 4"/>
-                                            <path d="M3 11V9a4 4 0 0 1 4-4h14"/>
-                                            <path d="M7 23l-4-4 4-4"/>
-                                            <path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+                                            <path d="M17 1l4 4-4 4" />
+                                            <path d="M3 11V9a4 4 0 0 1 4-4h14" />
+                                            <path d="M7 23l-4-4 4-4" />
+                                            <path d="M21 13v2a4 4 0 0 1-4 4H3" />
                                           </svg>
                                         )}
                                         <input
@@ -1412,13 +1415,13 @@ const AdminPartituras = () => {
                                       >
                                         {deleting === parte.id ? (
                                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: 'spin 1s linear infinite' }}>
-                                            <circle cx="12" cy="12" r="10" strokeOpacity="0.25"/>
-                                            <path d="M12 2a10 10 0 0 1 10 10" strokeLinecap="round"/>
+                                            <circle cx="12" cy="12" r="10" strokeOpacity="0.25" />
+                                            <path d="M12 2a10 10 0 0 1 10 10" strokeLinecap="round" />
                                           </svg>
                                         ) : (
                                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                            <polyline points="3 6 5 6 21 6"/>
-                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                            <polyline points="3 6 5 6 21 6" />
+                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
                                           </svg>
                                         )}
                                       </button>
@@ -1449,16 +1452,16 @@ const AdminPartituras = () => {
                             {addingPart ? (
                               <>
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: 'spin 1s linear infinite' }}>
-                                  <circle cx="12" cy="12" r="10" strokeOpacity="0.25"/>
-                                  <path d="M12 2a10 10 0 0 1 10 10" strokeLinecap="round"/>
+                                  <circle cx="12" cy="12" r="10" strokeOpacity="0.25" />
+                                  <path d="M12 2a10 10 0 0 1 10 10" strokeLinecap="round" />
                                 </svg>
                                 Adicionando...
                               </>
                             ) : (
                               <>
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                  <line x1="12" y1="5" x2="12" y2="19"/>
-                                  <line x1="5" y1="12" x2="19" y2="12"/>
+                                  <line x1="12" y1="5" x2="12" y2="19" />
+                                  <line x1="5" y1="12" x2="19" y2="12" />
                                 </svg>
                                 Adicionar parte
                               </>
@@ -1520,9 +1523,9 @@ const AdminPartituras = () => {
             animation: 'pulse 1.5s ease-in-out infinite'
           }}>
             <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-              <polyline points="7 10 12 15 17 10"/>
-              <line x1="12" y1="15" x2="12" y2="3"/>
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
             </svg>
           </div>
 
@@ -1719,8 +1722,8 @@ const AdminPartituras = () => {
                   }}
                 >
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <line x1="18" y1="6" x2="6" y2="18"/>
-                    <line x1="6" y1="6" x2="18" y2="18"/>
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
                   </svg>
                 </button>
               </div>
@@ -1810,6 +1813,47 @@ const AdminPartituras = () => {
                 />
               </div>
 
+              {/* Campo Arranjador */}
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{
+                  display: 'block',
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  color: 'var(--text-secondary)',
+                  marginBottom: '8px',
+                  fontFamily: 'Outfit, sans-serif'
+                }}>
+                  Arranjador
+                </label>
+                <input
+                  type="text"
+                  value={editForm.arranjador}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, arranjador: e.target.value }))}
+                  placeholder="Nome do arranjador (opcional)"
+                  style={{
+                    width: '100%',
+                    padding: '14px 16px',
+                    borderRadius: '12px',
+                    border: '1.5px solid var(--border)',
+                    background: 'var(--bg-primary)',
+                    color: 'var(--text-primary)',
+                    fontSize: '15px',
+                    fontFamily: 'Outfit, sans-serif',
+                    outline: 'none',
+                    transition: 'border-color 0.2s, box-shadow 0.2s',
+                    boxSizing: 'border-box'
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.borderColor = '#D4AF37';
+                    e.target.style.boxShadow = '0 0 0 3px rgba(212, 175, 55, 0.15)';
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.borderColor = 'var(--border)';
+                    e.target.style.boxShadow = 'none';
+                  }}
+                />
+              </div>
+
               {/* Campo Categoria */}
               <div style={{ marginBottom: '28px' }}>
                 <label style={{
@@ -1864,7 +1908,7 @@ const AdminPartituras = () => {
                     color: 'var(--text-muted)'
                   }}>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <polyline points="6 9 12 15 18 9"/>
+                      <polyline points="6 9 12 15 18 9" />
                     </svg>
                   </div>
                 </div>
@@ -1919,17 +1963,17 @@ const AdminPartituras = () => {
                   {savingEdit ? (
                     <>
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: 'spin 1s linear infinite' }}>
-                        <circle cx="12" cy="12" r="10" strokeOpacity="0.25"/>
-                        <path d="M12 2a10 10 0 0 1 10 10" strokeLinecap="round"/>
+                        <circle cx="12" cy="12" r="10" strokeOpacity="0.25" />
+                        <path d="M12 2a10 10 0 0 1 10 10" strokeLinecap="round" />
                       </svg>
                       Salvando...
                     </>
                   ) : (
                     <>
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
-                        <polyline points="17 21 17 13 7 13 7 21"/>
-                        <polyline points="7 3 7 8 15 8"/>
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                        <polyline points="17 21 17 13 7 13 7 21" />
+                        <polyline points="7 3 7 8 15 8" />
                       </svg>
                       Salvar Alterações
                     </>

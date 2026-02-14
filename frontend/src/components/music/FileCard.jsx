@@ -41,6 +41,11 @@ const FileCard = memo(({ sheet, category, isFavorite, onToggleFavorite, index = 
       <div className={styles.info}>
         <h4 className={styles.title}>{sheet.title}</h4>
         <p className={styles.composer}>{sheet.composer}</p>
+        {sheet.arranger && (
+          <p className={styles.composer} style={{ fontSize: '11px', marginTop: '2px' }}>
+            Arr: {sheet.arranger}
+          </p>
+        )}
       </div>
 
       <button
@@ -66,6 +71,9 @@ const FileCard = memo(({ sheet, category, isFavorite, onToggleFavorite, index = 
 }, (prevProps, nextProps) => {
   return (
     prevProps.sheet.id === nextProps.sheet.id &&
+    prevProps.sheet.arranger === nextProps.sheet.arranger &&
+    prevProps.sheet.title === nextProps.sheet.title &&
+    prevProps.sheet.composer === nextProps.sheet.composer &&
     prevProps.isFavorite === nextProps.isFavorite &&
     prevProps.category?.id === nextProps.category?.id &&
     prevProps.index === nextProps.index

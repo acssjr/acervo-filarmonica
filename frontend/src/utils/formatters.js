@@ -45,13 +45,17 @@ export const getAtividadeInfo = (tipo, short = false) => {
   const mapLong = {
     'nova_partitura': { action: 'Nova partitura adicionada', color: '#43B97F' },
     'download': { action: 'Partitura baixada', color: '#5B8DEF' },
-    'favorito': { action: 'Favorito adicionado', color: '#E54D87' }
+    'favorito': { action: 'Favorito adicionado', color: '#E54D87' },
+    'novo_repertorio': { action: 'Novo repertório criado', color: '#9B59D0' },
+    'add_repertorio': { action: 'Adição ao repertório', color: '#9B59D0' }
   };
 
   const mapShort = {
     'nova_partitura': { action: 'Nova partitura', color: '#43B97F' },
     'download': { action: 'Download', color: '#5B8DEF' },
-    'favorito': { action: 'Favorito', color: '#E54D87' }
+    'favorito': { action: 'Favorito', color: '#E54D87' },
+    'novo_repertorio': { action: 'Novo repertório', color: '#9B59D0' },
+    'add_repertorio': { action: 'Adicionado ao repertório', color: '#9B59D0' }
   };
 
   const map = short ? mapShort : mapLong;
