@@ -71,6 +71,9 @@ const FileCard = memo(({ sheet, category, isFavorite, onToggleFavorite, index = 
 }, (prevProps, nextProps) => {
   return (
     prevProps.sheet.id === nextProps.sheet.id &&
+    prevProps.sheet.arranger === nextProps.sheet.arranger &&
+    prevProps.sheet.title === nextProps.sheet.title &&
+    prevProps.sheet.composer === nextProps.sheet.composer &&
     prevProps.isFavorite === nextProps.isFavorite &&
     prevProps.category?.id === nextProps.category?.id &&
     prevProps.index === nextProps.index
