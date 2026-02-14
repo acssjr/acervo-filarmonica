@@ -71,7 +71,7 @@ export async function calcularStreak(env, usuarioId) {
  * @returns {Promise<Object>} - Payload completo com streak, histórico, etc
  */
 export async function getPresencaUsuario(env, usuarioId) {
-  // 1. Buscar os últimos 7 ensaios REAIS registrados no banco
+  // 1. Buscar os últimos 100 ensaios REAIS registrados no banco
   // (datas onde houve pelo menos uma presença registrada por qualquer pessoa)
   const ultimasDatas = await env.DB.prepare(`
     SELECT DISTINCT data_ensaio

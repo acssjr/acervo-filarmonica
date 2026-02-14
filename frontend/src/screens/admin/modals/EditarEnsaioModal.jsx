@@ -137,7 +137,7 @@ const EditarEnsaioModal = ({ ensaio, usuarios, onClose, onUpdate, addNotificatio
   const handleRemoverPartitura = (epId, _partituraId) => {
     // If it's a real record (not optimistic), mark for deletion
     if (!epId.toString().startsWith('optimistic-')) {
-      setPartiturasRemovidasIds(prev => new Set(prev).add(epId));
+      setPartiturasRemovidasIds(prev => new Set(prev).add(_partituraId));
     }
 
     setDetalhe(prev => ({
@@ -190,7 +190,6 @@ const EditarEnsaioModal = ({ ensaio, usuarios, onClose, onUpdate, addNotificatio
     }
   };
 
-  // Filtered lists
   // Filtered lists
   const presenteIds = new Set((detalhe?.presentes || []).map(p => p.usuario_id));
   const ausentes = usuarios
