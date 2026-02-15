@@ -135,6 +135,24 @@ const STATEMENTS = [
     atualizado_em DATETIME DEFAULT CURRENT_TIMESTAMP
   )`,
 
+  // Avisos (admin → músicos)
+  `CREATE TABLE IF NOT EXISTS avisos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    titulo TEXT NOT NULL,
+    mensagem TEXT NOT NULL,
+    ativo INTEGER DEFAULT 1,
+    criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+    criado_por INTEGER
+  )`,
+
+  `CREATE TABLE IF NOT EXISTS avisos_lidos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    aviso_id INTEGER NOT NULL,
+    usuario_id INTEGER NOT NULL,
+    lido_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(aviso_id, usuario_id)
+  )`,
+
   // Valor padrão para modo recesso
   `INSERT OR IGNORE INTO configuracoes (chave, valor) VALUES ('modo_recesso', 'false')`,
 

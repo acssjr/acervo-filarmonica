@@ -1,0 +1,170 @@
+<!-- This is an auto-generated comment: summarize by coderabbit.ai -->
+<!-- This is an auto-generated comment: rate limited by coderabbit.ai -->
+
+> [!WARNING]
+> ## Rate limit exceeded
+> 
+> `@acssjr` has exceeded the limit for the number of commits that can be reviewed per hour. Please wait **16 minutes and 54 seconds** before requesting another review.
+> 
+> <details>
+> <summary>⌛ How to resolve this issue?</summary>
+> 
+> After the wait time has elapsed, a review can be triggered using the `@coderabbitai review` command as a PR comment. Alternatively, push new commits to this PR.
+> 
+> We recommend that you space out your commits to avoid hitting the rate limit.
+> 
+> </details>
+> 
+> 
+> <details>
+> <summary>🚦 How do rate limits work?</summary>
+> 
+> CodeRabbit enforces hourly rate limits for each developer per organization.
+> 
+> Our paid plans have higher rate limits than the trial, open-source and free plans. In all cases, we re-allow further reviews after a brief timeout.
+> 
+> Please see our [FAQ](https://docs.coderabbit.ai/faq) for further information.
+> 
+> </details>
+> 
+> 
+
+<!-- end of auto-generated comment: rate limited by coderabbit.ai -->
+
+<!-- walkthrough_start -->
+
+<details>
+<summary>📝 Walkthrough</summary>
+
+## Walkthrough
+
+Replaces generated rehearsal dates with real DB-driven dates and rehearsal numbering; moves date handling to UTC; adds portal-based responsive modals with scroll locking; implements batched, optimistic saves in the edit modal; excludes the Regente from presence counts; and updates UI/stylesheet layouts and changelogs.
+
+## Changes
+
+|Cohort / File(s)|Summary|
+|---|---|
+|**Calendar & Detail Modal** <br> `frontend/src/components/stats/AttendanceCalendar.jsx`, `frontend/src/components/stats/EnsaioDetailModal.jsx`|Switches per-ensaio date parsing to UTC (uses 'T12:00:00Z'), removes per-item partitura badge, adds portal-based modal rendering, responsive variants, scroll lock, and displays ensaio number in modal header.|
+|**Presence Styles** <br> `frontend/src/components/stats/PresenceStats.module.css`|Layout and responsiveness adjustments: flexible calendar grid (auto-fill), padded calendar badges, modal size/box-shadow tweaks, keyframe formatting and minor positioning changes.|
+|**Admin Presence UI** <br> `frontend/src/screens/admin/AdminPresenca.jsx`|Reloads partituras for selected dates, clears selections when an ensaio is deleted, updates counter logic to exclude Regente, and shows ensaio number badges in history.|
+|**Edit Ensaio Modal (Batch Save)** <br> `frontend/src/screens/admin/modals/EditarEnsaioModal.jsx`|Introduces optimistic UI + diff tracking (originalPresenteIds, partiturasRemovidasIds, hasChanges), defers API calls to a batched handleSalvar, updates UI to reflect saving state, excludes Regente from counts, and shows ensaio number. (Component signature now expects addNotification.)|
+|**Presence Service (backend)** <br> `worker/src/domain/presenca/presencaService.js`|Replaces synthetic date generation with DB queries for recent distinct data_ensaio (up to ~100), computes numero_ensaio map, recalculates streaks/percentages from real ensaios, expands LIMITs, and uses UTC midday parsing for weekday names.|
+|**Changelogs & README** <br> `README.md`, `frontend/src/components/modals/AboutModal/changelog/*`|Adds v2.9.1 changelog entries and bumps displayed version to 2.9.1; documentation-only changes.|
+
+## Sequence Diagram(s)
+
+```mermaid
+sequenceDiagram
+    participant User as User
+    participant Modal as EditarEnsaioModal
+    participant API as API
+    participant Service as presencaService
+    participant DB as Database
+
+    User->>Modal: Add/Remove presence or partitura
+    Modal->>Modal: Update local state (diff trackers) and optimistic UI
+    User->>Modal: Click "Salvar Alterações"
+    Modal->>Modal: Compute additions/removals for presences & partituras
+    par Parallel API Calls
+        Modal->>API: POST batch presence additions
+        Modal->>API: POST batch presence removals
+        Modal->>API: POST batch partitura additions
+        Modal->>API: POST batch partitura removals
+    end
+    API->>Service: Process each batch request
+    Service->>DB: Insert/Delete records, map numero_ensaio from distinct data_ensaio
+    DB-->>Service: OK
+    Service-->>API: OK
+    API-->>Modal: All operations complete
+    Modal->>Modal: Reset diff trackers, show success, close modal
+```
+
+## Estimated code review effort
+
+🎯 4 (Complex) | ⏱️ ~60 minutes
+
+## Possibly related PRs
+
+- **acssjr/acervo-filarmonica#93** — Directly overlaps attendance UI and presencaService changes (same files/features modified).  
+- **acssjr/acervo-filarmonica#87** — Related refactor touching AttendanceCalendar, EnsaioDetailModal, and presencaService date/time handling.
+
+## Poem
+
+> 🐰  
+> *I hopped through dates that once were born of code,*  
+> *Now real days march from the database road,*  
+> *Batches bundle changes with a gentle thump,*  
+> *Modals leap to portals—no more page jump,*  
+> *UTC midday keeps each weekday in good mode.* ✨
+
+</details>
+
+<!-- walkthrough_end -->
+
+<!-- pre_merge_checks_walkthrough_start -->
+
+<details>
+<summary>🚥 Pre-merge checks | ✅ 4</summary>
+
+<details>
+<summary>✅ Passed checks (4 passed)</summary>
+
+|        Check name        | Status   | Explanation                                                                                                                                                                                     |
+| :----------------------: | :------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|        Title check       | ✅ Passed | The title directly reflects the three main changes: calendar parsing fixes, modal positioning improvements, and rehearsal log numbering system.                                                 |
+|     Description check    | ✅ Passed | The description includes a clear summary, detailed change breakdown with sections for calendar/date logic, rehearsal numbering, and modal positioning, plus comprehensive testing instructions. |
+|    Docstring Coverage    | ✅ Passed | Docstring coverage is 100.00% which is sufficient. The required threshold is 80.00%.                                                                                                            |
+| Merge Conflict Detection | ✅ Passed | ✅ No merge conflicts detected when merging into `main`                                                                                                                                          |
+
+</details>
+
+<sub>✏️ Tip: You can configure your own custom pre-merge checks in the settings.</sub>
+
+</details>
+
+<!-- pre_merge_checks_walkthrough_end -->
+
+<!-- finishing_touch_checkbox_start -->
+
+<details>
+<summary>✨ Finishing touches</summary>
+
+<details>
+<summary>🧪 Generate unit tests (beta)</summary>
+
+- [ ] <!-- {"checkboxId": "f47ac10b-58cc-4372-a567-0e02b2c3d479", "radioGroupId": "utg-output-choice-group-unknown_comment_id"} -->   Create PR with unit tests
+- [ ] <!-- {"checkboxId": "07f1e7d6-8a8e-4e23-9900-8731c2c87f58", "radioGroupId": "utg-output-choice-group-unknown_comment_id"} -->   Post copyable unit tests in a comment
+- [ ] <!-- {"checkboxId": "6ba7b810-9dad-11d1-80b4-00c04fd430c8", "radioGroupId": "utg-output-choice-group-unknown_comment_id"} -->   Commit unit tests in branch `fix/calendar-modal`
+
+</details>
+
+</details>
+
+<!-- finishing_touch_checkbox_end -->
+
+<!-- tips_start -->
+
+---
+
+Thanks for using [CodeRabbit](https://coderabbit.ai?utm_source=oss&utm_medium=github&utm_campaign=acssjr/acervo-filarmonica&utm_content=95)! It's free for OSS, and your support helps us grow. If you like it, consider giving us a shout-out.
+
+<details>
+<summary>❤️ Share</summary>
+
+- [X](https://twitter.com/intent/tweet?text=I%20just%20used%20%40coderabbitai%20for%20my%20code%20review%2C%20and%20it%27s%20fantastic%21%20It%27s%20free%20for%20OSS%20and%20offers%20a%20free%20trial%20for%20the%20proprietary%20code.%20Check%20it%20out%3A&url=https%3A//coderabbit.ai)
+- [Mastodon](https://mastodon.social/share?text=I%20just%20used%20%40coderabbitai%20for%20my%20code%20review%2C%20and%20it%27s%20fantastic%21%20It%27s%20free%20for%20OSS%20and%20offers%20a%20free%20trial%20for%20the%20proprietary%20code.%20Check%20it%20out%3A%20https%3A%2F%2Fcoderabbit.ai)
+- [Reddit](https://www.reddit.com/submit?title=Great%20tool%20for%20code%20review%20-%20CodeRabbit&text=I%20just%20used%20CodeRabbit%20for%20my%20code%20review%2C%20and%20it%27s%20fantastic%21%20It%27s%20free%20for%20OSS%20and%20offers%20a%20free%20trial%20for%20proprietary%20code.%20Check%20it%20out%3A%20https%3A//coderabbit.ai)
+- [LinkedIn](https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fcoderabbit.ai&mini=true&title=Great%20tool%20for%20code%20review%20-%20CodeRabbit&summary=I%20just%20used%20CodeRabbit%20for%20my%20code%20review%2C%20and%20it%27s%20fantastic%21%20It%27s%20free%20for%20OSS%20and%20offers%20a%20free%20trial%20for%20proprietary%20code)
+
+</details>
+
+<sub>Comment `@coderabbitai help` to get the list of available commands and usage tips.</sub>
+
+<!-- tips_end -->
+
+<!-- internal state start -->
+
+
+<!-- DwQgtGAEAqAWCWBnSTIEMB26CuAXA9mAOYCmGJATmriQCaQDG+Ats2bgFyQAOFk+AIwBWJBrngA3EsgEBPRvlqU0AgfFwA6NPEgQAfACgjoCEYDEZyAAUASpETZWaCrKPR1AGxJcAZvAAeXADCaF4YtM48zojwGEQANJAAsoqhPPgx4vgYsUSQAGSQNiSwJNFpADL4RMgAFLaQZgCcAKwAlJCQBgCqNhVcsLi43IgcAPRjROqw2AIaTMxjaAyIiEIUSwyUEoR+Hs7M2fAMaGPc2B4eY62dPYiUXMur65CAKASQAMr42BRbvgFjE5hCIUMCHCIeSCAJMIYM5SJxIMxtFh3h9cNRsKN+NwyG9IEEKGUaLQuAAmAAMpIAbGBKWAAIwAFmglI4LSpHFJpIAWm4EMgGn5/NJIN0AJJjboADRQq2wItikFwpWshPuGC2+NCZBB6HCRRKZQoiDSABESOj4B5kCkIXr6GhaLRkGgDaVypCAHKOASUXKfWSIGjMSC1ABEFUkFHwkCUBqmQejiDDbQ0+NgmFIowMUBCwMihVN1BIkCqUwY/2FyHEbAAXtkS9xov7EDHCe7jWkIjRkBgYx5sqQ+IgED5cEqY8rG4SJPBvsgIvI5JBMf7utAglFjbkANyQQmHKTVlUjkgWxGrhgKbAYccCR2kSA+aMhqeMbXhSKzkgAdw0ObdI0TS9H0/TiLh4GYbgvDYW9kHuABHeVb3gNJ7wYABrHUUHCEh/H9Hx8D4dsgNCOozHpRIzFJRINDoto9xHfAf2PEszE9SB71oR9FTfABBWhmEVKw1TITUPCQcdMHoWgkGgtBA0gMMAFEMBNOdGk9MMcKVFVwTScRcC8f8oFtNIrAydQ5xyOICgNRBuGyGIpHIVYuEJHxlgIY1IFU9T8HNS0PDMyECBXe4DS8+ZCWLCyKHRSFakJXCfOoWN8AYRx2A0ARFFkNpEkdZ1OLy+wGGjS5IAHTD/R/UosH0yFUHwHEMEK/UtlvShWMRVJIWyWNpAwghuEgOqrRLVdbNdXKhhYMBT3PDzKDEksBsONQvFDaMBExccwvrFgqpIKRrVTNxpHEWy+x7Hho1nJR6EIvggR1SJuxLJFcAYBA4kSRrGHYMCiDGRByvwSrqow9r6AwUCKH9WcYk29RZH/AxlPwoN/UEEQxEkEUHCcFxQxvH7MzoNoOCMAwLGsOwiaRFw3E8bwnwCYIP11Jttz+5I+vSTJrP9Qpig7YDS2qZAum9ZhfQoLgbi6Xp+kgQZhlGCYpmVWZ5hYTZng2ZZtl2K0DiOE4zguK4lbuB50BWNY+C6L4fk1AQqA1WBK0BLnnDBAWYWgOFzw9zAfq4JFFRd9FcExLgWtxLoCSJOh0ARClqVpUkGWZVl2U5HkjHNMGEe4LIMC4AAxAIRRrEh63IWUHAVLBXs/PhZIc/Y0cgMUoJg9gXWsIiEqfIjdM+gWwrIBxCQUChCTESBazAWIlHw6b9UcoWjmm8HVkG2ctkQNMBOKxDkPENISI9SA4bl4HQ3YjpnpQKD7rT3AqBquJ0ZzMAhgDAmCgNhfAPgcAEGIGQZQxIFCsHYFwXg/BhCiHEEeTi8gmBKCoKodQWgdD6GAeAKAcBUCoEwJAwgpByBUDgQsWCCIqA/nsI4JmS4sGKGUHgzQ2hdCAJpiAowz5sg0HCKDX4gIWCOXIHBUGsdEBjD4kMN6GoSB5jehQDQQhECBAMGGAxtNLB8TFNA2hxZ6CM2cPIcBjAMxxGkEYKAxR5Inx4JQNewZYzFjVtJCStkREhmqgZSCDcGxgHvPcegRYaAKDUt/bA+MBphXXEECJaAolbhiOBew0F1DIFntofAGhuxoAAPqFLnIkXaVpiqulSZAGJJY0p9myDDcKdcMzjjfouf6ojYDtJ/GeDCi575oDYO+DwmV9gV1PgBZSEkhIYGLMgQkElw5rSwME0KoTG4llnK6AgVRXpNLRAjAJE9FxjF6reAZkA8J5IYJ4eQDlRDwB8LINcG4xqlHnuQOgdATIGkPJ0ksBAEpWGcIZH4GTQw82hVQa8t4Oj2NoP4vI0lJ4LzVDI2StkuKPmSjg/0vEVTikKgOWyP5phYoya2J5FjIASGcKhAQxkAIAGkzwjDutIdgSwBDqnHAOcs9pGASUwr48I6KVxewprQapeAVzcA+guP0Uh6DMo8PKOosk0D/WkIkPVHwSBImWR0MKxKpBPhfFi1J6TMkfX/gBT0MZyYOOrJOFUDzR50Ctmy44T4yYV3sPAIgyy45qn4C9aRDZbz3P8I5eK6NPQAHlPTKSMJGVydj5VcAANRNDGAyUkRhlLYy+mnbBJYZzwF/Pcnwz0ERJDoPARw+jDEALAMI6MXVxGIEkQsGRQ95HUEUX5IpgVtDBT6to3R1MDFhiMZAExZjYFpysSTWx7qsxOL7reaMtBEkildEmhKDq04AyJU/Wo5VU5xQSharpvUby4B6hOucU6rQhRwpajKWVbw5TykC8+qzpAyOciWX0GZZwTwOegQaiBhotTsaIDCpN7gtr1QARXlC4DomLHRCD2sgAGvA+W3moNZB2TAKB4qIB4eQtRZKNpWvG2IVlQhLByJWsYeF1BitiP4ksQZZBeGQD0oaI0mWn16ptEg51nEkFcSKDMdGwDVvoADZlCNMDjiUH4HIsyxo0qE7EEsVcqBsD4CkENvAWoLgRi5TBsoS7Ie4IkWIDBtX0djLIZZQkrw7ysnvBIobay5HaVQWSmIgXHIwsgJsj5S4Q0hHVXEb4AbNVai5s18BzgzP9LQf9jCFmmvYGK4rmVGFAdoLIKLl0iIKnHANbzGQSAgadPBNAPgSwfXHhQL6V08jLh5tkvIlTimlIqWpIpv6Yz2siWnfrmLnpDdqjS+u3IGxcAAOSpN20C1S9i3EA3dDgicOFvPYDjG+Sb994ahnebyoVHRSVgtZkCpIyJLRqQQ+hEZ0ZRqYu88cDCYAoFtYitBtAsGKCJGpcqOJMQgwVfI+qLYAqMcidwGJ/0S36ADXR6tewscOucu5cgAcjp/SYvheoGFiAwC9e+r9PIIrA21D4lYMUkzQr9nwI6SF8UGdUEQAR7eok1Gk4xGBlKkX0ASXDS2XHMrEewHvvWnFTkCZjABomRJkbyc0xdW6+xWZLtvhiOGjEUbbE+vin684AarzsCsiKWoH6AoWmnSFDo7wpzz2cCWPs6AnQhbUmMA8+AtWKOSuMkUtjncSpXTz9G2aRQ7roAWqkABmYtpImhlorYy6t+4Tp1pYSQRto8uBYbbcwDtS6u09tETqCRDApFQTjW+0dveRIUa2GiMdGhwQXA647Bdhi6arpoeuyxbDrH8AgVnxAe7z5pyCB8D4d1E7xXkEiJDluTzfzKBhAAQu9UQREqPWtynRyg9zB63gpWGmyeR1cJskrVEgAgMLqDBAyXQ0xDQFICBWKB/CIiwksROmUEhCwlkGfATxkChk9QTSbH1HJAAFIxV6RyRsD7ASAvAxAiJkBREYx7geYfFhM6hQ97gzVxArws89w1tqBht+AMBGNFN90LwPBxBoISwECkC2A6h78cEABxAcH8RIPwQkZnCVLCeHdmOQhjZiRIEcSCazAqMPYjVHegbAsYPAgg1goYWnfUIqNOWIGgQbVtHxUkFoLAxIFobAxIAAdgcNJ2U2QE/yYDUkkgqwYVPX2C2EYVDFDx8GDWsjSA5yYPNwUyBTFAPUUGPXoGCwrnciINvzBTdT9goCLCYx616zEES0sgrhxggTfHbl1AJXiIAm6BVUZUqNyO8SXAfBxzxxySzyeltSFDTnpAAA5/ABjuB/BGB4BfgtowomwnQ04aiTMkdXQllIJHATNaBlREhowbxHoF5aFEB2ko5KNzN6BOprCq029AN5lE1pJL0BZfDftH8YgIsLliJwMdcXJpAsRqU1iNdWhHDEQ0B/AwAvikcqR8CRj/oASwBSgw1BhIB+iWgJA7kLCHRYwgd7AMxisWFMVV5148JOJHBRoZ41IfhNkIcUNr1zkiBOttjcpASRxHRmJLsAY7jkRH9JNy5YBOtdC4EkMiCLQBoQdmiAciBNjwgJMJ4t8d8YoIgUZcdkd/CNQmM+xBtQh4BawN0mw3FnBvh9QKAiB7wmVQgdVuDbR3k61jjmiRT4B6Ae5vgEREBEcfobUjpej6BXCNMIZHAsArT6Awo0A8BTZKpP8lkkRRi35Dh54fAvB8I2Ua1Xi/C78ShYc5wtEAIkhYgJ5tcEyYFD5cAhk0AEsuAqjnBxCEYHR9QAYiM9pGFkAtjH8NoJpKspMUM2A9VIAkI/RpA9wlkJ5pjfNMUlkoSSAYT9p8yEsODJlNF8ivsMyY0EF40qygwayxVVTw1QjV8dIdM5xMRCCkk/tahQ8Yc4c0hIJNTcBzoAJU1BVtgq04iXR55eBIIWVGMBt1s4hQZNTadaBuTlzMV7gpAqBQoQ44FbS8Ao94zINXICkMATtys4I0xXUUF7gKBmVYzc0PVLtaMSwrDlA9yqpqhA1LlqBT1owT5xtnUZ8+DYFrI0C3wlBvNnAqMnJl90DfVCc+Bk9A03dxBHFTdWLHdaB/UU96L9g6EaKxoVpeoWNzSdJlRUBJT2Z2Vl1vschesgxIAa4to+JllGN1SKAs1zNkAuiC1c9+ji16Qi8MYS96EuFy9vwq8a94o69W121F0nFTADARE+1BKB1O9S4zxI9HQlklFBJYgB8Mc0A509E3KZ9TE586EN1F8t0V87y91U0sBSl8LHRPMIFXR+sKEPBpSXk+SxA6ANiSAwBqd6B8ktwEVYUwpEB/Mfpe01ScdiwgUAB1eqPUe5WbDSVAJQLwYkRIbzI0fCoEQg4g4zQjVYDKVCOBenSNWFZ7OivkuBe7L6H6UFRgH4ZKcce4Ka5bdq+ZGCjZF7EnJgV9f0GI6mToKARI7+ZIzUV0YoGhWJPYawy7PCa7OMJES6aMZ0kMIEaZJitSf8O6ng4neNcEEgEanUlrTg+QPsDAMAV6oGSatBS9S8VCMGgwCGxI9Aa86GrhOGqCPAacCjW6eq/AMeZG1GkgN6z6bGzAUjWIHcumtGrqHAIVQ1MVQkM9bmoGApfwH6/0TmmgcG3QUUBo2JJQVqJQRUpUH+f/Z4uJdEYrCgaAPCMKMKGKZeMKDcxUA6zG+gTEbqBIrAN8fkbyeQclWMOSHuf7No+YjXO7PqmMB+eWH5XEB+SgfAGbfySAPQSAckAbe5ZYDXa2oiY4NIdgFwdGOmcwYxKisS5inWlUESxi4ze3RNNi6NHgWYFPbiutNfU3cgJO5ITAd5S6DSxs7S0IWQPSgynNYyyAfNdkYtRkYvGsUvWy2tetavJtZymLRvNylvTy3tMRHyyRfy2eJYUKjAPXPqcdWSdECgL3EKKKqfJdWKtdBKhfYmGxFKimUu+6pIo9LYege8VnMYFjHwBaZMqlKAqMxkt+VtdgyhL3W6qWjfSxR+vIIMYsRIaOqYHS8KoGMUOpbeKFUXDJYoQ8a0jJSB6sZWhXTFDMRAIIO8p8fYKkvGqWlxYIywhBPVWJbnXnIEa0CcqGzHRamFdCi3T/FqGsb/K8cUZVVVMVbZe2xtJW5YFWvBiG3+hDcgFhVFLwD4UIHTINDUENKY0ij4ziagLa44u8os6Rcml0cPWZcCw8MiMOmhk9aBkXJavYyeLAWQzPIiLM3zchvnZARUKgy4IgmQ1LZiWYmxDAeoj6YBjAIIAce4dpBwBgMi++Gms0k4CuI7K43Cegdhv8snf45ZUgRhb+qAYR0R+wf+nCWSSJieTFLuFQLwQSsgIpjdMncUvgEINRUSsYSRjwaRviFOtAAAc4AFeRRdo5o/sCcJyTRZwt56AMGsGT7Jb7qB44K4E8zCB7g8LQLul8mibxxmBmb9y/SnQJdUipdlnVm6hdbTUY8FMXbf1cL0ESwJIgwXR9RTzP5NUkBsAyIxmDRICKBoClQVAqoVAiCrnjj4a0CPIprFLTjfnX0zGvMfN/RvqIXbJxaSxAlzrpdgaLhQa5kIbCHjYYCAK0gcRQQvJqM7HKHvCaVr6VHsRqKnJ2krDD0UjsQWHsYrwioI9KnarYGiWFjBpcnGUylmHIJWGcHQC4sCKGWOpREKocHGTV80n91OMJJ1TKt3kKjUHbIBpMqqquAgwmto0w1YhQhwGupkG+a+V9MFW+HMJupvaMqfcrQqdBdaAnmHrqXL78LRUDaNHYkcWTjQDpAzgpdNRLq4JjnMoNWQwPqb0oWbsxaGagZzoIbjsNl6Bo8tV57V7qNxHzWwpsgXyVnEnuHAHYkBznB0Nhm7yjVq9KBKT3FtxUdpcwo036mdMZzlTRQJQTCdDqyh4pWPgldYTjgBT9QaB/AFmVTTDbJfCUcxEGAsFsHagHJlgFczMm4JBZNKCs604mwkc+SayY2pbvHGVzt/QwpwWbsSx7tPbH90ssAobNAK6K6mnrCUXj8+tRBRKH2c6z005ezC6uKUIeLT7Pg39bdJoZbs9IAAADZSVe5wDevqWoAAb16v8kSExAeYRgyF8f8fa18d3ZoEKidFdXED8EieowAF82hQOdJQOvKp6O9QY7056grYgl6IQV71AoP3bN6dF/ByOYRahBBkKNUOg+wWEj2lAepQOip8OInQbyP7NRoHkJVnk4Uv2rwCW4jH34Fh1kUE7LAVLq71LNKSx67dLKBm7M84iSQ26uR88S0u6rKe6bK4x+6HKh7IAAAJGEpvdy7tAwF5xQmj4rA4n1wfU4GhtAE1FC44DrHRbe5dWfGBfe1hQ+li1fPddFtxNTWgD07Y+K0Glit8fYdSjiW+TsSEThmdhmrYjJMYJCKFDJDoT/DslwA9lUGKSEAr8cZwwAZAIjD7bsZZHvF0QA65s46S7AasVSkltEhicIvbJWugSiIPALT8wY1F40EoKgUzkz9JkQaQ0hOOkwNQhyqTiXyMpMpVv6BJsHHLWwYdQcYH8+BYhUdHQWLXRXTIAcueSSAOy1E9wPYz9vDurFikBxsEXNRUBCItjZKWuyhSviKgUrBKBPXHwh08AH2HT1AnT4WpoMVeUUe4FnAqB5AwpsfaUxAHm2uMlxwiuYeEOilRCMkP2sALgawMgvdxdcPuSD2abQghu5x/nq9AW3xWukUpJdTRBQgdv/QPX2ByeylnwvvkIGUaMiJ6NGMgV4Q9WThugHAWUPbmIpXCRv460MFsBCSYweuu4rpl5pt7stUdVLs1sBuMk2eNjqBfldJKFXva43SwB+tqVwhmIdx8GoAalFvh5iuJYz2K2kRRoDyspoxef8BX5bVQhSvv9+ubf3bDTtUuzg/y9I0/sjQXzntQ9Luv8gwEcaUgeeNsWFIqqg+Ia8ejHqqNQfMRRfaE/7s36I7af+qme+DIJWf3a5koBNfYUBx8AMJTew7XQzaHujKnJv5WTfSvU+t/NxkY7Lh5AlBrClkjr0REAXeVyg1KokXCsBoX6WE9uFg1Ac1EwtuYjjm6sAtN+XyrU05LvOtmHhbHkBN64V4GwUqNFP6GYzEUvcbdSALtmgD0hSQHAfAnAPJDchds9XbqjH24CQss+nDMKEMhIAjIFIYyEQurwtDQBUgiAMfr2H1558RO7fePv7S74TwygTpe7MuFD79ly84sNIFH39Ax8HYSYF0JVEt5eZ9MxFRPg3yloPJpIyACoGKCSBihoAY3XPKHTChGExBUAQ3siE9QJQykoXG1qKnGhbRw2vmLYPFGRD7gIYHuWFm9jbh/MLaj1C+jQOsx0Cs+fgIgi33TqNgPE92O0ucCkgHwwMXgZlPGgiKyMaK4BA5hgjfDkZYMO5PNoGiHDOBugA/Q4If2H5qwiCOLRIEQV5YRoCI3vX3j4kvhiRrqQrHSJ5B2B8BbEc3frI1xLoUVk697YzO4MGgMVU6f2N9nnU/Yu5eqhkEunukQobkZ4udASkJUDTBC8K1uCNCSTVQ0BSqdrUMMUAL7ok0AOIH5ldjb6pFlOTvdmK4O8KSVtaOoMqviW6SREBoEwwDqxGYAHUMEB4UwWTHM4aA2gFdXTmpXHAGcV0OlRuiZwMAZ4jK5nAtP0Ws4tBbO5aezmcUc4V4B6jlBEO5yICwBPO49GwMpD4imgkgykUfCSE8670PuiVJLtulSoAQMm9aLPCKl3LGY34EgUkBoCaAaB6QoYJkBpV/wUAUO8gTOFSE2ZMpKR1I0OrUHsKNJRApqL2pnHaBpgKRVImkelGqxDxm2koGUL0TMbFkNg9cPZNijQQ0U+kdoI8imSZSoQR4JgjwH0nkzoBmUa9NtkuSHjtI8qLAUwUJBFKg0RRnIjQKHQuZvpNcLCXrOcNDBdUx0fEbgKNHpKUl/ozPeAGADoaIpMSnBW1u+HihHdFGMNXxrlGcD0Z2RMw2ADkAmo3NDmy5eoKaCrjajfwj+dAV7DACHRmAiQKwB1T4goAx2nmD+IcxgLOAfo5VeXO+RxasE1EqYSAP0NsqP9V8e4TNtvxKzsBcupvLAavwYZEFqgYqACjEBVZWtrQdQldM00aFjjM6rQsghAgdxwJOhRdH9r0LLokAnhVdF4bXS0ofCm63wwyuOIs75pc8pIYtOSG7pPkHOcZeyg2hc5VAfw8IiAN5yo7t5fKXeTTr3kaiKI+IuUPACFEBBxERU89JZCMwcQio50MXLEfF0ZSboj644v9qBhEZEioJk4uOvIHJHdRqMDo2kWlDfDSZbEyI2QZ6DKRBBXOfET0OIWUgVBU04hY5pQiQBBBdqFWKMqAUIL7RJwTI5pOYVdEoBgw95QnoNCCjcCgxAhT5r6GKYcMVkaYLoFAC5ReEsU/GPrnkAdGh1iReEg9PIB6yfU3wmTEid0Pjq3AoA5+Akj1AEiwTsgfgPILEEIhRjuiR0accRLFFKCYw5kxUFRLFA0S+I5+VNOuFonpoq4YocQguLvbks/sTQ1ca+w3FDCtxHFTYcXV4pQB+h2DBKc+yzriUZ2AHI3OLhYqbinc6U3cdIG06V1VKNdN4UZ0+H6ULxLdP4W3RgEF5HxlaX5uCNfGD1a8yQFyqPU7TfjW83lGjkOh7yKJgJSiMCbgAgn6SQY9mPYOolwlUloumI4xHFRQk8kkq6ElLgSJmIolMmC0iyQRLgxESBo5ksiSqAokQJbAqaSKRUGUi0T6JjE5iaxM8yt8I200KSdOksLiT0Ai8fAaJ3KjwBb+eQFZgPzkkjiVkoYSMBIABpxhXqkkJMIkA0ThAAAh6h0SBmQkAiQU0CwAAC3OQfAIkD4jGjg84uNMHABPZYx2Cuk06eXgOIyAlUGhMcCUV3hYBjJj+UyfWnMn4SgU2HL+CqE4pXgXJOROjDpHumPTnpwU0KdAHCmehIp4hLgG+AABq3UNADGDt7YVLaKoWQupXFkhBJZXRMbgzLCgkTnUaZC0LAEUBh5HoXAZGgeNMg2y7ZZwo3EpOJCOyGwAENWSyjKbl4AsIHJ2QBCsAVTDIU7E+lK2llignpL0hiUxJYkqyV0h00SSNEqqwFIQ+E45p5MulijSJ5hLAOoFNQSSFIe4LSfTO8mMz1BRxUMCr0fxdFHhENGOXHLllhSggEUqKRBAwCERjZzoAANrkgAAuleLG7wd9gCkvbBrM7D4BdsiQHWXtl0m7ZIAxHS7OPK+YeAp5ms2efPKNJsxdsJE5ecR1M6/C80bUu8WAFLR2cnxYIl8ZXjfH9T68rlYaQImIQQBeqhOXKgGT3q915yTCNACwjQkuZq0uCNQLwkIQCIQE8CISLgDKTWlEAZSJznQDKSAN4o/CIBFAosoMByQDAFoC0HpC55XC/RforQB8CMgfA/RJkIUUZCkhc8VIGAbgtUACASFlIX/FSHQVvzQEzhEgP0RIBNB+iPgW8VSFoC54GAjIchbQCpD9FXCJAKkPwqBF0KqQrhRkP0SaCqB6QywDhZwugXqA4FzoRBRCKGS0AZs9AIhFAvIxlJrMpAMpFtUwgILUF44IhAYFg74MwwSAWwOfihh0AggLARhBZD0JhhfAZEWGq4qYgXBaAnijKBhFsCBKnwwS+IK4qQCpoAKZZBWrEs8jWgQlnQMMLJFoA2AbwBMhgGclyCYNSgmEWJQkiyVKRcl+SjAO4CMgrS0MFSoSQkuyU1KCl0gUGeXGshYMmlqslpa4v8TQExQcoaQGcliUGJWlSkdrr0swjFAHAfBZMFwH7n4NOgLizoBsqUi2KMInoBPBMvqVbRtlYYKZZsrDB5tMQzS+UCco2Vhh5OmAUGvspumsx7aS8IyPIABZoIeoyoQkJ9FMGStJyHcLJLkKrDqjsWpRYWLZAzFSAayDWDgW10nFcDbIjVVHMwA0DHLVlNymGhMp/DOB386KzZdkqXiOSw0JJdJfEoxXZKQGOrDwLMp2V7KuAYYQyF4CXSbLiO1y9ZQSrDDbLdlbACZSXC6Uhojl1y7JecqWVK0rlFKpSHcpyHZBHlT7UuPlhDTUDh4o1SIGhNLZBRbyFMTiDFBGTMQsAn+WZmSIngKjb61BIVuVThUPZH4AYsVGRnBWhYpu2qBfh/ENDZklQl0ElPEiZF7lT4+KzlVioZU4qKAeK4VUpCJU9ySVhIMlZkrDVhgqVOlWlTypIATKQZZcCuCyo2VsqMVHK05dyvpVKRCliYf0D4qxakB/Vpy0VZcqqWnLpVDyhlUWqN6jtDmVAHiMgCMKOiCC40J0qgAcCNpjgdaQDDAGh5IRxiwstULbMW6yg4S5ITtVgTRVxrA1SkYNaGslXxqEYoDUIEmoLU5KMoxauIMmAxXZrNluam5fmt5UMqW0epEsD4p7kSpxwgUVUbKrjVVr+lEqglVKsTT7AZVGACZYAFByTsTGCsUlhfCUZY4C6J34m0LWiISgKA2cm3gYwoHA4qBwrU3K1QnpDNY7OtiLquE2K3FbkFQ2UqN11K7dReqUjAbb1YGsQJms6DHzOgQ8qZWGHa62B+V6a6yBMurwMBSQPWekFIsdC54mg/CpoK4R8CuFaApIDRSQFcKtAGATQHwKSAYC0ByQAgUhScAEWuFc8EQHwBop6z9FGQPC5TZ5DQAtASA5IVwqSH9VMbKetgA5SmoZVSL6QomnrIXh8AtAGAt4/olxvwVcbc8LQUkNXjQDwl6QJwQTQIH4VoASAzhRkEVGEV4FNN/RUkIyBaBoAmgFlfBQIHpACBLNVWfdUQFLXKBSAD1SgDpWHw0BYlp6sML50oD+crRjHULkFwirhdj4UXMVaeuyXgpQgVcE4WpFiW5441Yw2ZB1WmCNrKSYq3PEevwbHzj52iixcBpsVlKEsJijhVAv9IEBtB/pe4CgrJxbaoUWi2DlZqDCQozatAZRMUHsreLfF6gHxa+kCXkhptK2gMutrNo7aaAS2/QEAA -->
+
+<!-- internal state end -->

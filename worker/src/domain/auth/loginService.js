@@ -10,6 +10,7 @@ import {
   errorResponse,
   getJwtSecret
 } from '../../infrastructure/index.js';
+import { registrarAtividade } from '../atividades/atividadeService.js';
 import { JWT_EXPIRY_HOURS, JWT_EXPIRY_HOURS_REMEMBER } from '../../config/index.js';
 
 /**
@@ -128,6 +129,9 @@ export async function login(request, env) {
   await env.DB.prepare(
     'UPDATE usuarios SET ultimo_acesso = CURRENT_TIMESTAMP WHERE id = ?'
   ).bind(user.id).run();
+
+  // Log atividade
+  await registrarAtividade(env, 'login', 'Login realizado', ip, user.id);
 
   // Buscar nome do instrumento
   let instrumentoNome = null;

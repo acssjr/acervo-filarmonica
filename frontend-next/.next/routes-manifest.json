@@ -1,0 +1,204 @@
+{
+  "version": 3,
+  "pages404": true,
+  "appType": "app",
+  "caseSensitive": false,
+  "basePath": "",
+  "redirects": [
+    {
+      "source": "/:path+/",
+      "destination": "/:path+",
+      "internal": true,
+      "priority": true,
+      "statusCode": 308,
+      "regex": "^(?:/((?:[^/]+?)(?:/(?:[^/]+?))*))/$"
+    },
+    {
+      "source": "/library",
+      "destination": "/acervo",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/library(?:/)?$"
+    },
+    {
+      "source": "/library/:path*",
+      "destination": "/acervo/:path*",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/library(?:/((?:[^/]+?)(?:/(?:[^/]+?))*))?(?:/)?$"
+    },
+    {
+      "source": "/search",
+      "destination": "/buscar",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/search(?:/)?$"
+    },
+    {
+      "source": "/favorites",
+      "destination": "/favoritos",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/favorites(?:/)?$"
+    },
+    {
+      "source": "/profile",
+      "destination": "/perfil",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/profile(?:/)?$"
+    },
+    {
+      "source": "/genres",
+      "destination": "/generos",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/genres(?:/)?$"
+    },
+    {
+      "source": "/composers",
+      "destination": "/compositores",
+      "statusCode": 308,
+      "regex": "^(?!/_next)/composers(?:/)?$"
+    }
+  ],
+  "headers": [],
+  "rewrites": {
+    "beforeFiles": [],
+    "afterFiles": [
+      {
+        "source": "/api/:path*",
+        "destination": "https://acervo-filarmonica-api.acssjr.workers.dev/api/:path*",
+        "regex": "^/api(?:/((?:[^/]+?)(?:/(?:[^/]+?))*))?(?:/)?$"
+      }
+    ],
+    "fallback": []
+  },
+  "dynamicRoutes": [
+    {
+      "page": "/acervo/[categoria]",
+      "regex": "^/acervo/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPcategoria": "nxtPcategoria"
+      },
+      "namedRegex": "^/acervo/(?<nxtPcategoria>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/acervo/[categoria]/[partituraId]",
+      "regex": "^/acervo/([^/]+?)/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPcategoria": "nxtPcategoria",
+        "nxtPpartituraId": "nxtPpartituraId"
+      },
+      "namedRegex": "^/acervo/(?<nxtPcategoria>[^/]+?)/(?<nxtPpartituraId>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/admin/[secao]",
+      "regex": "^/admin/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPsecao": "nxtPsecao"
+      },
+      "namedRegex": "^/admin/(?<nxtPsecao>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/serwist/[path]",
+      "regex": "^/serwist/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPpath": "nxtPpath"
+      },
+      "namedRegex": "^/serwist/(?<nxtPpath>[^/]+?)(?:/)?$"
+    }
+  ],
+  "staticRoutes": [
+    {
+      "page": "/",
+      "regex": "^/(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/(?:/)?$"
+    },
+    {
+      "page": "/_global-error",
+      "regex": "^/_global\\-error(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/_global\\-error(?:/)?$"
+    },
+    {
+      "page": "/_not-found",
+      "regex": "^/_not\\-found(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/_not\\-found(?:/)?$"
+    },
+    {
+      "page": "/acervo",
+      "regex": "^/acervo(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/acervo(?:/)?$"
+    },
+    {
+      "page": "/admin",
+      "regex": "^/admin(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin(?:/)?$"
+    },
+    {
+      "page": "/buscar",
+      "regex": "^/buscar(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/buscar(?:/)?$"
+    },
+    {
+      "page": "/compositores",
+      "regex": "^/compositores(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/compositores(?:/)?$"
+    },
+    {
+      "page": "/favoritos",
+      "regex": "^/favoritos(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/favoritos(?:/)?$"
+    },
+    {
+      "page": "/generos",
+      "regex": "^/generos(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/generos(?:/)?$"
+    },
+    {
+      "page": "/login",
+      "regex": "^/login(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/login(?:/)?$"
+    },
+    {
+      "page": "/manifest.json",
+      "regex": "^/manifest\\.json(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/manifest\\.json(?:/)?$"
+    },
+    {
+      "page": "/perfil",
+      "regex": "^/perfil(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/perfil(?:/)?$"
+    },
+    {
+      "page": "/repertorio",
+      "regex": "^/repertorio(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/repertorio(?:/)?$"
+    }
+  ],
+  "dataRoutes": [],
+  "rsc": {
+    "header": "rsc",
+    "varyHeader": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+    "prefetchHeader": "next-router-prefetch",
+    "didPostponeHeader": "x-nextjs-postponed",
+    "contentTypeHeader": "text/x-component",
+    "suffix": ".rsc",
+    "prefetchSegmentHeader": "next-router-segment-prefetch",
+    "prefetchSegmentSuffix": ".segment.rsc",
+    "prefetchSegmentDirSuffix": ".segments",
+    "clientParamParsing": false,
+    "dynamicRSCPrerender": false
+  },
+  "rewriteHeaders": {
+    "pathHeader": "x-nextjs-rewritten-path",
+    "queryHeader": "x-nextjs-rewritten-query"
+  }
+}
