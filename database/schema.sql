@@ -156,10 +156,12 @@ CREATE TABLE IF NOT EXISTS logs_download (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     partitura_id INTEGER NOT NULL,
     instrumento_id TEXT,
+    usuario_id INTEGER,
     data DATETIME DEFAULT CURRENT_TIMESTAMP,
     ip TEXT,
     FOREIGN KEY (partitura_id) REFERENCES partituras(id),
-    FOREIGN KEY (instrumento_id) REFERENCES instrumentos(id)
+    FOREIGN KEY (instrumento_id) REFERENCES instrumentos(id),
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
 );
 
 -- View para estatísticas

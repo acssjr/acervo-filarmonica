@@ -8,7 +8,7 @@
 
 <br/>
 
-[![Versão](https://img.shields.io/badge/versão-2.9.1-722F37?style=for-the-badge&labelColor=D4AF37)](https://github.com/acssjr/acervo-filarmonica)
+[![Versão](https://img.shields.io/badge/versão-2.9.2-722F37?style=for-the-badge&labelColor=D4AF37)](https://github.com/acssjr/acervo-filarmonica)
 [![Status](https://img.shields.io/badge/status-em%20produção-success?style=for-the-badge)](https://acervo.filarmonica25demarco.com)
 [![CI](https://img.shields.io/github/actions/workflow/status/acssjr/acervo-filarmonica/ci.yml?style=for-the-badge&label=CI&logo=github)](https://github.com/acssjr/acervo-filarmonica/actions)
 
@@ -74,7 +74,8 @@ O sistema permite que músicos acessem suas partituras de qualquer lugar, baixem
 - Visualização de PDF inline com zoom
 - **Frases engraçadas animadas durante upload**
 - Gestão de músicos com badges visuais
-- Estatísticas de downloads
+- **Dashboard de Analytics Premium** (KPIs, tendências e engajamento)
+- **Rastreamento de busca e downloads por usuário**
 - Reset de PIN de usuários
 - Toggle admin/usuário para testes
 - Proteção do super admin
@@ -369,6 +370,22 @@ Isso cria as tabelas e insere usuários de teste para desenvolvimento local.
 ## Changelog
 
 <details open>
+<summary><b>v2.9.2</b> - 15 de Fevereiro de 2026</summary>
+
+**Analytics & Insights**
+- **Dashboard Premium:** Nova interface com cards de KPI, gráficos de linha (tendências) e pizza (distribuição por naipe)
+- **Atividade Recente:** Feed detalhado com nomes de músicos e ações realizadas
+- **Rastreamento Avançado:** Logs de downloads vinculados a usuários e auditoria de buscas sem resultado
+- **Filtros Inteligentes:** Estatísticas de presença agora filtram automaticamente o maestro para precisão dos dados de músicos
+
+**Melhorias Técnicas**
+- **Wrangler:** Atualização para v4.65.0
+- **Fix:** Correção de fuso horário em datas de acesso e logs de atividade
+- **Fix:** Correção de encoding em nomes de músicos no banco de dados
+
+</details>
+
+<details>
 <summary><b>v2.9.1</b> - 14 de Fevereiro de 2026</summary>
 
 **Livro de Registros**
