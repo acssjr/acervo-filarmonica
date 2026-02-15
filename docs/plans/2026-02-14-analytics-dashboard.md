@@ -1,7 +1,5 @@
 # Dashboard & Analytics Implementation Plan
 
-> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
-
 **Goal:** Implement a comprehensive analytics dashboard for tracking musician engagement, sheet music downloads, and search behavior, using a hybrid approach (real-time SQL aggregation + event sourcing for search logs).
 
 **Architecture:** 

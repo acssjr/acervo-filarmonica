@@ -153,6 +153,25 @@ const STATEMENTS = [
     UNIQUE(aviso_id, usuario_id)
   )`,
 
+  // Logs de Download
+  `CREATE TABLE IF NOT EXISTS logs_download (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    partitura_id INTEGER NOT NULL,
+    instrumento_id TEXT,
+    usuario_id INTEGER,
+    data DATETIME DEFAULT CURRENT_TIMESTAMP,
+    ip TEXT
+  )`,
+
+  // Logs de Buscas
+  `CREATE TABLE IF NOT EXISTS logs_buscas (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    termo TEXT NOT NULL,
+    resultados_count INTEGER DEFAULT 0,
+    usuario_id INTEGER,
+    data DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`,
+
   // Valor padrão para modo recesso
   `INSERT OR IGNORE INTO configuracoes (chave, valor) VALUES ('modo_recesso', 'false')`,
 
