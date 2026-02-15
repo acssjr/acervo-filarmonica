@@ -20,6 +20,7 @@ const AdminRepertorio = lazy(() => import('./AdminRepertorio'));
 const AdminConfig = lazy(() => import('./AdminConfig'));
 const AdminPresenca = lazy(() => import('./AdminPresenca'));
 const AdminAvisos = lazy(() => import('./AdminAvisos'));
+const AdminAnalytics = lazy(() => import('./AdminAnalytics'));
 
 const SectionLoader = () => (
   <div style={{
@@ -106,6 +107,7 @@ const AdminApp = () => {
 
   const menuItems = [
     { id: 'dashboard', icon: 'dashboard', label: 'Dashboard' },
+    { id: 'analytics', icon: 'analytics', label: 'Analytics' },
     { id: 'musicos', icon: 'users', label: 'Músicos' },
     { id: 'partituras', icon: 'music', label: 'Partituras' },
     { id: 'repertorio', icon: 'repertorio', label: 'Repertório' },
@@ -169,6 +171,13 @@ const AdminApp = () => {
           <polyline points="22 4 12 14.01 9 11.01" />
         </svg>
       ),
+      analytics: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <line x1="18" y1="20" x2="18" y2="10" />
+          <line x1="12" y1="20" x2="12" y2="4" />
+          <line x1="6" y1="20" x2="6" y2="14" />
+        </svg>
+      ),
       bell: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
@@ -182,6 +191,7 @@ const AdminApp = () => {
   const renderContent = () => {
     switch (activeSection) {
       case 'dashboard': return <AdminDashboard />;
+      case 'analytics': return <AdminAnalytics />;
       case 'musicos': return <AdminMusicos />;
       case 'partituras': return <AdminPartituras />;
       case 'repertorio': return <AdminRepertorio />;

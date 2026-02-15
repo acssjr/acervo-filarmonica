@@ -1,7 +1,7 @@
 // ===== SEARCH SCREEN =====
 // Tela de busca com fuzzy search
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useData } from '@contexts/DataContext';
 import { Icons } from '@constants/icons';
@@ -9,6 +9,7 @@ import Header from '@components/common/Header';
 import CategoryIcon from '@components/common/CategoryIcon';
 import useDebounce from '@hooks/useDebounce';
 import { levenshtein } from '@utils/search';
+import { API } from '@services/api';
 
 // Regex hoisted para evitar criação repetida dentro do loop
 const WHITESPACE_REGEX = /\s+/;
@@ -188,6 +189,23 @@ const SearchScreen = () => {
   }, [debouncedQuery, sheets]);
 
   const handleClear = useCallback(() => setSearchQuery(''), []);
+
+  // === TRACKING: Envia log de busca após 2s de inatividade ===
+  const lastTrackedRef = useRef('');
+  useEffect(() => {
+    if (!debouncedQuery || debouncedQuery.trim().length < 3) return;
+    // Não trackear o mesmo termo duas vezes seguidas
+    if (lastTrackedRef.current === debouncedQuery.trim()) return;
+
+    const timer = setTimeout(() => {
+      const termo = debouncedQuery.trim();
+      lastTrackedRef.current = termo;
+      API.trackSearch(termo, searchResults.length);
+    }, 2000); // 2s após parar de digitar (já tem 300ms do debounce)
+
+    return () => clearTimeout(timer);
+  }, [debouncedQuery, searchResults.length]);
+
 
   return (
     <div style={{ width: '100%' }}>

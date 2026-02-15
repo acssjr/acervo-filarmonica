@@ -33,8 +33,8 @@ export async function downloadPartitura(id, request, env, user) {
     // Log de download
     try {
       await env.DB.prepare(
-        'INSERT INTO logs_download (partitura_id, instrumento_id, ip) VALUES (?, NULL, ?)'
-      ).bind(id, request.headers.get('CF-Connecting-IP')).run();
+        'INSERT INTO logs_download (partitura_id, instrumento_id, ip, usuario_id) VALUES (?, NULL, ?, ?)'
+      ).bind(id, request.headers.get('CF-Connecting-IP'), user.id).run();
     } catch (logError) {
       console.error('Erro ao registrar log:', logError);
     }
@@ -86,8 +86,8 @@ export async function downloadParte(parteId, request, env, user) {
     // Log de download
     try {
       await env.DB.prepare(
-        'INSERT INTO logs_download (partitura_id, instrumento_id, ip) VALUES (?, NULL, ?)'
-      ).bind(parte.partitura_id, request.headers.get('CF-Connecting-IP')).run();
+        'INSERT INTO logs_download (partitura_id, instrumento_id, ip, usuario_id) VALUES (?, NULL, ?, ?)'
+      ).bind(parte.partitura_id, request.headers.get('CF-Connecting-IP'), user.id).run();
     } catch (logError) {
       console.error('Erro ao registrar log:', logError);
     }

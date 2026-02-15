@@ -1,0 +1,19 @@
+{
+  "/(auth)/acervo/[categoria]/[partituraId]/page": "/acervo/[categoria]/[partituraId]",
+  "/(auth)/acervo/[categoria]/page": "/acervo/[categoria]",
+  "/(auth)/acervo/page": "/acervo",
+  "/(auth)/admin/[secao]/page": "/admin/[secao]",
+  "/(auth)/admin/page": "/admin",
+  "/(auth)/buscar/page": "/buscar",
+  "/(auth)/compositores/page": "/compositores",
+  "/(auth)/favoritos/page": "/favoritos",
+  "/(auth)/generos/page": "/generos",
+  "/(auth)/page": "/",
+  "/(auth)/perfil/page": "/perfil",
+  "/(auth)/repertorio/page": "/repertorio",
+  "/_global-error/page": "/_global-error",
+  "/_not-found/page": "/_not-found",
+  "/login/page": "/login",
+  "/manifest.json/route": "/manifest.json",
+  "/serwist/[path]/route": "/serwist/[path]"
+}

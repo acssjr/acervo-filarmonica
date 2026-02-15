@@ -1,0 +1,3 @@
+{
+  "/(auth)/acervo/[categoria]/page": "app/(auth)/acervo/[categoria]/page.js"
+}

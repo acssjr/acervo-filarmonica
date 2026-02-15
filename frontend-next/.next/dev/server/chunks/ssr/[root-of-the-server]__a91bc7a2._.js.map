@@ -1,0 +1,6 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 22, "column": 0}, "map": {"version":3,"sources":["file:///C:/Users/Ant%C3%B4nio/Documents/acervo-filarmonica/frontend-next/app/page.tsx"],"sourcesContent":["export default function Home() {\n  return (\n    <main className=\"flex min-h-screen flex-col items-center justify-center bg-bg-primary\">\n      <div className=\"text-center animate-in\">\n        <h1 className=\"text-4xl font-bold text-text-primary mb-4\">\n          Acervo Digital\n        </h1>\n        <p className=\"text-lg text-text-secondary mb-8\">\n          Filarmônica 25 de Março\n        </p>\n        <div className=\"inline-flex items-center gap-2 rounded-sm bg-primary px-6 py-3 text-white font-medium\">\n          Setup completo — Next.js 16 + Tailwind v4\n        </div>\n      </div>\n    </main>\n  );\n}\n"],"names":[],"mappings":";;;;;;AAAe,SAAS;IACtB,qBACE,kQAAC;QAAK,WAAU;kBACd,cAAA,kQAAC;YAAI,WAAU;;8BACb,kQAAC;oBAAG,WAAU;8BAA4C;;;;;;8BAG1D,kQAAC;oBAAE,WAAU;8BAAmC;;;;;;8BAGhD,kQAAC;oBAAI,WAAU;8BAAwF;;;;;;;;;;;;;;;;;AAM/G"}}]
+}

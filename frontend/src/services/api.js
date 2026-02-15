@@ -417,6 +417,28 @@ export const API = {
     return this.request('/api/admin/estatisticas');
   },
 
+  async getAnalyticsDashboard() {
+    return this.request('/api/admin/analytics/dashboard');
+  },
+
+  async trackSearch(termo, resultadosCount) {
+    // Tracking silencioso (sem await no fetch se possível, mas aqui usamos helpers)
+    // Não usar this.request para não lançar erro global
+    try {
+      const token = Storage.get('authToken', null);
+      await fetch(`${API_BASE_URL}/api/tracking/search`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { 'Authorization': `Bearer ${token}` })
+        },
+        body: JSON.stringify({ termo, resultados_count: resultadosCount })
+      });
+    } catch {
+      // Ignorar erros de tracking
+    }
+  },
+
   // ============ MANUTENÇÃO ADMIN ============
 
   async limparNomesUsuarios() {

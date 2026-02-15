@@ -1,0 +1,11 @@
+{
+  "[project]/frontend-next/src/components/modals/PDFViewerModal.tsx [app-client] (ecmascript, next/dynamic entry)": {
+    "id": "[project]/frontend-next/src/components/modals/PDFViewerModal.tsx [app-client] (ecmascript, next/dynamic entry)",
+    "files": [
+      "static/chunks/58c09_059c7450._.js",
+      "static/chunks/frontend-next_src_components_modals_PDFViewerModal_tsx_a6cf55f5._.js",
+      "static/chunks/58c09_react-pdf_dist_Page_3d7a3fc0._.css",
+      "static/chunks/frontend-next_src_components_modals_PDFViewerModal_tsx_e209f7a6._.js"
+    ]
+  }
+}

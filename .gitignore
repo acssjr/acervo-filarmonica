@@ -44,3 +44,20 @@ coverage/
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+# Tooling Artifacts
+.tldr/
+.scout-output/
+pr_analysis.txt
+review_comments.json
+gitlog.txt
+coderabbit_comments.json
+*.txt
+*.json
+!package.json
+!package-lock.json
+!composer.json
+!tsconfig.json
+!jsconfig.json
+!manifest.json
+!worker/openapi.json
+!frontend/src/api-types.json
