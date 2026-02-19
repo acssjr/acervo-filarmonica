@@ -2,7 +2,7 @@
 
 **Goal:** Implement a comprehensive analytics dashboard for tracking musician engagement, sheet music downloads, and search behavior, using a hybrid approach (real-time SQL aggregation + event sourcing for search logs).
 
-**Architecture:** 
+**Architecture:**
 - **Backend:** New API endpoints in `worker` for aggregated statistics (using complex SQL queries). New `logs_buscas` table for tracking search terms.
 - **Frontend:** Install `recharts` for visualization. Create `AdminAnalytics` screen with 3 tabs (Overview, Musicians, Engagement).
 - **Tracking:** Implement search term tracking in `SearchInput` component.
@@ -10,6 +10,8 @@
 **Tech Stack:** Cloudflare Workers (D1), React, Recharts, SQL.
 
 ---
+
+## Tasks
 
 ### Task 1: Database Migration & Schema
 
@@ -28,11 +30,15 @@ CREATE TABLE IF NOT EXISTS logs_buscas (
     termo TEXT NOT NULL,
     resultados_count INTEGER DEFAULT 0,
     usuario_id INTEGER,
-    data DATETIME DEFAULT CURRENT_TIMESTAMP
+    data DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
 );
 
 CREATE INDEX IF NOT EXISTS idx_logs_buscas_data ON logs_buscas(data DESC);
 CREATE INDEX IF NOT EXISTS idx_logs_buscas_termo ON logs_buscas(termo);
+
+-- Add usuario_id to logs_download
+ALTER TABLE logs_download ADD COLUMN usuario_id INTEGER REFERENCES usuarios(id);
 ```
 
 **Step 2: Update schema.sql reference**
@@ -91,7 +97,7 @@ Update `worker/src/routes/estatisticaRoutes.js` to include:
 
 ---
 
-### Task 3: Frontend - Install Recharts & Setup API
+### Task 3: Frontend - Install Recharts & Set Up API
 
 **Files:**
 - Modify: `frontend/package.json`

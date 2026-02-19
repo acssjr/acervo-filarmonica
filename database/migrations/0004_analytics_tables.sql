@@ -1,4 +1,4 @@
--- database/migrations/0004_analytics_tables.sql
+-- Migration 0004: Analytics Tables
 -- Tabela de Logs de Buscas
 CREATE TABLE IF NOT EXISTS logs_buscas (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -12,29 +12,7 @@ CREATE TABLE IF NOT EXISTS logs_buscas (
 CREATE INDEX IF NOT EXISTS idx_logs_buscas_data ON logs_buscas(data DESC);
 CREATE INDEX IF NOT EXISTS idx_logs_buscas_termo ON logs_buscas(termo);
 
--- Reestruturação da logs_download para incluir usuario_id e Foreign Keys
--- (Apenas se a coluna usuario_id ainda não existir)
--- Nota: Como o D1 não tem IF NOT EXISTS em ALTER TABLE, usamos uma abordagem de recriação.
-
-PRAGMA foreign_keys=OFF;
-CREATE TABLE IF NOT EXISTS logs_download_v2 (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    partitura_id INTEGER NOT NULL,
-    instrumento_id TEXT,
-    usuario_id INTEGER,
-    data DATETIME DEFAULT CURRENT_TIMESTAMP,
-    ip TEXT,
-    FOREIGN KEY (partitura_id) REFERENCES partituras(id),
-    FOREIGN KEY (instrumento_id) REFERENCES instrumentos(id),
-    FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
-);
-
--- Tenta copiar dados da tabela antiga (se existir)
--- Ignoramos erros se a tabela antiga não existir
-INSERT OR IGNORE INTO logs_download_v2 (id, partitura_id, instrumento_id, data, ip)
-SELECT id, partitura_id, instrumento_id, data, ip FROM logs_download;
-
--- Substituir a tabela antiga pela nova
-DROP TABLE IF EXISTS logs_download;
-ALTER TABLE logs_download_v2 RENAME TO logs_download;
-PRAGMA foreign_keys=ON;
+-- Adiciona coluna usuario_id à tabela logs_download (se ainda não existir)
+-- Nota: SQLite/D1 suporta ALTER TABLE ADD COLUMN de forma idempotente com IF NOT EXISTS não disponível,
+-- mas como esta migration só é executada uma vez pelo sistema de migrações, ADD COLUMN é suficiente.
+ALTER TABLE logs_download ADD COLUMN usuario_id INTEGER REFERENCES usuarios(id);
