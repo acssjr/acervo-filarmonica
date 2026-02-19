@@ -252,7 +252,7 @@ const AdminAnalytics = () => {
                             <Panel title="Top Partituras" icon={<Award size={18} color={GOLD} />}>
                                 <RankingList
                                     items={data.top_partituras}
-                                    renderItem={(item, i) => ({
+                                    renderItem={(item) => ({
                                         primary: item.titulo,
                                         secondary: item.compositor,
                                         value: item.downloads,
@@ -264,7 +264,7 @@ const AdminAnalytics = () => {
                             </Panel>
 
                             <Panel title="Atividade Recente" icon={<Activity size={18} color={COLORS.blue} />}>
-                                <ActivityFeed items={data.atividade_recente} isMobile={isMobile} />
+                                <ActivityFeed items={data.atividade_recente} />
                             </Panel>
                         </div>
                     </>
@@ -577,7 +577,7 @@ const RankingList = ({ items, renderItem, accentColor, showAvatar, isMobile }) =
 };
 
 // Access Table - Último acesso
-const AccessTable = ({ data, _isMobile, highlight }) => {
+const AccessTable = ({ data, isMobile, highlight }) => {
     // ... (same as before until formatDate)
 
     const formatDate = (dateStr) => {
@@ -613,10 +613,10 @@ const AccessTable = ({ data, _isMobile, highlight }) => {
             maxHeight: '400px',
             overflowY: 'auto'
         }}>
-            {data.map((m, i) => {
+            {data.map((m, _i) => {
                 const statusColor = highlight === 'danger' ? COLORS.red : getStatusColor(m.ultimo_acesso);
                 return (
-                    <div key={i} style={{
+                    <div key={_i} style={{
                         display: 'flex', alignItems: 'center', gap: '10px',
                         padding: '10px 12px', borderRadius: '10px',
                         background: 'var(--bg-primary)',
@@ -680,7 +680,7 @@ const AccessTable = ({ data, _isMobile, highlight }) => {
 };
 
 // Activity Feed — atividade recente
-const ActivityFeed = ({ items, _isMobile }) => {
+const ActivityFeed = ({ items }) => {
     if (!items || items.length === 0) {
         return <EmptyState icon={Activity} message="Sem atividades recentes" />;
     }

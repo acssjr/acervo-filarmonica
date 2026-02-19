@@ -229,7 +229,6 @@ CREATE TABLE IF NOT EXISTS avisos_lidos (
 CREATE INDEX IF NOT EXISTS idx_avisos_ativo ON avisos(ativo, criado_em DESC);
 CREATE INDEX IF NOT EXISTS idx_avisos_lidos_usuario ON avisos_lidos(usuario_id, aviso_id);
 
--- database/migrations/0004_analytics_tables.sql
 -- Tabela de Logs de Buscas
 CREATE TABLE IF NOT EXISTS logs_buscas (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

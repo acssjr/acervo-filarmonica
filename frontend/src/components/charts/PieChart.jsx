@@ -1,5 +1,4 @@
 // frontend/src/components/charts/PieChart.jsx
-import React from 'react';
 import { PieChart as RechartsPieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 const CustomTooltip = ({ active, payload }) => {

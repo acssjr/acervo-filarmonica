@@ -1,5 +1,4 @@
 // frontend/src/components/charts/BarChart.jsx
-import React from 'react';
 import {
     BarChart as RechartsBarChart,
     Bar,
