@@ -4,7 +4,7 @@
 
 **Architecture:**
 - **Backend:** New API endpoints in `worker` for aggregated statistics (using complex SQL queries). New `logs_buscas` table for tracking search terms.
-- **Frontend:** Install `recharts` for visualization. Create `AdminAnalytics` screen with 3 tabs (Overview, Musicians, Engagement).
+- **Frontend:** Install `recharts` for visualization. Create `AdminAnalytics` screen with 4 tabs (Visão Geral, Músicos, Engajamento, Buscas).
 - **Tracking:** Implement search term tracking in `SearchInput` component.
 
 **Tech Stack:** Cloudflare Workers (D1), React, Recharts, SQL.
