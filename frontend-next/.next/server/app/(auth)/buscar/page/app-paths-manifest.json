@@ -1,0 +1,3 @@
+{
+  "/(auth)/buscar/page": "app/(auth)/buscar/page.js"
+}

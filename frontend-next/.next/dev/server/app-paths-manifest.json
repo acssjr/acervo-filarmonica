@@ -1,0 +1,4 @@
+{
+  "/(auth)/favoritos/page": "app/(auth)/favoritos/page.js",
+  "/(auth)/page": "app/(auth)/page.js"
+}

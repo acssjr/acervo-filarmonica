@@ -156,10 +156,12 @@ CREATE TABLE IF NOT EXISTS logs_download (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     partitura_id INTEGER NOT NULL,
     instrumento_id TEXT,
+    usuario_id INTEGER,
     data DATETIME DEFAULT CURRENT_TIMESTAMP,
     ip TEXT,
     FOREIGN KEY (partitura_id) REFERENCES partituras(id),
-    FOREIGN KEY (instrumento_id) REFERENCES instrumentos(id)
+    FOREIGN KEY (instrumento_id) REFERENCES instrumentos(id),
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
 );
 
 -- View para estatísticas
@@ -227,3 +229,15 @@ CREATE TABLE IF NOT EXISTS avisos_lidos (
 CREATE INDEX IF NOT EXISTS idx_avisos_ativo ON avisos(ativo, criado_em DESC);
 CREATE INDEX IF NOT EXISTS idx_avisos_lidos_usuario ON avisos_lidos(usuario_id, aviso_id);
 
+-- Tabela de Logs de Buscas
+CREATE TABLE IF NOT EXISTS logs_buscas (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    termo TEXT NOT NULL,
+    resultados_count INTEGER DEFAULT 0,
+    usuario_id INTEGER,
+    data DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_logs_buscas_data ON logs_buscas(data DESC);
+CREATE INDEX IF NOT EXISTS idx_logs_buscas_termo ON logs_buscas(termo);
