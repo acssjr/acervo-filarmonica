@@ -1,5 +1,6 @@
 // ===== BOTTOM NAVIGATION =====
 // Navegacao movel inferior com efeito glassmorphism e indicador animado
+// Otimizado: prefetch de telas on hover/touch para navegação instantânea
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -7,6 +8,18 @@ import { motion } from 'framer-motion';
 import { useUI } from '@contexts/UIContext';
 import { Icons } from '@constants/icons';
 import styles from './BottomNav.module.css';
+
+// Map de rotas para componentes (para prefetch)
+const ROUTE_COMPONENTS = {
+  '/': () => import('@screens/HomeScreen'),
+  '/acervo': () => import('@screens/LibraryScreen'),
+  '/buscar': () => import('@screens/SearchScreen'),
+  '/favoritos': () => import('@screens/FavoritesScreen'),
+  '/repertorio': () => import('@screens/RepertorioScreen'),
+  '/perfil': () => import('@screens/ProfileScreen'),
+  '/generos': () => import('@screens/GenresScreen'),
+  '/compositores': () => import('@screens/ComposersScreen'),
+};
 
 const BottomNav = ({ activeTab }) => {
   const navigate = useNavigate();
@@ -53,6 +66,25 @@ const BottomNav = ({ activeTab }) => {
     shouldHide ? styles.hidden : styles.visible
   ].join(' ');
 
+  // Handler para navegação com prefetch
+  const handleNavigate = (path) => {
+    navigate(path);
+  };
+
+  // Handler para prefetch on hover/touch start
+  const handlePrefetch = (path) => {
+    const prefetchFn = ROUTE_COMPONENTS[path];
+    if (prefetchFn && typeof prefetchFn === 'function') {
+      // Usa requestIdleCallback se disponível para não bloquear
+      if ('requestIdleCallback' in window) {
+        requestIdleCallback(() => prefetchFn(), { timeout: 500 });
+      } else {
+        // Fallback: prefetch com pequeno delay
+        setTimeout(() => prefetchFn(), 50);
+      }
+    }
+  };
+
   return (
     <nav className={navClasses}>
       {tabs.map(tab => {
@@ -65,7 +97,9 @@ const BottomNav = ({ activeTab }) => {
               data-walkthrough="search"
               aria-label={tab.label}
               className={styles.centerButton}
-              onClick={() => navigate(tab.path)}
+              onClick={() => handleNavigate(tab.path)}
+              onMouseEnter={() => handlePrefetch(tab.path)} // Prefetch on hover
+              onTouchStart={() => handlePrefetch(tab.path)} // Prefetch on touch
               whileTap={{ scale: 0.9 }}
               transition={{ type: 'spring', stiffness: 400, damping: 20 }}
             >
@@ -86,18 +120,20 @@ const BottomNav = ({ activeTab }) => {
             aria-label={tab.label}
             aria-current={isActive ? 'page' : undefined}
             className={`${styles.tabButton} ${isActive ? styles.active : styles.inactive}`}
-            onClick={() => navigate(tab.path)}
+            onClick={() => handleNavigate(tab.path)}
+            onMouseEnter={() => handlePrefetch(tab.path)} // Prefetch on hover
+            onTouchStart={() => handlePrefetch(tab.path)} // Prefetch on touch
             whileTap={{ scale: 0.9 }}
             transition={{ type: 'spring', stiffness: 400, damping: 20 }}
           >
             {/* Indicador animado - só aparece no tab ativo */}
-            {isActive && (
+            {isActive ? (
               <motion.div
                 layoutId="bottomNavIndicator"
                 className={styles.indicator}
                 transition={{ type: 'spring', stiffness: 500, damping: 35 }}
               />
-            )}
+            ) : null}
             <motion.div
               className={styles.tabIcon}
               animate={{

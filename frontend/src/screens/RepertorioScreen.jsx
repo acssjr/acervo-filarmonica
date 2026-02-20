@@ -703,7 +703,7 @@ const DownloadModal = ({
 const RepertorioScreen = () => {
   const { user } = useAuth();
   const { showToast, setSelectedSheet } = useUI();
-  const { favorites, toggleFavorite, categoriesMap } = useData();
+  const { favoritesSet, toggleFavorite, categoriesMap } = useData();
 
   const [repertorio, setRepertorio] = useState(null);
   const [repertorioInstrumentos, setRepertorioInstrumentos] = useState([]);
@@ -1015,7 +1015,7 @@ const RepertorioScreen = () => {
                       borderRadius: '8px',
                       background: 'transparent',
                       border: 'none',
-                      color: favorites.includes(sheet.id) ? '#e74c3c' : 'var(--text-muted)',
+                      color: favoritesSet.has(sheet.id) ? '#e74c3c' : 'var(--text-muted)',
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
@@ -1023,7 +1023,7 @@ const RepertorioScreen = () => {
                     }}
                   >
                     <div style={{ width: '18px', height: '18px' }}>
-                      <Icons.Heart filled={favorites.includes(sheet.id)} />
+                      <Icons.Heart filled={favoritesSet.has(sheet.id)} />
                     </div>
                   </button>
 

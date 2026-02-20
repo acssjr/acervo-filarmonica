@@ -15,7 +15,7 @@ const WHITESPACE_REGEX = /\s+/;
 
 const SearchScreen = () => {
   const navigate = useNavigate();
-  const { sheets, favorites, toggleFavorite, categoriesMap } = useData();
+  const { sheets, favoritesSet, toggleFavorite, categoriesMap } = useData();
   const [searchQuery, setSearchQuery] = useState('');
 
   // Debounce de 300ms para evitar re-renders excessivos
@@ -375,7 +375,7 @@ const SearchScreen = () => {
                     toggleFavorite(sheet.id);
                   }}
                   style={{
-                    background: favorites.includes(sheet.id) ? 'rgba(232,90,79,0.1)' : 'transparent',
+                    background: favoritesSet.has(sheet.id) ? 'rgba(232,90,79,0.1)' : 'transparent',
                     border: 'none',
                     borderRadius: '10px',
                     width: '38px',
@@ -384,13 +384,13 @@ const SearchScreen = () => {
                     alignItems: 'center',
                     justifyContent: 'center',
                     cursor: 'pointer',
-                    color: favorites.includes(sheet.id) ? 'var(--primary)' : 'var(--text-muted)',
+                    color: favoritesSet.has(sheet.id) ? 'var(--primary)' : 'var(--text-muted)',
                     transition: 'all 0.2s ease',
                     flexShrink: 0
                   }}
                 >
                   <div style={{ width: '18px', height: '18px' }}>
-                    <Icons.Heart filled={favorites.includes(sheet.id)} />
+                    <Icons.Heart filled={favoritesSet.has(sheet.id)} />
                   </div>
                 </button>
               </div>

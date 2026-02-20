@@ -19,7 +19,7 @@ const CATEGORY_IMAGES = {
   hinos: 'https://images.unsplash.com/photo-1438232992991-995b7058bbb3?w=400&q=80'
 };
 
-const FeaturedSheets = ({ sheets, onToggleFavorite, favorites }) => {
+const FeaturedSheets = ({ sheets, onToggleFavorite, favoritesSet }) => {
   const { theme } = useUI();
   const { categoriesMap } = useData();
   const isDesktop = useMediaQuery('(min-width: 1024px)');
@@ -95,7 +95,9 @@ const FeaturedSheets = ({ sheets, onToggleFavorite, favorites }) => {
   }, []);
 
   // Não mostra a seção se não houver destaques (DEPOIS de todos os hooks)
-  if (featuredSheets.length === 0) return null;
+  if (featuredSheets.length === 0) {
+    return null;
+  }
 
   // Só duplica os cards se tiver mais de 2 (para animação fluida)
   const duplicatedSheets = featuredSheets.length > 2
@@ -161,7 +163,7 @@ const FeaturedSheets = ({ sheets, onToggleFavorite, favorites }) => {
               sheet={sheet}
               category={categoriesMap.get(sheet.category)}
               bgImage={CATEGORY_IMAGES[sheet.category]}
-              isFav={favorites.includes(sheet.id)}
+              isFav={favoritesSet.has(sheet.id)} // O(1) lookup
               onToggleFavorite={onToggleFavorite}
               isDesktop={isDesktop}
               stopAnimation={stopAnimation}

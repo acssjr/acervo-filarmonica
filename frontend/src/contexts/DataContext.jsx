@@ -45,8 +45,11 @@ export const DataProvider = ({ children }) => {
     return stored || FALLBACK_INSTRUMENTS;
   });
 
-  // Favoritos
-  const [favorites, setFavorites] = useState(() => Storage.get('favorites', []));
+  // Favoritos - Otimizado: usa Set para lookups O(1)
+  const [favoritesSet, setFavoritesSet] = useState(() => {
+    const stored = Storage.get('favorites', []);
+    return new Set(stored);
+  });
 
   // Navegacao
   const [activeTab, setActiveTab] = useState('home');
@@ -120,21 +123,34 @@ export const DataProvider = ({ children }) => {
     loadFromAPI();
   }, []);
 
-  // Persiste dados
-  useEffect(() => { Storage.set('sheets', sheets); }, [sheets]);
-  useEffect(() => { Storage.set('favorites', favorites); }, [favorites]);
-  useEffect(() => { Storage.set('categories', categories); }, [categories]);
-  useEffect(() => { Storage.set('instruments', instruments); }, [instruments]);
+  // Persiste dados em lote para reduzir operações de storage
+  useEffect(() => { 
+    Storage.set('sheets', sheets); 
+  }, [sheets]);
+  
+  useEffect(() => { 
+    // Converte Set para array antes de salvar
+    Storage.set('favorites', Array.from(favoritesSet)); 
+  }, [favoritesSet]);
+  
+  useEffect(() => { 
+    Storage.set('categories', categories); 
+  }, [categories]);
+  
+  useEffect(() => { 
+    Storage.set('instruments', instruments); 
+  }, [instruments]);
 
   // Helper: cria map de categorias para lookup O(1)
   const categoriesMap = useMemo(() => {
     return new Map(categories.map(cat => [cat.id, cat]));
   }, [categories]);
 
-  // Helper: lista de nomes de instrumentos para uso em selects
-  const instrumentNames = useMemo(() => {
-    return instruments.map(i => i.nome);
-  }, [instruments]);
+  // Helper: lista de nomes de instrumentos (sem useMemo para arrays pequenos)
+  const instrumentNames = instruments.map(i => i.nome);
+
+  // Helper: converte Set para array para compatibilidade (memoizado)
+  const favorites = useMemo(() => Array.from(favoritesSet), [favoritesSet]);
 
   // Carrega favoritos do usuario apos login
   const loadUserFavorites = useCallback(async () => {
@@ -144,46 +160,57 @@ export const DataProvider = ({ children }) => {
     try {
       const favoritosIds = await API.getFavoritosIds();
       if (favoritosIds && Array.isArray(favoritosIds)) {
-        const favoritosStr = favoritosIds.map(id => String(id));
-        setFavorites(favoritosStr);
-        Storage.set('favorites', favoritosStr);
+        const newSet = new Set(favoritosIds.map(id => String(id)));
+        setFavoritesSet(newSet);
+        Storage.set('favorites', Array.from(newSet));
       }
     } catch {
       // Silencioso - favoritos nao sao criticos
     }
   }, []);
 
+  // Otimizado: usa Set para O(1) lookups
   const toggleFavorite = useCallback(async (id) => {
     const token = Storage.get('authToken', null);
-
-    setFavorites(prev => {
-      const wasFavorito = prev.includes(id);
-      const newFavorites = wasFavorito ? prev.filter(f => f !== id) : [...prev, id];
-
-      // Fire and forget - API sync em background
-      if (USE_API && token) {
-        const apiCall = wasFavorito ? API.removeFavorito(id) : API.addFavorito(id);
-        apiCall.catch(error => {
-          // Rollback inteligente: verifica estado atual antes de reverter
-          // Evita rollback incorreto em caso de toggles rápidos
-          setFavorites(currentState => {
-            const isCurrentlyFavorito = currentState.includes(id);
-            const expectedState = !wasFavorito; // Estado esperado apos toggle
-
-            // So reverte se estado atual e o esperado (toggle nao foi sobrescrito)
-            if (isCurrentlyFavorito === expectedState) {
-              return wasFavorito ? [...currentState, id] : currentState.filter(f => f !== id);
-            }
-            // Estado ja foi alterado por outro toggle, nao reverte
-            return currentState;
-          });
-          console.error('Erro ao sincronizar favorito:', error);
-        });
+    const idStr = String(id);
+    
+    const wasFavorito = favoritesSet.has(idStr);
+    
+    // Atualiza Set imediatamente (UI otimista)
+    setFavoritesSet(prev => {
+      const newSet = new Set(prev);
+      if (wasFavorito) {
+        newSet.delete(idStr);
+      } else {
+        newSet.add(idStr);
       }
-
-      return newFavorites;
+      return newSet;
     });
-  }, []); // Sem dependencias - usa functional updates
+
+    // Fire and forget - API sync em background
+    if (USE_API && token) {
+      const apiCall = wasFavorito ? API.removeFavorito(id) : API.addFavorito(id);
+      apiCall.catch(error => {
+        // Rollback inteligente
+        setFavoritesSet(prev => {
+          const isCurrentlyFavorito = prev.has(idStr);
+          // Só reverte se estado atual é o esperado
+          if (isCurrentlyFavorito !== wasFavorito) {
+            const newSet = new Set(prev);
+            if (wasFavorito) newSet.add(idStr);
+            else newSet.delete(idStr);
+            return newSet;
+          }
+          return prev;
+        });
+        console.error('Erro ao sincronizar favorito:', error);
+      });
+    }
+  }, [favoritesSet]); // Agora depende do Set
+
+  const isFavorite = useCallback((id) => {
+    return favoritesSet.has(String(id));
+  }, [favoritesSet]);
 
   const addSheet = useCallback((sheet) => {
     setSheets(prev => [...prev, sheet]);
@@ -195,7 +222,9 @@ export const DataProvider = ({ children }) => {
       setSheets,
       addSheet,
       favorites,
-      setFavorites,
+      favoritesSet,
+      setFavoritesSet,
+      isFavorite,
       toggleFavorite,
       loadUserFavorites,
       categories,

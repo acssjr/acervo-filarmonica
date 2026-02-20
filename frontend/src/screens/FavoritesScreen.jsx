@@ -1,20 +1,32 @@
 // ===== FAVORITES SCREEN =====
 // Tela de favoritos
 // Categorias carregadas da API via DataContext
+// Otimizado: usa Set para O(1) lookups
 
-import { useMemo } from 'react';
+import { useMemo, memo, useCallback } from 'react';
 import { useData } from '@contexts/DataContext';
 import { Icons } from '@constants/icons';
 import Header from '@components/common/Header';
 import EmptyState from '@components/common/EmptyState';
 import FileCard from '@components/music/FileCard';
 
-const FavoritesScreen = () => {
-  const { sheets, favorites, toggleFavorite, categoriesMap } = useData();
+// MemoFileCard para evitar re-renders
+const MemoFileCard = memo(FileCard, (prev, next) => {
+  return prev.sheet.id === next.sheet.id;
+});
 
+const FavoritesScreen = () => {
+  const { sheets, favoritesSet, toggleFavorite, categoriesMap } = useData();
+
+  // Otimizado: usa Set.has() O(1) em vez de array.includes() O(n)
   const favoriteSheets = useMemo(() => {
-    return sheets.filter(s => favorites.includes(s.id));
-  }, [sheets, favorites]);
+    return sheets.filter(s => favoritesSet.has(s.id));
+  }, [sheets, favoritesSet]);
+
+  // Callback estável para toggle
+  const handleToggleFavorite = useCallback((id) => {
+    toggleFavorite(id);
+  }, [toggleFavorite]);
 
   return (
     <div>
@@ -33,12 +45,12 @@ const FavoritesScreen = () => {
           containIntrinsicSize: '0 2000px'
         }}>
           {favoriteSheets.map(sheet => (
-            <FileCard
+            <MemoFileCard
               key={sheet.id}
               sheet={sheet}
               category={categoriesMap.get(sheet.category)}
               isFavorite={true}
-              onToggleFavorite={() => toggleFavorite(sheet.id)}
+              onToggleFavorite={handleToggleFavorite}
             />
           ))}
         </div>

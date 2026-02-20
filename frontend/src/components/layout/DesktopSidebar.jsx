@@ -1,6 +1,7 @@
 // ===== DESKTOP SIDEBAR =====
 // Sidebar lateral para desktop com navegacao e filtros
 // Refatorado: componentes extraidos para /sidebar/
+// Otimizado: prefetch de rotas on hover
 
 import { useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -9,6 +10,18 @@ import { useUI } from '@contexts/UIContext';
 import { useData } from '@contexts/DataContext';
 import { Icons } from '@constants/icons';
 import { SidebarLogo, SidebarNavItem, SidebarSection } from './sidebar';
+
+// Map de paths para funções de import (prefetch)
+const ROUTE_IMPORTS = {
+  '/': () => import('@screens/HomeScreen'),
+  '/repertorio': () => import('@screens/RepertorioScreen'),
+  '/favoritos': () => import('@screens/FavoritesScreen'),
+  '/generos': () => import('@screens/GenresScreen'),
+  '/compositores': () => import('@screens/ComposersScreen'),
+  '/acervo': () => import('@screens/LibraryScreen'),
+  '/perfil': () => import('@screens/ProfileScreen'),
+  '/buscar': () => import('@screens/SearchScreen'),
+};
 
 const DesktopSidebar = ({ activeTab }) => {
   const navigate = useNavigate();
@@ -81,6 +94,18 @@ const DesktopSidebar = ({ activeTab }) => {
       return () => sidebar.removeEventListener('wheel', handleWheel);
     }
   }, [handleWheel]);
+
+  // Handler de prefetch - carrega componente em background
+  const prefetchRoute = useCallback((path) => {
+    const importFn = ROUTE_IMPORTS[path];
+    if (importFn) {
+      if ('requestIdleCallback' in window) {
+        requestIdleCallback(() => importFn(), { timeout: 500 });
+      } else {
+        setTimeout(() => importFn(), 50);
+      }
+    }
+  }, []);
 
   // Handlers de navegacao
   const handleNavigation = (path) => navigate(path);
@@ -162,7 +187,7 @@ const DesktopSidebar = ({ activeTab }) => {
 
         {/* Navegacao Principal */}
         <nav style={{ padding: '0 12px', marginBottom: '20px' }}>
-          {!sidebarCollapsed && (
+          {!sidebarCollapsed ? (
             <p style={{
               fontFamily: 'Outfit, sans-serif',
               fontSize: '10px',
@@ -173,69 +198,62 @@ const DesktopSidebar = ({ activeTab }) => {
               padding: '0 12px',
               marginBottom: '8px'
             }}>Menu</p>
-          )}
+          ) : null}
           {navItems.map(item => (
-            <SidebarNavItem
+            <div
               key={item.id}
-              data-sidebar={item.id}
-              icon={item.icon}
-              label={item.label}
-              isActive={activeTab === item.id}
-              collapsed={sidebarCollapsed}
-              onClick={() => handleNavigation(item.path)}
-            />
+              onMouseEnter={() => prefetchRoute(item.path)}
+            >
+              <SidebarNavItem
+                icon={item.icon}
+                label={item.label}
+                isActive={activeTab === item.id}
+                collapsed={sidebarCollapsed}
+                onClick={() => handleNavigation(item.path)}
+              />
+            </div>
           ))}
         </nav>
 
-        {/* Secoes de Generos e Compositores */}
-        {!sidebarCollapsed && (
-          <div style={{ padding: '0 12px' }}>
-            <SidebarSection
-              title="Generos"
-              items={categoriesWithCount}
-              selectedId={selectedCategory}
-              showCount
-              onItemClick={handleCategoryClick}
-              onHeaderClick={handleViewAllGenres}
-              onViewAllClick={handleViewAllGenres}
-            />
+        {/* Seção de Generos */}
+        {!sidebarCollapsed && categoriesWithCount.length > 0 ? (
+          <SidebarSection
+            title="Generos"
+            items={categoriesWithCount}
+            selectedId={selectedCategory}
+            onItemClick={handleCategoryClick}
+            onViewAllClick={handleViewAllGenres}
+            showCount={true}
+          />
+        ) : null}
 
-            <SidebarSection
-              title="Compositores"
-              items={displayComposers}
-              selectedId={selectedComposer}
-              onItemClick={handleComposerClick}
-              onHeaderClick={handleViewAllComposers}
-              onViewAllClick={handleViewAllComposers}
-            />
-          </div>
-        )}
-      </div>
+        {/* Seção de Compositores */}
+        {!sidebarCollapsed && displayComposers.length > 0 ? (
+          <SidebarSection
+            title="Compositores"
+            items={displayComposers}
+            selectedId={selectedComposer}
+            onItemClick={handleComposerClick}
+            onViewAllClick={handleViewAllComposers}
+            showCount={true}
+          />
+        ) : null}
 
-      {/* Perfil e Sair - Fixo no final */}
-      <div style={{
-        padding: '12px',
-        borderTop: '1px solid rgba(255,255,255,0.1)',
-        marginTop: 'auto',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '4px'
-      }}>
-        <SidebarNavItem
-          icon={Icons.User}
-          label="Perfil"
-          isActive={activeTab === 'profile'}
-          collapsed={sidebarCollapsed}
-          onClick={() => handleNavigation('/perfil')}
-        />
-        <SidebarNavItem
-          icon={Icons.Logout}
-          label="Sair"
-          isActive={false}
-          collapsed={sidebarCollapsed}
-          onClick={handleLogout}
-          danger
-        />
+        {/* Espaçador para empurrar logout para baixo */}
+        <div style={{ flex: 1, minHeight: '40px' }} />
+
+        {/* Logout */}
+        <div style={{ padding: '0 12px', marginTop: 'auto', marginBottom: '20px' }}>
+          <SidebarNavItem
+            icon={Icons.Logout}
+            label={sidebarCollapsed ? '' : 'Sair'}
+            isActive={false}
+            collapsed={sidebarCollapsed}
+            onClick={handleLogout}
+            danger
+            data-sidebar="logout"
+          />
+        </div>
       </div>
     </aside>
   );
