@@ -23,6 +23,7 @@ const mockToggleFavorite = jest.fn();
 
 let mockSelectedSheet = null;
 let mockFavorites = [];
+let mockFavoritesSet = new Set();
 
 // Mock de categorias para testes
 const mockCategoriesMap = new Map([
@@ -68,6 +69,7 @@ jest.unstable_mockModule('@contexts/UIContext', () => ({
 jest.unstable_mockModule('@contexts/DataContext', () => ({
   useData: () => ({
     favorites: mockFavorites,
+    favoritesSet: mockFavoritesSet,
     toggleFavorite: mockToggleFavorite,
     sheets: [],
     isLoading: false,
@@ -148,6 +150,7 @@ describe('SheetDetailModal', () => {
     jest.clearAllMocks();
     mockSelectedSheet = null;
     mockFavorites = [];
+    mockFavoritesSet = new Set();
   });
 
   describe('Renderizacao', () => {
@@ -249,6 +252,7 @@ describe('SheetDetailModal', () => {
     test('exibe botao de adicionar aos favoritos quando nao favoritado', async () => {
       mockSelectedSheet = createMockSheet({ id: 1 });
       mockFavorites = [];
+      mockFavoritesSet = new Set();
       renderModal();
 
       await waitFor(() => {
@@ -260,6 +264,7 @@ describe('SheetDetailModal', () => {
     test('exibe botao de remover dos favoritos quando favoritado', async () => {
       mockSelectedSheet = createMockSheet({ id: 1 });
       mockFavorites = [1];
+      mockFavoritesSet = new Set([1]);
       renderModal();
 
       await waitFor(() => {
@@ -272,6 +277,7 @@ describe('SheetDetailModal', () => {
       const user = userEvent.setup();
       mockSelectedSheet = createMockSheet({ id: 42 });
       mockFavorites = [];
+      mockFavoritesSet = new Set();
       renderModal();
 
       await waitFor(() => {
@@ -288,6 +294,7 @@ describe('SheetDetailModal', () => {
       // Nao favoritado
       mockSelectedSheet = createMockSheet({ id: 1 });
       mockFavorites = [];
+      mockFavoritesSet = new Set();
       const { unmount } = renderModal();
 
       await waitFor(() => {
@@ -298,6 +305,7 @@ describe('SheetDetailModal', () => {
 
       // Favoritado
       mockFavorites = [1];
+      mockFavoritesSet = new Set([1]);
       renderModal();
 
       await waitFor(() => {
