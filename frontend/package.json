@@ -1,7 +1,7 @@
 {
   "name": "acervo-filarmonica-frontend",
   "private": true,
-  "version": "2.9.0",
+  "version": "2.9.2",
   "type": "module",
   "scripts": {
     "dev": "cross-env VITE_API_TARGET=local vite",
@@ -32,7 +32,8 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-pdf": "^10.2.0",
-    "react-router-dom": "^7.10.1"
+    "react-router-dom": "^7.10.1",
+    "recharts": "^3.7.0"
   },
   "devDependencies": {
     "@babel/preset-env": "^7.28.5",

@@ -48,13 +48,16 @@ const AttendanceCalendar = ({ ensaios = [], onEnsaioClick }) => {
         animate="visible"
       >
         {ensaios.map((ensaio) => {
-          // Formatar data
-          const data = new Date(ensaio.data_ensaio + 'T00:00:00Z');
-          const dia = data.getDate();
-          const diaSemana = ensaio.dia_semana || data.toLocaleDateString('pt-BR', { weekday: 'short' });
-          const mes = data.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '');
+          // Formatar data de forma segura (ignorando timezone local)
+          const [ano, mesIndex, dia] = ensaio.data_ensaio.split('-').map(Number);
+
+          // Criar data em UTC (meio-dia) para obter nome do mês/semana corretamente sem shifts
+          // Note: mês em JS é 0-indexed, mas no split vem 1-indexed
+          const dataUTC = new Date(Date.UTC(ano, mesIndex - 1, dia, 12, 0, 0));
+
+          const diaSemana = ensaio.dia_semana || dataUTC.toLocaleDateString('pt-BR', { weekday: 'short', timeZone: 'UTC' });
+          const mes = dataUTC.toLocaleDateString('pt-BR', { month: 'short', timeZone: 'UTC' }).replace('.', '');
           const presente = ensaio.usuario_presente === 1;
-          const totalPartituras = ensaio.total_partituras || 0;
 
           return (
             <motion.button
@@ -90,12 +93,7 @@ const AttendanceCalendar = ({ ensaios = [], onEnsaioClick }) => {
                 )}
               </div>
 
-              {/* Badge com número de partituras (se > 0) */}
-              {totalPartituras > 0 && (
-                <div className={styles.calendarBadge}>
-                  {totalPartituras}
-                </div>
-              )}
+
             </motion.button>
           );
         })}

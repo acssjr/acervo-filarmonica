@@ -1,8 +1,18 @@
 // Changelog para o painel administrativo (AdminConfig)
 export const ADMIN_CHANGELOG = [
   {
-    version: '2.9.0',
+    version: '2.9.1',
     isCurrent: true,
+    items: [
+      { bold: 'Presença:', text: 'Numeração "Livro de Registros" (#N) na lista e modal' },
+      { bold: 'Modal:', text: 'Novo modal "blindado" (Portal) com scroll lock' },
+      { bold: 'Músicos:', text: 'Campo "Convidado" e melhor visualização de fotos' },
+      { bold: 'Calendário:', text: 'Correção de fusos e limpeza visual' },
+      { bold: 'Dev:', text: 'Migração definitiva para acervo.filarmonica25demarco.com' }
+    ]
+  },
+  {
+    version: '2.9.0',
     items: [
       { bold: 'Git Workflow:', text: 'Commitlint + pre-commit hooks para qualidade' },
       { bold: 'PR Template:', text: 'Template padronizado para pull requests' },
@@ -60,7 +70,7 @@ export const ADMIN_ABOUT_CONFIG = {
   subtitle: 'Painel Administrativo',
   maxWidth: 480,
   infoCards: [
-    { label: 'Versao', value: '2.9.0' },
+    { label: 'Versao', value: '2.9.1' },
     { label: 'Backend', value: 'Cloudflare Workers' },
     { label: 'Dev', value: 'Antonio Jr.', isHighlighted: true }
   ],

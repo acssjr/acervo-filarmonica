@@ -82,6 +82,7 @@ export const DataProvider = ({ children }) => {
               id: String(p.id),
               title: p.titulo,
               composer: p.compositor,
+              arranger: p.arranjador,
               category: p.categoria_id,
               year: p.ano,
               downloads: p.downloads || 0,

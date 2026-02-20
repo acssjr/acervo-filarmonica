@@ -28,8 +28,8 @@ export async function getPartituras(request, env) {
   }
 
   if (busca) {
-    query += ' AND (p.titulo LIKE ? OR p.compositor LIKE ?)';
-    params.push(`%${busca}%`, `%${busca}%`);
+    query += ' AND (p.titulo LIKE ? OR p.compositor LIKE ? OR p.arranjador LIKE ?)';
+    params.push(`%${busca}%`, `%${busca}%`, `%${busca}%`);
   }
 
   if (destaque === '1') {
@@ -228,7 +228,7 @@ export async function uploadPastaPartitura(request, env, admin) {
  *
  * Extraido de: worker/index.js linhas 880-908
  */
-export async function updatePartitura(id, request, env) {
+export async function updatePartitura(id, request, env, user) {
   const data = await request.json();
   const { titulo, compositor, arranjador, categoria, categoria_id, ano, descricao, destaque } = data;
 
@@ -249,18 +249,22 @@ export async function updatePartitura(id, request, env) {
     id
   ).run();
 
+  await registrarAtividade(env, 'update_partitura', titulo, 'Partitura atualizada', user.id);
+
   return jsonResponse({ success: true, message: 'Partitura atualizada!' }, 200, request);
 }
 
-/**
- * Deletar partitura (Admin) - soft delete
- *
- * Extraido de: worker/index.js linhas 910-922
- */
-export async function deletePartitura(id, request, env) {
+export async function deletePartitura(id, request, env, user) {
+  // Busca info antes de deletar para log
+  const partitura = await env.DB.prepare('SELECT titulo FROM partituras WHERE id = ?').bind(id).first();
+
   await env.DB.prepare(
     'UPDATE partituras SET ativo = 0, atualizado_em = CURRENT_TIMESTAMP WHERE id = ?'
   ).bind(id).run();
+
+  if (partitura) {
+    await registrarAtividade(env, 'delete_partitura', partitura.titulo, 'Partitura removida', user.id);
+  }
 
   return jsonResponse({ success: true, message: 'Partitura removida!' }, 200, request);
 }

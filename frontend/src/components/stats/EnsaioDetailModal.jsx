@@ -3,13 +3,31 @@
 // Data, status de presença, lista de partituras tocadas
 
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useMediaQuery } from '@hooks/useMediaQuery';
 import { API } from '@services/api';
 import styles from './PresenceStats.module.css';
 
 const EnsaioDetailModal = ({ ensaio, isOpen, onClose }) => {
   const [partituras, setPartituras] = useState([]);
   const [loading, setLoading] = useState(false);
+  const isDesktop = useMediaQuery('(min-width: 1024px)');
+
+  // Travar scroll do body quando modal estiver aberto
+  useEffect(() => {
+    if (isOpen) {
+      const scrollY = window.scrollY;
+      document.documentElement.classList.add('modal-open');
+      document.body.style.top = `-${scrollY}px`;
+
+      return () => {
+        document.documentElement.classList.remove('modal-open');
+        document.body.style.top = '';
+        window.scrollTo(0, scrollY);
+      };
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen || !ensaio) return;
@@ -32,13 +50,16 @@ const EnsaioDetailModal = ({ ensaio, isOpen, onClose }) => {
 
   if (!ensaio) return null;
 
-  // Formatar data
-  const data = new Date(ensaio.data_ensaio + 'T00:00:00Z');
-  const dataFormatada = data.toLocaleDateString('pt-BR', {
+  // Formatar data de forma segura
+  const [ano, mesIndex, dia] = ensaio.data_ensaio.split('-').map(Number);
+  const dataUTC = new Date(Date.UTC(ano, mesIndex - 1, dia, 12, 0, 0));
+
+  const dataFormatada = dataUTC.toLocaleDateString('pt-BR', {
     day: '2-digit',
     month: 'long',
     year: 'numeric',
-    weekday: 'long'
+    weekday: 'long',
+    timeZone: 'UTC'
   });
 
   const presente = ensaio.usuario_presente === 1;
@@ -49,24 +70,7 @@ const EnsaioDetailModal = ({ ensaio, isOpen, onClose }) => {
     visible: { opacity: 1 }
   };
 
-  // Modal variants
-  const modalVariants = {
-    hidden: { opacity: 0, scale: 0.9, y: 20 },
-    visible: {
-      opacity: 1,
-      scale: 1,
-      y: 0,
-      transition: { type: 'spring', damping: 25, stiffness: 300 }
-    },
-    exit: {
-      opacity: 0,
-      scale: 0.9,
-      y: 20,
-      transition: { duration: 0.2 }
-    }
-  };
-
-  return (
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
         <>
@@ -82,16 +86,45 @@ const EnsaioDetailModal = ({ ensaio, isOpen, onClose }) => {
 
           {/* Modal */}
           <motion.div
-            className={styles.modalContainer}
-            variants={modalVariants}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
+            key="ensaio-modal-content"
+            role="dialog"
+            aria-modal="true"
+            initial={isDesktop ? { opacity: 0, scale: 0.95 } : { opacity: 1, y: '100%' }}
+            animate={isDesktop ? { opacity: 1, scale: 1 } : { opacity: 1, y: 0 }}
+            exit={isDesktop ? { opacity: 0, scale: 0.95 } : { opacity: 1, y: '100%' }}
+            transition={{ type: 'spring', stiffness: 350, damping: 30 }}
+            style={{
+              position: 'fixed',
+              ...(isDesktop ? {
+                top: '50%',
+                left: '50%',
+                x: '-50%',
+                y: '-50%',
+                width: '500px',
+                maxWidth: '90vw',
+                borderRadius: '20px'
+              } : {
+                bottom: 0,
+                left: 0,
+                right: 0,
+                borderRadius: '24px 24px 0 0'
+              }),
+              background: 'var(--bg-card)',
+              zIndex: 10001,
+              maxHeight: isDesktop ? '85vh' : '90vh',
+              overflow: 'hidden',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+              display: 'flex',
+              flexDirection: 'column',
+              border: '1px solid var(--border)'
+            }}
           >
             {/* Header */}
             <div className={styles.modalHeader}>
               <div>
-                <h2 className={styles.modalTitle}>Ensaio</h2>
+                <h2 className={styles.modalTitle}>
+                  Ensaio {ensaio.numero_ensaio ? `#${ensaio.numero_ensaio}` : ''}
+                </h2>
                 <p className={styles.modalDate}>{dataFormatada}</p>
               </div>
               <button
@@ -161,7 +194,8 @@ const EnsaioDetailModal = ({ ensaio, isOpen, onClose }) => {
           </motion.div>
         </>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 };
 

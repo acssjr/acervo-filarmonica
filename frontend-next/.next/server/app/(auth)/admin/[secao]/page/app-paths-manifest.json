@@ -1,0 +1,3 @@
+{
+  "/(auth)/admin/[secao]/page": "app/(auth)/admin/[secao]/page.js"
+}

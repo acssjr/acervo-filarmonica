@@ -1,0 +1,12 @@
+var R=require("../../chunks/ssr/[turbopack]_runtime.js")("server/app/_not-found/page.js")
+R.c("server/chunks/ssr/58c09_next_dist_6e360268._.js")
+R.c("server/chunks/ssr/[root-of-the-server]__68ffb5f6._.js")
+R.c("server/chunks/ssr/58c09_next_dist_54139083._.js")
+R.c("server/chunks/ssr/[externals]__7f148858._.js")
+R.c("server/chunks/ssr/[root-of-the-server]__27167252._.js")
+R.c("server/chunks/ssr/frontend-next_app_loading_tsx_2e203de9._.js")
+R.c("server/chunks/ssr/frontend-next_af7525c6._.js")
+R.c("server/chunks/ssr/58c09_next_dist_client_components_f6a765d3._.js")
+R.c("server/chunks/ssr/frontend-next__next-internal_server_app__not-found_page_actions_5eb65341.js")
+R.m("[project]/frontend-next/node_modules/next/dist/esm/build/templates/app-page.js?page=/_not-found/page { MODULE_0 => \"[project]/frontend-next/app/layout.tsx [app-rsc] (ecmascript, Next.js Server Component)\", MODULE_1 => \"[project]/frontend-next/app/loading.tsx [app-rsc] (ecmascript, Next.js Server Component)\", MODULE_2 => \"[project]/frontend-next/app/not-found.tsx [app-rsc] (ecmascript, Next.js Server Component)\", MODULE_3 => \"[project]/frontend-next/node_modules/next/dist/client/components/builtin/forbidden.js [app-rsc] (ecmascript, Next.js Server Component)\", MODULE_4 => \"[project]/frontend-next/node_modules/next/dist/client/components/builtin/unauthorized.js [app-rsc] (ecmascript, Next.js Server Component)\", MODULE_5 => \"[project]/frontend-next/app/not-found.tsx [app-rsc] (ecmascript, Next.js Server Component)\" } [app-rsc] (ecmascript)")
+module.exports=R.m("[project]/frontend-next/node_modules/next/dist/esm/build/templates/app-page.js?page=/_not-found/page { MODULE_0 => \"[project]/frontend-next/app/layout.tsx [app-rsc] (ecmascript, Next.js Server Component)\", MODULE_1 => \"[project]/frontend-next/app/loading.tsx [app-rsc] (ecmascript, Next.js Server Component)\", MODULE_2 => \"[project]/frontend-next/app/not-found.tsx [app-rsc] (ecmascript, Next.js Server Component)\", MODULE_3 => \"[project]/frontend-next/node_modules/next/dist/client/components/builtin/forbidden.js [app-rsc] (ecmascript, Next.js Server Component)\", MODULE_4 => \"[project]/frontend-next/node_modules/next/dist/client/components/builtin/unauthorized.js [app-rsc] (ecmascript, Next.js Server Component)\", MODULE_5 => \"[project]/frontend-next/app/not-found.tsx [app-rsc] (ecmascript, Next.js Server Component)\" } [app-rsc] (ecmascript)").exports

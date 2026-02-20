@@ -1,0 +1,19 @@
+{
+  "/(auth)/acervo/[categoria]/[partituraId]/page": "app/(auth)/acervo/[categoria]/[partituraId]/page.js",
+  "/(auth)/acervo/[categoria]/page": "app/(auth)/acervo/[categoria]/page.js",
+  "/(auth)/acervo/page": "app/(auth)/acervo/page.js",
+  "/(auth)/admin/[secao]/page": "app/(auth)/admin/[secao]/page.js",
+  "/(auth)/admin/page": "app/(auth)/admin/page.js",
+  "/(auth)/buscar/page": "app/(auth)/buscar/page.js",
+  "/(auth)/compositores/page": "app/(auth)/compositores/page.js",
+  "/(auth)/favoritos/page": "app/(auth)/favoritos/page.js",
+  "/(auth)/generos/page": "app/(auth)/generos/page.js",
+  "/(auth)/page": "app/(auth)/page.js",
+  "/(auth)/perfil/page": "app/(auth)/perfil/page.js",
+  "/(auth)/repertorio/page": "app/(auth)/repertorio/page.js",
+  "/_global-error/page": "app/_global-error/page.js",
+  "/_not-found/page": "app/_not-found/page.js",
+  "/login/page": "app/login/page.js",
+  "/manifest.json/route": "app/manifest.json/route.js",
+  "/serwist/[path]/route": "app/serwist/[path]/route.js"
+}

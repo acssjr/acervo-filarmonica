@@ -1,0 +1,6 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 4, "column": 0}, "map": {"version":3,"sources":["file:///C:/Users/Ant%C3%B4nio/Documents/acervo-filarmonica/frontend-next/app/loading.tsx"],"sourcesContent":["export default function Loading() {\r\n  return (\r\n    <div className=\"flex min-h-screen items-center justify-center bg-bg-primary\">\r\n      <div className=\"flex flex-col items-center gap-4\">\r\n        <div\r\n          className=\"h-10 w-10 rounded-full border-3 border-border border-t-primary\"\r\n          style={{ animation: \"spin 0.8s linear infinite\" }}\r\n        />\r\n        <p className=\"text-sm text-text-muted\">Carregando...</p>\r\n      </div>\r\n    </div>\r\n  );\r\n}\r\n"],"names":[],"mappings":";;;;;;AAAe,SAAS;IACtB,qBACE,kQAAC;QAAI,WAAU;kBACb,cAAA,kQAAC;YAAI,WAAU;;8BACb,kQAAC;oBACC,WAAU;oBACV,OAAO;wBAAE,WAAW;oBAA4B;;;;;;8BAElD,kQAAC;oBAAE,WAAU;8BAA0B;;;;;;;;;;;;;;;;;AAI/C"}}]
+}

@@ -44,13 +44,13 @@ export function setupPartituraRoutes(router) {
   router.post('/api/partituras', (req, env, params, context) => {
     return createPartitura(req, env, context.user);
   }, [adminMiddleware]);
-  router.put('/api/partituras/:id', (req, env, params) => {
+  router.put('/api/partituras/:id', (req, env, params, context) => {
     const id = params.id;
-    return updatePartitura(id, req, env);
+    return updatePartitura(id, req, env, context.user);
   }, [adminMiddleware]);
-  router.delete('/api/partituras/:id', (req, env, params) => {
+  router.delete('/api/partituras/:id', (req, env, params, context) => {
     const id = params.id;
-    return deletePartitura(id, req, env);
+    return deletePartitura(id, req, env, context.user);
   }, [adminMiddleware]);
 
   // Rota autenticada - listar partes (qualquer usuário logado pode ver para download)

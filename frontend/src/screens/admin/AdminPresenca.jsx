@@ -536,6 +536,11 @@ const AdminPresenca = () => {
       setUsuarios(musicos);
       setHistorico(presencas?.ensaios || []);
       setPartituras(todasPartituras || []);
+
+      // Se houver uma data selecionada, recarregar suas partituras também para garantir sincronia
+      if (dataEnsaio) {
+        loadPartiturasEnsaio(dataEnsaio);
+      }
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
       showToast('Erro ao carregar dados', 'error');
@@ -682,6 +687,14 @@ const AdminPresenca = () => {
     try {
       await API.excluirEnsaio(ensaio.data_ensaio);
       showToast('Ensaio excluído com sucesso', 'success');
+
+      // Se o ensaio excluído for o que está selecionado atualmente, limpar o estado local
+      if (ensaio.data_ensaio === dataEnsaio) {
+        setSelecionados([]);
+        setPartiturasEnsaio([]);
+        // Se o modo de marcação estiver ativo, talvez resetar outros estados se necessário
+      }
+
       loadData();
     } catch (error) {
       showToast('Erro ao excluir ensaio', 'error');
@@ -729,13 +742,39 @@ const AdminPresenca = () => {
 
   // Contar presentes/ausentes com base no modo
   const contadorTexto = useMemo(() => {
+    // Helper para identificar Maestro
+    const isRegente = (u) => u.instrumento_nome === 'Regente' || u.nome.includes('Regente');
+
+    // Total de músicos (excluindo Regente) para base de cálculo
+    const totalMusicos = usuarios.filter(u => !isRegente(u)).length;
+
     if (modoMarcacao === 'presentes') {
-      return `${selecionados.length} selecionado${selecionados.length !== 1 ? 's' : ''}`;
+      // Contar selecionados que NÃO são Regente
+      const selecionadosMusicos = selecionados.filter(id => {
+        const u = usuarios.find(user => user.id === id);
+        return u && !isRegente(u);
+      }).length;
+
+      return `${selecionadosMusicos} selecionado${selecionadosMusicos !== 1 ? 's' : ''}`;
     } else {
-      const presentes = usuarios.length - selecionados.length;
-      return `${presentes} presente${presentes !== 1 ? 's' : ''}, ${selecionados.length} ausente${selecionados.length !== 1 ? 's' : ''}`;
+      // Modo Ausentes: selecionados são os que FALTARAM.
+      // Presentes = (Total Músicos) - (Músicos Ausentes)
+
+      // Músicos que foram marcados como ausentes
+      const ausentesMusicos = selecionados.filter(id => {
+        const u = usuarios.find(user => user.id === id);
+        return u && !isRegente(u);
+      }).length;
+
+      const presentes = totalMusicos - ausentesMusicos;
+
+      // Contagem de ausentes total (inclui regente se marcado, ou nao? O texto diz "X ausentes")
+      // O usuário pediu para não contar o maestro no número de "músicos" presentes.
+      // Vou mostrar X presentes (músicos), Y ausentes (músicos)
+
+      return `${presentes} presente${presentes !== 1 ? 's' : ''}, ${ausentesMusicos} ausente${ausentesMusicos !== 1 ? 's' : ''}`;
     }
-  }, [modoMarcacao, selecionados.length, usuarios.length]);
+  }, [modoMarcacao, selecionados, usuarios]);
 
   // Agrupar músicos por família de instrumento
   const gruposPorFamilia = useMemo(() => {
@@ -1535,6 +1574,19 @@ const AdminPresenca = () => {
                       marginBottom: '4px'
                     }}>
                       {formatDatePt(ensaio.data_ensaio)}
+                      {ensaio.numero_ensaio > 0 && (
+                        <span style={{
+                          marginLeft: '8px',
+                          background: 'rgba(212, 175, 55, 0.15)',
+                          color: '#D4AF37',
+                          padding: '2px 6px',
+                          borderRadius: '4px',
+                          fontSize: '10px',
+                          textTransform: 'uppercase'
+                        }}>
+                          #{ensaio.numero_ensaio}
+                        </span>
+                      )}
                     </div>
                     <div style={{
                       display: 'flex',

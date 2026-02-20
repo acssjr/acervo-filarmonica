@@ -417,6 +417,28 @@ export const API = {
     return this.request('/api/admin/estatisticas');
   },
 
+  async getAnalyticsDashboard() {
+    return this.request('/api/admin/analytics/dashboard');
+  },
+
+  async trackSearch(termo, resultadosCount) {
+    // Tracking silencioso (sem await no fetch se possível, mas aqui usamos helpers)
+    // Não usar this.request para não lançar erro global
+    try {
+      const token = Storage.get('authToken', null);
+      await fetch(`${API_BASE_URL}/api/tracking/search`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { 'Authorization': `Bearer ${token}` })
+        },
+        body: JSON.stringify({ termo, resultados_count: resultadosCount })
+      });
+    } catch {
+      // Ignorar erros de tracking
+    }
+  },
+
   // ============ MANUTENÇÃO ADMIN ============
 
   async limparNomesUsuarios() {
@@ -587,6 +609,42 @@ export const API = {
     return this.request(`/api/ensaios/${dataEnsaio}/partituras/reorder`, {
       method: 'PUT',
       body: JSON.stringify({ ordens })
+    });
+  },
+
+  // ============ AVISOS ============
+
+  async getAvisos() {
+    return this.request('/api/admin/avisos');
+  },
+
+  async criarAviso(data) {
+    return this.request('/api/admin/avisos', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  },
+
+  async atualizarAviso(id, data) {
+    return this.request(`/api/admin/avisos/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    });
+  },
+
+  async excluirAviso(id) {
+    return this.request(`/api/admin/avisos/${id}`, {
+      method: 'DELETE'
+    });
+  },
+
+  async getAvisosNaoLidos() {
+    return this.request('/api/avisos/nao-lidos');
+  },
+
+  async marcarAvisoLido(id) {
+    return this.request(`/api/avisos/${id}/lido`, {
+      method: 'POST'
     });
   }
 };
