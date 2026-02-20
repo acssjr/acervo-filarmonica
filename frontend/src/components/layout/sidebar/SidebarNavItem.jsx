@@ -6,6 +6,12 @@ const SidebarNavItem = ({ icon: Icon, label, isActive, collapsed, onClick, dange
   const dangerColor = 'rgba(239, 68, 68, 0.8)';
   const dangerHoverColor = 'rgba(239, 68, 68, 1)';
 
+  // Fallback para ícone inválido
+  if (!Icon || typeof Icon !== 'function') {
+    console.error(`[SidebarNavItem] Ícone inválido para label: ${label}`);
+    return null;
+  }
+
   return (
     <button
       onClick={onClick}

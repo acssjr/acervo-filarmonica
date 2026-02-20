@@ -51,7 +51,7 @@ const transliterate = (str) => {
 const DesktopHeader = () => {
   const navigate = useNavigate();
   const { setShowNotifications } = useUI();
-  const { sheets, favorites, toggleFavorite, categoriesMap } = useData();
+  const { sheets, favoritesSet, toggleFavorite, categoriesMap } = useData();
   const { unreadCount } = useNotifications();
   const [searchQuery, setSearchQuery] = useState('');
   const [showResults, setShowResults] = useState(false);
@@ -469,9 +469,9 @@ const DesktopHeader = () => {
                     e.stopPropagation();
                     toggleFavorite(sheet.id);
                   }}
-                  aria-label={favorites.includes(sheet.id) ? `Remover ${sheet.title} dos favoritos` : `Adicionar ${sheet.title} aos favoritos`}
+                  aria-label={favoritesSet.has(sheet.id) ? `Remover ${sheet.title} dos favoritos` : `Adicionar ${sheet.title} aos favoritos`}
                   style={{
-                    background: favorites.includes(sheet.id) ? 'rgba(232,90,79,0.1)' : 'transparent',
+                    background: favoritesSet.has(sheet.id) ? 'rgba(232,90,79,0.1)' : 'transparent',
                     border: 'none',
                     borderRadius: '8px',
                     width: '32px',
@@ -480,12 +480,12 @@ const DesktopHeader = () => {
                     alignItems: 'center',
                     justifyContent: 'center',
                     cursor: 'pointer',
-                    color: favorites.includes(sheet.id) ? 'var(--primary)' : 'var(--text-muted)',
+                    color: favoritesSet.has(sheet.id) ? 'var(--primary)' : 'var(--text-muted)',
                     transition: 'all 0.2s ease'
                   }}
                 >
                   <div style={{ width: '16px', height: '16px' }}>
-                    <Icons.Heart filled={favorites.includes(sheet.id)} />
+                    <Icons.Heart filled={favoritesSet.has(sheet.id)} />
                   </div>
                 </button>
               </div>

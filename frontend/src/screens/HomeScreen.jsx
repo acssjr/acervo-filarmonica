@@ -1,13 +1,13 @@
 // ===== HOME SCREEN =====
 // Tela inicial com destaques, categorias e atividade recente
+// Otimizado: iterações combinadas, memoização de componentes
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, memo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@contexts/AuthContext';
 import { useData } from '@contexts/DataContext';
 import { useIsMobile } from '@hooks/useResponsive';
 import { API } from '@services/api';
-// import { formatTimeAgo, getAtividadeInfo } from '@utils/formatters';
 import HomeHeader from '@components/common/HomeHeader';
 import HeaderActions from '@components/common/HeaderActions';
 import FeaturedSheets from '@components/music/FeaturedSheets';
@@ -18,22 +18,51 @@ import PresenceStats from '@components/stats/PresenceStats';
 import AvisoModal from '@components/modals/AvisoModal';
 import { PROFILE_ABOUT_CONFIG } from '@components/modals/AboutModal/changelog/profileChangelog';
 
+// MemoFileCard - evita re-renders desnecessários
+const MemoFileCard = memo(FileCard, (prev, next) => {
+  return prev.sheet.id === next.sheet.id &&
+         prev.isFavorite === next.isFavorite &&
+         prev.category?.id === next.category?.id;
+});
+
 const HomeScreen = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { sheets, favorites, toggleFavorite, categories, categoriesMap } = useData();
+  const { sheets, favoritesSet, toggleFavorite, categories, categoriesMap } = useData();
   const isMobile = useIsMobile();
   const [_atividades, setAtividades] = useState([]);
 
-  // Memoiza contagem por categoria (evita O(n) * categorias em cada render)
-  const categoryCounts = useMemo(() => {
-    const counts = {};
+  // Otimizado: uma única iteração calcula tudo
+  const homeData = useMemo(() => {
+    const categoryCounts = {};
+    const composerCounts = {};
+    
+    // Single pass: conta categorias e compositores
     sheets.forEach(s => {
-      counts[s.category] = (counts[s.category] || 0) + 1;
+      // Contagem por categoria
+      categoryCounts[s.category] = (categoryCounts[s.category] || 0) + 1;
+      
+      // Contagem por compositor
+      if (s.composer && s.composer.trim()) {
+        composerCounts[s.composer] = (composerCounts[s.composer] || 0) + 1;
+      }
     });
-    return counts;
+
+    // Partituras ordenadas por downloads (top 6)
+    const recentSheets = [...sheets]
+      .sort((a, b) => (b.downloads || 0) - (a.downloads || 0))
+      .slice(0, 6);
+
+    // Compositores mais populares (top 6)
+    const topComposers = Object.entries(composerCounts)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 6);
+
+    return { categoryCounts, recentSheets, topComposers };
   }, [sheets]);
 
+  const { categoryCounts, recentSheets, topComposers } = homeData;
   const getCategoryCount = (catId) => categoryCounts[catId] || 0;
 
   // Gêneros principais para exibição na home
@@ -43,36 +72,19 @@ const HomeScreen = () => {
       .map(id => categories.find(cat => cat.id === id))
       .filter(Boolean);
 
-    // Se não encontrou as categorias esperadas, loga aviso e usa fallback
+    // Se não encontrou as categorias esperadas, usa fallback
     if (filtered.length === 0 && categories.length > 0) {
-      const missing = desiredIds.filter(id => !categories.find(cat => cat.id === id));
-      console.warn(`[HomeScreen] Categorias principais não encontradas: ${missing.join(', ')}. Usando as primeiras ${Math.min(categories.length, 4)} categorias como fallback.`);
       return categories.slice(0, 4);
     }
 
     return filtered;
   }, [categories]);
 
-  // Memoiza total de downloads
+  // Memoiza total de downloads (só calculado quando necessário)
   const _totalDownloads = useMemo(() =>
     sheets.reduce((acc, s) => acc + (s.downloads || 0), 0),
-    [sheets]);
-
-  const recentSheets = useMemo(() => [...sheets].sort((a, b) => (b.downloads || 0) - (a.downloads || 0)).slice(0, 6), [sheets]);
-
-  // Compositores mais populares (top 6 por quantidade de partituras)
-  const topComposers = useMemo(() => {
-    const composerCounts = {};
-    sheets.forEach(s => {
-      if (s.composer && s.composer.trim()) {
-        composerCounts[s.composer] = (composerCounts[s.composer] || 0) + 1;
-      }
-    });
-    return Object.entries(composerCounts)
-      .map(([name, count]) => ({ name, count }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 6);
-  }, [sheets]);
+    [sheets]
+  );
 
   // Carrega atividades da API somente se usuario estiver autenticado
   useEffect(() => {
@@ -89,6 +101,11 @@ const HomeScreen = () => {
     loadAtividades();
   }, [user]);
 
+  // Callback estável para toggle de favorito
+  const handleToggleFavorite = useCallback((id) => {
+    toggleFavorite(id);
+  }, [toggleFavorite]);
+
   return (
     <div style={{ width: '100%', overflow: 'visible' }}>
       <AvisoModal />
@@ -99,13 +116,21 @@ const HomeScreen = () => {
       />
 
       <div style={{ paddingTop: '8px', overflow: 'visible' }}>
-        <FeaturedSheets sheets={sheets} favorites={favorites} onToggleFavorite={toggleFavorite} />
+        <FeaturedSheets 
+          sheets={sheets} 
+          favoritesSet={favoritesSet}
+          onToggleFavorite={handleToggleFavorite} 
+        />
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 20px', marginBottom: '16px' }}>
         <h2 style={{ fontFamily: "Outfit, sans-serif", fontSize: '18px', fontWeight: '700' }}>Gêneros Musicais</h2>
-        <button style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: '14px', fontWeight: '500', cursor: 'pointer', fontFamily: 'Outfit, sans-serif' }}
-          onClick={() => navigate('/generos')}>Ver Todos</button>
+        <button 
+          style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: '14px', fontWeight: '500', cursor: 'pointer', fontFamily: 'Outfit, sans-serif' }}
+          onClick={() => navigate('/generos')}
+        >
+          Ver Todos
+        </button>
       </div>
 
       <div data-walkthrough="categories" style={{ padding: '0 20px', marginBottom: '24px' }}>
@@ -116,29 +141,38 @@ const HomeScreen = () => {
           width: '100%'
         }}>
           {mainGenres.map((cat, i) => (
-            <CategoryCard key={cat.id} category={cat} count={getCategoryCount(cat.id)} index={i}
-              onClick={() => navigate(`/acervo/${cat.id}`)} />
+            <CategoryCard 
+              key={cat.id} 
+              category={cat} 
+              count={getCategoryCount(cat.id)} 
+              index={i}
+              onClick={() => navigate(`/acervo/${cat.id}`)} 
+            />
           ))}
         </div>
       </div>
 
       {/* Secao de Compositores - Carrossel apenas no mobile */}
-      {isMobile && <ComposerCarousel composers={topComposers} />}
+      {isMobile ? <ComposerCarousel composers={topComposers} /> : null}
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 20px', marginBottom: '12px' }}>
         <h2 style={{ fontFamily: "Outfit, sans-serif", fontSize: '18px', fontWeight: '700' }}>Partituras Populares</h2>
-        <button style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: '14px', fontWeight: '500', cursor: 'pointer', fontFamily: 'Outfit, sans-serif' }}
-          onClick={() => navigate('/acervo')}>Ver Todas</button>
+        <button 
+          style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: '14px', fontWeight: '500', cursor: 'pointer', fontFamily: 'Outfit, sans-serif' }}
+          onClick={() => navigate('/acervo')}
+        >
+          Ver Todas
+        </button>
       </div>
 
       <div className="sheets-grid" style={{ padding: '0 20px' }}>
         {recentSheets.map((sheet, index) => (
-          <FileCard
+          <MemoFileCard
             key={sheet.id}
             sheet={sheet}
             category={categoriesMap.get(sheet.category)}
-            isFavorite={favorites.includes(sheet.id)}
-            onToggleFavorite={() => toggleFavorite(sheet.id)}
+            isFavorite={favoritesSet.has(sheet.id)} // O(1) lookup
+            onToggleFavorite={handleToggleFavorite}
             index={index}
           />
         ))}

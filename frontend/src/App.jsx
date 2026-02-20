@@ -1,9 +1,10 @@
 // ===== MAIN APP COMPONENT =====
 // Com React Router para navegacao por URLs em PT-BR
+// Otimizado: prefetching de telas, transições rápidas
 
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useParams } from 'react-router-dom';
-import { AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import PageTransition from '@components/common/PageTransition';
 import { useAuth } from '@contexts/AuthContext';
 import { useUI } from '@contexts/UIContext';
@@ -26,9 +27,12 @@ import { useUserWalkthrough } from '@components/onboarding/useUserWalkthrough';
 // Login - carregado sempre (primeira tela)
 import LoginScreen from '@screens/LoginScreen';
 
-// Screens - Lazy loaded para reduzir bundle inicial
-const HomeScreen = lazy(() => import('@screens/HomeScreen'));
-const LibraryScreen = lazy(() => import('@screens/LibraryScreen'));
+// ===== TELAS PRINCIPAIS (Eager Load) =====
+// Carregadas imediatamente - mais rápido para navegação
+import HomeScreen from '@screens/HomeScreen';
+import LibraryScreen from '@screens/LibraryScreen';
+
+// ===== TELAS SECUNDÁRIAS (Lazy Load com Prefetch) =====
 const SearchScreen = lazy(() => import('@screens/SearchScreen'));
 const FavoritesScreen = lazy(() => import('@screens/FavoritesScreen'));
 const RepertorioScreen = lazy(() => import('@screens/RepertorioScreen'));
@@ -37,7 +41,32 @@ const ComposersScreen = lazy(() => import('@screens/ComposersScreen'));
 const ProfileScreen = lazy(() => import('@screens/ProfileScreen'));
 const AdminApp = lazy(() => import('@screens/admin').then(m => ({ default: m.AdminApp })));
 
-// Loading Screen Component
+// Prefetch de telas secundárias em background
+const prefetchScreens = () => {
+  // Usa requestIdleCallback para não bloquear a thread principal
+  const schedulePrefetch = (callback) => {
+    if ('requestIdleCallback' in window) {
+      requestIdleCallback(callback, { timeout: 2000 });
+    } else {
+      setTimeout(callback, 100);
+    }
+  };
+
+  // Prefetch Search e Favorites (mais usadas)
+  schedulePrefetch(() => {
+    import('@screens/SearchScreen');
+    import('@screens/FavoritesScreen');
+  });
+
+  // Prefetch outras telas após 2s
+  schedulePrefetch(() => {
+    import('@screens/RepertorioScreen');
+    import('@screens/ProfileScreen');
+    import('@screens/GenresScreen');
+  });
+};
+
+// Loading Screen Component - versão minimalista e rápida
 const LoadingScreen = () => (
   <div style={{
     position: 'fixed',
@@ -90,6 +119,31 @@ const LoadingScreen = () => (
   </div>
 );
 
+// Page Loader minimalista para transições rápidas
+const PageLoader = () => (
+  <motion.div
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    exit={{ opacity: 0 }}
+    style={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      minHeight: '200px',
+      padding: '40px'
+    }}
+  >
+    <div style={{
+      width: '32px',
+      height: '32px',
+      border: '3px solid var(--border)',
+      borderTopColor: 'var(--primary)',
+      borderRadius: '50%',
+      animation: 'spin 0.6s linear infinite'
+    }} />
+  </motion.div>
+);
+
 // Componente de protecao de rotas
 // Permite admins acessarem area de musico (para usar AdminToggle)
 const ProtectedRoute = ({ children }) => {
@@ -129,27 +183,10 @@ const AdminRoute = ({ children }) => {
   return children;
 };
 
-// Loading fallback para Suspense (mais leve que LoadingScreen)
-const PageLoader = () => (
-  <div style={{
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: '200px',
-    padding: '40px'
-  }}>
-    <div style={{
-      width: '32px',
-      height: '32px',
-      border: '3px solid var(--border)',
-      borderTopColor: 'var(--primary)',
-      borderRadius: '50%',
-      animation: 'spin 0.8s linear infinite'
-    }} />
-  </div>
-);
+
 
 // Layout para usuario comum (com BottomNav e DesktopLayout)
+// Otimizado: sem AnimatePresence mode="wait", transições mais rápidas
 const UserLayout = ({ children }) => {
   const location = useLocation();
 
@@ -171,13 +208,12 @@ const UserLayout = ({ children }) => {
 
   return (
     <DesktopLayout activeTab={activeTab}>
-      <AnimatePresence mode="wait">
-        <Suspense fallback={<PageLoader />}>
-          <PageTransition key={location.pathname}>
-            {children}
-          </PageTransition>
-        </Suspense>
-      </AnimatePresence>
+      {/* Sem AnimatePresence mode="wait" - remove delay de transição */}
+      <Suspense fallback={<PageLoader />}>
+        <PageTransition key={location.pathname}>
+          {children}
+        </PageTransition>
+      </Suspense>
       <BottomNav activeTab={activeTab} />
     </DesktopLayout>
   );
@@ -201,7 +237,7 @@ const ComposerWithSlug = () => {
   return <ComposersScreen composerSlugFromUrl={slug} />;
 };
 
-// Walkthrough global - renderizado no nivel do App para ficar acima dos modals
+// Walkthrough global - renderizado no nivel do App para ficar acima de tudo
 const GlobalUserWalkthrough = () => {
   const [showWalkthrough, setShowWalkthrough] = useUserWalkthrough();
   return (
@@ -212,9 +248,16 @@ const GlobalUserWalkthrough = () => {
   );
 };
 
-// App Content - uses context and router
+// App Content - providers estao no main.jsx
 const AppContent = () => {
   const { toast, clearToast } = useUI();
+
+  // Inicia prefetch após carregamento inicial
+  useEffect(() => {
+    // Pequeno delay para não competir com o carregamento inicial
+    const timer = setTimeout(prefetchScreens, 1500);
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
     <>
@@ -340,7 +383,7 @@ const AppContent = () => {
       {/* Notificação de atualização */}
       <UpdateNotification />
 
-      {toast && <Toast message={toast.message} type={toast.type} onClose={clearToast} />}
+      {toast ? <Toast message={toast.message} type={toast.type} onClose={clearToast} /> : null}
 
       {/* User Walkthrough - DEVE ser o ultimo para ficar acima de tudo */}
       <GlobalUserWalkthrough />

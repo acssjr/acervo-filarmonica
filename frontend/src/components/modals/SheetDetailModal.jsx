@@ -23,7 +23,7 @@ const SheetDetailModal = () => {
   const location = useLocation();
   const { user } = useAuth();
   const { selectedSheet, setSelectedSheet, showToast, addToShareCart, removeFromShareCart, shareCart } = useUI();
-  const { favorites, toggleFavorite, categoriesMap, instrumentNames } = useData();
+  const { favoritesSet, toggleFavorite, categoriesMap, instrumentNames } = useData();
 
   // Estado local
   const isDesktop = useMediaQuery('(min-width: 1024px)');
@@ -118,7 +118,7 @@ const SheetDetailModal = () => {
 
   // Dados derivados do selectedSheet (só acessados quando existe)
   const category = selectedSheet ? categoriesMap.get(selectedSheet.category) : null;
-  const isFavorite = selectedSheet ? favorites.includes(selectedSheet.id) : false;
+  const isFavorite = selectedSheet ? favoritesSet.has(selectedSheet.id) : false;
   const userInstrument = user?.instrument || 'Trompete Bb';
   const userInstrumentLower = userInstrument?.toLowerCase() || '';
   const isMaestro = userInstrumentLower === 'maestro' || userInstrumentLower === 'regente';

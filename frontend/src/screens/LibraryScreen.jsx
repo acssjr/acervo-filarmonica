@@ -2,8 +2,9 @@
 // Tela de biblioteca com categorias e partituras
 // Suporta navegacao via URL: /acervo, /acervo/:categoria, /acervo/:categoria/:partituraId
 // Categorias carregadas da API via DataContext
+// Otimizado: usa Set para O(1) lookups de favoritos
 
-import { useMemo, useEffect, useCallback } from 'react';
+import { useMemo, useEffect, useCallback, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@contexts/AuthContext';
 import { useData } from '@contexts/DataContext';
@@ -15,6 +16,12 @@ import EmptyState from '@components/common/EmptyState';
 import CategoryCard from '@components/music/CategoryCard';
 import FileCard from '@components/music/FileCard';
 
+// MemoFileCard para evitar re-renders
+const MemoFileCard = memo(FileCard, (prev, next) => {
+  return prev.sheet.id === next.sheet.id &&
+         prev.isFavorite === next.isFavorite;
+});
+
 const LibraryScreen = ({ categoryFromUrl, sheetIdFromUrl }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -23,7 +30,7 @@ const LibraryScreen = ({ categoryFromUrl, sheetIdFromUrl }) => {
     categories, categoriesMap,
     selectedCategory, setSelectedCategory,
     selectedComposer, setSelectedComposer,
-    favorites, toggleFavorite
+    favoritesSet, toggleFavorite
   } = useData();
   const { setSelectedSheet } = useUI();
 
@@ -92,6 +99,11 @@ const LibraryScreen = ({ categoryFromUrl, sheetIdFromUrl }) => {
     navigate(`/acervo/${catId}`);
   };
 
+  // Callback estável para toggle
+  const handleToggleFavorite = useCallback((id) => {
+    toggleFavorite(id);
+  }, [toggleFavorite]);
+
   const getTitle = () => {
     if (selectedComposer) return selectedComposer;
     if (currentCategory) return currentCategory.name;
@@ -110,9 +122,9 @@ const LibraryScreen = ({ categoryFromUrl, sheetIdFromUrl }) => {
         subtitle={getSubtitle()}
         showBack={!!(selectedCategory || selectedComposer)}
         onBack={handleBack}
-        actions={user?.isAdmin && (
+        actions={user?.isAdmin ? (
           <IconButton icon={Icons.Plus} primary onClick={() => navigate('/admin/partituras')} />
-        )}
+        ) : null}
       />
 
       {!selectedCategory && !selectedComposer ? (
@@ -143,12 +155,12 @@ const LibraryScreen = ({ categoryFromUrl, sheetIdFromUrl }) => {
           containIntrinsicSize: '0 2000px'
         }}>
           {filteredSheets.map(sheet => (
-            <FileCard
+            <MemoFileCard
               key={sheet.id}
               sheet={sheet}
               category={currentCategory}
-              isFavorite={favorites.includes(sheet.id)}
-              onToggleFavorite={() => toggleFavorite(sheet.id)}
+              isFavorite={favoritesSet.has(sheet.id)} // O(1) lookup
+              onToggleFavorite={handleToggleFavorite}
             />
           ))}
         </div>
