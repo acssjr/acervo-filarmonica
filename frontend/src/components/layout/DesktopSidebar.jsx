@@ -252,7 +252,7 @@ const DesktopSidebar = ({ activeTab }) => {
         <div style={{ padding: '0 12px', marginTop: 'auto', marginBottom: '20px' }}>
           <SidebarNavItem
             icon={Icons.Logout}
-            label={sidebarCollapsed ? '' : 'Sair'}
+            label="Sair"
             isActive={false}
             collapsed={sidebarCollapsed}
             onClick={handleLogout}

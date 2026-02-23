@@ -10,6 +10,7 @@ import { extrairInstrumento } from '@utils/instrumentParser';
 const CorrigirBombardinosModal = ({ isOpen, onClose, partituras }) => {
     const { showToast } = useUI();
     const folderInputRef = useRef(null);
+    const cancelledRef = useRef(false);
 
     // Steps: 'select' -> 'preview' -> 'processing' -> 'done'
     const [step, setStep] = useState('select');
@@ -83,7 +84,7 @@ const CorrigirBombardinosModal = ({ isOpen, onClose, partituras }) => {
             });
         }
 
-        // Ordernar: matched primeiro, depois unmatched
+        // Ordenar: matched primeiro, depois unmatched
         matched.sort((a, b) => {
             if (a.matched && !b.matched) return -1;
             if (!a.matched && b.matched) return 1;
@@ -105,6 +106,7 @@ const CorrigirBombardinosModal = ({ isOpen, onClose, partituras }) => {
             return;
         }
 
+        cancelledRef.current = false;
         setStep('processing');
         setProcessing(true);
         setProgress({ current: 0, total: toProcess.length });
@@ -112,6 +114,7 @@ const CorrigirBombardinosModal = ({ isOpen, onClose, partituras }) => {
         const resultData = { success: 0, errors: [] };
 
         for (let i = 0; i < toProcess.length; i++) {
+            if (cancelledRef.current) break;
             const match = toProcess[i];
             setProgress({ current: i + 1, total: toProcess.length });
 
@@ -134,9 +137,11 @@ const CorrigirBombardinosModal = ({ isOpen, onClose, partituras }) => {
             }
         }
 
-        setResults(resultData);
-        setProcessing(false);
-        setStep('done');
+        if (!cancelledRef.current) {
+            setResults(resultData);
+            setProcessing(false);
+            setStep('done');
+        }
     };
 
     const handleReset = () => {
@@ -147,6 +152,8 @@ const CorrigirBombardinosModal = ({ isOpen, onClose, partituras }) => {
     };
 
     const handleClose = () => {
+        if (step === 'processing') return;
+        cancelledRef.current = true;
         handleReset();
         onClose();
     };
@@ -173,22 +180,26 @@ const CorrigirBombardinosModal = ({ isOpen, onClose, partituras }) => {
             />
 
             {/* Modal */}
-            <div style={{
-                position: 'fixed',
-                top: '50%', left: '50%',
-                transform: 'translate(-50%, -50%)',
-                width: '90%',
-                maxWidth: '720px',
-                maxHeight: '85vh',
-                background: 'var(--bg-card)',
-                borderRadius: '16px',
-                boxShadow: '0 24px 64px rgba(0,0,0,0.4)',
-                zIndex: 10000,
-                display: 'flex',
-                flexDirection: 'column',
-                fontFamily: 'Outfit, sans-serif',
-                animation: 'scaleIn 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
-            }}>
+            <div
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="bombardinos-modal-title"
+                style={{
+                    position: 'fixed',
+                    top: '50%', left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    width: '90%',
+                    maxWidth: '720px',
+                    maxHeight: '85vh',
+                    background: 'var(--bg-card)',
+                    borderRadius: '16px',
+                    boxShadow: '0 24px 64px rgba(0,0,0,0.4)',
+                    zIndex: 10000,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    fontFamily: 'Outfit, sans-serif',
+                    animation: 'scaleIn 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+                }}>
                 {/* Header */}
                 <div style={{
                     padding: '20px 24px',
@@ -210,7 +221,7 @@ const CorrigirBombardinosModal = ({ isOpen, onClose, partituras }) => {
                             </svg>
                         </div>
                         <div>
-                            <h2 style={{ fontSize: '18px', fontWeight: '600', color: 'var(--text-primary)', margin: 0 }}>
+                            <h2 id="bombardinos-modal-title" style={{ fontSize: '18px', fontWeight: '600', color: 'var(--text-primary)', margin: 0 }}>
                                 Corrigir Bombardinos
                             </h2>
                             <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
@@ -220,17 +231,20 @@ const CorrigirBombardinosModal = ({ isOpen, onClose, partituras }) => {
                     </div>
                     <button
                         onClick={handleClose}
+                        disabled={step === 'processing'}
+                        aria-label="Fechar modal"
                         style={{
                             width: '36px', height: '36px',
                             borderRadius: '50%',
                             background: 'var(--bg-primary)',
                             border: '1px solid var(--border)',
                             color: 'var(--text-secondary)',
-                            cursor: 'pointer',
+                            cursor: step === 'processing' ? 'not-allowed' : 'pointer',
+                            opacity: step === 'processing' ? 0.5 : 1,
                             display: 'flex', alignItems: 'center', justifyContent: 'center'
                         }}
                     >
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                             <line x1="18" y1="6" x2="6" y2="18" />
                             <line x1="6" y1="6" x2="18" y2="18" />
                         </svg>
@@ -272,12 +286,12 @@ const CorrigirBombardinosModal = ({ isOpen, onClose, partituras }) => {
                                     <path d="M12 11v6M9 14h6" />
                                 </svg>
                                 Selecionar Pasta
+                                {/* eslint-disable-next-line react/no-unknown-property */}
                                 <input
                                     ref={folderInputRef}
                                     type="file"
-                                    // eslint-disable-next-line react/no-unknown-property
-                                    webkitdirectory="true"
-                                    directory="true"
+                                    webkitdirectory=""
+                                    directory=""
                                     multiple
                                     style={{ display: 'none' }}
                                     onChange={handleFolderSelect}
@@ -379,7 +393,7 @@ const CorrigirBombardinosModal = ({ isOpen, onClose, partituras }) => {
                                             </div>
                                             {!match.matched && (
                                                 <div style={{ fontSize: '11px', color: '#e74c3c', marginTop: '2px' }}>
-                                                    Titulo nao encontrado no acervo
+                                                    Título não encontrado no acervo
                                                 </div>
                                             )}
                                         </div>
@@ -453,7 +467,7 @@ const CorrigirBombardinosModal = ({ isOpen, onClose, partituras }) => {
                                 <polyline points="22 4 12 14.01 9 11.01" />
                             </svg>
                             <h3 style={{ fontSize: '16px', color: 'var(--text-primary)', marginBottom: '8px' }}>
-                                Correcao concluida
+                                Correção concluída
                             </h3>
                             <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginBottom: '20px' }}>
                                 {results.success} partitura{results.success !== 1 ? 's' : ''} corrigida{results.success !== 1 ? 's' : ''} com sucesso

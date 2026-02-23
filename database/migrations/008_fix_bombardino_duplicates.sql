@@ -23,28 +23,17 @@
 -- HAVING COUNT(*) > 1;
 
 -- Para cada partitura ATIVA com exatamente 2 partes de 'Bombardino',
--- renomear a SEGUNDA (maior id) para 'Bombardino Bb':
+-- renomear a que tem 'Bb' ou 'Sib' no arquivo_nome para 'Bombardino Bb':
 UPDATE partes
 SET instrumento = 'Bombardino Bb'
-WHERE id IN (
-  SELECT pt.id
-  FROM partes pt
-  JOIN partituras p ON p.id = pt.partitura_id
-  WHERE pt.instrumento = 'Bombardino'
-    AND p.ativo = 1
-    AND pt.id = (
-      SELECT MAX(pt2.id)
-      FROM partes pt2
-      WHERE pt2.partitura_id = pt.partitura_id
-        AND pt2.instrumento = 'Bombardino'
-    )
-    AND pt.partitura_id IN (
-      SELECT pt3.partitura_id
-      FROM partes pt3
-      JOIN partituras p2 ON p2.id = pt3.partitura_id
-      WHERE pt3.instrumento = 'Bombardino'
-        AND p2.ativo = 1
-      GROUP BY pt3.partitura_id
-      HAVING COUNT(*) = 2
-    )
-);
+WHERE instrumento = 'Bombardino'
+  AND (arquivo_nome LIKE '%Bb%' OR arquivo_nome LIKE '%Sib%' OR arquivo_nome LIKE '%bb%')
+  AND partitura_id IN (
+    SELECT pt3.partitura_id
+    FROM partes pt3
+    JOIN partituras p2 ON p2.id = pt3.partitura_id
+    WHERE pt3.instrumento = 'Bombardino'
+      AND p2.ativo = 1
+    GROUP BY pt3.partitura_id
+    HAVING COUNT(*) = 2
+  );

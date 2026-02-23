@@ -179,7 +179,7 @@ const SheetDetailModal = () => {
               onDownload={() => {
                 // Abre em nova aba como fallback
                 if (download.pdfViewer.url) {
-                  window.open(download.pdfViewer.url, '_blank');
+                  window.open(download.pdfViewer.url, '_blank', 'noopener,noreferrer');
                 }
               }}
             />

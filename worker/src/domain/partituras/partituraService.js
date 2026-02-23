@@ -278,14 +278,14 @@ export async function deletePartitura(id, request, env, user) {
     }
   }
 
-  // 3. Deletar registros relacionados
-  await env.DB.prepare('DELETE FROM partes WHERE partitura_id = ?').bind(id).run();
-  await env.DB.prepare('DELETE FROM favoritos WHERE partitura_id = ?').bind(id).run();
-  await env.DB.prepare('DELETE FROM repertorio_partituras WHERE partitura_id = ?').bind(id).run();
-  await env.DB.prepare('DELETE FROM ensaio_partituras WHERE partitura_id = ?').bind(id).run();
-
-  // 4. Deletar a partitura
-  await env.DB.prepare('DELETE FROM partituras WHERE id = ?').bind(id).run();
+  // 3. & 4. Deletar registros relacionados e a partitura (transacionalmente)
+  await env.DB.batch([
+    env.DB.prepare('DELETE FROM partes WHERE partitura_id = ?').bind(id),
+    env.DB.prepare('DELETE FROM favoritos WHERE partitura_id = ?').bind(id),
+    env.DB.prepare('DELETE FROM repertorio_partituras WHERE partitura_id = ?').bind(id),
+    env.DB.prepare('DELETE FROM ensaio_partituras WHERE partitura_id = ?').bind(id),
+    env.DB.prepare('DELETE FROM partituras WHERE id = ?').bind(id)
+  ]);
 
   await registrarAtividade(env, 'delete_partitura', partitura.titulo, 'Partitura removida permanentemente', user.id);
 
@@ -313,12 +313,31 @@ export async function corrigirBombardinosPartitura(partituraId, request, env) {
       return errorResponse('Partitura não encontrada', 404, request);
     }
 
-    // 1. Buscar partes de Bombardino existentes
+    // 1. Pre-validar e armazenar buffers antes de deletar
+    const timestamp = Date.now();
+    const novosArquivos = [];
+    for (let i = 0; i < totalArquivos; i++) {
+      const arquivo = formData.get(`arquivo_${i}`);
+      const instrumento = formData.get(`instrumento_${i}`);
+      if (!arquivo || !instrumento) {
+        return errorResponse('Arquivo/instrumento ausente', 400, request);
+      }
+      const arrayBuffer = await arquivo.arrayBuffer();
+      const bytes = new Uint8Array(arrayBuffer.slice(0, 5));
+      const isPdf = bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46 && bytes[4] === 0x2D;
+      if (!isPdf) {
+        return errorResponse(`Arquivo "${arquivo.name}" não é um PDF válido`, 400, request);
+      }
+      const nomeArquivoStorage = `${timestamp}_${partituraId}_${i}_${instrumento.replace(/[^a-zA-Z0-9.-]/g, '_')}.pdf`;
+      novosArquivos.push({ instrumento, arrayBuffer, nomeArquivoStorage });
+    }
+
+    // 2. Buscar partes de Bombardino existentes
     const partesAntigas = await env.DB.prepare(
       "SELECT id, arquivo_nome FROM partes WHERE partitura_id = ? AND instrumento LIKE 'Bombardino%'"
     ).bind(partituraId).all();
 
-    // 2. Deletar arquivos antigos do R2
+    // 3. Deletar arquivos antigos do R2
     for (const parte of (partesAntigas.results || [])) {
       if (parte.arquivo_nome) {
         try {
@@ -329,40 +348,21 @@ export async function corrigirBombardinosPartitura(partituraId, request, env) {
       }
     }
 
-    // 3. Deletar registros antigos do DB
+    // 4. Deletar registros antigos do DB
     await env.DB.prepare(
       "DELETE FROM partes WHERE partitura_id = ? AND instrumento LIKE 'Bombardino%'"
     ).bind(partituraId).run();
 
-    // 4. Upload dos novos arquivos
-    const timestamp = Date.now();
+    // 5. Upload dos novos arquivos (ja validados)
     let partesAdicionadas = 0;
-
-    for (let i = 0; i < totalArquivos; i++) {
-      const arquivo = formData.get(`arquivo_${i}`);
-      const instrumento = formData.get(`instrumento_${i}`);
-
-      if (!arquivo || !instrumento) continue;
-
-      const arrayBuffer = await arquivo.arrayBuffer();
-
-      // Validar PDF
-      const bytes = new Uint8Array(arrayBuffer.slice(0, 5));
-      const isPdf = bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46 && bytes[4] === 0x2D;
-
-      if (!isPdf) {
-        return errorResponse(`Arquivo "${arquivo.name}" não é um PDF válido`, 400, request);
-      }
-
-      const nomeArquivoStorage = `${timestamp}_${partituraId}_${i}_${instrumento.replace(/[^a-zA-Z0-9.-]/g, '_')}.pdf`;
-
-      await env.BUCKET.put(nomeArquivoStorage, arrayBuffer, {
+    for (const item of novosArquivos) {
+      await env.BUCKET.put(item.nomeArquivoStorage, item.arrayBuffer, {
         httpMetadata: { contentType: 'application/pdf' }
       });
 
       await env.DB.prepare(
         'INSERT INTO partes (partitura_id, instrumento, arquivo_nome) VALUES (?, ?, ?)'
-      ).bind(partituraId, instrumento, nomeArquivoStorage).run();
+      ).bind(partituraId, item.instrumento, item.nomeArquivoStorage).run();
 
       partesAdicionadas++;
     }
