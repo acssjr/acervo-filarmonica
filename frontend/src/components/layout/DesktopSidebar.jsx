@@ -217,26 +217,32 @@ const DesktopSidebar = ({ activeTab }) => {
 
         {/* Seção de Generos */}
         {!sidebarCollapsed && categoriesWithCount.length > 0 ? (
-          <SidebarSection
-            title="Generos"
-            items={categoriesWithCount}
-            selectedId={selectedCategory}
-            onItemClick={handleCategoryClick}
-            onViewAllClick={handleViewAllGenres}
-            showCount={true}
-          />
+          <div style={{ padding: '0 12px' }}>
+            <SidebarSection
+              title="Generos"
+              items={categoriesWithCount}
+              selectedId={selectedCategory}
+              onItemClick={handleCategoryClick}
+              onHeaderClick={handleViewAllGenres}
+              onViewAllClick={handleViewAllGenres}
+              showCount={true}
+            />
+          </div>
         ) : null}
 
         {/* Seção de Compositores */}
         {!sidebarCollapsed && displayComposers.length > 0 ? (
-          <SidebarSection
-            title="Compositores"
-            items={displayComposers}
-            selectedId={selectedComposer}
-            onItemClick={handleComposerClick}
-            onViewAllClick={handleViewAllComposers}
-            showCount={true}
-          />
+          <div style={{ padding: '0 12px' }}>
+            <SidebarSection
+              title="Compositores"
+              items={displayComposers}
+              selectedId={selectedComposer}
+              onItemClick={handleComposerClick}
+              onHeaderClick={handleViewAllComposers}
+              onViewAllClick={handleViewAllComposers}
+              showCount={true}
+            />
+          </div>
         ) : null}
 
         {/* Espaçador para empurrar logout para baixo */}

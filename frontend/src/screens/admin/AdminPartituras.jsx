@@ -17,6 +17,7 @@ import { API_BASE_URL } from '@constants/api';
 
 const PDFViewerModal = lazy(() => import('@components/modals/PDFViewerModal'));
 const ImportacaoLoteModal = lazy(() => import('@components/modals/ImportacaoLoteModal'));
+const CorrigirBombardinosModal = lazy(() => import('./components/CorrigirBombardinosModal'));
 
 // ===== FUNÇÕES MODULE-LEVEL (não recriadas a cada render) =====
 
@@ -63,6 +64,9 @@ const detectInstrumento = (filename) => {
     { pattern: /trompete|trump/i, name: 'Trompete' },
     { pattern: /trombone\s*[123]/i, name: (m) => `Trombone ${m[0].match(/[123]/)?.[0] || '1'}` },
     { pattern: /trombone/i, name: 'Trombone' },
+    { pattern: /bombardino\s*bb|euph(?:onium)?\s*bb/i, name: 'Bombardino Bb' },
+    { pattern: /bombardino\s*c\b/i, name: 'Bombardino C' },
+    { pattern: /bombardino\s*eb/i, name: 'Bombardino Eb' },
     { pattern: /bombardino|euph|flicorne/i, name: 'Bombardino' },
     { pattern: /tuba|sousafone|bass/i, name: 'Tuba' },
     { pattern: /caixa.*clara|snare/i, name: 'Caixa Clara' },
@@ -93,6 +97,7 @@ const AdminPartituras = () => {
   const [showCatDropdown, setShowCatDropdown] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showImportacaoLote, setShowImportacaoLote] = useState(false);
+  const [showCorrigirBombardinos, setShowCorrigirBombardinos] = useState(false);
 
   // Estado para drag & drop global na tela
   const [isDraggingOver, setIsDraggingOver] = useState(false);
@@ -874,6 +879,34 @@ const AdminPartituras = () => {
               <path d="M12 11v6M9 14h6" />
             </svg>
             Importar Lote
+          </button>
+          <button
+            onClick={() => setShowCorrigirBombardinos(true)}
+            disabled={tutorialPending || showTutorial}
+            className="btn-secondary-hover"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '10px 20px',
+              borderRadius: '12px',
+              background: (tutorialPending || showTutorial)
+                ? 'rgba(212, 175, 55, 0.3)'
+                : 'rgba(212, 175, 55, 0.15)',
+              color: (tutorialPending || showTutorial) ? 'var(--text-muted)' : '#D4AF37',
+              border: '1px solid rgba(212, 175, 55, 0.3)',
+              fontSize: '14px',
+              fontWeight: '500',
+              cursor: (tutorialPending || showTutorial) ? 'not-allowed' : 'pointer',
+              fontFamily: 'Outfit, sans-serif',
+              opacity: (tutorialPending || showTutorial) ? 0.7 : 1,
+              transition: 'all 0.2s ease'
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+            </svg>
+            Corrigir Bombardinos
           </button>
         </div>
       </div>
@@ -1986,6 +2019,16 @@ const AdminPartituras = () => {
             </div>
           </div>
         </>
+      )}
+
+      {showCorrigirBombardinos && (
+        <Suspense fallback={null}>
+          <CorrigirBombardinosModal
+            isOpen={showCorrigirBombardinos}
+            onClose={() => setShowCorrigirBombardinos(false)}
+            partituras={partituras}
+          />
+        </Suspense>
       )}
 
       {/* Estilos */}

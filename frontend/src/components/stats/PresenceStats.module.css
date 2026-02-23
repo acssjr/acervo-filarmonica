@@ -1,6 +1,68 @@
 /* ===== PRESENCE STATS ===== */
 /* Stats de presença com design glassmorphism */
 
+/* Container horizontal: StreakBar + AttendanceCalendar */
+.container {
+  display: flex;
+  gap: 12px;
+  align-items: stretch;
+  background: linear-gradient(145deg, rgba(114, 47, 55, 0.5) 0%, rgba(92, 26, 27, 0.6) 100%);
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  border-radius: 16px;
+  padding: 16px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+  position: relative;
+  overflow: hidden;
+}
+
+.container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.3), transparent);
+}
+
+/* ===== STREAK BAR (lado esquerdo) ===== */
+.streakBar {
+  width: 56px;
+  min-width: 56px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0;
+}
+
+.streakNumber {
+  font-family: 'Outfit', sans-serif;
+  font-size: 28px;
+  font-weight: 800;
+  color: #F4E4BC;
+  line-height: 1;
+  text-shadow: 0 2px 8px rgba(212, 175, 55, 0.3);
+}
+
+.fireContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 0 6px rgba(255, 150, 0, 0.4));
+  transition: all 0.3s ease;
+}
+
+.fireActive {
+  animation: fire-flicker 1.5s ease-in-out infinite;
+}
+
+.fireInactive {
+  opacity: 0.3;
+  filter: grayscale(1);
+}
+
 .statsCard {
   background: linear-gradient(145deg, rgba(114, 47, 55, 0.6) 0%, rgba(92, 26, 27, 0.7) 100%);
   border: 1px solid rgba(212, 175, 55, 0.25);
@@ -9,7 +71,7 @@
   position: relative;
   overflow: hidden;
   backdrop-filter: blur(10px);
-  box-shadow: 
+  box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
@@ -41,11 +103,6 @@
   gap: 8px;
 }
 
-.statsTitle::before {
-  content: '🔥';
-  font-size: 14px;
-}
-
 .statsSubtitle {
   font-family: 'Outfit', sans-serif;
   font-size: 12px;
@@ -68,13 +125,6 @@
   justify-content: center;
 }
 
-.fireIcon::before {
-  content: '🔥';
-  font-size: 24px;
-  animation: fire-flicker 1.5s ease-in-out infinite;
-  filter: drop-shadow(0 0 8px rgba(255, 100, 0, 0.6));
-}
-
 .fireIcon.active::before {
   animation: fire-flicker 1s ease-in-out infinite, fire-glow 2s ease-in-out infinite;
 }
@@ -85,28 +135,50 @@
 }
 
 @keyframes fire-flicker {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: scale(1) rotate(0deg);
   }
+
   25% {
     transform: scale(1.05) rotate(-2deg);
   }
+
   50% {
     transform: scale(0.97) rotate(1deg);
   }
+
   75% {
     transform: scale(1.03) rotate(-1deg);
   }
 }
 
+/* ===== CALENDAR STATUS ICON ===== */
+.calendarIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2px;
+}
+
+.present .calendarIcon {
+  color: #4AB44A;
+}
+
+.absent .calendarIcon {
+  color: rgba(200, 80, 80, 0.7);
+}
+
 @keyframes fire-glow {
-  0%, 100% {
-    filter: drop-shadow(0 0 4px rgba(255, 200, 0, 0.4))
-           drop-shadow(0 0 8px rgba(212, 175, 55, 0.2));
+
+  0%,
+  100% {
+    filter: drop-shadow(0 0 4px rgba(255, 200, 0, 0.4)) drop-shadow(0 0 8px rgba(212, 175, 55, 0.2));
   }
+
   50% {
-    filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.7))
-           drop-shadow(0 0 16px rgba(212, 175, 55, 0.4));
+    filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.7)) drop-shadow(0 0 16px rgba(212, 175, 55, 0.4));
   }
 }
 
@@ -133,9 +205,10 @@
 /* ===== ATTENDANCE CALENDAR (FLEX-GROW) ===== */
 .calendarSection {
   flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
 .calendarTitle {
@@ -149,13 +222,13 @@
 
 .calendarGrid {
   display: flex;
-  flex-wrap: wrap;
   gap: 8px;
 }
 
 .calendarDay {
-  width: 56px;
-  height: 64px;
+  flex: 1;
+  min-width: 0;
+  height: 72px;
   border-radius: 12px;
   display: flex;
   flex-direction: column;
@@ -232,9 +305,12 @@
 }
 
 @keyframes badge-pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: scale(1);
   }
+
   50% {
     transform: scale(1.1);
   }
@@ -242,13 +318,30 @@
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
+  .container {
+    padding: 12px;
+    gap: 10px;
+  }
+
   .statsCard {
     padding: 16px;
   }
 
-  .calendarDay {
+  .streakBar {
     width: 48px;
-    height: 56px;
+    min-width: 48px;
+  }
+
+  .streakNumber {
+    font-size: 24px;
+  }
+
+  .calendarDay {
+    height: 64px;
+  }
+
+  .calendarGrid {
+    gap: 6px;
   }
 
   .calendarDayNumber {

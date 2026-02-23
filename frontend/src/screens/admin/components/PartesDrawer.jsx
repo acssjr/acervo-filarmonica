@@ -12,6 +12,8 @@ const PartesDrawer = ({ isOpen, onClose, partitura, categorias, onUpdate }) => {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(null); // ID da parte sendo substituída
   const [deleting, setDeleting] = useState(null); // ID da parte sendo deletada
+  const [renaming, setRenaming] = useState(null); // ID da parte sendo renomeada
+  const [renameValue, setRenameValue] = useState(''); // Novo nome do instrumento
   const [showAddForm, setShowAddForm] = useState(false);
   const [newPartInstrumento, setNewPartInstrumento] = useState('');
   const [addingPart, setAddingPart] = useState(false);
@@ -74,6 +76,25 @@ const PartesDrawer = ({ isOpen, onClose, partitura, categorias, onUpdate }) => {
       showToast(err.message || 'Erro ao remover parte', 'error');
     } finally {
       setDeleting(null);
+    }
+  };
+
+  // Renomear instrumento da parte
+  const handleRenamePart = async (parteId) => {
+    if (!renameValue.trim()) {
+      showToast('Nome do instrumento não pode ser vazio', 'error');
+      return;
+    }
+
+    try {
+      await API.renomearPartePartitura(parteId, renameValue.trim());
+      showToast(`Instrumento renomeado para "${renameValue.trim()}"!`);
+      setRenaming(null);
+      setRenameValue('');
+      loadPartes();
+      onUpdate?.();
+    } catch (err) {
+      showToast(err.message || 'Erro ao renomear parte', 'error');
     }
   };
 
@@ -195,8 +216,8 @@ const PartesDrawer = ({ isOpen, onClose, partitura, categorias, onUpdate }) => {
               }}
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18"/>
-                <line x1="6" y1="6" x2="18" y2="18"/>
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
               </svg>
             </button>
           </div>
@@ -204,17 +225,17 @@ const PartesDrawer = ({ isOpen, onClose, partitura, categorias, onUpdate }) => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '13px', color: 'var(--text-muted)' }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M9 18V5l12-2v13"/>
-                <circle cx="6" cy="18" r="3"/>
-                <circle cx="18" cy="16" r="3"/>
+                <path d="M9 18V5l12-2v13" />
+                <circle cx="6" cy="18" r="3" />
+                <circle cx="18" cy="16" r="3" />
               </svg>
               {partes.length} parte(s)
             </span>
             <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                <polyline points="7 10 12 15 17 10"/>
-                <line x1="12" y1="15" x2="12" y2="3"/>
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
               </svg>
               {partitura?.downloads || 0} downloads
             </span>
@@ -226,18 +247,18 @@ const PartesDrawer = ({ isOpen, onClose, partitura, categorias, onUpdate }) => {
           {loading ? (
             <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>
               <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: 'spin 1s linear infinite' }}>
-                <circle cx="12" cy="12" r="10" strokeOpacity="0.25"/>
-                <path d="M12 2a10 10 0 0 1 10 10" strokeLinecap="round"/>
+                <circle cx="12" cy="12" r="10" strokeOpacity="0.25" />
+                <path d="M12 2a10 10 0 0 1 10 10" strokeLinecap="round" />
               </svg>
               <p style={{ marginTop: '12px' }}>Carregando partes...</p>
             </div>
           ) : partes.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>
               <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ opacity: 0.5, marginBottom: '12px' }}>
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                <polyline points="14 2 14 8 20 8"/>
-                <line x1="12" y1="18" x2="12" y2="12"/>
-                <line x1="9" y1="15" x2="15" y2="15"/>
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+                <line x1="12" y1="18" x2="12" y2="12" />
+                <line x1="9" y1="15" x2="15" y2="15" />
               </svg>
               <p>Nenhuma parte encontrada</p>
               <p style={{ fontSize: '13px', marginTop: '8px' }}>Adicione uma parte usando o botão abaixo</p>
@@ -271,21 +292,85 @@ const PartesDrawer = ({ isOpen, onClose, partitura, categorias, onUpdate }) => {
                       flexShrink: 0
                     }}>
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                        <polyline points="14 2 14 8 20 8"/>
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                        <polyline points="14 2 14 8 20 8" />
                       </svg>
                     </div>
-                    <div style={{ minWidth: 0 }}>
-                      <div style={{
-                        fontWeight: '500',
-                        color: 'var(--text-primary)',
-                        fontSize: '14px',
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis'
-                      }}>
-                        {parte.instrumento}
-                      </div>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      {renaming === parte.id ? (
+                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                          <input
+                            type="text"
+                            value={renameValue}
+                            onChange={(e) => setRenameValue(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') handleRenamePart(parte.id);
+                              if (e.key === 'Escape') { setRenaming(null); setRenameValue(''); }
+                            }}
+                            autoFocus
+                            style={{
+                              flex: 1,
+                              padding: '4px 8px',
+                              borderRadius: '6px',
+                              border: '1.5px solid rgba(212, 175, 55, 0.5)',
+                              background: 'var(--bg-primary)',
+                              color: 'var(--text-primary)',
+                              fontSize: '13px',
+                              fontFamily: 'Outfit, sans-serif',
+                              outline: 'none',
+                              minWidth: 0
+                            }}
+                          />
+                          <button
+                            onClick={() => handleRenamePart(parte.id)}
+                            title="Confirmar"
+                            style={{
+                              width: '28px', height: '28px',
+                              borderRadius: '6px',
+                              background: 'rgba(39, 174, 96, 0.15)',
+                              border: '1px solid rgba(39, 174, 96, 0.3)',
+                              color: '#27ae60',
+                              cursor: 'pointer',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              flexShrink: 0
+                            }}
+                          >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                          </button>
+                          <button
+                            onClick={() => { setRenaming(null); setRenameValue(''); }}
+                            title="Cancelar"
+                            style={{
+                              width: '28px', height: '28px',
+                              borderRadius: '6px',
+                              background: 'rgba(231, 76, 60, 0.1)',
+                              border: '1px solid rgba(231, 76, 60, 0.3)',
+                              color: '#e74c3c',
+                              cursor: 'pointer',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              flexShrink: 0
+                            }}
+                          >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                              <line x1="18" y1="6" x2="6" y2="18" />
+                              <line x1="6" y1="6" x2="18" y2="18" />
+                            </svg>
+                          </button>
+                        </div>
+                      ) : (
+                        <div style={{
+                          fontWeight: '500',
+                          color: 'var(--text-primary)',
+                          fontSize: '14px',
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis'
+                        }}>
+                          {parte.instrumento}
+                        </div>
+                      )}
                       <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
                         {parte.nome_arquivo || 'PDF'}
                       </div>
@@ -293,6 +378,33 @@ const PartesDrawer = ({ isOpen, onClose, partitura, categorias, onUpdate }) => {
                   </div>
 
                   <div style={{ display: 'flex', gap: '6px' }}>
+                    {/* Renomear */}
+                    <button
+                      onClick={() => {
+                        setRenaming(parte.id);
+                        setRenameValue(parte.instrumento);
+                      }}
+                      title="Renomear instrumento"
+                      style={{
+                        width: '34px',
+                        height: '34px',
+                        borderRadius: '6px',
+                        background: 'rgba(52, 152, 219, 0.1)',
+                        border: '1px solid rgba(52, 152, 219, 0.3)',
+                        color: '#3498db',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                      </svg>
+                    </button>
+
                     {/* Visualizar */}
                     <button
                       onClick={() => handleViewPart(parte)}
@@ -312,8 +424,8 @@ const PartesDrawer = ({ isOpen, onClose, partitura, categorias, onUpdate }) => {
                       }}
                     >
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                        <circle cx="12" cy="12" r="3" />
                       </svg>
                     </button>
 
@@ -336,14 +448,14 @@ const PartesDrawer = ({ isOpen, onClose, partitura, categorias, onUpdate }) => {
                     >
                       {uploading === parte.id ? (
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: 'spin 1s linear infinite' }}>
-                          <circle cx="12" cy="12" r="10" strokeOpacity="0.25"/>
-                          <path d="M12 2a10 10 0 0 1 10 10" strokeLinecap="round"/>
+                          <circle cx="12" cy="12" r="10" strokeOpacity="0.25" />
+                          <path d="M12 2a10 10 0 0 1 10 10" strokeLinecap="round" />
                         </svg>
                       ) : (
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                          <polyline points="17 8 12 3 7 8"/>
-                          <line x1="12" y1="3" x2="12" y2="15"/>
+                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                          <polyline points="17 8 12 3 7 8" />
+                          <line x1="12" y1="3" x2="12" y2="15" />
                         </svg>
                       )}
                       <input
@@ -381,13 +493,13 @@ const PartesDrawer = ({ isOpen, onClose, partitura, categorias, onUpdate }) => {
                     >
                       {deleting === parte.id ? (
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: 'spin 1s linear infinite' }}>
-                          <circle cx="12" cy="12" r="10" strokeOpacity="0.25"/>
-                          <path d="M12 2a10 10 0 0 1 10 10" strokeLinecap="round"/>
+                          <circle cx="12" cy="12" r="10" strokeOpacity="0.25" />
+                          <path d="M12 2a10 10 0 0 1 10 10" strokeLinecap="round" />
                         </svg>
                       ) : (
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <polyline points="3 6 5 6 21 6"/>
-                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                          <polyline points="3 6 5 6 21 6" />
+                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
                         </svg>
                       )}
                     </button>
@@ -464,17 +576,17 @@ const PartesDrawer = ({ isOpen, onClose, partitura, categorias, onUpdate }) => {
                   {addingPart ? (
                     <>
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: 'spin 1s linear infinite' }}>
-                        <circle cx="12" cy="12" r="10" strokeOpacity="0.25"/>
-                        <path d="M12 2a10 10 0 0 1 10 10" strokeLinecap="round"/>
+                        <circle cx="12" cy="12" r="10" strokeOpacity="0.25" />
+                        <path d="M12 2a10 10 0 0 1 10 10" strokeLinecap="round" />
                       </svg>
                       Enviando...
                     </>
                   ) : (
                     <>
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                        <polyline points="17 8 12 3 7 8"/>
-                        <line x1="12" y1="3" x2="12" y2="15"/>
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="17 8 12 3 7 8" />
+                        <line x1="12" y1="3" x2="12" y2="15" />
                       </svg>
                       Selecionar PDF
                     </>
@@ -516,8 +628,8 @@ const PartesDrawer = ({ isOpen, onClose, partitura, categorias, onUpdate }) => {
               }}
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="12" y1="5" x2="12" y2="19"/>
-                <line x1="5" y1="12" x2="19" y2="12"/>
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
               </svg>
               Adicionar nova parte
             </button>

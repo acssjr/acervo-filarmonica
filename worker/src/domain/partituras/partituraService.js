@@ -194,7 +194,7 @@ export async function uploadPastaPartitura(request, env, admin) {
         return errorResponse(`Arquivo "${arquivo.name}" não é um PDF válido`, 400, request);
       }
 
-      const nomeArquivoStorage = `${timestamp}_${partituraId}_${instrumento.replace(/[^a-zA-Z0-9.-]/g, '_')}.pdf`;
+      const nomeArquivoStorage = `${timestamp}_${partituraId}_${i}_${instrumento.replace(/[^a-zA-Z0-9.-]/g, '_')}.pdf`;
 
       await env.BUCKET.put(nomeArquivoStorage, arrayBuffer, {
         httpMetadata: { contentType: 'application/pdf' }
@@ -258,13 +258,124 @@ export async function deletePartitura(id, request, env, user) {
   // Busca info antes de deletar para log
   const partitura = await env.DB.prepare('SELECT titulo FROM partituras WHERE id = ?').bind(id).first();
 
-  await env.DB.prepare(
-    'UPDATE partituras SET ativo = 0, atualizado_em = CURRENT_TIMESTAMP WHERE id = ?'
-  ).bind(id).run();
-
-  if (partitura) {
-    await registrarAtividade(env, 'delete_partitura', partitura.titulo, 'Partitura removida', user.id);
+  if (!partitura) {
+    return errorResponse('Partitura não encontrada', 404, request);
   }
 
-  return jsonResponse({ success: true, message: 'Partitura removida!' }, 200, request);
+  // 1. Buscar todas as partes para deletar arquivos do R2
+  const partes = await env.DB.prepare(
+    'SELECT id, arquivo_nome FROM partes WHERE partitura_id = ?'
+  ).bind(id).all();
+
+  // 2. Deletar arquivos do R2
+  for (const parte of (partes.results || [])) {
+    if (parte.arquivo_nome) {
+      try {
+        await env.BUCKET.delete(parte.arquivo_nome);
+      } catch {
+        // Continua mesmo se falhar ao deletar do R2
+      }
+    }
+  }
+
+  // 3. Deletar registros relacionados
+  await env.DB.prepare('DELETE FROM partes WHERE partitura_id = ?').bind(id).run();
+  await env.DB.prepare('DELETE FROM favoritos WHERE partitura_id = ?').bind(id).run();
+  await env.DB.prepare('DELETE FROM repertorio_partituras WHERE partitura_id = ?').bind(id).run();
+  await env.DB.prepare('DELETE FROM ensaio_partituras WHERE partitura_id = ?').bind(id).run();
+
+  // 4. Deletar a partitura
+  await env.DB.prepare('DELETE FROM partituras WHERE id = ?').bind(id).run();
+
+  await registrarAtividade(env, 'delete_partitura', partitura.titulo, 'Partitura removida permanentemente', user.id);
+
+  return jsonResponse({ success: true, message: 'Partitura removida permanentemente!' }, 200, request);
+}
+
+/**
+ * Corrigir partes de Bombardino de uma partitura (Admin)
+ * Deleta partes existentes de Bombardino e faz upload das novas com nomes corretos
+ */
+export async function corrigirBombardinosPartitura(partituraId, request, env) {
+  try {
+    const formData = await request.formData();
+    const totalArquivos = parseInt(formData.get('total_arquivos') || '0');
+
+    if (totalArquivos === 0) {
+      return errorResponse('Nenhum arquivo enviado', 400, request);
+    }
+
+    const partitura = await env.DB.prepare(
+      'SELECT id, titulo FROM partituras WHERE id = ? AND ativo = 1'
+    ).bind(partituraId).first();
+
+    if (!partitura) {
+      return errorResponse('Partitura não encontrada', 404, request);
+    }
+
+    // 1. Buscar partes de Bombardino existentes
+    const partesAntigas = await env.DB.prepare(
+      "SELECT id, arquivo_nome FROM partes WHERE partitura_id = ? AND instrumento LIKE 'Bombardino%'"
+    ).bind(partituraId).all();
+
+    // 2. Deletar arquivos antigos do R2
+    for (const parte of (partesAntigas.results || [])) {
+      if (parte.arquivo_nome) {
+        try {
+          await env.BUCKET.delete(parte.arquivo_nome);
+        } catch {
+          // Continua mesmo se falhar
+        }
+      }
+    }
+
+    // 3. Deletar registros antigos do DB
+    await env.DB.prepare(
+      "DELETE FROM partes WHERE partitura_id = ? AND instrumento LIKE 'Bombardino%'"
+    ).bind(partituraId).run();
+
+    // 4. Upload dos novos arquivos
+    const timestamp = Date.now();
+    let partesAdicionadas = 0;
+
+    for (let i = 0; i < totalArquivos; i++) {
+      const arquivo = formData.get(`arquivo_${i}`);
+      const instrumento = formData.get(`instrumento_${i}`);
+
+      if (!arquivo || !instrumento) continue;
+
+      const arrayBuffer = await arquivo.arrayBuffer();
+
+      // Validar PDF
+      const bytes = new Uint8Array(arrayBuffer.slice(0, 5));
+      const isPdf = bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46 && bytes[4] === 0x2D;
+
+      if (!isPdf) {
+        return errorResponse(`Arquivo "${arquivo.name}" não é um PDF válido`, 400, request);
+      }
+
+      const nomeArquivoStorage = `${timestamp}_${partituraId}_${i}_${instrumento.replace(/[^a-zA-Z0-9.-]/g, '_')}.pdf`;
+
+      await env.BUCKET.put(nomeArquivoStorage, arrayBuffer, {
+        httpMetadata: { contentType: 'application/pdf' }
+      });
+
+      await env.DB.prepare(
+        'INSERT INTO partes (partitura_id, instrumento, arquivo_nome) VALUES (?, ?, ?)'
+      ).bind(partituraId, instrumento, nomeArquivoStorage).run();
+
+      partesAdicionadas++;
+    }
+
+    return jsonResponse({
+      success: true,
+      partes_removidas: (partesAntigas.results || []).length,
+      partes_adicionadas: partesAdicionadas,
+      message: `Bombardinos corrigidos: ${partesAdicionadas} partes atualizadas!`
+    }, 200, request);
+
+  } catch (error) {
+    console.error('Erro ao corrigir bombardinos:', error);
+    return errorResponse('Erro ao corrigir bombardinos', 500, request);
+  }
 }
