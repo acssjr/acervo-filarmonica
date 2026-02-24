@@ -4,27 +4,46 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// Lista de imagens para o background (adicione novos arquivos WebP aqui)
-const BACKGROUND_IMAGES = [
-  '/assets/images/banda/foto-banda-sao-goncalo.webp',
-  // Adicione outras fotos aqui, ex:
-  // '/assets/images/banda/foto-banda-2.webp',
-  // '/assets/images/banda/foto-banda-3.webp',
-];
+const FALLBACK_IMAGE = '/assets/images/banda/foto-banda-sao-goncalo.webp';
 
 const LoginBackground = () => {
+  const [images, setImages] = useState([FALLBACK_IMAGE]);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Carregar lista de backgrounds do servidor
+  useEffect(() => {
+    const fetchBackgrounds = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/assets/list/backgrounds`);
+        if (!response.ok) throw new Error('Erro ao carregar backgrounds');
+        const data = await response.json();
+
+        if (data.assets && data.assets.length > 0) {
+          const urls = data.assets.map(a => `${API_BASE_URL}${a.url}`);
+          // Embaralhar a lista para não ser sempre o mesmo ao entrar
+          setImages(urls.sort(() => Math.random() - 0.5));
+        }
+      } catch (error) {
+        console.warn('Usando background padrão:', error.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchBackgrounds();
+  }, []);
 
   // Troca de imagem a cada 8 segundos
   useEffect(() => {
-    if (BACKGROUND_IMAGES.length <= 1) return;
+    if (images.length <= 1) return;
 
     const timer = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % BACKGROUND_IMAGES.length);
+      setCurrentIndex((prev) => (prev + 1) % images.length);
     }, 8000);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [images.length]);
 
   return (
     <>
@@ -38,7 +57,7 @@ const LoginBackground = () => {
       }}>
         <AnimatePresence mode="wait">
           <motion.div
-            key={BACKGROUND_IMAGES[currentIndex]}
+            key={images[currentIndex]}
             initial={{ opacity: 0, scale: 1.1 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0 }}
@@ -46,7 +65,7 @@ const LoginBackground = () => {
             style={{
               position: 'absolute',
               inset: 0,
-              backgroundImage: `url('${BACKGROUND_IMAGES[currentIndex]}')`,
+              backgroundImage: `url('${images[currentIndex]}')`,
               backgroundSize: 'cover',
               backgroundPosition: 'center',
               filter: 'brightness(0.7)'
