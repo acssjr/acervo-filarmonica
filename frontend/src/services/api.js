@@ -196,6 +196,31 @@ export const API = {
     });
   },
 
+  async renomearPartePartitura(parteId, instrumento) {
+    return this.request(`/api/partes/${parteId}/renomear`, {
+      method: 'PUT',
+      body: JSON.stringify({ instrumento })
+    });
+  },
+
+  async corrigirBombardinosPartitura(partituraId, formData) {
+    const token = Storage.get('authToken', null);
+    const response = await fetch(`${API_BASE_URL}/api/partituras/${partituraId}/corrigir-bombardinos`, {
+      method: 'POST',
+      headers: {
+        ...(token && { 'Authorization': `Bearer ${token}` })
+      },
+      body: formData
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'Erro ao corrigir bombardinos' }));
+      throw new Error(error.error);
+    }
+
+    return response.json();
+  },
+
   // ============ DOWNLOAD ============
 
   getDownloadUrl(id, instrumento = null) {

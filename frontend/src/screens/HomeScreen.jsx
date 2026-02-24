@@ -2,7 +2,7 @@
 // Tela inicial com destaques, categorias e atividade recente
 // Otimizado: iterações combinadas, memoização de componentes
 
-import { useState, useEffect, useMemo, memo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@contexts/AuthContext';
 import { useData } from '@contexts/DataContext';
@@ -18,12 +18,7 @@ import PresenceStats from '@components/stats/PresenceStats';
 import AvisoModal from '@components/modals/AvisoModal';
 import { PROFILE_ABOUT_CONFIG } from '@components/modals/AboutModal/changelog/profileChangelog';
 
-// MemoFileCard - evita re-renders desnecessários
-const MemoFileCard = memo(FileCard, (prev, next) => {
-  return prev.sheet.id === next.sheet.id &&
-         prev.isFavorite === next.isFavorite &&
-         prev.category?.id === next.category?.id;
-});
+
 
 const HomeScreen = () => {
   const navigate = useNavigate();
@@ -36,12 +31,12 @@ const HomeScreen = () => {
   const homeData = useMemo(() => {
     const categoryCounts = {};
     const composerCounts = {};
-    
+
     // Single pass: conta categorias e compositores
     sheets.forEach(s => {
       // Contagem por categoria
       categoryCounts[s.category] = (categoryCounts[s.category] || 0) + 1;
-      
+
       // Contagem por compositor
       if (s.composer && s.composer.trim()) {
         composerCounts[s.composer] = (composerCounts[s.composer] || 0) + 1;
@@ -116,16 +111,16 @@ const HomeScreen = () => {
       />
 
       <div style={{ paddingTop: '8px', overflow: 'visible' }}>
-        <FeaturedSheets 
-          sheets={sheets} 
+        <FeaturedSheets
+          sheets={sheets}
           favoritesSet={favoritesSet}
-          onToggleFavorite={handleToggleFavorite} 
+          onToggleFavorite={handleToggleFavorite}
         />
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 20px', marginBottom: '16px' }}>
         <h2 style={{ fontFamily: "Outfit, sans-serif", fontSize: '18px', fontWeight: '700' }}>Gêneros Musicais</h2>
-        <button 
+        <button
           style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: '14px', fontWeight: '500', cursor: 'pointer', fontFamily: 'Outfit, sans-serif' }}
           onClick={() => navigate('/generos')}
         >
@@ -141,12 +136,12 @@ const HomeScreen = () => {
           width: '100%'
         }}>
           {mainGenres.map((cat, i) => (
-            <CategoryCard 
-              key={cat.id} 
-              category={cat} 
-              count={getCategoryCount(cat.id)} 
+            <CategoryCard
+              key={cat.id}
+              category={cat}
+              count={getCategoryCount(cat.id)}
               index={i}
-              onClick={() => navigate(`/acervo/${cat.id}`)} 
+              onClick={() => navigate(`/acervo/${cat.id}`)}
             />
           ))}
         </div>
@@ -157,7 +152,7 @@ const HomeScreen = () => {
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 20px', marginBottom: '12px' }}>
         <h2 style={{ fontFamily: "Outfit, sans-serif", fontSize: '18px', fontWeight: '700' }}>Partituras Populares</h2>
-        <button 
+        <button
           style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: '14px', fontWeight: '500', cursor: 'pointer', fontFamily: 'Outfit, sans-serif' }}
           onClick={() => navigate('/acervo')}
         >
@@ -167,12 +162,12 @@ const HomeScreen = () => {
 
       <div className="sheets-grid" style={{ padding: '0 20px' }}>
         {recentSheets.map((sheet, index) => (
-          <MemoFileCard
+          <FileCard
             key={sheet.id}
             sheet={sheet}
             category={categoriesMap.get(sheet.category)}
             isFavorite={favoritesSet.has(sheet.id)} // O(1) lookup
-            onToggleFavorite={handleToggleFavorite}
+            onToggleFavorite={() => handleToggleFavorite(sheet.id)}
             index={index}
           />
         ))}

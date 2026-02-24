@@ -12,7 +12,9 @@ import {
   getPartesPartitura,
   addParte,
   substituirParte,
-  deleteParte
+  renomearParte,
+  deleteParte,
+  corrigirBombardinosPartitura
 } from '../domain/partituras/index.js';
 
 /**
@@ -41,6 +43,10 @@ export function setupPartituraRoutes(router) {
   router.post('/api/partituras/upload-pasta', (req, env, params, context) => {
     return uploadPastaPartitura(req, env, context.user);
   }, [adminMiddleware]);
+  router.post('/api/partituras/:id/corrigir-bombardinos', (req, env, params) => {
+    const id = params.id;
+    return corrigirBombardinosPartitura(id, req, env);
+  }, [adminMiddleware]);
   router.post('/api/partituras', (req, env, params, context) => {
     return createPartitura(req, env, context.user);
   }, [adminMiddleware]);
@@ -67,6 +73,10 @@ export function setupPartituraRoutes(router) {
   router.put('/api/partes/:id/substituir', (req, env, params) => {
     const id = params.id;
     return substituirParte(id, req, env);
+  }, [adminMiddleware]);
+  router.put('/api/partes/:id/renomear', (req, env, params) => {
+    const id = params.id;
+    return renomearParte(id, req, env);
   }, [adminMiddleware]);
   router.delete('/api/partes/:id', (req, env, params) => {
     const id = params.id;

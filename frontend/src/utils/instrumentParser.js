@@ -297,15 +297,19 @@ export const nomesPadrao = {
   'trombones': 'Trombone',
 
   // Bombardinos / Eufônio
+  // IMPORTANTE: preservar tonalidade para diferenciar Bombardino de Bombardino Bb
   'bombardino': 'Bombardino',
-  'bombardino bb': 'Bombardino',
-  'bombardino c': 'Bombardino',
-  'bombardino eb': 'Bombardino',
+  'bombardino bb': 'Bombardino Bb',
+  'bombardino c': 'Bombardino C',
+  'bombardino eb': 'Bombardino Eb',
   'euphonium': 'Bombardino',
-  'euphonium 1': 'Bombardino',
-  'euphonium 2': 'Bombardino',
+  'euphonium bb': 'Bombardino Bb',
+  'euphonium c': 'Bombardino C',
+  'euphonium 1': 'Bombardino 1',
+  'euphonium 2': 'Bombardino 2',
   'euphonium bombardino': 'Bombardino',
   'eufonio': 'Bombardino',
+  'eufonio bb': 'Bombardino Bb',
 
   // Tubas/Baixos
   'baixo eb': 'Baixo Eb',

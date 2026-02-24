@@ -9,19 +9,8 @@ import { useAuth } from '@contexts/AuthContext';
 import { useUI } from '@contexts/UIContext';
 import { useData } from '@contexts/DataContext';
 import { Icons } from '@constants/icons';
+import { useRoutePrefetch } from '@hooks/useRoutePrefetch';
 import { SidebarLogo, SidebarNavItem, SidebarSection } from './sidebar';
-
-// Map de paths para funções de import (prefetch)
-const ROUTE_IMPORTS = {
-  '/': () => import('@screens/HomeScreen'),
-  '/repertorio': () => import('@screens/RepertorioScreen'),
-  '/favoritos': () => import('@screens/FavoritesScreen'),
-  '/generos': () => import('@screens/GenresScreen'),
-  '/compositores': () => import('@screens/ComposersScreen'),
-  '/acervo': () => import('@screens/LibraryScreen'),
-  '/perfil': () => import('@screens/ProfileScreen'),
-  '/buscar': () => import('@screens/SearchScreen'),
-};
 
 const DesktopSidebar = ({ activeTab }) => {
   const navigate = useNavigate();
@@ -34,6 +23,7 @@ const DesktopSidebar = ({ activeTab }) => {
   } = useData();
 
   const sidebarContentRef = useRef(null);
+  const prefetchRoute = useRoutePrefetch();
 
   // Extrair compositores unicos das partituras (filtrando vazios)
   const composers = useMemo(() => {
@@ -94,18 +84,6 @@ const DesktopSidebar = ({ activeTab }) => {
       return () => sidebar.removeEventListener('wheel', handleWheel);
     }
   }, [handleWheel]);
-
-  // Handler de prefetch - carrega componente em background
-  const prefetchRoute = useCallback((path) => {
-    const importFn = ROUTE_IMPORTS[path];
-    if (importFn) {
-      if ('requestIdleCallback' in window) {
-        requestIdleCallback(() => importFn(), { timeout: 500 });
-      } else {
-        setTimeout(() => importFn(), 50);
-      }
-    }
-  }, []);
 
   // Handlers de navegacao
   const handleNavigation = (path) => navigate(path);
@@ -217,26 +195,32 @@ const DesktopSidebar = ({ activeTab }) => {
 
         {/* Seção de Generos */}
         {!sidebarCollapsed && categoriesWithCount.length > 0 ? (
-          <SidebarSection
-            title="Generos"
-            items={categoriesWithCount}
-            selectedId={selectedCategory}
-            onItemClick={handleCategoryClick}
-            onViewAllClick={handleViewAllGenres}
-            showCount={true}
-          />
+          <div style={{ padding: '0 12px' }}>
+            <SidebarSection
+              title="Generos"
+              items={categoriesWithCount}
+              selectedId={selectedCategory}
+              onItemClick={handleCategoryClick}
+              onHeaderClick={handleViewAllGenres}
+              onViewAllClick={handleViewAllGenres}
+              showCount={true}
+            />
+          </div>
         ) : null}
 
         {/* Seção de Compositores */}
         {!sidebarCollapsed && displayComposers.length > 0 ? (
-          <SidebarSection
-            title="Compositores"
-            items={displayComposers}
-            selectedId={selectedComposer}
-            onItemClick={handleComposerClick}
-            onViewAllClick={handleViewAllComposers}
-            showCount={true}
-          />
+          <div style={{ padding: '0 12px' }}>
+            <SidebarSection
+              title="Compositores"
+              items={displayComposers}
+              selectedId={selectedComposer}
+              onItemClick={handleComposerClick}
+              onHeaderClick={handleViewAllComposers}
+              onViewAllClick={handleViewAllComposers}
+              showCount={true}
+            />
+          </div>
         ) : null}
 
         {/* Espaçador para empurrar logout para baixo */}
@@ -246,7 +230,7 @@ const DesktopSidebar = ({ activeTab }) => {
         <div style={{ padding: '0 12px', marginTop: 'auto', marginBottom: '20px' }}>
           <SidebarNavItem
             icon={Icons.Logout}
-            label={sidebarCollapsed ? '' : 'Sair'}
+            label="Sair"
             isActive={false}
             collapsed={sidebarCollapsed}
             onClick={handleLogout}

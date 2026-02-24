@@ -151,6 +151,41 @@ export async function substituirParte(parteId, request, env) {
 }
 
 /**
+ * Renomear instrumento de uma parte (Admin)
+ * Permite corrigir o nome do instrumento sem re-upload
+ */
+export async function renomearParte(parteId, request, env) {
+  try {
+    const data = await request.json();
+    const { instrumento } = data;
+
+    if (!instrumento || !instrumento.trim()) {
+      return errorResponse('Nome do instrumento é obrigatório', 400, request);
+    }
+
+    const parte = await env.DB.prepare(
+      'SELECT * FROM partes WHERE id = ?'
+    ).bind(parteId).first();
+
+    if (!parte) {
+      return errorResponse('Parte não encontrada', 404, request);
+    }
+
+    await env.DB.prepare(
+      'UPDATE partes SET instrumento = ? WHERE id = ?'
+    ).bind(instrumento.trim(), parteId).run();
+
+    return jsonResponse({
+      success: true,
+      message: `Instrumento alterado para "${instrumento.trim()}"!`
+    }, 200, request);
+
+  } catch (error) {
+    return errorResponse('Erro ao renomear parte', 500, request);
+  }
+}
+
+/**
  * Remover uma parte (Admin)
  *
  * Extraido de: worker/index.js linhas 851-878
