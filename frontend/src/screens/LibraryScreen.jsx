@@ -4,7 +4,7 @@
 // Categorias carregadas da API via DataContext
 // Otimizado: usa Set para O(1) lookups de favoritos
 
-import { useMemo, useEffect, useCallback, memo } from 'react';
+import { useMemo, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@contexts/AuthContext';
 import { useData } from '@contexts/DataContext';
@@ -16,11 +16,7 @@ import EmptyState from '@components/common/EmptyState';
 import CategoryCard from '@components/music/CategoryCard';
 import FileCard from '@components/music/FileCard';
 
-// MemoFileCard para evitar re-renders
-const MemoFileCard = memo(FileCard, (prev, next) => {
-  return prev.sheet.id === next.sheet.id &&
-         prev.isFavorite === next.isFavorite;
-});
+
 
 const LibraryScreen = ({ categoryFromUrl, sheetIdFromUrl }) => {
   const navigate = useNavigate();
@@ -155,12 +151,12 @@ const LibraryScreen = ({ categoryFromUrl, sheetIdFromUrl }) => {
           containIntrinsicSize: '0 2000px'
         }}>
           {filteredSheets.map(sheet => (
-            <MemoFileCard
+            <FileCard
               key={sheet.id}
               sheet={sheet}
               category={currentCategory}
               isFavorite={favoritesSet.has(sheet.id)} // O(1) lookup
-              onToggleFavorite={handleToggleFavorite}
+              onToggleFavorite={() => handleToggleFavorite(sheet.id)}
             />
           ))}
         </div>

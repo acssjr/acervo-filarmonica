@@ -27,7 +27,7 @@
 UPDATE partes
 SET instrumento = 'Bombardino Bb'
 WHERE instrumento = 'Bombardino'
-  AND (arquivo_nome LIKE '%Bb%' OR arquivo_nome LIKE '%Sib%' OR arquivo_nome LIKE '%bb%')
+  AND (LOWER(arquivo_nome) LIKE '%bb%' OR LOWER(arquivo_nome) LIKE '%sib%')
   AND partitura_id IN (
     SELECT pt3.partitura_id
     FROM partes pt3
@@ -36,4 +36,8 @@ WHERE instrumento = 'Bombardino'
       AND p2.ativo = 1
     GROUP BY pt3.partitura_id
     HAVING COUNT(*) = 2
+       AND SUM(CASE
+                 WHEN LOWER(pt3.arquivo_nome) LIKE '%bb%' OR LOWER(pt3.arquivo_nome) LIKE '%sib%'
+                 THEN 1 ELSE 0
+               END) = 1
   );

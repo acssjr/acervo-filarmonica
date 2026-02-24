@@ -7,6 +7,20 @@ import { useUI } from '@contexts/UIContext';
 import { API } from '@services/api';
 import { extrairInstrumento } from '@utils/instrumentParser';
 
+// Normaliza texto para comparação de títulos
+const normalizeTitle = (text) => {
+    if (!text) return '';
+    return text.toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[ºª°]/g, '')
+        .replace(/n[°º.]?\s*/gi, 'n')
+        .replace(/\./g, ' ')
+        .replace(/[^a-z0-9\s]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+};
+
 const CorrigirBombardinosModal = ({ isOpen, onClose, partituras }) => {
     const { showToast } = useUI();
     const folderInputRef = useRef(null);
@@ -15,23 +29,8 @@ const CorrigirBombardinosModal = ({ isOpen, onClose, partituras }) => {
     // Steps: 'select' -> 'preview' -> 'processing' -> 'done'
     const [step, setStep] = useState('select');
     const [matches, setMatches] = useState([]);
-    const [processing, setProcessing] = useState(false);
     const [progress, setProgress] = useState({ current: 0, total: 0 });
     const [results, setResults] = useState({ success: 0, errors: [] });
-
-    // Normaliza texto para comparação de títulos
-    const normalizeTitle = (text) => {
-        if (!text) return '';
-        return text.toLowerCase()
-            .normalize('NFD')
-            .replace(/[\u0300-\u036f]/g, '')
-            .replace(/[ºª°]/g, '')
-            .replace(/n[°º.]?\s*/gi, 'n')
-            .replace(/\./g, ' ')
-            .replace(/[^a-z0-9\s]/g, '')
-            .replace(/\s+/g, ' ')
-            .trim();
-    };
 
     // Processar arquivos selecionados
     const handleFolderSelect = (event) => {
@@ -108,7 +107,6 @@ const CorrigirBombardinosModal = ({ isOpen, onClose, partituras }) => {
 
         cancelledRef.current = false;
         setStep('processing');
-        setProcessing(true);
         setProgress({ current: 0, total: toProcess.length });
 
         const resultData = { success: 0, errors: [] };
@@ -139,7 +137,6 @@ const CorrigirBombardinosModal = ({ isOpen, onClose, partituras }) => {
 
         if (!cancelledRef.current) {
             setResults(resultData);
-            setProcessing(false);
             setStep('done');
         }
     };
@@ -266,7 +263,7 @@ const CorrigirBombardinosModal = ({ isOpen, onClose, partituras }) => {
                             <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '24px', lineHeight: '1.6' }}>
                                 Selecione a pasta que contém as subpastas de cada partitura.<br />
                                 O sistema vai filtrar apenas os arquivos de Bombardino e cruzar<br />
-                                com as partituras cadastradas pelo titulo.
+                                com as partituras cadastradas pelo título.
                             </p>
                             <label style={{
                                 display: 'inline-flex',
@@ -286,12 +283,11 @@ const CorrigirBombardinosModal = ({ isOpen, onClose, partituras }) => {
                                     <path d="M12 11v6M9 14h6" />
                                 </svg>
                                 Selecionar Pasta
-                                {/* eslint-disable-next-line react/no-unknown-property */}
                                 <input
                                     ref={folderInputRef}
                                     type="file"
-                                    webkitdirectory=""
-                                    directory=""
+                                    webkitdirectory={true}
+                                    directory={true}
                                     multiple
                                     style={{ display: 'none' }}
                                     onChange={handleFolderSelect}
@@ -342,7 +338,7 @@ const CorrigirBombardinosModal = ({ isOpen, onClose, partituras }) => {
                                         border: '1px solid rgba(231, 76, 60, 0.2)'
                                     }}>
                                         <div style={{ fontSize: '24px', fontWeight: '700', color: '#e74c3c' }}>{unmatchedCount}</div>
-                                        <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Sem correspondencia</div>
+                                        <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Sem correspondência</div>
                                     </div>
                                 )}
                             </div>

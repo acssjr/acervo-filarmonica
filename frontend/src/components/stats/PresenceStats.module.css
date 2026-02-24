@@ -258,6 +258,12 @@
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
 }
 
+.calendarDay:focus-visible {
+  outline: 2px solid rgba(212, 175, 55, 0.9);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.25);
+}
+
 .calendarMonth {
   font-family: Outfit, sans-serif;
   font-size: 9px;
@@ -356,4 +362,13 @@
 
 [data-theme="dark"] .calendarDay.absent {
   background: linear-gradient(145deg, rgba(200, 80, 80, 0.25) 0%, rgba(200, 80, 80, 0.15) 100%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .fireActive,
+  .fireIcon.active::before,
+  .calendarBadge {
+    animation: none;
+  }
 }

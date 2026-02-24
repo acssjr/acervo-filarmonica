@@ -3,7 +3,7 @@
 // Suporta URL compartilhavel: /acervo/:categoria/:id
 // Refatorado: extraido componentes e hook de download
 
-import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
+import { useState, useEffect, useCallback, lazy, Suspense, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@contexts/AuthContext';
@@ -30,6 +30,7 @@ const SheetDetailModal = () => {
   const [showInstrumentPicker, setShowInstrumentPicker] = useState(false);
   const [partes, setPartes] = useState([]);
   const [loadingPartes, setLoadingPartes] = useState(false);
+  const modalRef = useRef(null);
 
   // Hook de download
   const download = useSheetDownload({
@@ -107,14 +108,58 @@ const SheetDetailModal = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- download é estável (useSheetDownload)
   }, [selectedSheet]);
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     setSelectedSheet(null);
     // Se estamos numa URL de partitura, volta para o acervo da categoria
     if (location.pathname.includes('/acervo/') && location.pathname.split('/').length > 3) {
       const categoria = selectedSheet?.category || 'dobrado';
       navigate(`/acervo/${categoria}`, { replace: true });
     }
-  };
+  }, [selectedSheet, navigate, location.pathname, setSelectedSheet]);
+
+  // Trap focus and close on Escape
+  useEffect(() => {
+    if (selectedSheet && modalRef.current) {
+      const modal = modalRef.current;
+      const previousElement = document.activeElement;
+
+      // Make sure we have a node to query on
+      const focusableElements = modal.querySelectorAll(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      );
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+
+      if (firstElement) {
+        firstElement.focus();
+      }
+
+      const handleKeyDown = (e) => {
+        if (e.key === 'Escape') {
+          handleClose();
+        } else if (e.key === 'Tab') {
+          if (e.shiftKey) {
+            if (document.activeElement === firstElement) {
+              e.preventDefault();
+              lastElement?.focus();
+            }
+          } else {
+            if (document.activeElement === lastElement) {
+              e.preventDefault();
+              firstElement?.focus();
+            }
+          }
+        }
+      };
+
+      document.addEventListener('keydown', handleKeyDown);
+
+      return () => {
+        document.removeEventListener('keydown', handleKeyDown);
+        if (previousElement) previousElement.focus();
+      };
+    }
+  }, [selectedSheet, handleClose]);
 
   // Dados derivados do selectedSheet (só acessados quando existe)
   const category = selectedSheet ? categoriesMap.get(selectedSheet.category) : null;
@@ -170,7 +215,7 @@ const SheetDetailModal = () => {
           />
 
           {/* Visualizador de PDF embutido */}
-          <Suspense fallback={<div className="flex items-center justify-center p-8">Carregando visualizador...</div>}>
+          <Suspense fallback={<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px' }}>Carregando visualizador...</div>}>
             <PDFViewerModal
               isOpen={download.pdfViewer.isOpen}
               pdfUrl={download.pdfViewer.url}
@@ -187,6 +232,7 @@ const SheetDetailModal = () => {
 
           {/* Modal Principal */}
           <motion.div
+            ref={modalRef}
             key="sheet-modal-content"
             role="dialog"
             aria-modal="true"

@@ -48,7 +48,7 @@ export const DataProvider = ({ children }) => {
   // Favoritos - Otimizado: usa Set para lookups O(1)
   const [favoritesSet, setFavoritesSet] = useState(() => {
     const stored = Storage.get('favorites', []);
-    return new Set(stored);
+    return new Set(stored.map(String));
   });
 
   // Navegacao
@@ -125,21 +125,21 @@ export const DataProvider = ({ children }) => {
   }, []);
 
   // Persiste dados em lote para reduzir operações de storage
-  useEffect(() => { 
-    Storage.set('sheets', sheets); 
+  useEffect(() => {
+    Storage.set('sheets', sheets);
   }, [sheets]);
-  
-  useEffect(() => { 
+
+  useEffect(() => {
     // Converte Set para array antes de salvar
-    Storage.set('favorites', Array.from(favoritesSet)); 
+    Storage.set('favorites', Array.from(favoritesSet));
   }, [favoritesSet]);
-  
-  useEffect(() => { 
-    Storage.set('categories', categories); 
+
+  useEffect(() => {
+    Storage.set('categories', categories);
   }, [categories]);
-  
-  useEffect(() => { 
-    Storage.set('instruments', instruments); 
+
+  useEffect(() => {
+    Storage.set('instruments', instruments);
   }, [instruments]);
 
   // Helper: cria map de categorias para lookup O(1)
@@ -174,9 +174,9 @@ export const DataProvider = ({ children }) => {
   const toggleFavorite = useCallback(async (id) => {
     const token = Storage.get('authToken', null);
     const idStr = String(id);
-    
+
     const wasFavorito = favoritesSet.has(idStr);
-    
+
     // Atualiza Set imediatamente (UI otimista)
     setFavoritesSet(prev => {
       const newSet = new Set(prev);
