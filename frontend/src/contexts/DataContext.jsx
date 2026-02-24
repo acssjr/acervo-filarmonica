@@ -91,7 +91,6 @@ export const DataProvider = ({ children }) => {
               apiId: p.id
             }));
             setSheets(mappedSheets);
-            Storage.set('sheets', mappedSheets);
           }
 
           // Atualiza categorias da API
@@ -101,7 +100,6 @@ export const DataProvider = ({ children }) => {
               name: c.nome
             }));
             setCategories(mappedCategories);
-            Storage.set('categories', mappedCategories);
           }
 
           // Atualiza instrumentos da API
@@ -111,7 +109,6 @@ export const DataProvider = ({ children }) => {
               nome: i.nome
             }));
             setInstruments(mappedInstruments);
-            Storage.set('instruments', mappedInstruments);
           }
         }
       } catch (error) {
@@ -163,7 +160,6 @@ export const DataProvider = ({ children }) => {
       if (favoritosIds && Array.isArray(favoritosIds)) {
         const newSet = new Set(favoritosIds.map(id => String(id)));
         setFavoritesSet(newSet);
-        Storage.set('favorites', Array.from(newSet));
       }
     } catch {
       // Silencioso - favoritos nao sao criticos

@@ -2,7 +2,7 @@
 // Modal para correção em massa das partes de Bombardino
 // Escaneia pasta do acervo, cruza com partituras no banco, e substitui partes
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useUI } from '@contexts/UIContext';
 import { API } from '@services/api';
 import { extrairInstrumento } from '@utils/instrumentParser';
@@ -21,10 +21,11 @@ const normalizeTitle = (text) => {
         .trim();
 };
 
-const CorrigirBombardinosModal = ({ isOpen, onClose, partituras }) => {
+const CorrigirBombardinosModal = ({ onClose, partituras }) => {
     const { showToast } = useUI();
     const folderInputRef = useRef(null);
     const cancelledRef = useRef(false);
+    const modalRef = useRef(null);
 
     // Steps: 'select' -> 'preview' -> 'processing' -> 'done'
     const [step, setStep] = useState('select');
@@ -148,18 +149,56 @@ const CorrigirBombardinosModal = ({ isOpen, onClose, partituras }) => {
         setResults({ success: 0, errors: [] });
     };
 
-    const handleClose = () => {
+    const handleClose = useCallback(() => {
         if (step === 'processing') return;
         cancelledRef.current = true;
         handleReset();
         onClose();
-    };
+    }, [step, onClose]);
+
+    // Escape key + focus trap
+    useEffect(() => {
+        if (!modalRef.current) return;
+        const modal = modalRef.current;
+        const previousElement = document.activeElement;
+
+        const FOCUSABLE = 'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+        const initialFocusable = modal.querySelectorAll(FOCUSABLE);
+        if (initialFocusable[0]) initialFocusable[0].focus();
+
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape') {
+                handleClose();
+            } else if (e.key === 'Tab') {
+                const els = modal.querySelectorAll(FOCUSABLE);
+                const first = els[0];
+                const last = els[els.length - 1];
+                if (e.shiftKey) {
+                    if (document.activeElement === first) {
+                        e.preventDefault();
+                        last?.focus();
+                    }
+                } else {
+                    if (document.activeElement === last) {
+                        e.preventDefault();
+                        first?.focus();
+                    }
+                }
+            }
+        };
+
+        document.addEventListener('keydown', handleKeyDown);
+        return () => {
+            document.removeEventListener('keydown', handleKeyDown);
+            if (previousElement) previousElement.focus();
+        };
+    }, [handleClose]);
 
     const matchedCount = matches.filter(m => m.matched).length;
     const unmatchedCount = matches.filter(m => !m.matched).length;
     const totalFiles = matches.reduce((sum, m) => sum + m.files.length, 0);
 
-    if (!isOpen) return null;
+
 
     return (
         <>
@@ -178,6 +217,7 @@ const CorrigirBombardinosModal = ({ isOpen, onClose, partituras }) => {
 
             {/* Modal */}
             <div
+                ref={modalRef}
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="bombardinos-modal-title"

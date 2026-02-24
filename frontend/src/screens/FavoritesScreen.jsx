@@ -21,7 +21,7 @@ const FavoritesScreen = () => {
   }, [sheets, favoritesSet]);
 
   // Callback estável para toggle
-  const handleToggleFavorite = useCallback((id) => () => {
+  const handleToggleFavorite = useCallback((id) => {
     toggleFavorite(id);
   }, [toggleFavorite]);
 
@@ -47,7 +47,7 @@ const FavoritesScreen = () => {
               sheet={sheet}
               category={categoriesMap.get(sheet.category)}
               isFavorite={true}
-              onToggleFavorite={handleToggleFavorite(sheet.id)}
+              onToggleFavorite={() => handleToggleFavorite(sheet.id)}
             />
           ))}
         </div>

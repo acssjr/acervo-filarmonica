@@ -31,6 +31,7 @@ const SheetDetailModal = () => {
   const [partes, setPartes] = useState([]);
   const [loadingPartes, setLoadingPartes] = useState(false);
   const modalRef = useRef(null);
+  const subModalOpenRef = useRef(false);
 
   // Hook de download
   const download = useSheetDownload({
@@ -38,6 +39,13 @@ const SheetDetailModal = () => {
     selectedSheet,
     partes
   });
+
+  // Track sub-modal open state via ref to avoid effect re-runs
+  useEffect(() => {
+    subModalOpenRef.current = download.showPartePicker ||
+      !!download.confirmInstrument ||
+      download.pdfViewer.isOpen;
+  }, [download.showPartePicker, download.confirmInstrument, download.pdfViewer.isOpen]);
 
   // Handler para adicionar parte ao carrinho de compartilhamento
   const handleAddToCart = useCallback((instrument) => {
@@ -123,21 +131,25 @@ const SheetDetailModal = () => {
       const modal = modalRef.current;
       const previousElement = document.activeElement;
 
-      // Make sure we have a node to query on
-      const focusableElements = modal.querySelectorAll(
-        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-      );
-      const firstElement = focusableElements[0];
-      const lastElement = focusableElements[focusableElements.length - 1];
+      const FOCUSABLE_SELECTOR =
+        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
-      if (firstElement) {
-        firstElement.focus();
+      // Initial focus
+      const initialFocusable = modal.querySelectorAll(FOCUSABLE_SELECTOR);
+      if (initialFocusable[0]) {
+        initialFocusable[0].focus();
       }
 
       const handleKeyDown = (e) => {
         if (e.key === 'Escape') {
+          // Don't close parent modal when a sub-modal is open
+          if (subModalOpenRef.current) return;
           handleClose();
         } else if (e.key === 'Tab') {
+          // Re-query on each Tab so dynamic DOM changes are reflected
+          const focusableElements = modal.querySelectorAll(FOCUSABLE_SELECTOR);
+          const firstElement = focusableElements[0];
+          const lastElement = focusableElements[focusableElements.length - 1];
           if (e.shiftKey) {
             if (document.activeElement === firstElement) {
               e.preventDefault();

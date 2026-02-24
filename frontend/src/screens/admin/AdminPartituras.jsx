@@ -2026,7 +2026,6 @@ const AdminPartituras = () => {
       {showCorrigirBombardinos && (
         <Suspense fallback={null}>
           <CorrigirBombardinosModal
-            isOpen={showCorrigirBombardinos}
             onClose={() => setShowCorrigirBombardinos(false)}
             partituras={partituras}
           />
