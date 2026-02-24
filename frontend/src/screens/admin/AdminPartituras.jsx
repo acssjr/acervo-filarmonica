@@ -46,32 +46,7 @@ const matchesSearch = (text, query) => {
   return queryTerms.every(term => normalizedText.includes(term));
 };
 
-// ===== FUNÇÕES MODULE-LEVEL (não recriadas a cada render) =====
 
-// Normalização avançada para busca (estilo YouTube)
-// - Remove acentos e diacríticos
-// - Normaliza "nº", "n°", "no." para "n" (número)
-// - Remove caracteres especiais mantendo espaços
-const normalizeText = (text) => {
-  if (!text) return '';
-  return text.toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '') // Remove acentos
-    .replace(/[ºª°]/g, '') // Remove indicadores ordinais
-    .replace(/n[°º.]?\s*/gi, 'n') // "nº ", "n° ", "n. " → "n"
-    .replace(/\./g, ' ') // Pontos viram espaços
-    .replace(/\s+/g, ' ') // Colapsa espaços múltiplos
-    .trim();
-};
-
-// Verifica se todos os termos da busca estão presentes (em qualquer ordem)
-const matchesSearch = (text, query) => {
-  if (!query) return true;
-  const normalizedText = normalizeText(text);
-  const queryTerms = normalizeText(query).split(' ').filter(t => t.length > 0);
-  // Todos os termos devem estar presentes
-  return queryTerms.every(term => normalizedText.includes(term));
-};
 
 // Helper para detectar instrumento pelo nome do arquivo
 const detectInstrumento = (filename) => {

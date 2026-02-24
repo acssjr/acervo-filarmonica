@@ -2,6 +2,7 @@
 // Rotas para gestão de partituras tocadas em ensaios
 
 import { authMiddleware, adminMiddleware } from '../middleware/index.js';
+import { jsonResponse, errorResponse } from '../infrastructure/response/helpers.js';
 import * as EnsaioService from '../domain/ensaio/ensaioService.js';
 
 /**
@@ -13,13 +14,10 @@ export function setupEnsaioRoutes(router) {
   router.get('/api/ensaios/:data/partituras', async (request, env, params) => {
     try {
       const data = await EnsaioService.getPartiturasEnsaio(env, params.data);
-      return Response.json(data);
+      return jsonResponse(data, 200, request);
     } catch (error) {
       console.error('Erro ao buscar partituras do ensaio:', error);
-      return Response.json(
-        { erro: 'Erro ao buscar partituras' },
-        { status: 500 }
-      );
+      return errorResponse('Erro ao buscar partituras', 500, request);
     }
   });
 
@@ -29,10 +27,7 @@ export function setupEnsaioRoutes(router) {
       const { partitura_id } = await request.json();
 
       if (!partitura_id) {
-        return Response.json(
-          { erro: 'ID da partitura é obrigatório' },
-          { status: 400 }
-        );
+        return errorResponse('ID da partitura é obrigatório', 400, request);
       }
 
       const result = await EnsaioService.addPartituraEnsaio(
@@ -42,21 +37,15 @@ export function setupEnsaioRoutes(router) {
         context.user.id
       );
 
-      return Response.json(result);
+      return jsonResponse(result, 200, request);
     } catch (error) {
       console.error('Erro ao adicionar partitura ao ensaio:', error);
 
       if (error.message.includes('já foi adicionada')) {
-        return Response.json(
-          { erro: error.message },
-          { status: 400 }
-        );
+        return errorResponse(error.message, 400, request);
       }
 
-      return Response.json(
-        { erro: 'Erro ao adicionar partitura' },
-        { status: 500 }
-      );
+      return errorResponse('Erro ao adicionar partitura', 500, request);
     }
   }, [authMiddleware, adminMiddleware]);
 
@@ -64,13 +53,10 @@ export function setupEnsaioRoutes(router) {
   router.delete('/api/ensaios/:data/partituras/:partituraId', async (request, env, params) => {
     try {
       const result = await EnsaioService.removePartituraEnsaio(env, params.data, parseInt(params.partituraId, 10));
-      return Response.json(result);
+      return jsonResponse(result, 200, request);
     } catch (error) {
       console.error('Erro ao remover partitura do ensaio:', error);
-      return Response.json(
-        { erro: 'Erro ao remover partitura' },
-        { status: 500 }
-      );
+      return errorResponse('Erro ao remover partitura', 500, request);
     }
   }, [authMiddleware, adminMiddleware]);
 
@@ -80,20 +66,14 @@ export function setupEnsaioRoutes(router) {
       const { ordens } = await request.json();
 
       if (!ordens || !Array.isArray(ordens)) {
-        return Response.json(
-          { erro: 'Array de ordens é obrigatório' },
-          { status: 400 }
-        );
+        return errorResponse('Array de ordens é obrigatório', 400, request);
       }
 
       const result = await EnsaioService.reorderPartiturasEnsaio(env, params.data, ordens);
-      return Response.json(result);
+      return jsonResponse(result, 200, request);
     } catch (error) {
       console.error('Erro ao reordenar partituras:', error);
-      return Response.json(
-        { erro: 'Erro ao reordenar partituras' },
-        { status: 500 }
-      );
+      return errorResponse('Erro ao reordenar partituras', 500, request);
     }
   }, [authMiddleware, adminMiddleware]);
 }

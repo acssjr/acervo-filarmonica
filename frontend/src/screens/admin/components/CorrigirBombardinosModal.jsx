@@ -15,6 +15,8 @@ const CorrigirBombardinosModal = ({ isOpen, onClose, partituras }) => {
     // Steps: 'select' -> 'preview' -> 'processing' -> 'done'
     const [step, setStep] = useState('select');
     const [matches, setMatches] = useState([]);
+    const [skipped, setSkipped] = useState([]);
+    const [showSkipped, setShowSkipped] = useState(false);
     const [processing, setProcessing] = useState(false);
     const [progress, setProgress] = useState({ current: 0, total: 0 });
     const [results, setResults] = useState({ success: 0, errors: [] });
@@ -33,26 +35,33 @@ const CorrigirBombardinosModal = ({ isOpen, onClose, partituras }) => {
             .trim();
     };
 
-    // Processar arquivos selecionados
-    const handleFolderSelect = (event) => {
-        const files = Array.from(event.target.files);
-        if (files.length === 0) return;
+    // Função para processar a lista de arquivos (seja via input ou drop)
+    const processarConteudo = (files) => {
+        if (!files || files.length === 0) return;
 
-        // Agrupar arquivos por pasta pai
+        // Agrupar arquivos por pasta pai (a que contém o arquivo)
         const folderMap = {};
+        const skippedFolders = new Set();
+        const allScannedFolders = new Set();
+
         for (const file of files) {
-            const pathParts = file.webkitRelativePath.split('/');
+            const path = file.webkitRelativePath || file.name;
+            const pathParts = path.split('/');
+
             if (pathParts.length < 2) continue;
 
-            // Nome da subpasta (título da partitura)
-            const folderName = pathParts.length === 2 ? pathParts[0] : pathParts[1];
+            const folderName = pathParts[pathParts.length - 2];
+            allScannedFolders.add(folderName);
 
             // Detectar instrumento
             const { instrumento } = extrairInstrumento(file.name);
-            const instrumentoLower = instrumento.toLowerCase();
+            const instLower = instrumento.toLowerCase();
 
-            // Filtrar apenas bombardinos
-            if (!instrumentoLower.startsWith('bombardino')) continue;
+            // Abrangência maior: Bombardier, Euphonium, Eufônio, Barítono (Bb), etc.
+            const keywords = ['bombardino', 'euphonium', 'eufonio', 'baritono', 'sib', 'sibemol'];
+            const looksLikeBombardino = keywords.some(k => instLower.includes(k));
+
+            if (!looksLikeBombardino) continue;
 
             if (!folderMap[folderName]) {
                 folderMap[folderName] = { folderName, files: [] };
@@ -60,11 +69,16 @@ const CorrigirBombardinosModal = ({ isOpen, onClose, partituras }) => {
             folderMap[folderName].files.push({ file, instrumento });
         }
 
+        // Identificar pastas que foram ignoradas por não terem bombardinos
+        for (const f of allScannedFolders) {
+            if (!folderMap[f]) skippedFolders.add(f);
+        }
+
         // Cruzar nomes de pastas com títulos de partituras
         const matched = [];
         const partituraTitleMap = {};
 
-        // Criar mapa normalizado de partituras
+        // Criar mapa normalizado de partituras (match exato)
         for (const p of partituras) {
             const normalized = normalizeTitle(p.titulo);
             if (!partituraTitleMap[normalized]) {
@@ -72,9 +86,37 @@ const CorrigirBombardinosModal = ({ isOpen, onClose, partituras }) => {
             }
         }
 
+        // Títulos ordenados por tamanho (maior primeiro) para busca por inclusão/prefixo
+        const sortedDatabasePartituras = [...partituras].sort((a, b) => b.titulo.length - a.titulo.length);
+
         for (const [folderName, data] of Object.entries(folderMap)) {
             const normalizedFolder = normalizeTitle(folderName);
-            const partitura = partituraTitleMap[normalizedFolder];
+
+            // 1. TENTA MATCH EXATO
+            let partitura = partituraTitleMap[normalizedFolder];
+
+            // 2. TENTA EXTRAIR TÍTULO (caso a pasta seja "Titulo - Compositor")
+            if (!partitura && folderName.includes(' - ')) {
+                const titlePart = folderName.split(' - ')[0].trim();
+                partitura = partituraTitleMap[normalizeTitle(titlePart)];
+            }
+
+            // 3. TENTA BUSCA POR PREFIXO (Se o título do banco é o início do nome da pasta)
+            if (!partitura) {
+                partitura = sortedDatabasePartituras.find(p => {
+                    const normP = normalizeTitle(p.titulo);
+                    // Match se a pasta COMESSA com o título do banco (ex: "Amalia de Araujo - ..." começa com "Amalia de Araujo")
+                    return normalizedFolder.startsWith(normP);
+                });
+            }
+
+            // 4. TENTA BUSCA POR INCLUSÃO (Último recurso)
+            if (!partitura) {
+                partitura = sortedDatabasePartituras.find(p => {
+                    const normP = normalizeTitle(p.titulo);
+                    return normalizedFolder.includes(normP);
+                });
+            }
 
             matched.push({
                 folderName: data.folderName,
@@ -91,11 +133,79 @@ const CorrigirBombardinosModal = ({ isOpen, onClose, partituras }) => {
             return a.folderName.localeCompare(b.folderName);
         });
 
+        if (matched.length === 0 && skippedFolders.size === 0) {
+            showToast('Nenhuma pasta válida ou arquivo de Bombardino encontrado', 'warning');
+            return;
+        }
+
         setMatches(matched);
+        setSkipped([...skippedFolders].sort());
         setStep('preview');
 
         // Limpar input para permitir re-seleção
         if (folderInputRef.current) folderInputRef.current.value = '';
+    };
+
+    // Handler para seleção via botão/input
+    const handleFolderSelect = (event) => {
+        const files = Array.from(event.target.files);
+        processarConteudo(files);
+    };
+
+    // Handlers para Drag & Drop
+    const [isDragging, setIsDragging] = useState(false);
+
+    const handleDragOver = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(true);
+    };
+
+    const handleDragLeave = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(false);
+    };
+
+    const handleDrop = async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(false);
+
+        const items = e.dataTransfer.items;
+        if (!items) return;
+
+        const files = [];
+        const readEntry = async (entry, path = '') => {
+            if (entry.isFile) {
+                const file = await new Promise(resolve => entry.file(resolve));
+                // Simulamos o webkitRelativePath para manter compatibilidade com a lógica existente
+                Object.defineProperty(file, 'webkitRelativePath', {
+                    value: path + file.name,
+                    writable: false
+                });
+                files.push(file);
+            } else if (entry.isDirectory) {
+                const reader = entry.createReader();
+                const entries = await new Promise(resolve => {
+                    reader.readEntries(resolve);
+                });
+                for (const childEntry of entries) {
+                    await readEntry(childEntry, path + entry.name + '/');
+                }
+            }
+        };
+
+        const promises = [];
+        for (const item of items) {
+            const entry = item.webkitGetAsEntry();
+            if (entry) {
+                promises.push(readEntry(entry));
+            }
+        }
+
+        await Promise.all(promises);
+        processarConteudo(files);
     };
 
     // Processar correções em massa
@@ -252,11 +362,23 @@ const CorrigirBombardinosModal = ({ isOpen, onClose, partituras }) => {
                 </div>
 
                 {/* Content */}
-                <div style={{ flex: 1, overflow: 'auto', padding: '20px 24px' }}>
+                <div
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                    style={{ flex: 1, overflow: 'auto', padding: '20px 24px' }}
+                >
 
                     {/* Step 1: Select Folder */}
                     {step === 'select' && (
-                        <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+                        <div style={{
+                            textAlign: 'center',
+                            padding: '40px 20px',
+                            border: isDragging ? '2px dashed #D4AF37' : '2px dashed transparent',
+                            background: isDragging ? 'rgba(212, 175, 55, 0.05)' : 'transparent',
+                            borderRadius: '12px',
+                            transition: 'all 0.2s'
+                        }}>
                             <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.4, marginBottom: '20px' }}>
                                 <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
                             </svg>
@@ -292,6 +414,8 @@ const CorrigirBombardinosModal = ({ isOpen, onClose, partituras }) => {
                                     type="file"
                                     webkitdirectory=""
                                     directory=""
+                                    mozdirectory=""
+                                    allowdirs=""
                                     multiple
                                     style={{ display: 'none' }}
                                     onChange={handleFolderSelect}
@@ -422,6 +546,62 @@ const CorrigirBombardinosModal = ({ isOpen, onClose, partituras }) => {
                                     </div>
                                 ))}
                             </div>
+
+                            {/* Skipped Folders (Optional) */}
+                            {
+                                skipped.length > 0 && (
+                                    <div style={{ marginTop: '20px' }}>
+                                        <button
+                                            onClick={() => setShowSkipped(!showSkipped)}
+                                            style={{
+                                                background: 'none',
+                                                border: 'none',
+                                                color: 'var(--text-muted)',
+                                                fontSize: '11px',
+                                                cursor: 'pointer',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '4px',
+                                                padding: '4px 0'
+                                            }}
+                                        >
+                                            <svg
+                                                width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                                                style={{ transform: showSkipped ? 'rotate(0deg)' : 'rotate(-90deg)', transition: 'transform 0.2s' }}
+                                            >
+                                                <polyline points="6 9 12 15 18 9" />
+                                            </svg>
+                                            {showSkipped ? 'Ocultar' : 'Mostrar'} {skipped.length} pastas ignoradas (sem bombardino detectado)
+                                        </button>
+
+                                        {showSkipped && (
+                                            <div style={{
+                                                marginTop: '8px',
+                                                display: 'grid',
+                                                gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
+                                                gap: '6px',
+                                                padding: '12px',
+                                                background: 'rgba(0,0,0,0.1)',
+                                                borderRadius: '8px',
+                                                maxHeight: '150px',
+                                                overflowY: 'auto'
+                                            }}>
+                                                {skipped.map((folder, i) => (
+                                                    <div key={i} style={{
+                                                        fontSize: '11px',
+                                                        color: 'var(--text-muted)',
+                                                        whiteSpace: 'nowrap',
+                                                        overflow: 'hidden',
+                                                        textOverflow: 'ellipsis'
+                                                    }}>
+                                                        • {folder}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                )
+                            }
                         </div>
                     )}
 

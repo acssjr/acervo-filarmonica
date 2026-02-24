@@ -159,43 +159,42 @@ const InstrumentSelector = ({
 
                 {/* Botoes de acao - compactos */}
                 <div style={{ display: 'flex', gap: '3px', flexShrink: 0 }}>
-                  {/* Visualizar (mobile) ou Imprimir (desktop) */}
-                  {isMobile ? (
-                    onViewInstrument && (
-                      <button
-                        onClick={() => onViewInstrument(instrument)}
-                        disabled={downloading}
-                        aria-label={`Visualizar ${instrument}`}
-                        title="Visualizar"
-                        className="action-btn"
-                        style={{
-                          ...actionButtonStyle,
-                          background: 'rgba(52, 152, 219, 0.12)',
-                          color: '#3498db',
-                          transition: 'all 0.15s ease'
-                        }}
-                      >
-                        <div style={{ width: '13px', height: '13px' }}><Icons.Eye /></div>
-                      </button>
-                    )
-                  ) : (
-                    onPrintInstrument && (
-                      <button
-                        onClick={() => onPrintInstrument(instrument)}
-                        disabled={downloading}
-                        aria-label={`Imprimir ${instrument}`}
-                        title="Imprimir"
-                        className="action-btn"
-                        style={{
-                          ...actionButtonStyle,
-                          background: 'rgba(52, 152, 219, 0.12)',
-                          color: '#3498db',
-                          transition: 'all 0.15s ease'
-                        }}
-                      >
-                        <div style={{ width: '13px', height: '13px' }}><Icons.Printer /></div>
-                      </button>
-                    )
+                  {/* Visualizar (Olho) - Disponível em PC e Mobile */}
+                  {onViewInstrument && (
+                    <button
+                      onClick={() => onViewInstrument(instrument)}
+                      disabled={downloading}
+                      aria-label={`Visualizar ${instrument}`}
+                      title="Visualizar"
+                      className="action-btn"
+                      style={{
+                        ...actionButtonStyle,
+                        background: 'rgba(52, 152, 219, 0.12)',
+                        color: '#3498db',
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      <div style={{ width: '13px', height: '13px' }}><Icons.Eye /></div>
+                    </button>
+                  )}
+
+                  {/* Imprimir - Apenas PC (isMobile === false) */}
+                  {!isMobile && onPrintInstrument && (
+                    <button
+                      onClick={() => onPrintInstrument(instrument)}
+                      disabled={downloading}
+                      aria-label={`Imprimir ${instrument}`}
+                      title="Imprimir"
+                      className="action-btn"
+                      style={{
+                        ...actionButtonStyle,
+                        background: 'rgba(46, 204, 113, 0.12)',
+                        color: '#2ecc71',
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      <div style={{ width: '13px', height: '13px' }}><Icons.Printer /></div>
+                    </button>
                   )}
 
                   {/* Compartilhar individual */}

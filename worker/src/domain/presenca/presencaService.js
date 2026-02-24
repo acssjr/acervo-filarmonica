@@ -264,7 +264,7 @@ export async function getDetalheEnsaio(env, dataEnsaio) {
   `).bind(dataEnsaio).all();
 
   const partituras = await env.DB.prepare(`
-    SELECT ep.id, ep.partitura_id, p.titulo, p.compositor, c.nome as categoria_nome
+    SELECT ep.id, ep.partitura_id, p.titulo, p.compositor, c.nome as categoria_nome, c.cor as categoria_cor, c.emoji as categoria_emoji
     FROM ensaios_partituras ep
     JOIN partituras p ON ep.partitura_id = p.id
     LEFT JOIN categorias c ON p.categoria_id = c.id

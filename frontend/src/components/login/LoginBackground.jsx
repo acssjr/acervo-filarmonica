@@ -1,22 +1,67 @@
 // ===== LOGIN BACKGROUND COMPONENT =====
-// Background decorativo com imagem e overlay do login
+// Background decorativo com carrosel de imagens e overlay do login
+
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+
+// Lista de imagens para o background (adicione novos arquivos WebP aqui)
+const BACKGROUND_IMAGES = [
+  '/assets/images/banda/foto-banda-sao-goncalo.webp',
+  // Adicione outras fotos aqui, ex:
+  // '/assets/images/banda/foto-banda-2.webp',
+  // '/assets/images/banda/foto-banda-3.webp',
+];
 
 const LoginBackground = () => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  // Troca de imagem a cada 8 segundos
+  useEffect(() => {
+    if (BACKGROUND_IMAGES.length <= 1) return;
+
+    const timer = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % BACKGROUND_IMAGES.length);
+    }, 8000);
+
+    return () => clearInterval(timer);
+  }, []);
+
   return (
     <>
-      {/* Background com imagem e overlay */}
+      {/* Container fixo para as imagens com cross-fade */}
       <div style={{
         position: 'fixed',
         inset: 0,
-        background: `
-          linear-gradient(135deg, rgba(61, 21, 24, 0.92) 0%, rgba(92, 26, 27, 0.88) 50%, rgba(61, 21, 24, 0.92) 100%),
-          url('/assets/images/banda/foto-banda-sao-goncalo.webp')
-        `,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        filter: 'brightness(0.9)',
-        zIndex: -2
-      }} />
+        zIndex: -2,
+        background: '#1a1a1a', // Cor de fundo sólida enquanto carrega
+        overflow: 'hidden'
+      }}>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={BACKGROUND_IMAGES[currentIndex]}
+            initial={{ opacity: 0, scale: 1.1 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 2, ease: "easeOut" }}
+            style={{
+              position: 'absolute',
+              inset: 0,
+              backgroundImage: `url('${BACKGROUND_IMAGES[currentIndex]}')`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              filter: 'brightness(0.7)'
+            }}
+          />
+        </AnimatePresence>
+
+        {/* Overlay de gradiente luxuoso para garantir legibilidade do login */}
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          background: 'linear-gradient(135deg, rgba(61, 21, 24, 0.94) 0%, rgba(30, 10, 12, 0.8) 50%, rgba(61, 21, 24, 0.94) 100%)',
+          zIndex: 1
+        }} />
+      </div>
 
       {/* Padrao decorativo sutil */}
       <div style={{
