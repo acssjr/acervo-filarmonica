@@ -10,6 +10,7 @@ import { extrairInstrumento } from '@utils/instrumentParser';
 const CorrigirBombardinosModal = ({ isOpen, onClose, onSuccess, partituras }) => {
     const { showToast } = useUI();
     const folderInputRef = useRef(null);
+    const dropZoneRef = useRef(null);
     const cancelledRef = useRef(false);
 
     // Steps: 'select' -> 'preview' -> 'processing' -> 'done'
@@ -167,13 +168,20 @@ const CorrigirBombardinosModal = ({ isOpen, onClose, onSuccess, partituras }) =>
     const handleDragLeave = (e) => {
         e.preventDefault();
         e.stopPropagation();
-        setIsDragging(false);
+        // Only clear dragging if leaving the drop zone entirely (not entering a child)
+        const relatedTarget = e.relatedTarget;
+        if (!relatedTarget || !dropZoneRef.current || !dropZoneRef.current.contains(relatedTarget)) {
+            setIsDragging(false);
+        }
     };
 
     const handleDrop = async (e) => {
         e.preventDefault();
         e.stopPropagation();
         setIsDragging(false);
+
+        // Guard: only process drops in 'select' step
+        if (step !== 'select') return;
 
         const items = e.dataTransfer.items;
         if (!items) return;
@@ -374,6 +382,7 @@ const CorrigirBombardinosModal = ({ isOpen, onClose, onSuccess, partituras }) =>
 
                 {/* Content */}
                 <div
+                    ref={dropZoneRef}
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
                     onDrop={handleDrop}
@@ -399,7 +408,7 @@ const CorrigirBombardinosModal = ({ isOpen, onClose, onSuccess, partituras }) =>
                             <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '24px', lineHeight: '1.6' }}>
                                 Selecione a pasta que contém as subpastas de cada partitura.<br />
                                 O sistema vai filtrar apenas os arquivos de Bombardino e cruzar<br />
-                                com as partituras cadastradas pelo titulo.
+                                com as partituras cadastradas pelo título.
                             </p>
                             <label style={{
                                 display: 'inline-flex',
@@ -474,7 +483,7 @@ const CorrigirBombardinosModal = ({ isOpen, onClose, onSuccess, partituras }) =>
                                         border: '1px solid rgba(231, 76, 60, 0.2)'
                                     }}>
                                         <div style={{ fontSize: '24px', fontWeight: '700', color: '#e74c3c' }}>{unmatchedCount}</div>
-                                        <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Sem correspondencia</div>
+                                        <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Sem correspondência</div>
                                     </div>
                                 )}
                             </div>

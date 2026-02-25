@@ -490,7 +490,7 @@ const SheetDetailModal = () => {
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     marginBottom: '12px',
-                    boxShadow: (loadingPartes || (isMaestro && !hasGrade)) ? 'none' : '0 4px 12px rgba(114, 47, 55, 0.3)'
+                    boxShadow: (loadingPartes || download.downloading || (isMaestro && !hasGrade)) ? 'none' : '0 4px 12px rgba(114, 47, 55, 0.3)'
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

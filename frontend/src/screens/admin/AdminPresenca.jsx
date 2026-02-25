@@ -473,7 +473,7 @@ const getFamiliaColor = (familia) => {
  * @param {Object} u - Usuário com instrumento_nome e nome
  * @returns {boolean}
  */
-const isRegente = (u) => u.instrumento_nome === 'Regente' || u.nome.includes('Regente');
+const isRegente = (u) => (u.instrumento_nome && u.instrumento_nome.includes('Regente')) || (u.nome && u.nome.includes('Regente'));
 
 /**
  * Ordem padrão das famílias de instrumentos.
