@@ -354,18 +354,28 @@ export async function corrigirBombardinosPartitura(partituraId, request, env) {
     ).bind(partituraId).run();
 
     // 5. Upload dos novos arquivos (ja validados)
-    let partesAdicionadas = 0;
+    // Usar batch para atomicidade no DB
+    const uploadedFiles = [];
+    const batch = [];
+    
     for (const item of novosArquivos) {
       await env.BUCKET.put(item.nomeArquivoStorage, item.arrayBuffer, {
         httpMetadata: { contentType: 'application/pdf' }
       });
-
-      await env.DB.prepare(
+      uploadedFiles.push(item.nomeArquivoStorage);
+      
+      const stmt = env.DB.prepare(
         'INSERT INTO partes (partitura_id, instrumento, arquivo_nome) VALUES (?, ?, ?)'
-      ).bind(partituraId, item.instrumento, item.nomeArquivoStorage).run();
-
-      partesAdicionadas++;
+      ).bind(partituraId, item.instrumento, item.nomeArquivoStorage);
+      batch.push(stmt);
     }
+    
+    // Executar inserts em batch (atômico)
+    if (batch.length > 0) {
+      await env.DB.batch(batch);
+    }
+    
+    const partesAdicionadas = uploadedFiles.length;
 
     return jsonResponse({
       success: true,
