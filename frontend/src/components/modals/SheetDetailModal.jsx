@@ -460,7 +460,7 @@ const SheetDetailModal = () => {
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <div style={{ width: '16px', height: '16px' }}><Icons.Download /></div>
-                    <span>{loadingPartes ? 'Carregando...' : (isMaestro ? 'Baixar Grade' : 'Baixar PDF')}</span>
+                    <span>{loadingPartes ? 'Carregando...' : (isMaestro ? 'Baixar Grade' : 'Meu Instrumento')}</span>
                   </div>
                   <span style={{
                     background: 'rgba(244, 228, 188, 0.2)',
