@@ -149,9 +149,16 @@ const AdminAssets = () => {
         setOptimizedBlob(null);
     };
 
-    const handleFileSelect = (e) => {
+    const handleFileSelect = (e, isFolderUpload = false) => {
         const files = Array.from(e.target.files);
         if (files.length === 0) return;
+
+        // Guard: não permitir novas seleções enquanto batch está em andamento
+        if (isBatchUploadingRef.current || isBatchUploading) {
+            showToast('Aguarde o upload atual terminar', 'warning');
+            e.target.value = '';
+            return;
+        }
 
         // Filtrar apenas imagens
         const imageFiles = files.filter(file => file.type.startsWith('image/'));
@@ -168,8 +175,8 @@ const AdminAssets = () => {
             return;
         }
 
-        // Se for apenas um arquivo, abrir modal de otimização
-        if (imageFiles.length === 1) {
+        // Se for apenas um arquivo E NÃO for upload de pasta, abrir modal de otimização individual
+        if (imageFiles.length === 1 && !isFolderUpload) {
             const file = imageFiles[0];
             setSelectedFile(file);
             if (previewUrl) URL.revokeObjectURL(previewUrl);
@@ -178,7 +185,7 @@ const AdminAssets = () => {
             // Iniciar otimização automática
             processImage(file);
         } else {
-            // Múltiplos arquivos: adicionar à fila
+            // Upload de pasta ou múltiplos arquivos: adicionar à fila (batch)
             const queueItems = imageFiles.map((file, index) => ({
                 id: `${Date.now()}-${index}`,
                 file,
