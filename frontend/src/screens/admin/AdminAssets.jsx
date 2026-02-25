@@ -70,6 +70,12 @@ const AdminAssets = () => {
     const folderInputRef = useRef(null);
     const isBatchUploadingRef = useRef(false);
 
+    // Feature detection para folder upload (webkitdirectory)
+    const isFolderUploadSupported = useRef(() => {
+        const input = document.createElement('input');
+        return 'webkitdirectory' in input || 'directory' in input;
+    }).current();
+
     const loadAssets = useCallback(async () => {
         setLoading(true);
         try {
@@ -333,7 +339,8 @@ const AdminAssets = () => {
                         <span>Upload</span>
                     </button>
                     <button
-                        onClick={() => folderInputRef.current?.click()}
+                        onClick={() => isFolderUploadSupported && folderInputRef.current?.click()}
+                        disabled={!isFolderUploadSupported}
                         className="btn-primary"
                         style={{
                             display: 'flex',
@@ -341,11 +348,15 @@ const AdminAssets = () => {
                             gap: '8px',
                             padding: '12px 20px',
                             borderRadius: '12px',
-                            background: 'var(--bg-secondary)',
-                            color: 'var(--text-primary)',
+                            background: isFolderUploadSupported ? 'var(--bg-secondary)' : 'var(--bg-primary)',
+                            color: isFolderUploadSupported ? 'var(--text-primary)' : 'var(--text-muted)',
                             fontWeight: '600',
-                            border: '1px solid var(--border)'
+                            border: '1px solid var(--border)',
+                            opacity: isFolderUploadSupported ? 1 : 0.5,
+                            cursor: isFolderUploadSupported ? 'pointer' : 'not-allowed'
                         }}
+                        aria-disabled={!isFolderUploadSupported}
+                        title={isFolderUploadSupported ? 'Selecionar pasta' : 'Seu navegador não suporta upload de pastas'}
                     >
                         <FolderOpen size={18} />
                         <span>Pasta</span>
@@ -359,16 +370,18 @@ const AdminAssets = () => {
                     accept="image/*"
                     multiple
                 />
-                <input
-                    type="file"
-                    ref={folderInputRef}
-                    onChange={(e) => handleFileSelect(e, true)}
-                    style={{ display: 'none' }}
-                    accept="image/*"
-                    webkitdirectory="true"
-                    directory=""
-                    multiple
-                />
+                {isFolderUploadSupported && (
+                    <input
+                        type="file"
+                        ref={folderInputRef}
+                        onChange={(e) => handleFileSelect(e, true)}
+                        style={{ display: 'none' }}
+                        accept="image/*"
+                        webkitdirectory="true"
+                        directory=""
+                        multiple
+                    />
+                )}
             </div>
 
             {/* Upload em Lote - Painel */}

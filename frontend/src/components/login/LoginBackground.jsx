@@ -30,6 +30,10 @@ const LoginBackground = () => {
           // Pré-carregar primeira imagem imediatamente
           const firstImg = new Image();
           firstImg.onload = () => setIsFirstLoad(false);
+          firstImg.onerror = () => {
+            console.warn('Erro ao carregar primeira imagem, usando fallback');
+            setIsFirstLoad(false);
+          };
           firstImg.src = shuffled[0];
 
           // Pré-carregar restante
@@ -42,6 +46,7 @@ const LoginBackground = () => {
         }
       } catch (error) {
         console.warn('Usando background padrão:', error.message);
+        setIsFirstLoad(false);
       } finally {
         setIsLoading(false);
       }
