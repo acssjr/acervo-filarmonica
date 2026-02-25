@@ -68,6 +68,7 @@ const AdminAssets = () => {
 
     const fileInputRef = useRef(null);
     const folderInputRef = useRef(null);
+    const isBatchUploadingRef = useRef(false);
 
     const loadAssets = useCallback(async () => {
         setLoading(true);
@@ -189,52 +190,59 @@ const AdminAssets = () => {
     const processBatch = async () => {
         if (uploadQueue.length === 0) return;
         
+        // Guard síncrono para prevenir múltiplas execuções concorrentes
+        if (isBatchUploadingRef.current) return;
+        isBatchUploadingRef.current = true;
         setIsBatchUploading(true);
         setUploadProgress({ current: 0, total: uploadQueue.length });
 
-        const processed = [];
-        
-        for (let i = 0; i < uploadQueue.length; i++) {
-            const item = uploadQueue[i];
-            setUploadProgress({ current: i + 1, total: uploadQueue.length });
+        try {
+            const processed = [];
+            
+            for (let i = 0; i < uploadQueue.length; i++) {
+                const item = uploadQueue[i];
+                setUploadProgress({ current: i + 1, total: uploadQueue.length });
 
-            try {
-                const options = {
-                    maxSizeMB: 1,
-                    maxWidthOrHeight: maxWidth,
-                    useWebWorker: true,
-                    initialQuality: quality,
-                    fileType: convertToWebP ? 'image/webp' : item.file.type
-                };
+                try {
+                    const options = {
+                        maxSizeMB: 1,
+                        maxWidthOrHeight: maxWidth,
+                        useWebWorker: true,
+                        initialQuality: quality,
+                        fileType: convertToWebP ? 'image/webp' : item.file.type
+                    };
 
-                const compressedFile = await imageCompression(item.file, options);
-                
-                let fileName = item.file.name;
-                if (convertToWebP) {
-                    fileName = fileName.replace(/\.[^/.]+$/, ".webp");
+                    const compressedFile = await imageCompression(item.file, options);
+                    
+                    let fileName = item.file.name;
+                    if (convertToWebP) {
+                        fileName = fileName.replace(/\.[^/.]+$/, ".webp");
+                    }
+
+                    await API.uploadAsset(compressedFile, currentFolder.id, fileName);
+                    
+                    processed.push(item);
+                    setUploadQueue(prev => prev.map(q => 
+                        q.id === item.id ? { ...q, status: 'done', compressedSize: compressedFile.size } : q
+                    ));
+                } catch (error) {
+                    console.error('Erro no upload:', error);
+                    setUploadQueue(prev => prev.map(q => 
+                        q.id === item.id ? { ...q, status: 'error' } : q
+                    ));
                 }
-
-                await API.uploadAsset(compressedFile, currentFolder.id, fileName);
-                
-                processed.push(item);
-                setUploadQueue(prev => prev.map(q => 
-                    q.id === item.id ? { ...q, status: 'done', compressedSize: compressedFile.size } : q
-                ));
-            } catch (error) {
-                console.error('Erro no upload:', error);
-                setUploadQueue(prev => prev.map(q => 
-                    q.id === item.id ? { ...q, status: 'error' } : q
-                ));
             }
-        }
 
-        const successCount = processed.length;
-        showToast(`${successCount} de ${uploadQueue.length} arquivos enviados com sucesso!`, successCount === uploadQueue.length ? 'success' : 'warning');
-        
-        setIsBatchUploading(false);
-        setUploadQueue([]);
-        loadAssets();
-    };
+            const successCount = processed.length;
+            showToast(`${successCount} de ${uploadQueue.length} arquivos enviados com sucesso!`, successCount === uploadQueue.length ? 'success' : 'warning');
+            
+            setUploadQueue([]);
+            loadAssets();
+        } finally {
+            isBatchUploadingRef.current = false;
+            setIsBatchUploading(false);
+        }
+    }
 
     const clearQueue = () => {
         setUploadQueue([]);

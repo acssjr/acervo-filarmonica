@@ -283,7 +283,7 @@ export async function deletePartitura(id, request, env, user) {
     env.DB.prepare('DELETE FROM partes WHERE partitura_id = ?').bind(id),
     env.DB.prepare('DELETE FROM favoritos WHERE partitura_id = ?').bind(id),
     env.DB.prepare('DELETE FROM repertorio_partituras WHERE partitura_id = ?').bind(id),
-    env.DB.prepare('DELETE FROM ensaio_partituras WHERE partitura_id = ?').bind(id),
+    env.DB.prepare('DELETE FROM ensaios_partituras WHERE partitura_id = ?').bind(id),
     env.DB.prepare('DELETE FROM partituras WHERE id = ?').bind(id)
   ]);
 
