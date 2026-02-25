@@ -1,5 +1,5 @@
 // worker/src/routes/assetRoutes.js
-import { authMiddleware, adminMiddleware } from '../middleware/index.js';
+import { adminMiddleware } from '../middleware/index.js';
 import {
     listAssets,
     uploadAsset,
@@ -30,15 +30,15 @@ export function setupAssetRoutes(router) {
     });
 
     // Rotas administrativas para gerenciamento
-    router.get('/api/admin/assets/list', (req, env, params, context) => {
+    router.get('/api/admin/assets/list', (req, env) => {
         return listAssets(req, env);
     }, [adminMiddleware]);
 
-    router.post('/api/admin/assets/upload', (req, env, params, context) => {
+    router.post('/api/admin/assets/upload', (req, env) => {
         return uploadAsset(req, env);
     }, [adminMiddleware]);
 
-    router.delete('/api/admin/assets', (req, env, params, context) => {
+    router.delete('/api/admin/assets', (req, env) => {
         return deleteAsset(req, env);
     }, [adminMiddleware]);
 }

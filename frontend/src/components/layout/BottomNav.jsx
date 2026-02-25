@@ -7,24 +7,14 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useUI } from '@contexts/UIContext';
 import { Icons } from '@constants/icons';
+import { useRoutePrefetch } from '@hooks/useRoutePrefetch';
 import styles from './BottomNav.module.css';
-
-// Map de rotas para componentes (para prefetch)
-const ROUTE_COMPONENTS = {
-  '/': () => import('@screens/HomeScreen'),
-  '/acervo': () => import('@screens/LibraryScreen'),
-  '/buscar': () => import('@screens/SearchScreen'),
-  '/favoritos': () => import('@screens/FavoritesScreen'),
-  '/repertorio': () => import('@screens/RepertorioScreen'),
-  '/perfil': () => import('@screens/ProfileScreen'),
-  '/generos': () => import('@screens/GenresScreen'),
-  '/compositores': () => import('@screens/ComposersScreen'),
-};
 
 const BottomNav = ({ activeTab }) => {
   const navigate = useNavigate();
   const { theme, showNotifications } = useUI();
   const [keyboardOpen, setKeyboardOpen] = useState(false);
+  const handlePrefetch = useRoutePrefetch();
 
   const isMobile = typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
   const isHiding = showNotifications && isMobile;
@@ -66,23 +56,9 @@ const BottomNav = ({ activeTab }) => {
     shouldHide ? styles.hidden : styles.visible
   ].join(' ');
 
-  // Handler para navegação com prefetch
+  // Handler para navegação
   const handleNavigate = (path) => {
     navigate(path);
-  };
-
-  // Handler para prefetch on hover/touch start
-  const handlePrefetch = (path) => {
-    const prefetchFn = ROUTE_COMPONENTS[path];
-    if (prefetchFn && typeof prefetchFn === 'function') {
-      // Usa requestIdleCallback se disponível para não bloquear
-      if ('requestIdleCallback' in window) {
-        requestIdleCallback(() => prefetchFn(), { timeout: 500 });
-      } else {
-        // Fallback: prefetch com pequeno delay
-        setTimeout(() => prefetchFn(), 50);
-      }
-    }
   };
 
   return (
