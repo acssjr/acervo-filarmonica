@@ -330,6 +330,7 @@ const AdminAssets = () => {
                 <div style={{ display: 'flex', gap: '12px' }}>
                     <button
                         onClick={() => fileInputRef.current?.click()}
+                        disabled={isBatchUploading}
                         className="btn-primary"
                         style={{
                             display: 'flex',
@@ -339,15 +340,19 @@ const AdminAssets = () => {
                             borderRadius: '12px',
                             background: 'var(--accent)',
                             color: 'white',
-                            fontWeight: '600'
+                            fontWeight: '600',
+                            opacity: isBatchUploading ? 0.5 : 1,
+                            cursor: isBatchUploading ? 'not-allowed' : 'pointer'
                         }}
+                        aria-disabled={isBatchUploading}
+                        title={isBatchUploading ? 'Aguarde o upload atual terminar' : 'Selecionar arquivos'}
                     >
                         <Upload size={18} />
                         <span>Upload</span>
                     </button>
                     <button
                         onClick={() => isFolderUploadSupported && folderInputRef.current?.click()}
-                        disabled={!isFolderUploadSupported}
+                        disabled={!isFolderUploadSupported || isBatchUploading}
                         className="btn-primary"
                         style={{
                             display: 'flex',
@@ -355,15 +360,19 @@ const AdminAssets = () => {
                             gap: '8px',
                             padding: '12px 20px',
                             borderRadius: '12px',
-                            background: isFolderUploadSupported ? 'var(--bg-secondary)' : 'var(--bg-primary)',
-                            color: isFolderUploadSupported ? 'var(--text-primary)' : 'var(--text-muted)',
+                            background: isFolderUploadSupported && !isBatchUploading ? 'var(--bg-secondary)' : 'var(--bg-primary)',
+                            color: isFolderUploadSupported && !isBatchUploading ? 'var(--text-primary)' : 'var(--text-muted)',
                             fontWeight: '600',
                             border: '1px solid var(--border)',
-                            opacity: isFolderUploadSupported ? 1 : 0.5,
-                            cursor: isFolderUploadSupported ? 'pointer' : 'not-allowed'
+                            opacity: (isFolderUploadSupported && !isBatchUploading) ? 1 : 0.5,
+                            cursor: (isFolderUploadSupported && !isBatchUploading) ? 'pointer' : 'not-allowed'
                         }}
-                        aria-disabled={!isFolderUploadSupported}
-                        title={isFolderUploadSupported ? 'Selecionar pasta' : 'Seu navegador não suporta upload de pastas'}
+                        aria-disabled={!isFolderUploadSupported || isBatchUploading}
+                        title={
+                            isBatchUploading ? 'Aguarde o upload atual terminar' :
+                            isFolderUploadSupported ? 'Selecionar pasta' :
+                            'Seu navegador não suporta upload de pastas'
+                        }
                     >
                         <FolderOpen size={18} />
                         <span>Pasta</span>
