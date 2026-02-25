@@ -14,6 +14,7 @@ const PartesDrawer = ({ isOpen, onClose, partitura, categorias, onUpdate }) => {
   const [deleting, setDeleting] = useState(null); // ID da parte sendo deletada
   const [renaming, setRenaming] = useState(null); // ID da parte sendo renomeada
   const [renameValue, setRenameValue] = useState(''); // Novo nome do instrumento
+  const [renamingSaving, setRenamingSaving] = useState(false); // Estado de loading do rename
   const [showAddForm, setShowAddForm] = useState(false);
   const [newPartInstrumento, setNewPartInstrumento] = useState('');
   const [addingPart, setAddingPart] = useState(false);
@@ -81,11 +82,13 @@ const PartesDrawer = ({ isOpen, onClose, partitura, categorias, onUpdate }) => {
 
   // Renomear instrumento da parte
   const handleRenamePart = async (parteId) => {
+    if (renamingSaving) return; // Prevenir chamadas duplicadas
     if (!renameValue.trim()) {
       showToast('Nome do instrumento não pode ser vazio', 'error');
       return;
     }
 
+    setRenamingSaving(true);
     try {
       await API.renomearPartePartitura(parteId, renameValue.trim());
       showToast(`Instrumento renomeado para "${renameValue.trim()}"!`);
@@ -95,6 +98,8 @@ const PartesDrawer = ({ isOpen, onClose, partitura, categorias, onUpdate }) => {
       onUpdate?.();
     } catch (err) {
       showToast(err.message || 'Erro ao renomear parte', 'error');
+    } finally {
+      setRenamingSaving(false);
     }
   };
 
@@ -308,6 +313,7 @@ const PartesDrawer = ({ isOpen, onClose, partitura, categorias, onUpdate }) => {
                               if (e.key === 'Escape') { setRenaming(null); setRenameValue(''); }
                             }}
                             autoFocus
+                            disabled={renamingSaving}
                             style={{
                               flex: 1,
                               padding: '4px 8px',
@@ -318,39 +324,50 @@ const PartesDrawer = ({ isOpen, onClose, partitura, categorias, onUpdate }) => {
                               fontSize: '13px',
                               fontFamily: 'Outfit, sans-serif',
                               outline: 'none',
-                              minWidth: 0
+                              minWidth: 0,
+                              opacity: renamingSaving ? 0.6 : 1
                             }}
                           />
                           <button
                             onClick={() => handleRenamePart(parte.id)}
                             title="Confirmar"
+                            disabled={renamingSaving}
                             style={{
                               width: '28px', height: '28px',
                               borderRadius: '6px',
-                              background: 'rgba(39, 174, 96, 0.15)',
+                              background: renamingSaving ? 'rgba(39, 174, 96, 0.05)' : 'rgba(39, 174, 96, 0.15)',
                               border: '1px solid rgba(39, 174, 96, 0.3)',
                               color: '#27ae60',
-                              cursor: 'pointer',
+                              cursor: renamingSaving ? 'wait' : 'pointer',
                               display: 'flex', alignItems: 'center', justifyContent: 'center',
                               flexShrink: 0
                             }}
                           >
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                              <polyline points="20 6 9 17 4 12" />
-                            </svg>
+                            {renamingSaving ? (
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: 'spin 1s linear infinite' }}>
+                                <circle cx="12" cy="12" r="10" strokeOpacity="0.25" />
+                                <path d="M12 2a10 10 0 0 1 10 10" strokeLinecap="round" />
+                              </svg>
+                            ) : (
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="20 6 9 17 4 12" />
+                              </svg>
+                            )}
                           </button>
                           <button
                             onClick={() => { setRenaming(null); setRenameValue(''); }}
                             title="Cancelar"
+                            disabled={renamingSaving}
                             style={{
                               width: '28px', height: '28px',
                               borderRadius: '6px',
                               background: 'rgba(231, 76, 60, 0.1)',
                               border: '1px solid rgba(231, 76, 60, 0.3)',
                               color: '#e74c3c',
-                              cursor: 'pointer',
+                              cursor: renamingSaving ? 'not-allowed' : 'pointer',
                               display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              flexShrink: 0
+                              flexShrink: 0,
+                              opacity: renamingSaving ? 0.5 : 1
                             }}
                           >
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">

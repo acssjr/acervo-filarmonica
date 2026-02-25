@@ -159,43 +159,42 @@ const InstrumentSelector = ({
 
                 {/* Botoes de acao - compactos */}
                 <div style={{ display: 'flex', gap: '3px', flexShrink: 0 }}>
-                  {/* Visualizar (mobile) ou Imprimir (desktop) */}
-                  {isMobile ? (
-                    onViewInstrument && (
-                      <button
-                        onClick={() => onViewInstrument(instrument)}
-                        disabled={downloading}
-                        aria-label={`Visualizar ${instrument}`}
-                        title="Visualizar"
-                        className="action-btn"
-                        style={{
-                          ...actionButtonStyle,
-                          background: 'rgba(52, 152, 219, 0.12)',
-                          color: '#3498db',
-                          transition: 'all 0.15s ease'
-                        }}
-                      >
-                        <div style={{ width: '13px', height: '13px' }}><Icons.Eye /></div>
-                      </button>
-                    )
-                  ) : (
-                    onPrintInstrument && (
-                      <button
-                        onClick={() => onPrintInstrument(instrument)}
-                        disabled={downloading}
-                        aria-label={`Imprimir ${instrument}`}
-                        title="Imprimir"
-                        className="action-btn"
-                        style={{
-                          ...actionButtonStyle,
-                          background: 'rgba(52, 152, 219, 0.12)',
-                          color: '#3498db',
-                          transition: 'all 0.15s ease'
-                        }}
-                      >
-                        <div style={{ width: '13px', height: '13px' }}><Icons.Printer /></div>
-                      </button>
-                    )
+                  {/* Visualizar (Olho) - Disponível em PC e Mobile */}
+                  {onViewInstrument && (
+                    <button
+                      onClick={() => onViewInstrument(instrument)}
+                      disabled={downloading}
+                      aria-label={`Visualizar ${instrument}`}
+                      title="Visualizar"
+                      className="action-btn"
+                      style={{
+                        ...actionButtonStyle,
+                        background: 'rgba(52, 152, 219, 0.12)',
+                        color: '#3498db',
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      <div style={{ width: '13px', height: '13px' }}><Icons.Eye /></div>
+                    </button>
+                  )}
+
+                  {/* Imprimir - Apenas PC (isMobile === false) */}
+                  {!isMobile && onPrintInstrument && (
+                    <button
+                      onClick={() => onPrintInstrument(instrument)}
+                      disabled={downloading}
+                      aria-label={`Imprimir ${instrument}`}
+                      title="Imprimir"
+                      className="action-btn"
+                      style={{
+                        ...actionButtonStyle,
+                        background: 'rgba(30, 132, 73, 0.12)',
+                        color: '#1e8449',
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      <div style={{ width: '13px', height: '13px' }}><Icons.Printer /></div>
+                    </button>
                   )}
 
                   {/* Compartilhar individual */}
@@ -208,8 +207,8 @@ const InstrumentSelector = ({
                       className="action-btn"
                       style={{
                         ...actionButtonStyle,
-                        background: 'rgba(37, 211, 102, 0.12)',
-                        color: '#25D366',
+                        background: 'rgba(25, 127, 58, 0.12)',
+                        color: '#197f3a',
                         transition: 'all 0.15s ease'
                       }}
                     >

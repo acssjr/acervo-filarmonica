@@ -1,22 +1,102 @@
 // ===== LOGIN BACKGROUND COMPONENT =====
-// Background decorativo com imagem e overlay do login
+// Background decorativo com carrosel de imagens e overlay do login
+
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { API_BASE_URL } from '../../constants/api';
+
+const FALLBACK_IMAGE = '/assets/images/banda/foto-banda-sao-goncalo.webp';
 
 const LoginBackground = () => {
+  const [images, setImages] = useState([FALLBACK_IMAGE]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [_isLoading, setIsLoading] = useState(true);
+
+  // Carregar lista de backgrounds do servidor
+  useEffect(() => {
+    const fetchBackgrounds = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/assets/list/backgrounds`);
+        if (!response.ok) throw new Error('Erro ao carregar backgrounds');
+        const data = await response.json();
+
+        if (data.assets && data.assets.length > 0) {
+          const urls = data.assets.map(a => `${API_BASE_URL}${a.url}`);
+          // Embaralhar a lista para não ser sempre o mesmo ao entrar
+          setImages(urls.sort(() => Math.random() - 0.5));
+
+          // Pré-carregar todas as imagens para evitar flicker
+          urls.forEach(url => {
+            const img = new Image();
+            img.src = url;
+          });
+        }
+      } catch (error) {
+        console.warn('Usando background padrão:', error.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchBackgrounds();
+  }, []);
+
+  // Troca de imagem a cada 8 segundos
+  useEffect(() => {
+    if (images.length <= 1) return;
+
+    const timer = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % images.length);
+    }, 8000);
+
+    return () => clearInterval(timer);
+  }, [images.length]);
+
+  // Pré-carregar próxima imagem para evitar flicker na transição
+  useEffect(() => {
+    if (images.length <= 1) return;
+
+    const nextIndex = (currentIndex + 1) % images.length;
+    const img = new Image();
+    img.src = images[nextIndex];
+  }, [currentIndex, images]);
+
   return (
     <>
-      {/* Background com imagem e overlay */}
+      {/* Container fixo para as imagens com cross-fade */}
       <div style={{
         position: 'fixed',
         inset: 0,
-        background: `
-          linear-gradient(135deg, rgba(61, 21, 24, 0.92) 0%, rgba(92, 26, 27, 0.88) 50%, rgba(61, 21, 24, 0.92) 100%),
-          url('/assets/images/banda/foto-banda-sao-goncalo.webp')
-        `,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        filter: 'brightness(0.9)',
-        zIndex: -2
-      }} />
+        zIndex: -2,
+        background: '#1a1a1a', // Cor de fundo sólida enquanto carrega
+        overflow: 'hidden'
+      }}>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={images[currentIndex]}
+            initial={{ opacity: 0, scale: 1.1 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 2, ease: "easeOut" }}
+            style={{
+              position: 'absolute',
+              inset: 0,
+              backgroundImage: `url('${images[currentIndex]}')`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              filter: 'brightness(0.7)'
+            }}
+          />
+        </AnimatePresence>
+
+        {/* Overlay de gradiente luxuoso para garantir legibilidade do login */}
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          background: 'linear-gradient(135deg, rgba(61, 21, 24, 0.94) 0%, rgba(30, 10, 12, 0.8) 50%, rgba(61, 21, 24, 0.94) 100%)',
+          zIndex: 1
+        }} />
+      </div>
 
       {/* Padrao decorativo sutil */}
       <div style={{

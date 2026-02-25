@@ -671,6 +671,41 @@ export const API = {
     return this.request(`/api/avisos/${id}/lido`, {
       method: 'POST'
     });
+  },
+
+  // ============ ASSETS (ADMIN) ============
+
+  async getAssets(prefix = '') {
+    return this.request(`/api/admin/assets/list?prefix=${encodeURIComponent(prefix)}`);
+  },
+
+  async uploadAsset(file, folder = 'general', customName = null) {
+    const token = Storage.get('authToken', null);
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('folder', folder);
+    if (customName) formData.append('name', customName);
+
+    const response = await fetch(`${API_BASE_URL}/api/admin/assets/upload`, {
+      method: 'POST',
+      headers: {
+        ...(token && { 'Authorization': `Bearer ${token}` })
+      },
+      body: formData
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'Erro no upload de asset' }));
+      throw new Error(error.error);
+    }
+
+    return response.json();
+  },
+
+  async deleteAsset(key) {
+    return this.request(`/api/admin/assets?key=${encodeURIComponent(key)}`, {
+      method: 'DELETE'
+    });
   }
 };
 

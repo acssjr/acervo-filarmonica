@@ -466,6 +466,74 @@ const getFamiliaColor = (familia) => {
   return FAMILIA_CONFIG[familia]?.color || FAMILIA_CONFIG.Outros.color;
 };
 
+// ===== HELPERS: AGRUPAMENTO POR FAMÍLIA =====
+
+/**
+ * Predicado para identificar se um usuário é regente.
+ * @param {Object} u - Usuário com instrumento_nome e nome
+ * @returns {boolean}
+ */
+const isRegente = (u) => (u.instrumento_nome && u.instrumento_nome.includes('Regente')) || (u.nome && u.nome.includes('Regente'));
+
+/**
+ * Ordem padrão das famílias de instrumentos.
+ */
+const ORDEM_FAMILIAS = ['Madeiras', 'Metais', 'Percussão', 'Outros'];
+
+/**
+ * Agrupa músicos por família de instrumento, separando regentes.
+ * Retorna regentes ordenados e grupos por família na ordem correta
+ * (conhecidas primeiro, desconhecidas depois).
+ *
+ * @param {Array} usuarios - Lista de usuários com instrumento_nome, instrumento_familia, nome
+ * @returns {Object} { regentes: Array, gruposPorFamilia: Array<{familia, musicos}>, familiasOrdenadas: Array<string> }
+ */
+const groupMusiciansByFamily = (usuarios) => {
+  // Separar regentes
+  const regentes = usuarios
+    .filter(u => isRegente(u))
+    .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+
+  // Filtrar músicos (não regentes)
+  const musicosList = usuarios.filter(u => !isRegente(u));
+
+  // Agrupar por família
+  const grupos = {};
+  musicosList.forEach(u => {
+    const familia = u.instrumento_familia || 'Outros';
+    if (!grupos[familia]) grupos[familia] = [];
+    grupos[familia].push(u);
+  });
+
+  // Ordenar músicos dentro de cada família
+  Object.keys(grupos).forEach(familia => {
+    grupos[familia].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+  });
+
+  // Preparar resultado com ordem: famílias conhecidas primeiro, depois desconhecidas
+  const gruposPorFamilia = [];
+  const familiasConhecidas = new Set(ORDEM_FAMILIAS);
+
+  // Primeiro: famílias na ordem conhecida
+  for (const familia of ORDEM_FAMILIAS) {
+    if (grupos[familia] && grupos[familia].length > 0) {
+      gruposPorFamilia.push({ familia, musicos: grupos[familia] });
+    }
+  }
+
+  // Depois: famílias desconhecidas (não estão em ORDEM_FAMILIAS)
+  for (const [familia, musicos] of Object.entries(grupos)) {
+    if (!familiasConhecidas.has(familia) && musicos.length > 0) {
+      gruposPorFamilia.push({ familia, musicos });
+    }
+  }
+
+  // Extrair apenas os nomes das famílias ordenadas
+  const familiasOrdenadas = gruposPorFamilia.map(g => g.familia);
+
+  return { regentes, gruposPorFamilia, familiasOrdenadas };
+};
+
 const AdminPresenca = () => {
   const { showToast } = useUI();
   const [usuarios, setUsuarios] = useState([]);
@@ -505,7 +573,7 @@ const AdminPresenca = () => {
   const [historico, setHistorico] = useState([]);
   const [modoMarcacao, setModoMarcacao] = useState('ausentes'); // 'presentes' ou 'ausentes'
   const [mostrarTodoHistorico, setMostrarTodoHistorico] = useState(false);
-  const [agruparPorFamilia, setAgruparPorFamilia] = useState(false);
+
 
   // Estado para gestão de partituras
   const [partituras, setPartituras] = useState([]);
@@ -642,6 +710,9 @@ const AdminPresenca = () => {
       partitura_id: partituraId,
       titulo: partitura.titulo,
       compositor: partitura.compositor,
+      categoria_nome: partitura.categoria_nome,
+      categoria_cor: partitura.categoria_cor,
+      categoria_emoji: partitura.categoria_emoji,
       ordem: novaOrdem
     };
     setPartiturasEnsaio(prev => [...prev, optimistic]);
@@ -742,9 +813,6 @@ const AdminPresenca = () => {
 
   // Contar presentes/ausentes com base no modo
   const contadorTexto = useMemo(() => {
-    // Helper para identificar Maestro
-    const isRegente = (u) => u.instrumento_nome === 'Regente' || u.nome.includes('Regente');
-
     // Total de músicos (excluindo Regente) para base de cálculo
     const totalMusicos = usuarios.filter(u => !isRegente(u)).length;
 
@@ -776,29 +844,11 @@ const AdminPresenca = () => {
     }
   }, [modoMarcacao, selecionados, usuarios]);
 
-  // Agrupar músicos por família de instrumento
-  const gruposPorFamilia = useMemo(() => {
-    const grupos = {};
-    const ordemFamilias = ['Madeiras', 'Metais', 'Percussão', 'Outros'];
-
-    usuarios.forEach(u => {
-      const familia = u.instrumento_familia || 'Outros';
-      if (!grupos[familia]) {
-        grupos[familia] = [];
-      }
-      grupos[familia].push(u);
-    });
-
-    // Ordenar músicos dentro de cada grupo por nome
-    Object.keys(grupos).forEach(familia => {
-      grupos[familia].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
-    });
-
-    // Retornar na ordem definida
-    return ordemFamilias
-      .filter(f => grupos[f] && grupos[f].length > 0)
-      .map(f => ({ familia: f, musicos: grupos[f] }));
-  }, [usuarios]);
+  // Separar regentes dos músicos e agrupar por família
+  const { regentes, gruposPorFamilia } = useMemo(
+    () => groupMusiciansByFamily(usuarios),
+    [usuarios]
+  );
 
   // Histórico limitado
   const historicoExibido = useMemo(() => {
@@ -820,7 +870,7 @@ const AdminPresenca = () => {
           display: 'flex',
           alignItems: 'center',
           gap: '12px',
-          padding: '10px 16px',
+          padding: '14px 16px',
           paddingLeft: isSelected ? '13px' : '16px',
           borderBottom: '1px solid var(--border)',
           borderLeft: isSelected ? `3px solid ${accentColor}` : '3px solid transparent',
@@ -889,7 +939,7 @@ const AdminPresenca = () => {
   };
 
   return (
-    <div className="screen-container" style={{ padding: '40px 32px', maxWidth: '1400px', margin: '0 auto' }}>
+    <div className="screen-container admin-presenca-container">
       {/* Header */}
       <div style={{ marginBottom: '32px' }}>
         <h1 style={{
@@ -913,13 +963,7 @@ const AdminPresenca = () => {
       </div>
 
       {/* Toolbar Compacta: Data + Mode Toggle */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '16px',
-        marginBottom: '24px',
-        flexWrap: 'wrap'
-      }}>
+      <div className="admin-presenca-toolbar">
         {/* DatePicker à esquerda */}
         <div style={{ flex: 1, minWidth: '280px' }}>
           <DatePickerCalendar
@@ -982,12 +1026,7 @@ const AdminPresenca = () => {
       </div>
 
       {/* Grid Principal: Músicos + Partituras */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: '1fr 1fr',
-        gap: '16px',
-        marginBottom: '24px'
-      }}>
+      <div className="admin-presenca-grid">
         {/* Seção: Músicos */}
         <div style={{
           background: 'var(--bg-card)',
@@ -1030,28 +1069,7 @@ const AdminPresenca = () => {
             </div>
 
             {/* Botões de Controle Compactos */}
-            <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-              <button
-                onClick={() => setAgruparPorFamilia(prev => !prev)}
-                style={{
-                  padding: '4px 10px',
-                  background: agruparPorFamilia ? 'rgba(212, 175, 55, 0.15)' : 'transparent',
-                  color: agruparPorFamilia ? '#D4AF37' : 'var(--text-muted)',
-                  border: `1px solid ${agruparPorFamilia ? 'rgba(212, 175, 55, 0.4)' : 'var(--border)'}`,
-                  borderRadius: '6px',
-                  fontFamily: 'Outfit, sans-serif',
-                  fontSize: '12px',
-                  fontWeight: '500',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px'
-                }}
-              >
-                Por seção
-              </button>
-              <div style={{ width: '1px', height: '16px', background: 'var(--border)' }} />
+            <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
               {[
                 { label: 'Todos', onClick: marcarTodos },
                 { label: 'Limpar', onClick: desmarcarTodos },
@@ -1107,14 +1125,11 @@ const AdminPresenca = () => {
               }}>
                 Nenhum músico cadastrado
               </div>
-            ) : agruparPorFamilia ? (
-              gruposPorFamilia.map(({ familia, musicos }) => {
-                const familiaColor = getFamiliaColor(familia);
-                const selecionadosNoGrupo = musicos.filter(m => selecionados.includes(m.id)).length;
-
-                return (
-                  <div key={familia}>
-                    {/* Header do grupo */}
+            ) : (
+              <>
+                {/* Regente(s) no topo */}
+                {regentes.length > 0 && (
+                  <div>
                     <div style={{
                       padding: '8px 20px',
                       background: 'var(--bg)',
@@ -1123,43 +1138,70 @@ const AdminPresenca = () => {
                       alignItems: 'center',
                       gap: '8px'
                     }}>
-                      <div style={{
-                        width: '8px',
-                        height: '8px',
-                        borderRadius: '50%',
-                        background: familiaColor,
-                        flexShrink: 0
-                      }} />
+                      <span style={{ fontSize: '14px' }}>🎼</span>
                       <span style={{
                         fontFamily: 'Outfit, sans-serif',
                         fontSize: '12px',
                         fontWeight: '700',
-                        color: 'var(--text-muted)',
+                        color: '#D4AF37',
                         textTransform: 'uppercase',
                         letterSpacing: '0.5px',
                         flex: 1
                       }}>
-                        {familia}
-                      </span>
-                      <span style={{
-                        fontFamily: 'Outfit, sans-serif',
-                        fontSize: '11px',
-                        color: 'var(--text-muted)',
-                        fontWeight: '500'
-                      }}>
-                        {selecionadosNoGrupo}/{musicos.length}
+                        Regência
                       </span>
                     </div>
-
-                    {/* Músicos do grupo */}
-                    {musicos.map((usuario) => renderMusicoRow(usuario, getFamiliaColor(usuario.instrumento_familia || 'Outros')))}
+                    {regentes.map(u => renderMusicoRow(u, '#D4AF37'))}
                   </div>
-                );
-              })
-            ) : (
-              [...usuarios].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')).map((usuario) =>
-                renderMusicoRow(usuario, getFamiliaColor(usuario.instrumento_familia || 'Outros'))
-              )
+                )}
+
+                {/* Seções de instrumentos */}
+                {gruposPorFamilia.map(({ familia, musicos }) => {
+                  const familiaColor = getFamiliaColor(familia);
+                  const selecionadosNoGrupo = musicos.filter(m => selecionados.includes(m.id)).length;
+
+                  return (
+                    <div key={familia}>
+                      <div style={{
+                        padding: '8px 20px',
+                        background: 'var(--bg)',
+                        borderBottom: '1px solid var(--border)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px'
+                      }}>
+                        <div style={{
+                          width: '8px',
+                          height: '8px',
+                          borderRadius: '50%',
+                          background: familiaColor,
+                          flexShrink: 0
+                        }} />
+                        <span style={{
+                          fontFamily: 'Outfit, sans-serif',
+                          fontSize: '12px',
+                          fontWeight: '700',
+                          color: 'var(--text-muted)',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.5px',
+                          flex: 1
+                        }}>
+                          {familia}
+                        </span>
+                        <span style={{
+                          fontFamily: 'Outfit, sans-serif',
+                          fontSize: '11px',
+                          color: 'var(--text-muted)',
+                          fontWeight: '500'
+                        }}>
+                          {selecionadosNoGrupo}/{musicos.length}
+                        </span>
+                      </div>
+                      {musicos.map((usuario) => renderMusicoRow(usuario, getFamiliaColor(usuario.instrumento_familia || 'Outros')))}
+                    </div>
+                  );
+                })}
+              </>
             )}
           </div>
 
@@ -1335,9 +1377,23 @@ const AdminPresenca = () => {
                         </div>
                         <div style={{
                           fontSize: '11px',
-                          color: 'var(--text-muted)'
+                          color: 'var(--text-muted)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px'
                         }}>
                           {p.compositor}
+                          {p.categoria_nome && (
+                            <span style={{
+                              fontSize: '9px', padding: '1px 5px',
+                              borderRadius: '3px',
+                              background: p.categoria_cor ? `${p.categoria_cor}20` : 'rgba(212,175,55,0.12)',
+                              color: p.categoria_cor || '#D4AF37',
+                              fontWeight: '600'
+                            }}>
+                              {p.categoria_emoji} {p.categoria_nome}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </button>
@@ -1405,15 +1461,36 @@ const AdminPresenca = () => {
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{
-                      fontSize: '14px',
-                      fontWeight: '600',
-                      color: 'var(--text-primary)',
-                      marginBottom: '1px',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap'
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      marginBottom: '1px'
                     }}>
-                      {p.titulo}
+                      <span style={{
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: 'var(--text-primary)',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        minWidth: 0
+                      }}>
+                        {p.titulo}
+                      </span>
+                      {p.categoria_nome && (
+                        <span style={{
+                          fontSize: '10px',
+                          padding: '2px 6px',
+                          borderRadius: '4px',
+                          background: p.categoria_cor ? `${p.categoria_cor}20` : 'rgba(212,175,55,0.12)',
+                          color: p.categoria_cor || '#D4AF37',
+                          fontWeight: '600',
+                          flexShrink: 0,
+                          whiteSpace: 'nowrap'
+                        }}>
+                          {p.categoria_emoji} {p.categoria_nome}
+                        </span>
+                      )}
                     </div>
                     <div style={{
                       fontSize: '12px',
@@ -1434,7 +1511,6 @@ const AdminPresenca = () => {
                       border: 'none',
                       cursor: 'pointer',
                       color: '#E85A4F',
-                      opacity: 0,
                       transition: 'opacity 0.15s',
                       display: 'flex',
                       alignItems: 'center',
@@ -1682,56 +1758,115 @@ const AdminPresenca = () => {
                         Carregando...
                       </div>
                     ) : detalheEnsaio ? (
-                      <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
+                      <div className="admin-presenca-detalhe-grid">
                         {/* Presentes column */}
-                        <div style={{ flex: 1, minWidth: '200px' }}>
+                        <div style={{ minWidth: 0 }}>
                           <div style={{
                             fontSize: '11px', fontWeight: '600', color: 'var(--text-muted)',
                             fontFamily: 'Outfit, sans-serif', textTransform: 'uppercase',
-                            letterSpacing: '0.5px', marginBottom: '8px'
+                            letterSpacing: '0.5px', marginBottom: '10px'
                           }}>
                             Presentes ({detalheEnsaio.total_presentes})
                           </div>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                            {(detalheEnsaio.presentes || []).map(p => (
-                              <div key={p.usuario_id} style={{
-                                fontSize: '13px', fontFamily: 'Outfit, sans-serif',
-                                color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px'
-                              }}>
-                                <span>{p.nome}</span>
-                                {p.instrumento_nome && (
-                                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                                    {p.instrumento_nome}
-                                  </span>
+                          {(detalheEnsaio.presentes || []).length === 0 ? (
+                            <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontFamily: 'Outfit, sans-serif' }}>
+                              Nenhum presente
+                            </span>
+                          ) : (() => {
+                            const presentes = detalheEnsaio.presentes || [];
+                            const { regentes, gruposPorFamilia } = groupMusiciansByFamily(presentes);
+
+                            return (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                {/* Regente(s) */}
+                                {regentes.length > 0 && (
+                                  <>
+                                    <div style={{
+                                      fontSize: '10px', fontWeight: '700', color: '#D4AF37',
+                                      fontFamily: 'Outfit, sans-serif', textTransform: 'uppercase',
+                                      letterSpacing: '0.5px', padding: '4px 0 2px',
+                                      display: 'flex', alignItems: 'center', gap: '4px'
+                                    }}>
+                                      <span style={{ fontSize: '12px' }}>🎼</span> Regência
+                                    </div>
+                                    {regentes.map(p => (
+                                      <div key={p.usuario_id} style={{
+                                        fontSize: '13px', fontFamily: 'Outfit, sans-serif',
+                                        color: 'var(--text-primary)', padding: '2px 0 2px 16px',
+                                        display: 'flex', alignItems: 'center', gap: '6px'
+                                      }}>
+                                        <span>{p.nome}</span>
+                                      </div>
+                                    ))}
+                                  </>
                                 )}
+
+                                {/* Sections */}
+                                {gruposPorFamilia.map(({ familia, musicos }) => (
+                                  <React.Fragment key={familia}>
+                                    <div style={{
+                                      fontSize: '10px', fontWeight: '700', color: 'var(--text-muted)',
+                                      fontFamily: 'Outfit, sans-serif', textTransform: 'uppercase',
+                                      letterSpacing: '0.5px', padding: '6px 0 2px',
+                                      display: 'flex', alignItems: 'center', gap: '6px'
+                                    }}>
+                                      <div style={{
+                                        width: '6px', height: '6px', borderRadius: '50%',
+                                        background: getFamiliaColor(familia), flexShrink: 0
+                                      }} />
+                                      {familia} ({musicos.length})
+                                    </div>
+                                    {musicos.map(p => (
+                                      <div key={p.usuario_id} style={{
+                                        fontSize: '13px', fontFamily: 'Outfit, sans-serif',
+                                        color: 'var(--text-primary)', padding: '2px 0 2px 16px',
+                                        display: 'flex', alignItems: 'center', gap: '6px'
+                                      }}>
+                                        <span>{p.nome}</span>
+                                        {p.instrumento_nome && (
+                                          <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                                            {p.instrumento_nome}
+                                          </span>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </React.Fragment>
+                                ))}
                               </div>
-                            ))}
-                            {(detalheEnsaio.presentes || []).length === 0 && (
-                              <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontFamily: 'Outfit, sans-serif' }}>
-                                Nenhum presente
-                              </span>
-                            )}
-                          </div>
+                            );
+                          })()}
                         </div>
                         {/* Partituras column */}
-                        <div style={{ flex: 1, minWidth: '200px' }}>
+                        <div style={{ minWidth: 0 }}>
                           <div style={{
                             fontSize: '11px', fontWeight: '600', color: 'var(--text-muted)',
                             fontFamily: 'Outfit, sans-serif', textTransform: 'uppercase',
-                            letterSpacing: '0.5px', marginBottom: '8px'
+                            letterSpacing: '0.5px', marginBottom: '10px'
                           }}>
                             Partituras ({detalheEnsaio.total_partituras})
                           </div>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                             {(detalheEnsaio.partituras || []).map(p => (
                               <div key={p.id} style={{
                                 fontSize: '13px', fontFamily: 'Outfit, sans-serif',
-                                color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px'
+                                color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px',
+                                flexWrap: 'wrap'
                               }}>
                                 <span>{p.titulo}</span>
+                                {p.categoria_nome && (
+                                  <span style={{
+                                    fontSize: '10px', padding: '1px 6px',
+                                    borderRadius: '4px',
+                                    background: p.categoria_cor ? `${p.categoria_cor}20` : 'rgba(212,175,55,0.12)',
+                                    color: p.categoria_cor || '#D4AF37',
+                                    fontWeight: '600', whiteSpace: 'nowrap'
+                                  }}>
+                                    {p.categoria_emoji} {p.categoria_nome}
+                                  </span>
+                                )}
                                 {p.compositor && (
                                   <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                                    {p.compositor}
+                                    — {p.compositor}
                                   </span>
                                 )}
                               </div>

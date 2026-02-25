@@ -297,19 +297,29 @@ export const nomesPadrao = {
   'trombones': 'Trombone',
 
   // Bombardinos / Eufônio
-  // IMPORTANTE: preservar tonalidade para diferenciar Bombardino de Bombardino Bb
-  'bombardino': 'Bombardino',
-  'bombardino bb': 'Bombardino Bb',
+  // IMPORTANTE: A partir de agora, não existe mais "Bombardino" genérico.
+  // Arquivos sem tonalidade são assumidos como Bombardino C (Dó).
+  'bombardino': 'Bombardino C',
   'bombardino c': 'Bombardino C',
+  'bombardino do': 'Bombardino C',
+  'bombardino dó': 'Bombardino C',
+  'bombardino bb': 'Bombardino Bb',
+  'bombardino sib': 'Bombardino Bb',
+  'bombardino sibemol': 'Bombardino Bb',
   'bombardino eb': 'Bombardino Eb',
-  'euphonium': 'Bombardino',
-  'euphonium bb': 'Bombardino Bb',
+  'euphonium': 'Bombardino C',
   'euphonium c': 'Bombardino C',
-  'euphonium 1': 'Bombardino 1',
-  'euphonium 2': 'Bombardino 2',
-  'euphonium bombardino': 'Bombardino',
-  'eufonio': 'Bombardino',
+  'euphonium do': 'Bombardino C',
+  'euphonium dó': 'Bombardino C',
+  'euphonium bb': 'Bombardino Bb',
+  'euphonium sib': 'Bombardino Bb',
+  'euphonium 1': 'Bombardino C 1',
+  'euphonium 2': 'Bombardino C 2',
+  'euphonium bombardino': 'Bombardino C',
+  'eufonio': 'Bombardino C',
+  'eufonio c': 'Bombardino C',
   'eufonio bb': 'Bombardino Bb',
+  'eufonio sib': 'Bombardino Bb',
 
   // Tubas/Baixos
   'baixo eb': 'Baixo Eb',

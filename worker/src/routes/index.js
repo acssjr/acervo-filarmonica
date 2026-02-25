@@ -17,6 +17,7 @@ import { setupConfigRoutes } from './configRoutes.js';
 import { setupPresencaRoutes } from './presencaRoutes.js';
 import { setupEnsaioRoutes } from './ensaioRoutes.js';
 import { setupAvisoRoutes } from './avisoRoutes.js';
+import { setupAssetRoutes } from './assetRoutes.js';
 
 /**
  * Cria e configura o router com todas as rotas da aplicação
@@ -43,6 +44,7 @@ export function createRouter() {
   setupPresencaRoutes(router);
   setupEnsaioRoutes(router);
   setupAvisoRoutes(router);
+  setupAssetRoutes(router);
 
   return router;
 }

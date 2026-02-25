@@ -21,6 +21,7 @@ const AdminConfig = lazy(() => import('./AdminConfig'));
 const AdminPresenca = lazy(() => import('./AdminPresenca'));
 const AdminAvisos = lazy(() => import('./AdminAvisos'));
 const AdminAnalytics = lazy(() => import('./AdminAnalytics'));
+const AdminAssets = lazy(() => import('./AdminAssets'));
 
 const SectionLoader = () => (
   <div style={{
@@ -114,6 +115,7 @@ const AdminApp = () => {
     { id: 'categorias', icon: 'folder', label: 'Categorias' },
     { id: 'presenca', icon: 'check-circle', label: 'Presença' },
     { id: 'avisos', icon: 'bell', label: 'Avisos' },
+    { id: 'assets', icon: 'assets', label: 'Ativos' },
     { id: 'config', icon: 'settings', label: 'Configurações' },
   ];
 
@@ -183,6 +185,11 @@ const AdminApp = () => {
           <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
           <path d="M13.73 21a2 2 0 0 1-3.46 0" />
         </svg>
+      ),
+      assets: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+        </svg>
       )
     };
     return icons[type] || icons.music;
@@ -198,6 +205,7 @@ const AdminApp = () => {
       case 'categorias': return <AdminCategorias />;
       case 'presenca': return <AdminPresenca />;
       case 'avisos': return <AdminAvisos />;
+      case 'assets': return <AdminAssets />;
       case 'config': return <AdminConfig />;
       default: return <AdminDashboard />;
     }

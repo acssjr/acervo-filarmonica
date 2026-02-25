@@ -3,7 +3,7 @@
 // Suporta URL compartilhavel: /acervo/:categoria/:id
 // Refatorado: extraido componentes e hook de download
 
-import { useState, useEffect, useCallback, lazy, Suspense, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@contexts/AuthContext';
@@ -30,8 +30,6 @@ const SheetDetailModal = () => {
   const [showInstrumentPicker, setShowInstrumentPicker] = useState(false);
   const [partes, setPartes] = useState([]);
   const [loadingPartes, setLoadingPartes] = useState(false);
-  const modalRef = useRef(null);
-  const subModalOpenRef = useRef(false);
 
   // Hook de download
   const download = useSheetDownload({
@@ -39,13 +37,6 @@ const SheetDetailModal = () => {
     selectedSheet,
     partes
   });
-
-  // Track sub-modal open state via ref to avoid effect re-runs
-  useEffect(() => {
-    subModalOpenRef.current = download.showPartePicker ||
-      !!download.confirmInstrument ||
-      download.pdfViewer.isOpen;
-  }, [download.showPartePicker, download.confirmInstrument, download.pdfViewer.isOpen]);
 
   // Handler para adicionar parte ao carrinho de compartilhamento
   const handleAddToCart = useCallback((instrument) => {
@@ -65,7 +56,21 @@ const SheetDetailModal = () => {
     }
   }, [selectedSheet, partes, addToShareCart, showToast]);
 
-  // Travar scroll do body quando modal estiver aberto
+  // Refs para focus trap
+  const modalRef = useRef(null);
+  const previouslyFocusedElement = useRef(null);
+
+  // Handler para fechar modal
+  const handleClose = useCallback(() => {
+    setSelectedSheet(null);
+    // Se estamos numa URL de partitura, volta para o acervo da categoria
+    if (location.pathname.includes('/acervo/') && location.pathname.split('/').length > 3) {
+      const categoria = selectedSheet?.category || 'dobrado';
+      navigate(`/acervo/${categoria}`, { replace: true });
+    }
+  }, [location.pathname, navigate, selectedSheet, setSelectedSheet]);
+
+  // Travar scroll do body quando modal estiver aberto + focus trap + Escape key
   useEffect(() => {
     if (selectedSheet) {
       // Salvar posição atual do scroll
@@ -75,14 +80,41 @@ const SheetDetailModal = () => {
       document.documentElement.classList.add('modal-open');
       document.body.style.top = `-${scrollY}px`;
 
+      // Salvar elemento com foco atual
+      previouslyFocusedElement.current = document.activeElement;
+
+      // Mover foco para o modal quando abrir
+      if (modalRef.current) {
+        const focusableElements = modalRef.current.querySelectorAll(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusableElements.length > 0) {
+          focusableElements[0].focus();
+        }
+      }
+
+      // Handler para Escape
+      const handleKeyDown = (e) => {
+        if (e.key === 'Escape') {
+          handleClose();
+        }
+      };
+
+      document.addEventListener('keydown', handleKeyDown);
+
       return () => {
+        document.removeEventListener('keydown', handleKeyDown);
         // Restaurar scroll
         document.documentElement.classList.remove('modal-open');
         document.body.style.top = '';
         window.scrollTo(0, scrollY);
+        // Restaurar foco anterior
+        if (previouslyFocusedElement.current) {
+          previouslyFocusedElement.current.focus();
+        }
       };
     }
-  }, [selectedSheet]);
+  }, [selectedSheet, handleClose]);
 
   // Buscar partes quando abrir o modal
   useEffect(() => {
@@ -115,63 +147,6 @@ const SheetDetailModal = () => {
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- download é estável (useSheetDownload)
   }, [selectedSheet]);
-
-  const handleClose = useCallback(() => {
-    setSelectedSheet(null);
-    // Se estamos numa URL de partitura, volta para o acervo da categoria
-    if (location.pathname.includes('/acervo/') && location.pathname.split('/').length > 3) {
-      const categoria = selectedSheet?.category || 'dobrado';
-      navigate(`/acervo/${categoria}`, { replace: true });
-    }
-  }, [selectedSheet, navigate, location.pathname, setSelectedSheet]);
-
-  // Trap focus and close on Escape
-  useEffect(() => {
-    if (selectedSheet && modalRef.current) {
-      const modal = modalRef.current;
-      const previousElement = document.activeElement;
-
-      const FOCUSABLE_SELECTOR =
-        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
-
-      // Initial focus
-      const initialFocusable = modal.querySelectorAll(FOCUSABLE_SELECTOR);
-      if (initialFocusable[0]) {
-        initialFocusable[0].focus();
-      }
-
-      const handleKeyDown = (e) => {
-        if (e.key === 'Escape') {
-          // Don't close parent modal when a sub-modal is open
-          if (subModalOpenRef.current) return;
-          handleClose();
-        } else if (e.key === 'Tab') {
-          // Re-query on each Tab so dynamic DOM changes are reflected
-          const focusableElements = modal.querySelectorAll(FOCUSABLE_SELECTOR);
-          const firstElement = focusableElements[0];
-          const lastElement = focusableElements[focusableElements.length - 1];
-          if (e.shiftKey) {
-            if (document.activeElement === firstElement) {
-              e.preventDefault();
-              lastElement?.focus();
-            }
-          } else {
-            if (document.activeElement === lastElement) {
-              e.preventDefault();
-              firstElement?.focus();
-            }
-          }
-        }
-      };
-
-      document.addEventListener('keydown', handleKeyDown);
-
-      return () => {
-        document.removeEventListener('keydown', handleKeyDown);
-        if (previousElement) previousElement.focus();
-      };
-    }
-  }, [selectedSheet, handleClose]);
 
   // Dados derivados do selectedSheet (só acessados quando existe)
   const category = selectedSheet ? categoriesMap.get(selectedSheet.category) : null;
@@ -227,20 +202,22 @@ const SheetDetailModal = () => {
           />
 
           {/* Visualizador de PDF embutido */}
-          <Suspense fallback={<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px' }}>Carregando visualizador...</div>}>
-            <PDFViewerModal
-              isOpen={download.pdfViewer.isOpen}
-              pdfUrl={download.pdfViewer.url}
-              title={`${download.pdfViewer.title} - ${download.pdfViewer.instrument}`}
-              onClose={download.closePdfViewer}
-              onDownload={() => {
-                // Abre em nova aba como fallback
-                if (download.pdfViewer.url) {
-                  window.open(download.pdfViewer.url, '_blank', 'noopener,noreferrer');
-                }
-              }}
-            />
-          </Suspense>
+          {download.pdfViewer.isOpen && (
+            <Suspense fallback={<div className="flex items-center justify-center p-8">Carregando visualizador...</div>}>
+              <PDFViewerModal
+                isOpen={download.pdfViewer.isOpen}
+                pdfUrl={download.pdfViewer.url}
+                title={`${download.pdfViewer.title} - ${download.pdfViewer.instrument}`}
+                onClose={download.closePdfViewer}
+                onDownload={() => {
+                  // Abre em nova aba como fallback
+                  if (download.pdfViewer.url) {
+                    window.open(download.pdfViewer.url, '_blank', 'noopener,noreferrer');
+                  }
+                }}
+              />
+            </Suspense>
+          )}
 
           {/* Modal Principal */}
           <motion.div
@@ -429,7 +406,7 @@ const SheetDetailModal = () => {
                 )}
               </div>
 
-              {/* Opcoes de Download */}
+              {/* Opções de Download / Ações Rápidas */}
               <div style={{ marginBottom: '14px' }}>
                 <p style={{
                   fontSize: '10px',
@@ -439,82 +416,95 @@ const SheetDetailModal = () => {
                   textTransform: 'uppercase',
                   letterSpacing: '0.5px',
                   fontWeight: '600'
-                }}>Baixar Partitura</p>
+                }}>Ações para {isMaestro ? 'Grade' : userInstrument}</p>
 
-                {/* Botao Download - Meu Instrumento ou Grade (Maestro) */}
-                {isMaestro && !hasGrade && !loadingPartes ? (
-                  /* Botão desabilitado quando não há grade */
+                {/* Botões de Ação Rápida (Visualizar / Imprimir) */}
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
                   <button
-                    data-walkthrough="quick-download"
-                    disabled
-                    aria-label="Grade não disponível"
+                    onClick={() => download.handleViewInstrument(isMaestro ? 'Grade' : userInstrument)}
+                    disabled={download.downloading || loadingPartes || (isMaestro && !hasGrade)}
                     style={{
-                      width: '100%',
-                      padding: '12px 14px',
+                      flex: 1,
+                      padding: '10px',
                       borderRadius: '10px',
-                      background: 'var(--bg-secondary)',
-                      border: '1px solid var(--border)',
-                      color: 'var(--text-muted)',
+                      background: 'rgba(52, 152, 219, 0.1)',
+                      border: '1.5px solid rgba(52, 152, 219, 0.3)',
+                      color: '#3498db',
                       fontFamily: 'Outfit, sans-serif',
-                      fontSize: '13px',
+                      fontSize: '12px',
                       fontWeight: '600',
-                      cursor: 'not-allowed',
+                      cursor: (isMaestro && !hasGrade) || download.downloading || loadingPartes ? 'not-allowed' : 'pointer',
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'space-between',
-                      marginBottom: '8px',
-                      opacity: 0.6
+                      justifyContent: 'center',
+                      gap: '6px'
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <div style={{ width: '16px', height: '16px' }}><Icons.Download /></div>
-                      <span>Grade não disponível</span>
-                    </div>
-                    <span style={{
-                      background: 'var(--bg-card)',
-                      padding: '3px 8px',
-                      borderRadius: '5px',
-                      fontSize: '10px',
-                      fontWeight: '700'
-                    }}>Indisponível</span>
+                    <div style={{ width: '14px', height: '14px' }}><Icons.Eye /></div>
+                    Visualizar
                   </button>
-                ) : (
+
                   <button
-                    data-walkthrough="quick-download"
-                    onClick={() => download.handleSelectInstrument(isMaestro ? 'Grade' : userInstrument)}
-                    aria-label={isMaestro ? 'Baixar grade' : `Baixar partitura para ${userInstrument}`}
-                    disabled={loadingPartes}
+                    onClick={() => download.handlePrintInstrument(isMaestro ? 'Grade' : userInstrument)}
+                    disabled={download.downloading || loadingPartes || (isMaestro && !hasGrade)}
                     style={{
-                      width: '100%',
-                      padding: '12px 14px',
+                      flex: 1,
+                      padding: '10px',
                       borderRadius: '10px',
-                      background: loadingPartes ? 'var(--bg-secondary)' : 'linear-gradient(145deg, #722F37 0%, #5C1A1B 100%)',
-                      border: 'none',
-                      color: loadingPartes ? 'var(--text-muted)' : '#F4E4BC',
+                      background: 'rgba(46, 204, 113, 0.1)',
+                      border: '1.5px solid rgba(46, 204, 113, 0.3)',
+                      color: '#2ecc71',
                       fontFamily: 'Outfit, sans-serif',
-                      fontSize: '13px',
+                      fontSize: '12px',
                       fontWeight: '600',
-                      cursor: loadingPartes ? 'wait' : 'pointer',
+                      cursor: (isMaestro && !hasGrade) || download.downloading || loadingPartes ? 'not-allowed' : 'pointer',
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'space-between',
-                      marginBottom: '8px',
-                      boxShadow: loadingPartes ? 'none' : '0 4px 12px rgba(114, 47, 55, 0.3)'
+                      justifyContent: 'center',
+                      gap: '6px'
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <div style={{ width: '16px', height: '16px' }}><Icons.Download /></div>
-                      <span>{loadingPartes ? 'Carregando...' : (isMaestro ? 'Baixar Grade' : 'Meu Instrumento')}</span>
-                    </div>
-                    <span style={{
-                      background: 'rgba(244, 228, 188, 0.2)',
-                      padding: '3px 8px',
-                      borderRadius: '5px',
-                      fontSize: '10px',
-                      fontWeight: '700'
-                    }}>{isMaestro ? 'Grade' : userInstrument}</span>
+                    <div style={{ width: '14px', height: '14px' }}><Icons.Printer /></div>
+                    Imprimir
                   </button>
-                )}
+                </div>
+
+                {/* Botão Baixar - Meu Instrumento */}
+                <button
+                  data-walkthrough="quick-download"
+                  onClick={() => download.handleSelectInstrument(isMaestro ? 'Grade' : userInstrument)}
+                  aria-label={isMaestro ? 'Baixar grade' : `Baixar partitura para ${userInstrument}`}
+                  disabled={loadingPartes || download.downloading || (isMaestro && !hasGrade)}
+                  style={{
+                    width: '100%',
+                    padding: '12px 14px',
+                    borderRadius: '10px',
+                    background: (loadingPartes || download.downloading || (isMaestro && !hasGrade)) ? 'var(--bg-secondary)' : 'linear-gradient(145deg, #722F37 0%, #5C1A1B 100%)',
+                    border: 'none',
+                    color: (loadingPartes || download.downloading || (isMaestro && !hasGrade)) ? 'var(--text-muted)' : '#F4E4BC',
+                    fontFamily: 'Outfit, sans-serif',
+                    fontSize: '13px',
+                    fontWeight: '600',
+                    cursor: (isMaestro && !hasGrade) ? 'not-allowed' : ((loadingPartes || download.downloading) ? 'wait' : 'pointer'),
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    marginBottom: '12px',
+                    boxShadow: (loadingPartes || download.downloading || (isMaestro && !hasGrade)) ? 'none' : '0 4px 12px rgba(114, 47, 55, 0.3)'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ width: '16px', height: '16px' }}><Icons.Download /></div>
+                    <span>{loadingPartes ? 'Carregando...' : (isMaestro ? 'Baixar Grade' : 'Meu Instrumento')}</span>
+                  </div>
+                  <span style={{
+                    background: 'rgba(244, 228, 188, 0.2)',
+                    padding: '3px 8px',
+                    borderRadius: '5px',
+                    fontSize: '10px',
+                    fontWeight: '700'
+                  }}>{isMaestro ? 'Grade' : userInstrument}</span>
+                </button>
 
                 {/* Seletor de Outros Instrumentos */}
                 <div data-walkthrough="instrument-selector">
@@ -537,35 +527,8 @@ const SheetDetailModal = () => {
                 </div>
               </div>
 
-              {/* Botoes Imprimir, Compartilhar e Favoritar */}
+              {/* Botoes Adicionais */}
               <div data-walkthrough="sheet-options" style={{ display: 'flex', gap: '8px' }}>
-                <button
-                  onClick={() => download.handlePrintInstrument(isMaestro ? 'Grade' : userInstrument)}
-                  disabled={download.downloading || loadingPartes || (isMaestro && !hasGrade)}
-                  aria-label="Imprimir partitura"
-                  style={{
-                    flex: 1,
-                    padding: '10px',
-                    borderRadius: '10px',
-                    background: (isMaestro && !hasGrade) ? 'var(--bg-secondary)' : 'rgba(52, 152, 219, 0.1)',
-                    border: (isMaestro && !hasGrade) ? '1.5px solid var(--border)' : '1.5px solid rgba(52, 152, 219, 0.3)',
-                    color: (isMaestro && !hasGrade) ? 'var(--text-muted)' : '#3498db',
-                    fontFamily: 'Outfit, sans-serif',
-                    fontSize: '12px',
-                    fontWeight: '600',
-                    cursor: (isMaestro && !hasGrade) || download.downloading || loadingPartes ? 'not-allowed' : 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '6px',
-                    opacity: (isMaestro && !hasGrade) ? 0.5 : 1
-                  }}
-                >
-                  <div style={{ width: '14px', height: '14px' }}><Icons.Printer /></div>
-                  Imprimir
-                </button>
-
-                {/* Botao Compartilhar - apenas se suportado */}
                 {download.canShareFiles() && (
                   <button
                     onClick={() => download.handleShareInstrument(isMaestro ? 'Grade' : userInstrument)}
