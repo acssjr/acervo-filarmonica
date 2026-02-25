@@ -439,18 +439,18 @@ const SheetDetailModal = () => {
                   data-walkthrough="quick-download"
                   onClick={() => download.handleSelectInstrument(isMaestro ? 'Grade' : userInstrument)}
                   aria-label={isMaestro ? 'Baixar grade' : `Baixar partitura para ${userInstrument}`}
-                  disabled={loadingPartes || (isMaestro && !hasGrade)}
+                  disabled={loadingPartes || download.downloading || (isMaestro && !hasGrade)}
                   style={{
                     width: '100%',
                     padding: '12px 14px',
                     borderRadius: '10px',
-                    background: (loadingPartes || (isMaestro && !hasGrade)) ? 'var(--bg-secondary)' : 'linear-gradient(145deg, #722F37 0%, #5C1A1B 100%)',
+                    background: (loadingPartes || download.downloading || (isMaestro && !hasGrade)) ? 'var(--bg-secondary)' : 'linear-gradient(145deg, #722F37 0%, #5C1A1B 100%)',
                     border: 'none',
-                    color: (loadingPartes || (isMaestro && !hasGrade)) ? 'var(--text-muted)' : '#F4E4BC',
+                    color: (loadingPartes || download.downloading || (isMaestro && !hasGrade)) ? 'var(--text-muted)' : '#F4E4BC',
                     fontFamily: 'Outfit, sans-serif',
                     fontSize: '13px',
                     fontWeight: '600',
-                    cursor: (loadingPartes || (isMaestro && !hasGrade)) ? 'wait' : 'pointer',
+                    cursor: (isMaestro && !hasGrade) ? 'not-allowed' : ((loadingPartes || download.downloading) ? 'wait' : 'pointer'),
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',

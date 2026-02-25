@@ -7,7 +7,7 @@ import { useUI } from '@contexts/UIContext';
 import { API } from '@services/api';
 import { extrairInstrumento } from '@utils/instrumentParser';
 
-const CorrigirBombardinosModal = ({ isOpen, onClose, partituras }) => {
+const CorrigirBombardinosModal = ({ isOpen, onClose, onSuccess, partituras }) => {
     const { showToast } = useUI();
     const folderInputRef = useRef(null);
     const cancelledRef = useRef(false);
@@ -17,7 +17,7 @@ const CorrigirBombardinosModal = ({ isOpen, onClose, partituras }) => {
     const [matches, setMatches] = useState([]);
     const [skipped, setSkipped] = useState([]);
     const [showSkipped, setShowSkipped] = useState(false);
-    const [processing, setProcessing] = useState(false);
+
     const [progress, setProgress] = useState({ current: 0, total: 0 });
     const [results, setResults] = useState({ success: 0, errors: [] });
 
@@ -218,7 +218,6 @@ const CorrigirBombardinosModal = ({ isOpen, onClose, partituras }) => {
 
         cancelledRef.current = false;
         setStep('processing');
-        setProcessing(true);
         setProgress({ current: 0, total: toProcess.length });
 
         const resultData = { success: 0, errors: [] };
@@ -249,8 +248,11 @@ const CorrigirBombardinosModal = ({ isOpen, onClose, partituras }) => {
 
         if (!cancelledRef.current) {
             setResults(resultData);
-            setProcessing(false);
             setStep('done');
+            // Notificar sucesso para recarregar dados
+            if (onSuccess && resultData.success > 0) {
+                onSuccess();
+            }
         }
     };
 
@@ -408,14 +410,11 @@ const CorrigirBombardinosModal = ({ isOpen, onClose, partituras }) => {
                                     <path d="M12 11v6M9 14h6" />
                                 </svg>
                                 Selecionar Pasta
-                                {/* eslint-disable-next-line react/no-unknown-property */}
                                 <input
                                     ref={folderInputRef}
                                     type="file"
-                                    webkitdirectory=""
-                                    directory=""
-                                    mozdirectory=""
-                                    allowdirs=""
+                                    webkitdirectory={true}
+                                    directory={true}
                                     multiple
                                     style={{ display: 'none' }}
                                     onChange={handleFolderSelect}

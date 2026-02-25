@@ -40,16 +40,40 @@ export async function uploadAsset(request, env) {
     try {
         const formData = await request.formData();
         const file = formData.get('file');
-        const folder = formData.get('folder') || 'general'; // pasta de destino (prefixo)
+        let folder = formData.get('folder') || 'general'; // pasta de destino (prefixo)
         const customName = formData.get('name');
 
         if (!file) {
             return errorResponse('Nenhum arquivo enviado', 400, request);
         }
 
+        // Validar e sanitizar folder e filename para evitar path traversal
+        const validatePathComponent = (value, fieldName) => {
+            if (!value) return value;
+            // Rejeitar path traversal attempts
+            if (value.includes('..') || value.includes('/') || value.includes('\\')) {
+                throw new Error(`${fieldName} inválido: contém caracteres não permitidos`);
+            }
+            // Remover caracteres potencialmente perigosos
+            return value.replace(/[<>:"|?*]/g, '_');
+        };
+
+        try {
+            folder = validatePathComponent(folder, 'folder');
+        } catch (err) {
+            return errorResponse(err.message, 400, request);
+        }
+
         const arrayBuffer = await file.arrayBuffer();
-        const fileName = customName || file.name;
-        const key = `${folder}/${fileName}`.replace(/\/+/g, '/'); // evitar barras duplas
+        let fileName = customName || file.name;
+        
+        try {
+            fileName = validatePathComponent(fileName, 'name');
+        } catch (err) {
+            return errorResponse(err.message, 400, request);
+        }
+        
+        const key = `${folder}/${fileName}`;
 
         // Fazer upload para o R2
         await env.BUCKET.put(key, arrayBuffer, {

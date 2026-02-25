@@ -2028,6 +2028,7 @@ const AdminPartituras = () => {
           <CorrigirBombardinosModal
             isOpen={showCorrigirBombardinos}
             onClose={() => setShowCorrigirBombardinos(false)}
+            onSuccess={loadData}
             partituras={partituras}
           />
         </Suspense>

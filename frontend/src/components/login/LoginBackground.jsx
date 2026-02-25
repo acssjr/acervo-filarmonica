@@ -3,13 +3,14 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { API_BASE_URL } from '../../constants/api';
 
 const FALLBACK_IMAGE = '/assets/images/banda/foto-banda-sao-goncalo.webp';
 
 const LoginBackground = () => {
   const [images, setImages] = useState([FALLBACK_IMAGE]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
+  const [_isLoading, setIsLoading] = useState(true);
 
   // Carregar lista de backgrounds do servidor
   useEffect(() => {

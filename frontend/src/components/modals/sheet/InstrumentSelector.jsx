@@ -188,8 +188,8 @@ const InstrumentSelector = ({
                       className="action-btn"
                       style={{
                         ...actionButtonStyle,
-                        background: 'rgba(46, 204, 113, 0.12)',
-                        color: '#2ecc71',
+                        background: 'rgba(30, 132, 73, 0.12)',
+                        color: '#1e8449',
                         transition: 'all 0.15s ease'
                       }}
                     >
@@ -207,8 +207,8 @@ const InstrumentSelector = ({
                       className="action-btn"
                       style={{
                         ...actionButtonStyle,
-                        background: 'rgba(37, 211, 102, 0.12)',
-                        color: '#25D366',
+                        background: 'rgba(25, 127, 58, 0.12)',
+                        color: '#197f3a',
                         transition: 'all 0.15s ease'
                       }}
                     >

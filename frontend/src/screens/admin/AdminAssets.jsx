@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    Image as ImageIcon,
     Trash2,
     Upload,
     Search,
@@ -9,8 +8,6 @@ import {
     X,
     Check,
     Loader2,
-    RefreshCw,
-    Maximize2,
     Info
 } from 'lucide-react';
 import imageCompression from 'browser-image-compression';
@@ -64,10 +61,21 @@ const AdminAssets = () => {
         loadAssets();
     }, [loadAssets]);
 
+    // Cleanup URLs ao desmontar
+    useEffect(() => {
+        return () => {
+            if (previewUrl) URL.revokeObjectURL(previewUrl);
+            if (optimizedUrl) URL.revokeObjectURL(optimizedUrl);
+        };
+    }, [previewUrl, optimizedUrl]);
+
     // Função para processar a imagem (Otimização)
-    const processImage = useCallback(async (file, customQuality, customWidth) => {
+    const processImage = useCallback(async (file, customQuality, customWidth, customWebP) => {
         if (!file) return;
         setOptimizationLoading(true);
+
+        // Usar valor explicito ou estado atual
+        const useWebP = customWebP !== undefined ? customWebP : convertToWebP;
 
         try {
             const options = {
@@ -75,7 +83,7 @@ const AdminAssets = () => {
                 maxWidthOrHeight: customWidth || maxWidth,
                 useWebWorker: true,
                 initialQuality: customQuality || quality,
-                fileType: convertToWebP ? 'image/webp' : file.type
+                fileType: useWebP ? 'image/webp' : file.type
             };
 
             const compressedFile = await imageCompression(file, options);
@@ -91,12 +99,32 @@ const AdminAssets = () => {
         }
     }, [quality, maxWidth, convertToWebP, optimizedUrl, showToast]);
 
+    const cleanupUrls = () => {
+        if (previewUrl) {
+            URL.revokeObjectURL(previewUrl);
+            setPreviewUrl(null);
+        }
+        if (optimizedUrl) {
+            URL.revokeObjectURL(optimizedUrl);
+            setOptimizedUrl(null);
+        }
+    };
+
+    const handleCloseModal = () => {
+        if (uploading) return;
+        cleanupUrls();
+        setShowUploadModal(false);
+        setSelectedFile(null);
+        setOptimizedBlob(null);
+    };
+
     const handleFileSelect = (e) => {
         const file = e.target.files[0];
         if (!file) return;
 
         if (!file.type.startsWith('image/')) {
             showToast('Por favor, selecione apenas imagens', 'warning');
+            e.target.value = '';
             return;
         }
 
@@ -104,6 +132,7 @@ const AdminAssets = () => {
         if (previewUrl) URL.revokeObjectURL(previewUrl);
         setPreviewUrl(URL.createObjectURL(file));
         setShowUploadModal(true);
+        e.target.value = '';
 
         // Iniciar otimização automática com defaults
         processImage(file);
@@ -121,6 +150,9 @@ const AdminAssets = () => {
 
             await API.uploadAsset(optimizedBlob, currentFolder.id, fileName);
             showToast('Arquivo enviado e otimizado com sucesso!');
+            
+            // Cleanup e reset
+            cleanupUrls();
             setShowUploadModal(false);
             loadAssets();
 
@@ -371,7 +403,7 @@ const AdminAssets = () => {
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
-                            onClick={() => !uploading && setShowUploadModal(false)}
+                            onClick={handleCloseModal}
                             style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)' }}
                         />
 
@@ -394,7 +426,7 @@ const AdminAssets = () => {
                             <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <h2 style={{ fontSize: '20px', fontWeight: '800' }}>Otimizar Imagem</h2>
                                 <button
-                                    onClick={() => setShowUploadModal(false)}
+                                    onClick={handleCloseModal}
                                     style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
                                 >
                                     <X size={24} />
@@ -458,7 +490,8 @@ const AdminAssets = () => {
                                             step="0.05"
                                             value={quality}
                                             onChange={(e) => setQuality(parseFloat(e.target.value))}
-                                            onMouseUp={() => processImage(selectedFile)}
+                                            onPointerUp={() => processImage(selectedFile)}
+                                            onKeyUp={(e) => e.key === 'Enter' && processImage(selectedFile)}
                                             style={{ width: '100%', accentColor: 'var(--accent)' }}
                                         />
                                     </div>
@@ -492,7 +525,11 @@ const AdminAssets = () => {
 
                                     <label style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
                                         <div
-                                            onClick={() => { setConvertToWebP(!convertToWebP); setTimeout(() => processImage(selectedFile), 50); }}
+                                            onClick={() => { 
+                                                const newVal = !convertToWebP;
+                                                setConvertToWebP(newVal);
+                                                processImage(selectedFile, quality, maxWidth, newVal);
+                                            }}
                                             style={{
                                                 width: '48px',
                                                 height: '24px',
