@@ -10,6 +10,7 @@ const FALLBACK_IMAGE = '/assets/images/banda/foto-banda-sao-goncalo.webp';
 const LoginBackground = () => {
   const [images, setImages] = useState([FALLBACK_IMAGE]);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isFirstLoad, setIsFirstLoad] = useState(true);
   const [_isLoading, setIsLoading] = useState(true);
 
   // Carregar lista de backgrounds do servidor
@@ -23,13 +24,21 @@ const LoginBackground = () => {
         if (data.assets && data.assets.length > 0) {
           const urls = data.assets.map(a => `${API_BASE_URL}${a.url}`);
           // Embaralhar a lista para não ser sempre o mesmo ao entrar
-          setImages(urls.sort(() => Math.random() - 0.5));
+          const shuffled = urls.sort(() => Math.random() - 0.5);
+          setImages(shuffled);
 
-          // Pré-carregar todas as imagens para evitar flicker
-          urls.forEach(url => {
+          // Pré-carregar primeira imagem imediatamente
+          const firstImg = new Image();
+          firstImg.onload = () => setIsFirstLoad(false);
+          firstImg.src = shuffled[0];
+
+          // Pré-carregar restante
+          shuffled.slice(1).forEach(url => {
             const img = new Image();
             img.src = url;
           });
+        } else {
+          setIsFirstLoad(false);
         }
       } catch (error) {
         console.warn('Usando background padrão:', error.message);
@@ -74,10 +83,13 @@ const LoginBackground = () => {
         <AnimatePresence mode="wait">
           <motion.div
             key={images[currentIndex]}
-            initial={{ opacity: 0, scale: 1.1 }}
+            initial={isFirstLoad && currentIndex === 0 ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 1.05 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 2, ease: "easeOut" }}
+            transition={{ 
+              duration: isFirstLoad && currentIndex === 0 ? 0 : 2, 
+              ease: "easeOut" 
+            }}
             style={{
               position: 'absolute',
               inset: 0,
@@ -89,11 +101,11 @@ const LoginBackground = () => {
           />
         </AnimatePresence>
 
-        {/* Overlay de gradiente luxuoso para garantir legibilidade do login */}
+        {/* Overlay de gradiente - transparência reduzida para foto mais visível */}
         <div style={{
           position: 'absolute',
           inset: 0,
-          background: 'linear-gradient(135deg, rgba(61, 21, 24, 0.94) 0%, rgba(30, 10, 12, 0.8) 50%, rgba(61, 21, 24, 0.94) 100%)',
+          background: 'linear-gradient(135deg, rgba(61, 21, 24, 0.85) 0%, rgba(30, 10, 12, 0.75) 50%, rgba(61, 21, 24, 0.85) 100%)',
           zIndex: 1
         }} />
       </div>

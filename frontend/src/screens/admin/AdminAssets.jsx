@@ -8,17 +8,35 @@ import {
     X,
     Check,
     Loader2,
-    Info
+    Image,
+    Palette,
+    FolderOpen,
+    Images
 } from 'lucide-react';
 import imageCompression from 'browser-image-compression';
 import { useUI } from '@contexts/UIContext';
 import { API } from '@services/api';
 import { API_BASE_URL } from '@constants/api';
 
+// Ícones SVG modernos para cada pasta (brandline guidelines)
+const FolderIcon = ({ type }) => {
+    const iconStyle = { size: 20, strokeWidth: 1.5 };
+    switch (type) {
+        case 'backgrounds':
+            return <Image {...iconStyle} />;
+        case 'logos':
+            return <Palette {...iconStyle} />;
+        case 'general':
+            return <FolderOpen {...iconStyle} />;
+        default:
+            return <Folder {...iconStyle} />;
+    }
+};
+
 const ASSET_FOLDERS = [
-    { id: 'backgrounds', name: 'Planos de Fundo', icon: '🖼️', prefix: 'backgrounds/' },
-    { id: 'logos', name: 'Logos e Ícones', icon: '🎨', prefix: 'logos/' },
-    { id: 'general', name: 'Geral', icon: '📂', prefix: 'general/' }
+    { id: 'backgrounds', name: 'Planos de Fundo', prefix: 'backgrounds/', description: 'Fotos da tela de login' },
+    { id: 'logos', name: 'Logos e Ícones', prefix: 'logos/', description: 'Logos e ícones do sistema' },
+    { id: 'general', name: 'Geral', prefix: 'general/', description: 'Outros arquivos' }
 ];
 
 const AdminAssets = () => {
@@ -43,7 +61,13 @@ const AdminAssets = () => {
     const [convertToWebP, setConvertToWebP] = useState(true);
     const [uploading, setUploading] = useState(false);
 
+    // Upload em lote
+    const [uploadQueue, setUploadQueue] = useState([]);
+    const [isBatchUploading, setIsBatchUploading] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
+
     const fileInputRef = useRef(null);
+    const folderInputRef = useRef(null);
 
     const loadAssets = useCallback(async () => {
         setLoading(true);
@@ -119,23 +143,102 @@ const AdminAssets = () => {
     };
 
     const handleFileSelect = (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
+        const files = Array.from(e.target.files);
+        if (files.length === 0) return;
 
-        if (!file.type.startsWith('image/')) {
+        // Filtrar apenas imagens
+        const imageFiles = files.filter(file => file.type.startsWith('image/'));
+        
+        if (imageFiles.length === 0) {
             showToast('Por favor, selecione apenas imagens', 'warning');
             e.target.value = '';
             return;
         }
 
-        setSelectedFile(file);
-        if (previewUrl) URL.revokeObjectURL(previewUrl);
-        setPreviewUrl(URL.createObjectURL(file));
-        setShowUploadModal(true);
-        e.target.value = '';
+        if (imageFiles.length > 50) {
+            showToast('Limite de 50 arquivos por vez', 'warning');
+            e.target.value = '';
+            return;
+        }
 
-        // Iniciar otimização automática com defaults
-        processImage(file);
+        // Se for apenas um arquivo, abrir modal de otimização
+        if (imageFiles.length === 1) {
+            const file = imageFiles[0];
+            setSelectedFile(file);
+            if (previewUrl) URL.revokeObjectURL(previewUrl);
+            setPreviewUrl(URL.createObjectURL(file));
+            setShowUploadModal(true);
+            // Iniciar otimização automática
+            processImage(file);
+        } else {
+            // Múltiplos arquivos: adicionar à fila
+            const queueItems = imageFiles.map((file, index) => ({
+                id: `${Date.now()}-${index}`,
+                file,
+                status: 'pending',
+                optimizedBlob: null,
+                originalSize: file.size,
+                compressedSize: null
+            }));
+            setUploadQueue(queueItems);
+        }
+        
+        e.target.value = '';
+    };
+
+    const processBatch = async () => {
+        if (uploadQueue.length === 0) return;
+        
+        setIsBatchUploading(true);
+        setUploadProgress({ current: 0, total: uploadQueue.length });
+
+        const processed = [];
+        
+        for (let i = 0; i < uploadQueue.length; i++) {
+            const item = uploadQueue[i];
+            setUploadProgress({ current: i + 1, total: uploadQueue.length });
+
+            try {
+                const options = {
+                    maxSizeMB: 1,
+                    maxWidthOrHeight: maxWidth,
+                    useWebWorker: true,
+                    initialQuality: quality,
+                    fileType: convertToWebP ? 'image/webp' : item.file.type
+                };
+
+                const compressedFile = await imageCompression(item.file, options);
+                
+                let fileName = item.file.name;
+                if (convertToWebP) {
+                    fileName = fileName.replace(/\.[^/.]+$/, ".webp");
+                }
+
+                await API.uploadAsset(compressedFile, currentFolder.id, fileName);
+                
+                processed.push(item);
+                setUploadQueue(prev => prev.map(q => 
+                    q.id === item.id ? { ...q, status: 'done', compressedSize: compressedFile.size } : q
+                ));
+            } catch (error) {
+                console.error('Erro no upload:', error);
+                setUploadQueue(prev => prev.map(q => 
+                    q.id === item.id ? { ...q, status: 'error' } : q
+                ));
+            }
+        }
+
+        const successCount = processed.length;
+        showToast(`${successCount} de ${uploadQueue.length} arquivos enviados com sucesso!`, successCount === uploadQueue.length ? 'success' : 'warning');
+        
+        setIsBatchUploading(false);
+        setUploadQueue([]);
+        loadAssets();
+    };
+
+    const clearQueue = () => {
+        setUploadQueue([]);
+        setUploadProgress({ current: 0, total: 0 });
     };
 
     const handleUpload = async () => {
@@ -203,31 +306,206 @@ const AdminAssets = () => {
                     <p style={{ color: 'var(--text-muted)' }}>Controle fotos, ícones e backgrounds do sistema</p>
                 </div>
 
-                <button
-                    onClick={() => fileInputRef.current?.click()}
-                    className="btn-primary"
-                    style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        padding: '12px 24px',
-                        borderRadius: '12px',
-                        background: 'var(--accent)',
-                        color: 'white',
-                        fontWeight: '600'
-                    }}
-                >
-                    <Upload size={20} />
-                    <span>Novo Upload</span>
-                </button>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                    <button
+                        onClick={() => fileInputRef.current?.click()}
+                        className="btn-primary"
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '12px 20px',
+                            borderRadius: '12px',
+                            background: 'var(--accent)',
+                            color: 'white',
+                            fontWeight: '600'
+                        }}
+                    >
+                        <Upload size={18} />
+                        <span>Upload</span>
+                    </button>
+                    <button
+                        onClick={() => folderInputRef.current?.click()}
+                        className="btn-primary"
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '12px 20px',
+                            borderRadius: '12px',
+                            background: 'var(--bg-secondary)',
+                            color: 'var(--text-primary)',
+                            fontWeight: '600',
+                            border: '1px solid var(--border)'
+                        }}
+                    >
+                        <FolderOpen size={18} />
+                        <span>Pasta</span>
+                    </button>
+                </div>
                 <input
                     type="file"
                     ref={fileInputRef}
-                    onChange={handleFileSelect}
+                    onChange={(e) => handleFileSelect(e, false)}
                     style={{ display: 'none' }}
                     accept="image/*"
+                    multiple
+                />
+                <input
+                    type="file"
+                    ref={folderInputRef}
+                    onChange={(e) => handleFileSelect(e, true)}
+                    style={{ display: 'none' }}
+                    accept="image/*"
+                    webkitdirectory="true"
+                    directory=""
+                    multiple
                 />
             </div>
+
+            {/* Upload em Lote - Painel */}
+            {uploadQueue.length > 0 && (
+                <div style={{ 
+                    marginBottom: '24px', 
+                    padding: '20px', 
+                    background: 'var(--bg-secondary)', 
+                    borderRadius: '16px', 
+                    border: '1px solid var(--border)'
+                }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                        <div>
+                            <h3 style={{ fontSize: '16px', fontWeight: '700', color: 'var(--text-primary)' }}>
+                                Upload em Lote
+                            </h3>
+                            <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                                {uploadQueue.length} arquivo(s) na fila
+                            </p>
+                        </div>
+                        <div style={{ display: 'flex', gap: '12px' }}>
+                            {!isBatchUploading && (
+                                <button
+                                    onClick={clearQueue}
+                                    style={{
+                                        padding: '8px 16px',
+                                        borderRadius: '8px',
+                                        background: 'transparent',
+                                        border: '1px solid var(--border)',
+                                        color: 'var(--text-muted)',
+                                        fontWeight: '600',
+                                        cursor: 'pointer'
+                                    }}
+                                >
+                                    Cancelar
+                                </button>
+                            )}
+                            <button
+                                onClick={processBatch}
+                                disabled={isBatchUploading}
+                                style={{
+                                    padding: '8px 20px',
+                                    borderRadius: '8px',
+                                    background: 'var(--accent)',
+                                    border: 'none',
+                                    color: 'white',
+                                    fontWeight: '600',
+                                    cursor: isBatchUploading ? 'not-allowed' : 'pointer',
+                                    opacity: isBatchUploading ? 0.7 : 1,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px'
+                                }}
+                            >
+                                {isBatchUploading ? (
+                                    <>
+                                        <Loader2 size={16} className="animate-spin" />
+                                        {uploadProgress.current}/{uploadProgress.total}
+                                    </>
+                                ) : (
+                                    <>
+                                        <Check size={16} />
+                                        Iniciar Upload
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                    
+                    {/* Barra de progresso */}
+                    {isBatchUploading && (
+                        <div style={{ marginBottom: '16px' }}>
+                            <div style={{ 
+                                height: '6px', 
+                                background: 'var(--bg-primary)', 
+                                borderRadius: '3px', 
+                                overflow: 'hidden' 
+                            }}>
+                                <div style={{
+                                    height: '100%',
+                                    width: `${(uploadProgress.current / uploadProgress.total) * 100}%`,
+                                    background: 'var(--accent)',
+                                    borderRadius: '3px',
+                                    transition: 'width 0.3s ease'
+                                }} />
+                            </div>
+                        </div>
+                    )}
+                    
+                    {/* Lista de arquivos */}
+                    <div style={{ 
+                        maxHeight: '200px', 
+                        overflowY: 'auto',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '8px'
+                    }}>
+                        {uploadQueue.map((item) => (
+                            <div 
+                                key={item.id}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '12px',
+                                    padding: '10px 12px',
+                                    background: 'var(--bg-primary)',
+                                    borderRadius: '8px',
+                                    border: item.status === 'error' ? '1px solid #e74c3c' : '1px solid var(--border)'
+                                }}
+                            >
+                                <div style={{ flex: 1, overflow: 'hidden' }}>
+                                    <p style={{
+                                        fontSize: '13px',
+                                        fontWeight: '500',
+                                        whiteSpace: 'nowrap',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis'
+                                    }}>
+                                        {item.file.name}
+                                    </p>
+                                    <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                                        {formatSize(item.originalSize)}
+                                        {item.compressedSize && (
+                                            <span style={{ color: '#27ae60', marginLeft: '8px' }}>
+                                                → {formatSize(item.compressedSize)}
+                                            </span>
+                                        )}
+                                    </p>
+                                </div>
+                                <div>
+                                    {item.status === 'pending' && (
+                                        <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Aguardando</span>
+                                    )}
+                                    {item.status === 'done' && (
+                                        <Check size={16} style={{ color: '#27ae60' }} />
+                                    )}
+                                    {item.status === 'error' && (
+                                        <span style={{ fontSize: '12px', color: '#e74c3c' }}>Erro</span>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr', gap: '32px' }}>
                 {/* Sidebar - Folders */}
@@ -254,14 +532,29 @@ const AdminAssets = () => {
                                 textAlign: 'left'
                             }}
                         >
-                            <span style={{ fontSize: '20px' }}>{folder.icon}</span>
-                            <span>{folder.name}</span>
+                            <div style={{ 
+                                color: currentFolder.id === folder.id ? 'var(--accent)' : 'var(--text-muted)',
+                                display: 'flex',
+                                alignItems: 'center'
+                            }}>
+                                <FolderIcon type={folder.id} />
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                                <span>{folder.name}</span>
+                                <span style={{ 
+                                    fontSize: '11px', 
+                                    color: 'var(--text-muted)', 
+                                    fontWeight: 400 
+                                }}>
+                                    {folder.description}
+                                </span>
+                            </div>
                         </button>
                     ))}
 
                     <div style={{ marginTop: '24px', padding: '16px', background: 'var(--bg-secondary)', borderRadius: '16px', border: '1px solid var(--border)' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent)', marginBottom: '8px' }}>
-                            <Info size={16} />
+                            <Images size={16} />
                             <span style={{ fontSize: '13px', fontWeight: '700' }}>Dica</span>
                         </div>
                         <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: '1.5' }}>
@@ -294,6 +587,143 @@ const AdminAssets = () => {
                             }}
                         />
                     </div>
+
+                    {/* Seção de Backgrounds do Sistema */}
+                    {currentFolder.id === 'backgrounds' && (
+                        <div style={{ marginBottom: '32px' }}>
+                            <h3 style={{ 
+                                fontSize: '14px', 
+                                fontWeight: '700', 
+                                color: 'var(--text-muted)', 
+                                textTransform: 'uppercase', 
+                                letterSpacing: '1px',
+                                marginBottom: '16px'
+                            }}>
+                                Background Padrão
+                            </h3>
+                            <div style={{ 
+                                display: 'flex',
+                                gap: '16px',
+                                padding: '16px',
+                                background: 'var(--bg-secondary)',
+                                borderRadius: '12px',
+                                border: '1px solid var(--border)'
+                            }}>
+                                <div style={{ 
+                                    width: '160px', 
+                                    height: '90px', 
+                                    borderRadius: '8px',
+                                    overflow: 'hidden',
+                                    background: '#1a1a1a'
+                                }}>
+                                    <img 
+                                        src="/assets/images/banda/foto-banda-sao-goncalo.webp" 
+                                        alt="Foto Banda São Gonçalo"
+                                        style={{ 
+                                            width: '100%', 
+                                            height: '100%', 
+                                            objectFit: 'cover' 
+                                        }}
+                                    />
+                                </div>
+                                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                                    <p style={{ 
+                                        fontSize: '14px', 
+                                        fontWeight: '600', 
+                                        color: 'var(--text-primary)',
+                                        marginBottom: '4px'
+                                    }}>
+                                        Foto Banda São Gonçalo
+                                    </p>
+                                    <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '8px' }}>
+                                        WebP • Background padrão do sistema
+                                    </p>
+                                    <p style={{ fontSize: '11px', color: 'var(--accent)', fontStyle: 'italic' }}>
+                                        Esta imagem é usada como fallback quando não há outros backgrounds.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Seção de Logos do Sistema */}
+                    {currentFolder.id === 'logos' && (
+                        <div style={{ marginBottom: '32px' }}>
+                            <h3 style={{ 
+                                fontSize: '14px', 
+                                fontWeight: '700', 
+                                color: 'var(--text-muted)', 
+                                textTransform: 'uppercase', 
+                                letterSpacing: '1px',
+                                marginBottom: '16px'
+                            }}>
+                                Logos em Uso
+                            </h3>
+                            <div style={{ 
+                                display: 'grid', 
+                                gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', 
+                                gap: '16px',
+                                padding: '16px',
+                                background: 'var(--bg-secondary)',
+                                borderRadius: '12px',
+                                border: '1px solid var(--border)'
+                            }}>
+                                {[
+                                    { name: 'Brasão (256x256)', path: '/assets/images/ui/brasao-256x256.png', type: 'PNG' },
+                                    { name: 'Brasão Transparente', path: '/assets/images/ui/brasao-transparente.webp', type: 'WebP' }
+                                ].map((logo) => (
+                                    <div 
+                                        key={logo.path}
+                                        style={{
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            alignItems: 'center',
+                                            gap: '8px',
+                                            padding: '12px',
+                                            background: 'var(--bg-primary)',
+                                            borderRadius: '8px',
+                                            border: '1px solid var(--border)'
+                                        }}
+                                    >
+                                        <div style={{ 
+                                            width: '64px', 
+                                            height: '64px', 
+                                            display: 'flex', 
+                                            alignItems: 'center', 
+                                            justifyContent: 'center',
+                                            background: logo.path.includes('transparent') ? 'linear-gradient(45deg, #333 25%, transparent 25%), linear-gradient(-45deg, #333 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #333 75%), linear-gradient(-45deg, transparent 75%, #333 75%)' : 'var(--bg-secondary)',
+                                            backgroundSize: logo.path.includes('transparent') ? '8px 8px' : 'auto',
+                                            backgroundPosition: logo.path.includes('transparent') ? '0 0, 0 4px, 4px -4px, -4px 0px' : 'center',
+                                            borderRadius: '8px'
+                                        }}>
+                                            <img 
+                                                src={logo.path} 
+                                                alt={logo.name}
+                                                style={{ 
+                                                    maxWidth: '56px', 
+                                                    maxHeight: '56px', 
+                                                    objectFit: 'contain' 
+                                                }}
+                                            />
+                                        </div>
+                                        <div style={{ textAlign: 'center' }}>
+                                            <p style={{ 
+                                                fontSize: '12px', 
+                                                fontWeight: '600', 
+                                                color: 'var(--text-primary)',
+                                                marginBottom: '2px'
+                                            }}>
+                                                {logo.name}
+                                            </p>
+                                            <p style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
+                                                {logo.type} • Sistema
+                                            </p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
 
                     {loading ? (
                         <div style={{ display: 'flex', justifyContent: 'center', padding: '100px 0' }}>
