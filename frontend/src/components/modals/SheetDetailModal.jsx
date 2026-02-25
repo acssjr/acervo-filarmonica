@@ -3,7 +3,7 @@
 // Suporta URL compartilhavel: /acervo/:categoria/:id
 // Refatorado: extraido componentes e hook de download
 
-import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
+import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@contexts/AuthContext';
@@ -56,7 +56,21 @@ const SheetDetailModal = () => {
     }
   }, [selectedSheet, partes, addToShareCart, showToast]);
 
-  // Travar scroll do body quando modal estiver aberto
+  // Refs para focus trap
+  const modalRef = useRef(null);
+  const previouslyFocusedElement = useRef(null);
+
+  // Handler para fechar modal
+  const handleClose = useCallback(() => {
+    setSelectedSheet(null);
+    // Se estamos numa URL de partitura, volta para o acervo da categoria
+    if (location.pathname.includes('/acervo/') && location.pathname.split('/').length > 3) {
+      const categoria = selectedSheet?.category || 'dobrado';
+      navigate(`/acervo/${categoria}`, { replace: true });
+    }
+  }, [location.pathname, navigate, selectedSheet, setSelectedSheet]);
+
+  // Travar scroll do body quando modal estiver aberto + focus trap + Escape key
   useEffect(() => {
     if (selectedSheet) {
       // Salvar posição atual do scroll
@@ -66,14 +80,41 @@ const SheetDetailModal = () => {
       document.documentElement.classList.add('modal-open');
       document.body.style.top = `-${scrollY}px`;
 
+      // Salvar elemento com foco atual
+      previouslyFocusedElement.current = document.activeElement;
+
+      // Mover foco para o modal quando abrir
+      if (modalRef.current) {
+        const focusableElements = modalRef.current.querySelectorAll(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusableElements.length > 0) {
+          focusableElements[0].focus();
+        }
+      }
+
+      // Handler para Escape
+      const handleKeyDown = (e) => {
+        if (e.key === 'Escape') {
+          handleClose();
+        }
+      };
+
+      document.addEventListener('keydown', handleKeyDown);
+
       return () => {
+        document.removeEventListener('keydown', handleKeyDown);
         // Restaurar scroll
         document.documentElement.classList.remove('modal-open');
         document.body.style.top = '';
         window.scrollTo(0, scrollY);
+        // Restaurar foco anterior
+        if (previouslyFocusedElement.current) {
+          previouslyFocusedElement.current.focus();
+        }
       };
     }
-  }, [selectedSheet]);
+  }, [selectedSheet, handleClose]);
 
   // Buscar partes quando abrir o modal
   useEffect(() => {
@@ -106,15 +147,6 @@ const SheetDetailModal = () => {
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- download é estável (useSheetDownload)
   }, [selectedSheet]);
-
-  const handleClose = () => {
-    setSelectedSheet(null);
-    // Se estamos numa URL de partitura, volta para o acervo da categoria
-    if (location.pathname.includes('/acervo/') && location.pathname.split('/').length > 3) {
-      const categoria = selectedSheet?.category || 'dobrado';
-      navigate(`/acervo/${categoria}`, { replace: true });
-    }
-  };
 
   // Dados derivados do selectedSheet (só acessados quando existe)
   const category = selectedSheet ? categoriesMap.get(selectedSheet.category) : null;
@@ -170,23 +202,26 @@ const SheetDetailModal = () => {
           />
 
           {/* Visualizador de PDF embutido */}
-          <Suspense fallback={<div className="flex items-center justify-center p-8">Carregando visualizador...</div>}>
-            <PDFViewerModal
-              isOpen={download.pdfViewer.isOpen}
-              pdfUrl={download.pdfViewer.url}
-              title={`${download.pdfViewer.title} - ${download.pdfViewer.instrument}`}
-              onClose={download.closePdfViewer}
-              onDownload={() => {
-                // Abre em nova aba como fallback
-                if (download.pdfViewer.url) {
-                  window.open(download.pdfViewer.url, '_blank', 'noopener,noreferrer');
-                }
-              }}
-            />
-          </Suspense>
+          {download.pdfViewer.isOpen && (
+            <Suspense fallback={<div className="flex items-center justify-center p-8">Carregando visualizador...</div>}>
+              <PDFViewerModal
+                isOpen={download.pdfViewer.isOpen}
+                pdfUrl={download.pdfViewer.url}
+                title={`${download.pdfViewer.title} - ${download.pdfViewer.instrument}`}
+                onClose={download.closePdfViewer}
+                onDownload={() => {
+                  // Abre em nova aba como fallback
+                  if (download.pdfViewer.url) {
+                    window.open(download.pdfViewer.url, '_blank', 'noopener,noreferrer');
+                  }
+                }}
+              />
+            </Suspense>
+          )}
 
           {/* Modal Principal */}
           <motion.div
+            ref={modalRef}
             key="sheet-modal-content"
             role="dialog"
             aria-modal="true"

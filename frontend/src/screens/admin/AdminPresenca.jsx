@@ -798,11 +798,24 @@ const AdminPresenca = () => {
       grupos[familia].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
     });
 
-    const gruposOrdenados = ordemFamilias
-      .filter(f => grupos[f] && grupos[f].length > 0)
-      .map(f => ({ familia: f, musicos: grupos[f] }));
+    const result = [];
+    const familiasConhecidas = new Set(ordemFamilias);
 
-    return { regentes: regList, gruposPorFamilia: gruposOrdenados };
+    // Primeiro adicionar famílias na ordem conhecida
+    for (const familia of ordemFamilias) {
+      if (grupos[familia] && grupos[familia].length > 0) {
+        result.push({ familia, musicos: grupos[familia] });
+      }
+    }
+
+    // Depois adicionar famílias desconhecidas (que não estão em ordemFamilias)
+    for (const [familia, musicos] of Object.entries(grupos)) {
+      if (!familiasConhecidas.has(familia) && musicos.length > 0) {
+        result.push({ familia, musicos });
+      }
+    }
+
+    return { regentes: regList, gruposPorFamilia: result };
   }, [usuarios]);
 
   // Histórico limitado
@@ -1741,6 +1754,24 @@ const AdminPresenca = () => {
                               familias[fam].push(p);
                             });
 
+                            // Preparar lista de famílias ordenadas (conhecidas primeiro, desconhecidas depois)
+                            const familiasConhecidas = new Set(ordemFam);
+                            const familiasOrdenadas = [];
+
+                            // Primeiro adicionar famílias na ordem conhecida
+                            for (const familia of ordemFam) {
+                              if (familias[familia] && familias[familia].length > 0) {
+                                familiasOrdenadas.push(familia);
+                              }
+                            }
+
+                            // Depois adicionar famílias desconhecidas
+                            for (const familia of Object.keys(familias)) {
+                              if (!familiasConhecidas.has(familia) && familias[familia].length > 0) {
+                                familiasOrdenadas.push(familia);
+                              }
+                            }
+
                             return (
                               <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                                 {/* Regente(s) */}
@@ -1767,7 +1798,7 @@ const AdminPresenca = () => {
                                 )}
 
                                 {/* Sections */}
-                                {ordemFam.filter(f => familias[f]).map(fam => (
+                                {familiasOrdenadas.map(fam => (
                                   <React.Fragment key={fam}>
                                     <div style={{
                                       fontSize: '10px', fontWeight: '700', color: 'var(--text-muted)',

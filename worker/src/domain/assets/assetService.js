@@ -10,9 +10,13 @@ export async function listAssets(request, env) {
     try {
         const url = new URL(request.url);
         const prefix = url.searchParams.get('prefix') || '';
+        const cursor = url.searchParams.get('cursor') || undefined;
 
         // Listar objetos no bucket
         const options = { prefix };
+        if (cursor) {
+            options.cursor = cursor;
+        }
         const listed = await env.BUCKET.list(options);
 
         const assets = listed.objects.map(obj => ({
@@ -24,7 +28,16 @@ export async function listAssets(request, env) {
             url: `/api/assets/${obj.key}`
         }));
 
-        return jsonResponse({ assets, truncated: listed.truncated }, 200, request);
+        const response = {
+            assets,
+            truncated: listed.truncated
+        };
+
+        if (listed.cursor) {
+            response.cursor = listed.cursor;
+        }
+
+        return jsonResponse(response, 200, request);
     } catch (error) {
         console.error('Erro ao listar assets:', error);
         return errorResponse('Erro ao listar arquivos', 500, request);

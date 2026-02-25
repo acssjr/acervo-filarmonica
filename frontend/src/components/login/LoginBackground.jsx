@@ -24,6 +24,12 @@ const LoginBackground = () => {
           const urls = data.assets.map(a => `${API_BASE_URL}${a.url}`);
           // Embaralhar a lista para não ser sempre o mesmo ao entrar
           setImages(urls.sort(() => Math.random() - 0.5));
+
+          // Pré-carregar todas as imagens para evitar flicker
+          urls.forEach(url => {
+            const img = new Image();
+            img.src = url;
+          });
         }
       } catch (error) {
         console.warn('Usando background padrão:', error.message);
@@ -45,6 +51,15 @@ const LoginBackground = () => {
 
     return () => clearInterval(timer);
   }, [images.length]);
+
+  // Pré-carregar próxima imagem para evitar flicker na transição
+  useEffect(() => {
+    if (images.length <= 1) return;
+
+    const nextIndex = (currentIndex + 1) % images.length;
+    const img = new Image();
+    img.src = images[nextIndex];
+  }, [currentIndex, images]);
 
   return (
     <>

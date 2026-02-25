@@ -55,11 +55,14 @@ const CorrigirBombardinosModal = ({ isOpen, onClose, onSuccess, partituras }) =>
 
             // Detectar instrumento
             const { instrumento } = extrairInstrumento(file.name);
-            const instLower = instrumento.toLowerCase();
+            const instNormalized = instrumento
+                .toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, ''); // Remove diacríticos
 
             // Abrangência maior: Bombardier, Euphonium, Eufônio, Barítono (Bb), etc.
             const keywords = ['bombardino', 'euphonium', 'eufonio', 'baritono', 'sib', 'sibemol'];
-            const looksLikeBombardino = keywords.some(k => instLower.includes(k));
+            const looksLikeBombardino = keywords.some(k => instNormalized.includes(k));
 
             if (!looksLikeBombardino) continue;
 
@@ -187,10 +190,16 @@ const CorrigirBombardinosModal = ({ isOpen, onClose, onSuccess, partituras }) =>
                 files.push(file);
             } else if (entry.isDirectory) {
                 const reader = entry.createReader();
-                const entries = await new Promise(resolve => {
-                    reader.readEntries(resolve);
-                });
-                for (const childEntry of entries) {
+                const allEntries = [];
+                
+                // Ler todos os batches
+                let batch;
+                do {
+                    batch = await new Promise(resolve => reader.readEntries(resolve));
+                    allEntries.push(...batch);
+                } while (batch.length > 0);
+                
+                for (const childEntry of allEntries) {
                     await readEntry(childEntry, path + entry.name + '/');
                 }
             }
