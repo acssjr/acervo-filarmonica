@@ -32,6 +32,12 @@ const LoginBackground = () => {
           firstImg.onload = () => setIsFirstLoad(false);
           firstImg.onerror = () => {
             console.warn('Erro ao carregar primeira imagem, usando fallback');
+            // Substituir URL quebrada pelo fallback para evitar background vazio
+            setImages(prev => {
+              const updated = [...prev];
+              updated[0] = FALLBACK_IMAGE;
+              return updated;
+            });
             setIsFirstLoad(false);
           };
           firstImg.src = shuffled[0];
