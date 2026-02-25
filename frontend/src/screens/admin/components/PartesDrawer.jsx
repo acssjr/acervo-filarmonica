@@ -131,7 +131,7 @@ const PartesDrawer = ({ isOpen, onClose, partitura, categorias, onUpdate }) => {
 
   // Abrir PDF em nova aba
   const handleViewPart = (parte) => {
-    const url = API.getDownloadUrl(partitura.id, parte.instrumento);
+    const url = API.getDownloadParteUrl(parte.id);
     window.open(url, '_blank');
   };
 
