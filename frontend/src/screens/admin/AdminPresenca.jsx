@@ -466,6 +466,74 @@ const getFamiliaColor = (familia) => {
   return FAMILIA_CONFIG[familia]?.color || FAMILIA_CONFIG.Outros.color;
 };
 
+// ===== HELPERS: AGRUPAMENTO POR FAMÍLIA =====
+
+/**
+ * Predicado para identificar se um usuário é regente.
+ * @param {Object} u - Usuário com instrumento_nome e nome
+ * @returns {boolean}
+ */
+const isRegente = (u) => u.instrumento_nome === 'Regente' || u.nome.includes('Regente');
+
+/**
+ * Ordem padrão das famílias de instrumentos.
+ */
+const ORDEM_FAMILIAS = ['Madeiras', 'Metais', 'Percussão', 'Outros'];
+
+/**
+ * Agrupa músicos por família de instrumento, separando regentes.
+ * Retorna regentes ordenados e grupos por família na ordem correta
+ * (conhecidas primeiro, desconhecidas depois).
+ *
+ * @param {Array} usuarios - Lista de usuários com instrumento_nome, instrumento_familia, nome
+ * @returns {Object} { regentes: Array, gruposPorFamilia: Array<{familia, musicos}>, familiasOrdenadas: Array<string> }
+ */
+const groupMusiciansByFamily = (usuarios) => {
+  // Separar regentes
+  const regentes = usuarios
+    .filter(u => isRegente(u))
+    .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+
+  // Filtrar músicos (não regentes)
+  const musicosList = usuarios.filter(u => !isRegente(u));
+
+  // Agrupar por família
+  const grupos = {};
+  musicosList.forEach(u => {
+    const familia = u.instrumento_familia || 'Outros';
+    if (!grupos[familia]) grupos[familia] = [];
+    grupos[familia].push(u);
+  });
+
+  // Ordenar músicos dentro de cada família
+  Object.keys(grupos).forEach(familia => {
+    grupos[familia].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+  });
+
+  // Preparar resultado com ordem: famílias conhecidas primeiro, depois desconhecidas
+  const gruposPorFamilia = [];
+  const familiasConhecidas = new Set(ORDEM_FAMILIAS);
+
+  // Primeiro: famílias na ordem conhecida
+  for (const familia of ORDEM_FAMILIAS) {
+    if (grupos[familia] && grupos[familia].length > 0) {
+      gruposPorFamilia.push({ familia, musicos: grupos[familia] });
+    }
+  }
+
+  // Depois: famílias desconhecidas (não estão em ORDEM_FAMILIAS)
+  for (const [familia, musicos] of Object.entries(grupos)) {
+    if (!familiasConhecidas.has(familia) && musicos.length > 0) {
+      gruposPorFamilia.push({ familia, musicos });
+    }
+  }
+
+  // Extrair apenas os nomes das famílias ordenadas
+  const familiasOrdenadas = gruposPorFamilia.map(g => g.familia);
+
+  return { regentes, gruposPorFamilia, familiasOrdenadas };
+};
+
 const AdminPresenca = () => {
   const { showToast } = useUI();
   const [usuarios, setUsuarios] = useState([]);
@@ -745,9 +813,6 @@ const AdminPresenca = () => {
 
   // Contar presentes/ausentes com base no modo
   const contadorTexto = useMemo(() => {
-    // Helper para identificar Maestro
-    const isRegente = (u) => u.instrumento_nome === 'Regente' || u.nome.includes('Regente');
-
     // Total de músicos (excluindo Regente) para base de cálculo
     const totalMusicos = usuarios.filter(u => !isRegente(u)).length;
 
@@ -780,43 +845,10 @@ const AdminPresenca = () => {
   }, [modoMarcacao, selecionados, usuarios]);
 
   // Separar regentes dos músicos e agrupar por família
-  const { regentes, gruposPorFamilia } = useMemo(() => {
-    const isRegenteFn = (u) => u.instrumento_nome === 'Regente' || u.nome.includes('Regente');
-    const regList = usuarios.filter(u => isRegenteFn(u)).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
-    const musicosList = usuarios.filter(u => !isRegenteFn(u));
-
-    const grupos = {};
-    const ordemFamilias = ['Madeiras', 'Metais', 'Percussão', 'Outros'];
-
-    musicosList.forEach(u => {
-      const familia = u.instrumento_familia || 'Outros';
-      if (!grupos[familia]) grupos[familia] = [];
-      grupos[familia].push(u);
-    });
-
-    Object.keys(grupos).forEach(familia => {
-      grupos[familia].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
-    });
-
-    const result = [];
-    const familiasConhecidas = new Set(ordemFamilias);
-
-    // Primeiro adicionar famílias na ordem conhecida
-    for (const familia of ordemFamilias) {
-      if (grupos[familia] && grupos[familia].length > 0) {
-        result.push({ familia, musicos: grupos[familia] });
-      }
-    }
-
-    // Depois adicionar famílias desconhecidas (que não estão em ordemFamilias)
-    for (const [familia, musicos] of Object.entries(grupos)) {
-      if (!familiasConhecidas.has(familia) && musicos.length > 0) {
-        result.push({ familia, musicos });
-      }
-    }
-
-    return { regentes: regList, gruposPorFamilia: result };
-  }, [usuarios]);
+  const { regentes, gruposPorFamilia } = useMemo(
+    () => groupMusiciansByFamily(usuarios),
+    [usuarios]
+  );
 
   // Histórico limitado
   const historicoExibido = useMemo(() => {
@@ -1742,40 +1774,12 @@ const AdminPresenca = () => {
                             </span>
                           ) : (() => {
                             const presentes = detalheEnsaio.presentes || [];
-                            const regs = presentes.filter(p => p.instrumento_nome === 'Regente' || (p.nome && p.nome.includes('Regente')));
-                            const musicos = presentes.filter(p => p.instrumento_nome !== 'Regente' && !(p.nome && p.nome.includes('Regente')));
-
-                            // Group by family
-                            const familias = {};
-                            const ordemFam = ['Madeiras', 'Metais', 'Percussão', 'Outros'];
-                            musicos.forEach(p => {
-                              const fam = p.instrumento_familia || 'Outros';
-                              if (!familias[fam]) familias[fam] = [];
-                              familias[fam].push(p);
-                            });
-
-                            // Preparar lista de famílias ordenadas (conhecidas primeiro, desconhecidas depois)
-                            const familiasConhecidas = new Set(ordemFam);
-                            const familiasOrdenadas = [];
-
-                            // Primeiro adicionar famílias na ordem conhecida
-                            for (const familia of ordemFam) {
-                              if (familias[familia] && familias[familia].length > 0) {
-                                familiasOrdenadas.push(familia);
-                              }
-                            }
-
-                            // Depois adicionar famílias desconhecidas
-                            for (const familia of Object.keys(familias)) {
-                              if (!familiasConhecidas.has(familia) && familias[familia].length > 0) {
-                                familiasOrdenadas.push(familia);
-                              }
-                            }
+                            const { regentes, gruposPorFamilia } = groupMusiciansByFamily(presentes);
 
                             return (
                               <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                                 {/* Regente(s) */}
-                                {regs.length > 0 && (
+                                {regentes.length > 0 && (
                                   <>
                                     <div style={{
                                       fontSize: '10px', fontWeight: '700', color: '#D4AF37',
@@ -1785,7 +1789,7 @@ const AdminPresenca = () => {
                                     }}>
                                       <span style={{ fontSize: '12px' }}>🎼</span> Regência
                                     </div>
-                                    {regs.map(p => (
+                                    {regentes.map(p => (
                                       <div key={p.usuario_id} style={{
                                         fontSize: '13px', fontFamily: 'Outfit, sans-serif',
                                         color: 'var(--text-primary)', padding: '2px 0 2px 16px',
@@ -1798,8 +1802,8 @@ const AdminPresenca = () => {
                                 )}
 
                                 {/* Sections */}
-                                {familiasOrdenadas.map(fam => (
-                                  <React.Fragment key={fam}>
+                                {gruposPorFamilia.map(({ familia, musicos }) => (
+                                  <React.Fragment key={familia}>
                                     <div style={{
                                       fontSize: '10px', fontWeight: '700', color: 'var(--text-muted)',
                                       fontFamily: 'Outfit, sans-serif', textTransform: 'uppercase',
@@ -1808,11 +1812,11 @@ const AdminPresenca = () => {
                                     }}>
                                       <div style={{
                                         width: '6px', height: '6px', borderRadius: '50%',
-                                        background: getFamiliaColor(fam), flexShrink: 0
+                                        background: getFamiliaColor(familia), flexShrink: 0
                                       }} />
-                                      {fam} ({familias[fam].length})
+                                      {familia} ({musicos.length})
                                     </div>
-                                    {familias[fam].map(p => (
+                                    {musicos.map(p => (
                                       <div key={p.usuario_id} style={{
                                         fontSize: '13px', fontFamily: 'Outfit, sans-serif',
                                         color: 'var(--text-primary)', padding: '2px 0 2px 16px',
