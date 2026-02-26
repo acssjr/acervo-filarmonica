@@ -229,6 +229,10 @@ export const API = {
     return url;
   },
 
+  getDownloadParteUrl(parteId) {
+    return `${API_BASE_URL}/api/download/parte/${parteId}`;
+  },
+
   // ============ CATEGORIAS E INSTRUMENTOS ============
 
   async getCategorias() {
