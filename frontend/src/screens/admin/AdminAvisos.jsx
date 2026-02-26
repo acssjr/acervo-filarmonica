@@ -152,7 +152,7 @@ const AdminAvisos = () => {
                     </div>
                     <div>
                         <h1 style={{ fontSize: '26px', fontWeight: '800', color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.5px' }}>Comunicações Oficiais</h1>
-                        <p style={{ fontSize: '14px', color: 'var(--text-muted)', margin: 0, fontWeight: '500' }}>Gerencie avisos e comunicados para toda a orquestra</p>
+                        <p style={{ fontSize: '14px', color: 'var(--text-muted)', margin: 0, fontWeight: '500' }}>Gerencie avisos e comunicados para toda a banda de música</p>
                     </div>
                 </div>
             </div>

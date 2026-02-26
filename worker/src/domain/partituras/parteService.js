@@ -27,11 +27,13 @@ export async function getPartesPartitura(partituraId, request, env) {
         WHEN instrumento LIKE 'Trompa Eb%' OR instrumento LIKE 'Trompa%' THEN 11
         WHEN instrumento LIKE 'Barítono%' OR instrumento LIKE 'Baritono%' THEN 12
         WHEN instrumento LIKE 'Trombone%' THEN 13
-        WHEN instrumento LIKE 'Bombardino%' THEN 14
-        WHEN instrumento LIKE 'Baixo%' OR instrumento LIKE 'Tuba%' THEN 15
-        WHEN instrumento LIKE 'Caixa%' THEN 16
-        WHEN instrumento LIKE 'Bombo%' OR instrumento LIKE 'Bumbo%' THEN 17
-        WHEN instrumento LIKE 'Pratos%' THEN 18
+        WHEN instrumento LIKE 'Bombardino C%' THEN 14
+        WHEN instrumento LIKE 'Bombardino Bb%' THEN 15
+        WHEN instrumento LIKE 'Bombardino%' THEN 15
+        WHEN instrumento LIKE 'Baixo%' OR instrumento LIKE 'Tuba%' THEN 16
+        WHEN instrumento LIKE 'Caixa%' THEN 17
+        WHEN instrumento LIKE 'Bombo%' OR instrumento LIKE 'Bumbo%' THEN 18
+        WHEN instrumento LIKE 'Pratos%' THEN 19
         ELSE 99
       END,
       instrumento
