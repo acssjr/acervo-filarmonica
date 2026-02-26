@@ -30,13 +30,15 @@ export function setupPartituraRoutes(router) {
   });
 
   // Rotas autenticadas (downloads)
-  router.get('/api/download/:id', (req, env, params, context) => {
-    const id = params.id;
-    return downloadPartitura(id, req, env, context.user);
-  }, [authMiddleware]);
+  // IMPORTANTE: rota mais específica (/parte/:id) deve vir ANTES da genérica (/:id)
+  // para evitar que o router capture "parte" como parâmetro de /api/download/:id
   router.get('/api/download/parte/:id', (req, env, params, context) => {
     const id = params.id;
     return downloadParte(id, req, env, context.user);
+  }, [authMiddleware]);
+  router.get('/api/download/:id', (req, env, params, context) => {
+    const id = params.id;
+    return downloadPartitura(id, req, env, context.user);
   }, [authMiddleware]);
 
   // Rotas admin - partituras

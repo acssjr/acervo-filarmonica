@@ -17,7 +17,7 @@ import { API_BASE_URL } from '@constants/api';
 
 const PDFViewerModal = lazy(() => import('@components/modals/PDFViewerModal'));
 const ImportacaoLoteModal = lazy(() => import('@components/modals/ImportacaoLoteModal'));
-const CorrigirBombardinosModal = lazy(() => import('./components/CorrigirBombardinosModal'));
+
 
 // ===== FUNÇÕES MODULE-LEVEL (não recriadas a cada render) =====
 
@@ -99,7 +99,7 @@ const AdminPartituras = () => {
   const [showCatDropdown, setShowCatDropdown] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showImportacaoLote, setShowImportacaoLote] = useState(false);
-  const [showCorrigirBombardinos, setShowCorrigirBombardinos] = useState(false);
+
 
   // Estado para drag & drop global na tela
   const [isDraggingOver, setIsDraggingOver] = useState(false);
@@ -114,6 +114,9 @@ const AdminPartituras = () => {
   const [uploading, setUploading] = useState(null);
   const [deleting, setDeleting] = useState(null);
   const [addingPart, setAddingPart] = useState(false);
+  const [renamingParte, setRenamingParte] = useState(null); // ID da parte sendo renomeada
+  const [renameParteValue, setRenameParteValue] = useState('');
+  const [renamingParteSaving, setRenamingParteSaving] = useState(false);
   const addFileInputRef = useRef(null);
 
   // Estado para pre-visualizacao do PDF (modal)
@@ -731,6 +734,27 @@ const AdminPartituras = () => {
     }
   };
 
+  // Renomear instrumento de uma parte (inline)
+  const handleRenameParte = async (parteId, partituraId) => {
+    if (renamingParteSaving) return;
+    if (!renameParteValue.trim()) {
+      showToast('Nome do instrumento não pode ser vazio', 'error');
+      return;
+    }
+    setRenamingParteSaving(true);
+    try {
+      await API.renomearPartePartitura(parteId, renameParteValue.trim());
+      showToast(`Instrumento renomeado para "${renameParteValue.trim()}"!`);
+      setRenamingParte(null);
+      setRenameParteValue('');
+      await loadPartes(partituraId);
+    } catch (err) {
+      showToast(err.message || 'Erro ao renomear parte', 'error');
+    } finally {
+      setRenamingParteSaving(false);
+    }
+  };
+
   // Filtragem com busca avançada
   const filtered = useMemo(() => {
     let results = partituras;
@@ -882,34 +906,7 @@ const AdminPartituras = () => {
             </svg>
             Importar Lote
           </button>
-          <button
-            onClick={() => setShowCorrigirBombardinos(true)}
-            disabled={tutorialPending || showTutorial}
-            className="btn-secondary-hover"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '10px 20px',
-              borderRadius: '12px',
-              background: (tutorialPending || showTutorial)
-                ? 'rgba(212, 175, 55, 0.3)'
-                : 'rgba(212, 175, 55, 0.15)',
-              color: (tutorialPending || showTutorial) ? 'var(--text-muted)' : '#D4AF37',
-              border: '1px solid rgba(212, 175, 55, 0.3)',
-              fontSize: '14px',
-              fontWeight: '500',
-              cursor: (tutorialPending || showTutorial) ? 'not-allowed' : 'pointer',
-              fontFamily: 'Outfit, sans-serif',
-              opacity: (tutorialPending || showTutorial) ? 0.7 : 1,
-              transition: 'all 0.2s ease'
-            }}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
-            </svg>
-            Corrigir Bombardinos
-          </button>
+
         </div>
       </div>
 
@@ -1359,16 +1356,92 @@ const AdminPartituras = () => {
                                           <polyline points="14 2 14 8 20 8" />
                                         </svg>
                                       )}
-                                      <span style={{
-                                        fontSize: '12px',
-                                        color: isViewing ? '#3498db' : 'var(--text-primary)',
-                                        fontWeight: isViewing ? '500' : '400',
-                                        whiteSpace: 'nowrap',
-                                        overflow: 'hidden',
-                                        textOverflow: 'ellipsis'
-                                      }}>
-                                        {parte.instrumento}
-                                      </span>
+                                      {renamingParte === parte.id ? (
+                                        <div style={{ display: 'flex', gap: '4px', alignItems: 'center', flex: 1, minWidth: 0 }} onClick={(e) => e.stopPropagation()}>
+                                          <input
+                                            type="text"
+                                            value={renameParteValue}
+                                            onChange={(e) => setRenameParteValue(e.target.value)}
+                                            onKeyDown={(e) => {
+                                              if (e.key === 'Enter') handleRenameParte(parte.id, p.id);
+                                              if (e.key === 'Escape') { setRenamingParte(null); setRenameParteValue(''); }
+                                            }}
+                                            autoFocus
+                                            disabled={renamingParteSaving}
+                                            style={{
+                                              flex: 1,
+                                              padding: '2px 6px',
+                                              borderRadius: '4px',
+                                              border: '1.5px solid rgba(212, 175, 55, 0.5)',
+                                              background: 'var(--bg-primary)',
+                                              color: 'var(--text-primary)',
+                                              fontSize: '12px',
+                                              fontFamily: 'Outfit, sans-serif',
+                                              outline: 'none',
+                                              minWidth: 0,
+                                              opacity: renamingParteSaving ? 0.6 : 1
+                                            }}
+                                          />
+                                          <button
+                                            onClick={() => handleRenameParte(parte.id, p.id)}
+                                            disabled={renamingParteSaving}
+                                            title="Confirmar"
+                                            style={{
+                                              width: '20px', height: '20px',
+                                              borderRadius: '4px',
+                                              background: 'rgba(39, 174, 96, 0.15)',
+                                              border: '1px solid rgba(39, 174, 96, 0.3)',
+                                              color: '#27ae60',
+                                              cursor: renamingParteSaving ? 'wait' : 'pointer',
+                                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                              flexShrink: 0, padding: 0
+                                            }}
+                                          >
+                                            {renamingParteSaving ? (
+                                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: 'spin 1s linear infinite' }}>
+                                                <circle cx="12" cy="12" r="10" strokeOpacity="0.25" />
+                                                <path d="M12 2a10 10 0 0 1 10 10" strokeLinecap="round" />
+                                              </svg>
+                                            ) : (
+                                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                                <polyline points="20 6 9 17 4 12" />
+                                              </svg>
+                                            )}
+                                          </button>
+                                          <button
+                                            onClick={() => { setRenamingParte(null); setRenameParteValue(''); }}
+                                            disabled={renamingParteSaving}
+                                            title="Cancelar"
+                                            style={{
+                                              width: '20px', height: '20px',
+                                              borderRadius: '4px',
+                                              background: 'rgba(231, 76, 60, 0.1)',
+                                              border: '1px solid rgba(231, 76, 60, 0.3)',
+                                              color: '#e74c3c',
+                                              cursor: renamingParteSaving ? 'not-allowed' : 'pointer',
+                                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                              flexShrink: 0, padding: 0,
+                                              opacity: renamingParteSaving ? 0.5 : 1
+                                            }}
+                                          >
+                                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                              <line x1="18" y1="6" x2="6" y2="18" />
+                                              <line x1="6" y1="6" x2="18" y2="18" />
+                                            </svg>
+                                          </button>
+                                        </div>
+                                      ) : (
+                                        <span style={{
+                                          fontSize: '12px',
+                                          color: isViewing ? '#3498db' : 'var(--text-primary)',
+                                          fontWeight: isViewing ? '500' : '400',
+                                          whiteSpace: 'nowrap',
+                                          overflow: 'hidden',
+                                          textOverflow: 'ellipsis'
+                                        }}>
+                                          {parte.instrumento}
+                                        </span>
+                                      )}
                                     </div>
                                     <div
                                       data-tutorial={partes.indexOf(parte) === 0 ? 'action-buttons' : undefined}
@@ -1387,6 +1460,33 @@ const AdminPartituras = () => {
                                         e.currentTarget.parentElement.style.borderColor = isViewing ? 'rgba(52, 152, 219, 0.4)' : 'var(--border)';
                                       }}
                                     >
+                                      <button
+                                        onClick={() => {
+                                          setRenamingParte(parte.id);
+                                          setRenameParteValue(parte.instrumento);
+                                        }}
+                                        title="Renomear instrumento"
+                                        className="action-btn action-btn-rename"
+                                        style={{
+                                          width: '24px',
+                                          height: '24px',
+                                          borderRadius: '4px',
+                                          background: 'rgba(52, 152, 219, 0.1)',
+                                          border: '1px solid rgba(52, 152, 219, 0.2)',
+                                          color: '#3498db',
+                                          cursor: 'pointer',
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          justifyContent: 'center',
+                                          transition: 'all 0.15s ease',
+                                          padding: 0
+                                        }}
+                                      >
+                                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                        </svg>
+                                      </button>
                                       <label
                                         data-tutorial={partes.indexOf(parte) === 0 ? 'btn-replace' : undefined}
                                         title="Substituir arquivo"
@@ -2023,16 +2123,7 @@ const AdminPartituras = () => {
         </>
       )}
 
-      {showCorrigirBombardinos && (
-        <Suspense fallback={null}>
-          <CorrigirBombardinosModal
-            isOpen={showCorrigirBombardinos}
-            onClose={() => setShowCorrigirBombardinos(false)}
-            onSuccess={loadData}
-            partituras={partituras}
-          />
-        </Suspense>
-      )}
+
 
       {/* Estilos */}
       <style>{`
@@ -2063,6 +2154,12 @@ const AdminPartituras = () => {
         }
 
         /* Hover individual para botao de substituir */
+        .action-btn-rename:hover {
+          background: rgba(52, 152, 219, 0.25) !important;
+          border-color: rgba(52, 152, 219, 0.5) !important;
+          transform: scale(1.05);
+        }
+
         .action-btn-replace:hover {
           background: rgba(212, 175, 55, 0.25) !important;
           border-color: rgba(212, 175, 55, 0.5) !important;
