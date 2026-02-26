@@ -18,8 +18,10 @@ import {
 } from '../domain/partituras/index.js';
 
 /**
- * Configurar rotas de partituras
- * @param {Router} router - Instância do router
+ * Registers all HTTP routes for partituras (scores), including public listings, authenticated downloads, and admin management, on the provided router.
+ *
+ * Ensures the specific /api/download/parte/:id route is registered before the generic /api/download/:id to avoid route parameter collisions.
+ * @param {Router} router - Router instance to attach the partituras routes to.
  */
 export function setupPartituraRoutes(router) {
   // Rotas públicas (listagem)
@@ -30,13 +32,15 @@ export function setupPartituraRoutes(router) {
   });
 
   // Rotas autenticadas (downloads)
-  router.get('/api/download/:id', (req, env, params, context) => {
-    const id = params.id;
-    return downloadPartitura(id, req, env, context.user);
-  }, [authMiddleware]);
+  // IMPORTANTE: rota mais específica (/parte/:id) deve vir ANTES da genérica (/:id)
+  // para evitar que o router capture "parte" como parâmetro de /api/download/:id
   router.get('/api/download/parte/:id', (req, env, params, context) => {
     const id = params.id;
     return downloadParte(id, req, env, context.user);
+  }, [authMiddleware]);
+  router.get('/api/download/:id', (req, env, params, context) => {
+    const id = params.id;
+    return downloadPartitura(id, req, env, context.user);
   }, [authMiddleware]);
 
   // Rotas admin - partituras
