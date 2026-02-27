@@ -1,6 +1,6 @@
 // ===== USE SHEET DOWNLOAD NETWORK TESTS =====
 import { renderHook, act } from '@testing-library/react';
-import { describe, it, expect, jest, beforeEach, afterAll } from '@jest/globals';
+import { describe, it, expect, jest, beforeEach, beforeAll, afterAll } from '@jest/globals';
 
 // Mock do Storage ANTES de importar o hook (hoisted)
 jest.unstable_mockModule('@services/storage', () => ({
@@ -12,12 +12,18 @@ jest.unstable_mockModule('@services/storage', () => ({
 // Import dinâmico DEPOIS do mock para garantir que o mock seja aplicado
 const { useSheetDownload } = await import('./useSheetDownload');
 
-// Mocks de APIs do browser
-global.URL.createObjectURL = jest.fn(() => 'blob:mock-url');
-global.URL.revokeObjectURL = jest.fn();
-global.Blob = class { constructor(parts) { this.parts = parts; } };
+// Salva globais originais para não vazarem para outros testes
+const originalCreateObjectURL = global.URL?.createObjectURL;
+const originalRevokeObjectURL = global.URL?.revokeObjectURL;
+const originalBlob = global.Blob;
 
 describe('useSheetDownload - Resiliencia de Rede e Storage', () => {
+    beforeAll(() => {
+        // Aplica mocks customizados para o navegador
+        global.URL.createObjectURL = jest.fn(() => 'blob:mock-url');
+        global.URL.revokeObjectURL = jest.fn();
+        global.Blob = class { constructor(parts) { this.parts = parts; } };
+    });
     const mockShowToast = jest.fn();
     const mockSelectedSheet = { id: 9, title: 'Dobrado Nº 9' };
     const mockParte = { id: 42, instrumento: 'Bombardino Bb' };
@@ -37,6 +43,10 @@ describe('useSheetDownload - Resiliencia de Rede e Storage', () => {
     });
 
     afterAll(() => {
+        // Restaura as implementações originais
+        global.URL.createObjectURL = originalCreateObjectURL;
+        global.URL.revokeObjectURL = originalRevokeObjectURL;
+        global.Blob = originalBlob;
         jest.restoreAllMocks();
     });
 
