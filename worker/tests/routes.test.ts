@@ -251,6 +251,50 @@ describe('Rotas de Partes (BUG FIX)', () => {
       expect(response.status).toBe(401);
     });
   });
+
+  describe('GET /api/download/parte/:id - Resiliencia de Storage/DB', () => {
+    let userToken: string;
+
+    beforeAll(async () => {
+      userToken = await createTestToken(2, false);
+    });
+
+    it('retorna 404 se a ID da parte não existir no banco de dados', async () => {
+      const response = await SELF.fetch('https://test.local/api/download/parte/99999', {
+        headers: { Authorization: `Bearer ${userToken}` }
+      });
+      // Garante que o Worker não exploda num erro 500
+      expect(response.status).toBe(404);
+      const data = await response.json() as { error: string };
+      expect(data.error).toBe('Parte não encontrada');
+    });
+
+    it('retorna 404 amigável se a parte existir no banco, mas o arquivo sumiu do R2 Bucket!', async () => {
+      // Como estamos rodando em ambiente de teste do Vitest,
+      // qualquer request à um arquivo que não foi "put()" no env.BUCKET
+      // vai resultar em bucket.get() retornando NULL!
+
+      // Precisamos dar seed em uma partitura+parte falsa sem colocar o blob no storage. (Mock DB apenas)
+      const partituraId = await env.DB.prepare(`
+        INSERT INTO partituras (titulo, compositor, categoria_id, arquivo_nome, arquivo_tamanho, destaque, ativo)
+        VALUES ('Teste R2 Desaparecido', 'Mock', 1, 'mock.pdf', 0, 0, 1) RETURNING id
+      `).first('id');
+
+      const parteId = await env.DB.prepare(`
+        INSERT INTO partes (partitura_id, instrumento, arquivo_nome)
+        VALUES (?, 'Trompete Bb', 'arquivo_fantasma.pdf') RETURNING id
+      `).bind(partituraId).first('id');
+
+      const response = await SELF.fetch(`https://test.local/api/download/parte/${parteId}`, {
+        headers: { Authorization: `Bearer ${userToken}` }
+      });
+
+      // Aqui o teste crucial: backend TEM QUE dar 404, não pode crashear (500)
+      expect(response.status).toBe(404);
+      const data = await response.json() as { error: string };
+      expect(data.error).toBe('Arquivo não encontrado no storage');
+    });
+  });
 });
 
 describe('Métodos HTTP incorretos', () => {

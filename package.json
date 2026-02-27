@@ -21,7 +21,7 @@
     "test:e2e": "npx playwright test",
     "test:e2e:ui": "npx playwright test --ui",
     "test:e2e:headed": "npx playwright test --headed",
-    "lint:worker": "eslint worker/src/ --max-warnings 0"
+    "lint:worker": "eslint worker/ --max-warnings 0"
   },
   "repository": {
     "type": "git",
@@ -48,6 +48,7 @@
     "@eslint/js": "^9.39.2",
     "@playwright/test": "^1.57.0",
     "@types/node": "^24.10.1",
+    "@vitest/coverage-v8": "3.2",
     "eslint": "^9.39.2",
     "globals": "^16.5.0",
     "vitest": "3.2",

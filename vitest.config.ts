@@ -25,5 +25,11 @@ export default defineWorkersConfig({
     exclude: ['node_modules', 'frontend'],
     // Timeout para testes de integração
     testTimeout: 10000,
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html'],
+      include: ['worker/src/**/*.js'],
+      exclude: ['worker/tests/**'],
+    },
   },
 });
