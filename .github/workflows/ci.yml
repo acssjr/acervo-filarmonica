@@ -3,7 +3,7 @@
 #
 # Jobs:
 # - lint: ESLint (obrigatorio) - roda primeiro, fail-fast
-# - worker-tests: Testes de integração do Worker (Vitest + workerd) - NOVO!
+# - worker-tests: Testes de integração do Worker (Vitest + workerd)
 # - unit-tests: Testes Jest do frontend (obrigatorio) - roda em todo push/PR
 # - e2e-tests-mocked: Testes Playwright com mocks (obrigatorio) - roda em todo push/PR
 # - build: Build do frontend (obrigatorio) - depende dos testes

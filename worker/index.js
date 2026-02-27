@@ -95,7 +95,7 @@ function arrayBufferToHex(buffer) {
     .join('');
 }
 
-function hexToArrayBuffer(hex) {
+function _hexToArrayBuffer(hex) {
   const bytes = new Uint8Array(hex.length / 2);
   for (let i = 0; i < hex.length; i += 2) {
     bytes[i / 2] = parseInt(hex.substr(i, 2), 16);
@@ -1799,7 +1799,7 @@ async function removeFavorito(partituraId, request, env) {
 // ============ ROUTER ============
 
 export default {
-  async fetch(request, env, ctx) {
+  async fetch(request, env, _ctx) {
     // CORS preflight
     if (request.method === 'OPTIONS') {
       return new Response(null, { headers: getCorsHeaders(request) });

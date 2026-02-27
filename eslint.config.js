@@ -2,7 +2,7 @@ import js from '@eslint/js';
 import globals from 'globals';
 
 export default [
-  // Ignorar tudo exceto worker/src
+  // Ignorar tudo exceto worker/src e worker/*.js
   {
     ignores: [
       'frontend/**',
@@ -11,42 +11,34 @@ export default [
       'database/**',
       'scripts/**',
       'e2e/**',
+      'worker/tests/**',
     ],
   },
 
   js.configs.recommended,
 
   {
-    files: ['worker/src/**/*.js'],
+    files: ['worker/src/**/*.js', 'worker/*.js'],
     languageOptions: {
       ecmaVersion: 2024,
       sourceType: 'module',
       globals: {
-        ...globals.worker, // fetch, Request, Response, etc.
+        ...globals.worker,
+        ...globals.node,
         caches: 'readonly',
+        console: 'readonly',
+        crypto: 'readonly',
       },
     },
     rules: {
-      // Proibir acidentalmente usar APIs do browser
       'no-restricted-globals': [
         'error',
         { name: 'window', message: 'Workers não têm acesso ao window' },
         { name: 'document', message: 'Workers não têm acesso ao DOM' },
         { name: 'location', message: 'Use request.url em Workers' },
       ],
-
-      // Console restrito em serverless
-      'no-console': ['warn', { allow: ['warn', 'error'] }],
-
-      // Padrão para variáveis
-      'no-unused-vars': [
-        'warn',
-        {
-          argsIgnorePattern: '^_',
-          varsIgnorePattern: '^_',
-          caughtErrors: 'none',
-        },
-      ],
+      'no-console': 'off',
+      'no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrors: 'none' }],
     },
   },
 ];
