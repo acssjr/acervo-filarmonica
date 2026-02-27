@@ -1,19 +1,51 @@
 /* ===== PRESENCE STATS ===== */
-/* Stats de presença com design glassmorphism */
+/* Stats de presença com design glassmorphism premium */
+
+:root {
+  --ps-bg: linear-gradient(145deg, rgba(255, 255, 255, 0.7) 0%, rgba(244, 228, 188, 0.4) 100%);
+  --ps-border: rgba(212, 175, 55, 0.3);
+  --ps-text-main: #5C1A1B; /* Vinho escuro para texto no modo claro */
+  --ps-text-sub: rgba(92, 26, 27, 0.7);
+  --ps-streak-number: #722F37;
+  --ps-shadow: 0 8px 32px rgba(212, 175, 55, 0.15);
+  
+  /* Cards de presença no modo claro */
+  --ps-card-present-bg: linear-gradient(145deg, rgba(74, 180, 74, 0.15) 0%, rgba(74, 180, 74, 0.08) 100%);
+  --ps-card-present-border: rgba(74, 180, 74, 0.3);
+  --ps-card-absent-bg: linear-gradient(145deg, rgba(200, 80, 80, 0.12) 0%, rgba(200, 80, 80, 0.06) 100%);
+  --ps-card-absent-border: rgba(200, 80, 80, 0.25);
+}
+
+[data-theme="dark"] {
+  --ps-bg: linear-gradient(145deg, rgba(114, 47, 55, 0.5) 0%, rgba(92, 26, 27, 0.6) 100%);
+  --ps-border: rgba(212, 175, 55, 0.2);
+  --ps-text-main: #F4E4BC;
+  --ps-text-sub: rgba(244, 228, 188, 0.7);
+  --ps-streak-number: #F4E4BC;
+  --ps-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+
+  /* Cards de presença no modo escuro */
+  --ps-card-present-bg: linear-gradient(145deg, rgba(74, 180, 74, 0.3) 0%, rgba(74, 180, 74, 0.15) 100%);
+  --ps-card-present-border: rgba(74, 180, 74, 0.4);
+  --ps-card-absent-bg: linear-gradient(145deg, rgba(200, 80, 80, 0.2) 0%, rgba(200, 80, 80, 0.1) 100%);
+  --ps-card-absent-border: rgba(200, 80, 80, 0.3);
+}
 
 /* Container horizontal: StreakBar + AttendanceCalendar */
 .container {
   display: flex;
-  gap: 12px;
+  gap: 16px;
   align-items: stretch;
-  background: linear-gradient(145deg, rgba(114, 47, 55, 0.5) 0%, rgba(92, 26, 27, 0.6) 100%);
-  border: 1px solid rgba(212, 175, 55, 0.2);
-  border-radius: 16px;
-  padding: 16px;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+  background: var(--ps-bg);
+  border: 1px solid var(--ps-border);
+  border-radius: 20px;
+  padding: 18px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: var(--ps-shadow);
   position: relative;
   overflow: hidden;
+  transition: all 0.3s ease;
 }
 
 .container::before {
@@ -23,34 +55,36 @@
   left: 0;
   right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.3), transparent);
+  background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.4), transparent);
 }
 
 /* ===== STREAK BAR (lado esquerdo) ===== */
 .streakBar {
-  width: 56px;
-  min-width: 56px;
+  width: 60px;
+  min-width: 60px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   padding: 4px 0;
+  border-right: 1px solid rgba(212, 175, 55, 0.15);
+  margin-right: 4px;
 }
 
 .streakNumber {
   font-family: Outfit, sans-serif;
-  font-size: 28px;
+  font-size: 32px;
   font-weight: 800;
-  color: #F4E4BC;
+  color: var(--ps-streak-number);
   line-height: 1;
-  text-shadow: 0 2px 8px rgba(212, 175, 55, 0.3);
+  text-shadow: 0 2px 10px rgba(212, 175, 55, 0.25);
 }
 
 .fireContainer {
   display: flex;
   align-items: center;
   justify-content: center;
-  filter: drop-shadow(0 0 6px rgba(255, 150, 0, 0.4));
+  filter: drop-shadow(0 0 8px rgba(255, 150, 0, 0.5));
   transition: all 0.3s ease;
 }
 
@@ -59,285 +93,205 @@
 }
 
 .fireInactive {
-  opacity: 0.3;
+  opacity: 0.25;
   filter: grayscale(1);
 }
 
-/* ===== STATS CARD (fallback) ===== */
-.statsCard {
-  background: linear-gradient(145deg, rgba(114, 47, 55, 0.6) 0%, rgba(92, 26, 27, 0.7) 100%);
-  border: 1px solid rgba(212, 175, 55, 0.25);
-  border-radius: 16px;
-  padding: 20px;
-  position: relative;
-  overflow: hidden;
-  backdrop-filter: blur(10px);
-  box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
-}
-
-.statsCard::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.5), transparent);
-}
-
-.statsHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-}
-
-.statsTitle {
-  font-family: Outfit, sans-serif;
-  font-size: 16px;
-  font-weight: 600;
-  color: #F4E4BC;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.statsSubtitle {
-  font-family: Outfit, sans-serif;
-  font-size: 12px;
-  color: rgba(244, 228, 188, 0.6);
-}
-
-/* ===== STREAK BADGE ===== */
-.streakBadge {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.fireIcon {
-  width: 40px;
-  height: 40px;
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.fireIcon.active::before {
-  animation: fire-flicker 1s ease-in-out infinite, fire-glow 2s ease-in-out infinite;
-}
-
-.fireIcon.inactive {
-  opacity: 0.35;
-  filter: grayscale(1);
-}
-
-@keyframes fire-flicker {
-
-  0%,
-  100% {
-    transform: scale(1) rotate(0deg);
-  }
-
-  25% {
-    transform: scale(1.05) rotate(-2deg);
-  }
-
-  50% {
-    transform: scale(0.97) rotate(1deg);
-  }
-
-  75% {
-    transform: scale(1.03) rotate(-1deg);
-  }
-}
-
-/* ===== CALENDAR STATUS ICON ===== */
+/* ===== ICON COLORS ===== */
 .calendarIcon {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-top: 2px;
+  margin-top: 4px;
 }
 
 .present .calendarIcon {
   color: #4AB44A;
+  filter: drop-shadow(0 0 2px rgba(74, 180, 74, 0.3));
 }
 
 .absent .calendarIcon {
-  color: rgba(200, 80, 80, 0.7);
-}
-
-@keyframes fire-glow {
-
-  0%,
-  100% {
-    filter: drop-shadow(0 0 4px rgba(255, 200, 0, 0.4)) drop-shadow(0 0 8px rgba(212, 175, 55, 0.2));
-  }
-
-  50% {
-    filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.7)) drop-shadow(0 0 16px rgba(212, 175, 55, 0.4));
-  }
+  color: #EF4444;
+  opacity: 0.8;
 }
 
 /* Barra de progresso vertical */
 .streakProgressContainer {
   flex: 1;
-  width: 6px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 3px;
+  width: 8px;
+  background: rgba(212, 175, 55, 0.1);
+  border-radius: 4px;
   overflow: hidden;
   position: relative;
+  border: 1px solid rgba(212, 175, 55, 0.05);
 }
 
 .streakProgressFill {
   position: absolute;
   bottom: 0;
   width: 100%;
-  background: linear-gradient(180deg, #F4E4BC 0%, #D4AF37 100%);
-  border-radius: 3px;
-  box-shadow: 0 0 8px rgba(212, 175, 55, 0.5);
+  background: linear-gradient(to top, #D4AF37, #F4E4BC);
+  border-radius: 4px;
+  box-shadow: 0 0 10px rgba(212, 175, 55, 0.4);
 }
 
-/* ===== ATTENDANCE CALENDAR (FLEX-GROW) ===== */
+/* ===== ATTENDANCE CALENDAR ===== */
 .calendarSection {
   flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
 .calendarTitle {
   font-family: Outfit, sans-serif;
-  font-size: 14px;
-  font-weight: 600;
-  color: rgba(244, 228, 188, 0.8);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ps-text-sub);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 1px;
 }
 
 .calendarGrid {
   display: flex;
-  gap: 8px;
+  gap: 10px;
 }
 
 .calendarDay {
   flex: 1;
   min-width: 0;
-  height: 72px;
-  border-radius: 12px;
+  height: 80px;
+  border-radius: 14px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
+  gap: 3px;
   border: 1px solid transparent;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   position: relative;
+  background: var(--bg-card); /* Fallback */
 }
 
 .calendarDay.present {
-  background: linear-gradient(145deg, rgba(74, 180, 74, 0.3) 0%, rgba(74, 180, 74, 0.15) 100%);
-  border-color: rgba(74, 180, 74, 0.4);
-  box-shadow: 0 4px 12px rgba(74, 180, 74, 0.2);
+  background: var(--ps-card-present-bg);
+  border-color: var(--ps-card-present-border);
+  box-shadow: 0 4px 15px rgba(74, 180, 74, 0.1);
 }
 
 .calendarDay.absent {
-  background: linear-gradient(145deg, rgba(200, 80, 80, 0.2) 0%, rgba(200, 80, 80, 0.1) 100%);
-  border-color: rgba(200, 80, 80, 0.3);
-  box-shadow: 0 4px 12px rgba(200, 80, 80, 0.15);
+  background: var(--ps-card-absent-bg);
+  border-color: var(--ps-card-absent-border);
+  box-shadow: 0 4px 15px rgba(200, 80, 80, 0.08);
 }
 
 .calendarDay:hover {
-  transform: scale(1.05);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+  transform: translateY(-4px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  border-color: rgba(212, 175, 55, 0.4);
 }
 
 .calendarMonth {
   font-family: Outfit, sans-serif;
-  font-size: 9px;
-  font-weight: 600;
+  font-size: 10px;
+  font-weight: 700;
   text-transform: uppercase;
-  opacity: 0.8;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--ps-text-sub);
 }
 
 .calendarDayNumber {
   font-family: Outfit, sans-serif;
-  font-size: 18px;
-  font-weight: 700;
+  font-size: 20px;
+  font-weight: 800;
   line-height: 1;
-  color: #F4E4BC;
+  color: var(--ps-text-main);
+  letter-spacing: -0.5px;
 }
 
 .calendarWeekday {
   font-family: Outfit, sans-serif;
-  font-size: 10px;
-  opacity: 0.7;
-  color: rgba(255, 255, 255, 0.8);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ps-text-sub);
+  opacity: 0.8;
 }
 
-/* ===== CALENDAR BADGE ===== */
-.calendarBadge {
-  position: absolute;
-  top: -6px;
-  right: -6px;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 5px;
-  background: linear-gradient(145deg, #D4AF37 0%, #B8941F 100%);
-  border-radius: 9px;
-  font-family: Outfit, sans-serif;
-  font-size: 10px;
-  font-weight: 700;
-  color: #1A1A1A;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 6px rgba(212, 175, 55, 0.4);
-  animation: badge-pulse 2s ease-in-out infinite;
-  z-index: 2;
+/* ===== ANIMATIONS ===== */
+@keyframes fire-flicker {
+  0%, 100% { transform: scale(1) rotate(0deg); opacity: 1; }
+  25% { transform: scale(1.1) rotate(-3deg); opacity: 0.9; }
+  50% { transform: scale(0.95) rotate(2deg); opacity: 1; }
+  75% { transform: scale(1.05) rotate(-1deg); opacity: 0.95; }
 }
 
 @keyframes badge-pulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 2px 6px rgba(212, 175, 55, 0.4); }
+  50% { transform: scale(1.15); box-shadow: 0 4px 12px rgba(212, 175, 55, 0.6); }
+}
 
-  0%,
-  100% {
-    transform: scale(1);
-  }
+/* Empty placeholder styles */
+.calendarEmpty {
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px dashed var(--ps-border);
+  border-radius: 14px;
+  color: var(--ps-text-sub);
+  font-style: italic;
+  font-size: 13px;
+}
 
-  50% {
-    transform: scale(1.1);
-  }
+/* Skeleton styles */
+.skeleton {
+  display: flex;
+  gap: 16px;
+  height: 120px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 20px;
+  padding: 18px;
+  animation: pulse 1.5s infinite;
+}
+
+.skeletonBar { width: 60px; background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
+.skeletonCalendar { flex: 1; background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
+
+@keyframes pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 0.8; } }
+
+/* Error styles */
+.error {
+  padding: 20px;
+  text-align: center;
+  color: #EF4444;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 16px;
+  font-family: Outfit, sans-serif;
+  font-size: 14px;
 }
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
   .container {
-    padding: 12px;
-    gap: 10px;
-  }
-
-  .statsCard {
-    padding: 16px;
+    padding: 14px;
+    gap: 12px;
   }
 
   .streakBar {
-    width: 48px;
-    min-width: 48px;
+    width: 50px;
+    min-width: 50px;
+    padding-right: 8px;
   }
 
   .streakNumber {
-    font-size: 24px;
+    font-size: 26px;
   }
 
   .calendarDay {
-    height: 64px;
+    height: 72px;
   }
 
   .calendarGrid {
@@ -345,15 +299,6 @@
   }
 
   .calendarDayNumber {
-    font-size: 16px;
+    font-size: 17px;
   }
-}
-
-/* ===== DARK MODE OVERRIDES ===== */
-[data-theme="dark"] .calendarDay.present {
-  background: linear-gradient(145deg, rgba(74, 180, 74, 0.35) 0%, rgba(74, 180, 74, 0.2) 100%);
-}
-
-[data-theme="dark"] .calendarDay.absent {
-  background: linear-gradient(145deg, rgba(200, 80, 80, 0.25) 0%, rgba(200, 80, 80, 0.15) 100%);
 }

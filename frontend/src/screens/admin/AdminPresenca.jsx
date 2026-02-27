@@ -965,7 +965,7 @@ const AdminPresenca = () => {
       {/* Toolbar Compacta: Data + Mode Toggle */}
       <div className="admin-presenca-toolbar">
         {/* DatePicker à esquerda */}
-        <div style={{ flex: 1, minWidth: '280px' }}>
+        <div className="ap-toolbar-date">
           <DatePickerCalendar
             value={dataEnsaio}
             max={dataMaxima}
@@ -974,13 +974,7 @@ const AdminPresenca = () => {
         </div>
 
         {/* Segmented Control à direita */}
-        <div style={{
-          display: 'flex',
-          border: '1px solid var(--border)',
-          borderRadius: '10px',
-          overflow: 'hidden',
-          flexShrink: 0
-        }}>
+        <div className="ap-toolbar-segment">
           <button
             onClick={() => setModoMarcacao('presentes')}
             style={{
@@ -1038,16 +1032,8 @@ const AdminPresenca = () => {
           flexDirection: 'column'
         }}>
           {/* Header da Seção */}
-          <div style={{
-            padding: '16px 20px',
-            borderBottom: '1px solid var(--border)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: '10px'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div className="ap-section-header">
+            <div className="ap-section-title">
               <UsersIcon size={20} color="#D4AF37" />
               <h2 style={{
                 fontFamily: 'Outfit, sans-serif',
@@ -1069,7 +1055,7 @@ const AdminPresenca = () => {
             </div>
 
             {/* Botões de Controle Compactos */}
-            <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <div className="ap-section-actions">
               {[
                 { label: 'Todos', onClick: marcarTodos },
                 { label: 'Limpar', onClick: desmarcarTodos },
@@ -1260,11 +1246,8 @@ const AdminPresenca = () => {
           flexDirection: 'column'
         }}>
           {/* Header da Seção */}
-          <div style={{
-            padding: '16px 20px',
-            borderBottom: '1px solid var(--border)'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+          <div className="ap-section-header">
+            <div className="ap-section-title" style={{ marginBottom: '12px' }}>
               <MusicIcon size={20} color="#D4AF37" />
               <h2 style={{
                 fontFamily: 'Outfit, sans-serif',

@@ -343,11 +343,54 @@
 
 .admin-presenca-toolbar {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: 12px;
   margin-bottom: 24px;
-  gap: 16px;
+}
+
+.ap-toolbar-date,
+.ap-toolbar-segment {
+  width: 100%;
+}
+
+.ap-toolbar-segment {
+  display: flex;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.ap-toolbar-segment button {
+  flex: 1;
+  justify-content: center;
+}
+
+.ap-section-header {
+  padding: 16px 14px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ap-section-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
   flex-wrap: wrap;
+}
+
+.ap-section-actions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  width: 100%;
+}
+
+.ap-section-actions button {
+  width: 100%;
+  justify-content: center;
 }
 
 /* Historico row actions always visible on mobile (no hover on touch) */
@@ -370,6 +413,46 @@
   .admin-presenca-detalhe-grid {
     grid-template-columns: 1fr 1fr;
     gap: 24px;
+  }
+
+  .admin-presenca-toolbar {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .ap-toolbar-date {
+    flex: 1;
+    min-width: 280px;
+  }
+
+  .ap-toolbar-segment {
+    width: auto;
+  }
+
+  .ap-toolbar-segment button {
+    flex: none;
+  }
+
+  .ap-section-header {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+  }
+
+  .ap-section-title {
+    width: auto;
+  }
+
+  .ap-section-actions {
+    display: flex;
+    width: auto;
+    gap: 6px;
+  }
+
+  .ap-section-actions button {
+    width: auto;
   }
 }
 
