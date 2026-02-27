@@ -1,19 +1,21 @@
 // ===== USE SHEET DOWNLOAD NETWORK TESTS =====
 import { renderHook, act } from '@testing-library/react';
-import { useSheetDownload } from './useSheetDownload';
-import { describe, it, expect, jest, beforeEach } from '@jest/globals';
-import { Storage } from '@services/storage';
+import { describe, it, expect, jest, beforeEach, afterAll } from '@jest/globals';
 
-// Mocks principais da rede e de bibliotecas externas
-global.URL.createObjectURL = jest.fn(() => 'blob:mock-url');
-global.URL.revokeObjectURL = jest.fn();
-global.Blob = class { constructor(parts) { this.parts = parts; } };
-
+// Mock do Storage ANTES de importar o hook (hoisted)
 jest.unstable_mockModule('@services/storage', () => ({
     Storage: {
         get: jest.fn(() => 'fake-jwt-token')
     }
 }));
+
+// Import dinâmico DEPOIS do mock para garantir que o mock seja aplicado
+const { useSheetDownload } = await import('./useSheetDownload');
+
+// Mocks de APIs do browser
+global.URL.createObjectURL = jest.fn(() => 'blob:mock-url');
+global.URL.revokeObjectURL = jest.fn();
+global.Blob = class { constructor(parts) { this.parts = parts; } };
 
 describe('useSheetDownload - Resiliencia de Rede e Storage', () => {
     const mockShowToast = jest.fn();

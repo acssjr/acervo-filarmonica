@@ -2,7 +2,7 @@ import js from '@eslint/js';
 import globals from 'globals';
 
 export default [
-  // Ignorar tudo exceto worker/src
+  // Ignorar tudo exceto worker/src e worker/*.js
   {
     ignores: [
       'frontend/**',
@@ -11,7 +11,7 @@ export default [
       'database/**',
       'scripts/**',
       'e2e/**',
-      'worker/tests/**/*.ts',
+      'worker/tests/**',
     ],
   },
 
@@ -39,31 +39,6 @@ export default [
       ],
       'no-console': 'off',
       'no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrors: 'none' }],
-    },
-  },
-
-  // Configuração para testes do Worker
-  {
-    files: ['worker/tests/**/*.js'],
-    languageOptions: {
-      ecmaVersion: 2024,
-      sourceType: 'module',
-      globals: {
-        ...globals.node,
-        describe: 'readonly',
-        it: 'readonly',
-        expect: 'readonly',
-        beforeAll: 'readonly',
-        afterAll: 'readonly',
-        beforeEach: 'readonly',
-        afterEach: 'readonly',
-        vi: 'readonly',
-        vitest: 'readonly',
-      },
-    },
-    rules: {
-      'no-console': 'off',
-      'no-unused-vars': 'off',
     },
   },
 ];
