@@ -334,7 +334,7 @@ export const useSheetDownload = ({ showToast, selectedSheet, partes = [] }) => {
     showToast(`Carregando "${selectedSheet.title}" - ${parte.instrumento}...`);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/download/parte/${parte.id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/download/parte/${parte.id}?action=view`, {
         headers: { 'Authorization': `Bearer ${Storage.get('authToken')}` }
       });
 

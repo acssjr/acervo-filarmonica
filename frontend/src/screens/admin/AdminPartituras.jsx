@@ -620,8 +620,8 @@ const AdminPartituras = () => {
 
     try {
       const token = Storage.get('authToken', null);
-      // Endpoint correto: /api/download/parte/:parteId
-      const url = `${API_BASE_URL}/api/download/parte/${parte.id}`;
+      // Endpoint correto: /api/download/parte/:parteId (?action=admin evita tracking)
+      const url = `${API_BASE_URL}/api/download/parte/${parte.id}?action=admin`;
 
       // Usa XMLHttpRequest em vez de fetch para evitar interceptacao por IDM e outros gerenciadores
       // Os headers X-Requested-With e Accept fazem o IDM ignorar a requisicao
@@ -1063,7 +1063,7 @@ const AdminPartituras = () => {
           textAlign: 'center',
           padding: '60px 20px',
           color: 'var(--text-secondary)',
-          }}>
+        }}>
           <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ opacity: 0.5, marginBottom: '16px' }}>
             <circle cx="11" cy="11" r="8" />
             <path d="m21 21-4.35-4.35" />
@@ -1817,7 +1817,7 @@ const AdminPartituras = () => {
                     fontSize: '20px',
                     fontWeight: '700',
                     color: 'var(--text-primary)',
-                    }}>
+                  }}>
                     Editar Partitura
                   </h2>
                   <p style={{
@@ -1866,7 +1866,7 @@ const AdminPartituras = () => {
                   fontWeight: '600',
                   color: 'var(--text-secondary)',
                   marginBottom: '8px',
-                  }}>
+                }}>
                   Título da Partitura
                 </label>
                 <input
@@ -1905,7 +1905,7 @@ const AdminPartituras = () => {
                   fontWeight: '600',
                   color: 'var(--text-secondary)',
                   marginBottom: '8px',
-                  }}>
+                }}>
                   Compositor
                 </label>
                 <input
@@ -1944,7 +1944,7 @@ const AdminPartituras = () => {
                   fontWeight: '600',
                   color: 'var(--text-secondary)',
                   marginBottom: '8px',
-                  }}>
+                }}>
                   Arranjador
                 </label>
                 <input
@@ -1983,7 +1983,7 @@ const AdminPartituras = () => {
                   fontWeight: '600',
                   color: 'var(--text-secondary)',
                   marginBottom: '8px',
-                  }}>
+                }}>
                   Categoria
                 </label>
                 <div style={{ position: 'relative' }}>

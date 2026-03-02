@@ -75,21 +75,38 @@ export async function downloadParte(parteId, request, env, user) {
       return errorResponse('Arquivo não encontrado no storage', 404, request);
     }
 
-    // Incrementa downloads da partitura
-    await env.DB.prepare(
-      'UPDATE partituras SET downloads = downloads + 1 WHERE id = ?'
-    ).bind(parte.partitura_id).run();
+    // Verifica o tipo de ação: admin (sem tracking), view (visualização), download (padrão)
+    const url = new URL(request.url);
+    const action = url.searchParams.get('action');
+    const isAdmin = action === 'admin';
+    const isView = action === 'view';
 
-    // Registra atividade de download
-    await registrarAtividade(env, 'download', parte.partitura_titulo, parte.instrumento, user.id);
+    // Admin preview: não conta nada (sem tracking, sem incremento)
+    if (!isAdmin) {
+      // Só incrementa downloads se for download real (não visualização)
+      if (!isView) {
+        await env.DB.prepare(
+          'UPDATE partituras SET downloads = downloads + 1 WHERE id = ?'
+        ).bind(parte.partitura_id).run();
+      }
 
-    // Log de download
-    try {
-      await env.DB.prepare(
-        'INSERT INTO logs_download (partitura_id, instrumento_id, ip, usuario_id) VALUES (?, NULL, ?, ?)'
-      ).bind(parte.partitura_id, request.headers.get('CF-Connecting-IP'), user.id).run();
-    } catch (logError) {
-      console.error('Erro ao registrar log:', logError);
+      // Registra atividade diferenciada
+      await registrarAtividade(
+        env,
+        isView ? 'visualizacao' : 'download',
+        parte.partitura_titulo,
+        parte.instrumento,
+        user.id
+      );
+
+      // Log de download
+      try {
+        await env.DB.prepare(
+          'INSERT INTO logs_download (partitura_id, instrumento_id, ip, usuario_id) VALUES (?, NULL, ?, ?)'
+        ).bind(parte.partitura_id, request.headers.get('CF-Connecting-IP'), user.id).run();
+      } catch (logError) {
+        console.error('Erro ao registrar log:', logError);
+      }
     }
 
     const nomeArquivo = `${parte.partitura_titulo} - ${parte.instrumento}.pdf`;
