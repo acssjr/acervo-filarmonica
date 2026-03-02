@@ -308,14 +308,18 @@ export const useSheetDownload = ({ showToast, selectedSheet, partes = [] }) => {
    * Inicia fluxo de impressão para um instrumento
    */
   const handlePrintInstrument = useCallback((instrument) => {
+    // Tenta correspondencia exata primeiro (resolve bug Clarinete Bb 1 vs 2)
+    const exata = findParteExata(instrument, partes);
+    if (exata) {
+      printParte(exata);
+      return;
+    }
+
     const correspondentes = findPartesCorrespondentes(instrument, partes);
 
     if (correspondentes.length === 0) {
       showToast('Parte não encontrada para impressão', 'error');
-    } else if (correspondentes.length === 1) {
-      printParte(correspondentes[0]);
     } else {
-      // Usa primeira parte para simplicidade
       printParte(correspondentes[0]);
     }
   }, [partes, printParte, showToast]);
@@ -377,12 +381,17 @@ export const useSheetDownload = ({ showToast, selectedSheet, partes = [] }) => {
    * Inicia fluxo de visualização para um instrumento
    */
   const handleViewInstrument = useCallback((instrument) => {
+    // Tenta correspondencia exata primeiro (resolve bug Clarinete Bb 1 vs 2)
+    const exata = findParteExata(instrument, partes);
+    if (exata) {
+      viewParte(exata);
+      return;
+    }
+
     const correspondentes = findPartesCorrespondentes(instrument, partes);
 
     if (correspondentes.length === 0) {
       showToast('Parte não encontrada', 'error');
-    } else if (correspondentes.length === 1) {
-      viewParte(correspondentes[0]);
     } else {
       viewParte(correspondentes[0]);
     }
@@ -450,14 +459,18 @@ export const useSheetDownload = ({ showToast, selectedSheet, partes = [] }) => {
    * Inicia fluxo de compartilhamento para um instrumento
    */
   const handleShareInstrument = useCallback((instrument) => {
+    // Tenta correspondencia exata primeiro (resolve bug Clarinete Bb 1 vs 2)
+    const exata = findParteExata(instrument, partes);
+    if (exata) {
+      shareParte(exata);
+      return;
+    }
+
     const correspondentes = findPartesCorrespondentes(instrument, partes);
 
     if (correspondentes.length === 0) {
       showToast('Parte não encontrada para compartilhar', 'error');
-    } else if (correspondentes.length === 1) {
-      shareParte(correspondentes[0]);
     } else {
-      // Usa primeira parte para simplicidade
       shareParte(correspondentes[0]);
     }
   }, [partes, shareParte, showToast]);
