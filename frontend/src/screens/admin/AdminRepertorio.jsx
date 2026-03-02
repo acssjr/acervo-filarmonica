@@ -756,7 +756,10 @@ const RepertorioCard = ({
   const formatDate = (dateStr) => {
     if (!dateStr) return null;
     try {
-      return new Date(dateStr).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      // Evita bug de fuso horário: new Date("2026-03-07") interpreta como UTC,
+      // que no Brasil (UTC-3) vira dia 06. Splitando a string evita isso.
+      const [year, month, day] = dateStr.split('T')[0].split('-');
+      return `${day}/${month}/${year}`;
     } catch { return dateStr; }
   };
 

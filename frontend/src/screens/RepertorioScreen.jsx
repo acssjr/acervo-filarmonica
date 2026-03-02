@@ -880,7 +880,10 @@ const RepertorioScreen = () => {
             margin: '0 0 12px 0'
           }}>
             <span style={{ width: '16px', height: '16px' }}><Icons.Calendar /></span>
-            {new Date(repertorio.data_apresentacao).toLocaleDateString('pt-BR')}
+            {(() => {
+              const [y, m, d] = repertorio.data_apresentacao.split('T')[0].split('-');
+              return `${d}/${m}/${y}`;
+            })()}
           </p>
         )}
 
