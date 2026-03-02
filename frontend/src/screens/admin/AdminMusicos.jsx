@@ -107,14 +107,13 @@ const AdminMusicos = () => {
   };
 
   return (
-    <div className="page-transition" style={{ padding: '32px', maxWidth: '1000px', margin: '0 auto', fontFamily: 'Outfit, sans-serif' }}>
+    <div className="page-transition" style={{ padding: '32px', maxWidth: '1000px', margin: '0 auto', }}>
       {/* Header */}
       <div style={{ marginBottom: '32px', textAlign: 'center' }}>
         <h1 style={{
           fontSize: '26px',
           fontWeight: '700',
           color: 'var(--text-primary)',
-          fontFamily: 'Outfit, sans-serif',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -151,7 +150,6 @@ const AdminMusicos = () => {
             fontSize: '15px',
             fontWeight: '600',
             cursor: 'pointer',
-            fontFamily: 'Outfit, sans-serif',
             boxShadow: `0 4px 16px ${COLORS_RGBA.gold.bg30}`
           }}
         >
@@ -265,8 +263,7 @@ const AdminMusicos = () => {
                       fontSize: '20px',
                       color: COLORS.text.cream,
                       fontWeight: '600',
-                      fontFamily: 'Outfit, sans-serif'
-                    }}>
+                      }}>
                       {user.nome?.charAt(0)?.toUpperCase() || '?'}
                     </div>
                   )}
@@ -319,7 +316,7 @@ const AdminMusicos = () => {
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                 {user.username !== 'admin' && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginRight: '12px' }}>
-                    <span style={{ fontSize: '11px', color: user.convidado ? '#3498db' : 'var(--text-muted)', fontFamily: 'Outfit, sans-serif', fontWeight: '500' }}>
+                    <span style={{ fontSize: '11px', color: user.convidado ? '#3498db' : 'var(--text-muted)', fontWeight: '500' }}>
                       Convidado
                     </span>
                     <ToggleSwitch

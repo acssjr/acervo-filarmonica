@@ -77,7 +77,6 @@ const AboutModal = ({
           </div>
 
           <h3 style={{
-            fontFamily: 'Outfit, sans-serif',
             fontSize: '18px',
             fontWeight: '700',
             color: 'var(--text-primary)',
@@ -85,7 +84,6 @@ const AboutModal = ({
           }}>Acervo Digital</h3>
 
           <p style={{
-            fontFamily: 'Outfit, sans-serif',
             fontSize: '13px',
             color: 'var(--text-muted)',
             marginBottom: '16px'
@@ -210,7 +208,6 @@ const AboutModal = ({
               border: 'none',
               borderRadius: '10px',
               color: '#fff',
-              fontFamily: 'Outfit, sans-serif',
               fontSize: '14px',
               fontWeight: '600',
               cursor: 'pointer'

@@ -79,13 +79,12 @@ const AdminConfig = () => {
   };
 
   return (
-    <div className="page-transition" style={{ padding: '32px', maxWidth: '600px', margin: '0 auto', fontFamily: 'Outfit, sans-serif' }}>
+    <div className="page-transition" style={{ padding: '32px', maxWidth: '600px', margin: '0 auto', }}>
       <h1 style={{
         fontSize: '24px',
         fontWeight: '700',
         marginBottom: '32px',
         color: 'var(--text-primary)',
-        fontFamily: 'Outfit, sans-serif',
         display: 'flex',
         alignItems: 'center',
         gap: '10px'
@@ -110,7 +109,6 @@ const AdminConfig = () => {
           fontWeight: '600',
           marginBottom: '16px',
           color: 'var(--text-primary)',
-          fontFamily: 'Outfit, sans-serif',
           display: 'flex',
           alignItems: 'center',
           gap: '8px'
@@ -155,7 +153,6 @@ const AdminConfig = () => {
               color: '#fff',
               fontSize: '13px',
               cursor: uploadingPhoto ? 'wait' : 'pointer',
-              fontFamily: 'Outfit, sans-serif',
               display: 'flex',
               alignItems: 'center'
             }}>
@@ -187,15 +184,14 @@ const AdminConfig = () => {
                   color: 'var(--text-secondary)',
                   fontSize: '13px',
                   cursor: 'pointer',
-                  fontFamily: 'Outfit, sans-serif'
-                }}
+                  }}
               >
                 Remover Foto
               </button>
             )}
           </div>
         </div>
-        <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '12px', fontFamily: 'Outfit, sans-serif' }}>
+        <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '12px', }}>
           Formatos aceitos: JPG, PNG, GIF. Tamanho máximo: 2MB
         </p>
       </div>
@@ -213,7 +209,6 @@ const AdminConfig = () => {
           fontWeight: '600',
           marginBottom: '16px',
           color: 'var(--text-primary)',
-          fontFamily: 'Outfit, sans-serif',
           display: 'flex',
           alignItems: 'center',
           gap: '8px'
@@ -226,10 +221,10 @@ const AdminConfig = () => {
         </h3>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
           <div>
-            <div style={{ color: 'var(--text-primary)', marginBottom: '4px', fontFamily: 'Outfit, sans-serif' }}>
+            <div style={{ color: 'var(--text-primary)', marginBottom: '4px', }}>
               Usuário: <strong>{user?.username}</strong>
             </div>
-            <div style={{ fontSize: '13px', color: 'var(--text-secondary)', fontFamily: 'Outfit, sans-serif' }}>
+            <div style={{ fontSize: '13px', color: 'var(--text-secondary)', }}>
               {user?.name}
             </div>
           </div>
@@ -241,7 +236,6 @@ const AdminConfig = () => {
             color: 'var(--text-primary)',
             fontSize: '14px',
             cursor: 'pointer',
-            fontFamily: 'Outfit, sans-serif',
             display: 'flex',
             alignItems: 'center',
             gap: '6px'
@@ -268,7 +262,6 @@ const AdminConfig = () => {
           fontWeight: '600',
           marginBottom: '16px',
           color: 'var(--text-primary)',
-          fontFamily: 'Outfit, sans-serif',
           display: 'flex',
           alignItems: 'center',
           gap: '8px'
@@ -289,15 +282,13 @@ const AdminConfig = () => {
               color: 'var(--text-primary)',
               fontWeight: '500',
               marginBottom: '4px',
-              fontFamily: 'Outfit, sans-serif'
-            }}>
+              }}>
               Modo Recesso
             </div>
             <div style={{
               fontSize: '13px',
               color: 'var(--text-muted)',
-              fontFamily: 'Outfit, sans-serif'
-            }}>
+              }}>
               Substitui o contador de ensaio por &ldquo;EM RECESSO&rdquo;
             </div>
           </div>
@@ -351,7 +342,6 @@ const AdminConfig = () => {
           fontWeight: '600',
           marginBottom: '12px',
           color: 'var(--text-primary)',
-          fontFamily: 'Outfit, sans-serif',
           display: 'flex',
           alignItems: 'center',
           gap: '8px'
@@ -366,7 +356,7 @@ const AdminConfig = () => {
             <path d="M9 18l6-6-6-6" />
           </svg>
         </h3>
-        <div style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: '1.6', fontFamily: 'Outfit, sans-serif' }}>
+        <div style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: '1.6', }}>
           <p><strong>Acervo Digital</strong> v{PROFILE_ABOUT_CONFIG.infoCards[0].value}</p>
           <p>Sociedade Filarmônica 25 de Março</p>
           <p>Fundada em 1868 - Feira de Santana, BA</p>
@@ -383,7 +373,6 @@ const AdminConfig = () => {
         fontSize: '14px',
         fontWeight: '500',
         cursor: 'pointer',
-        fontFamily: 'Outfit, sans-serif',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',

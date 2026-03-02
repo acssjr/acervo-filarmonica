@@ -105,7 +105,7 @@
 .tabLabel {
   font-size: 11px;
   font-weight: 700;
-  font-family: 'Outfit', sans-serif;
+  /* font-family inherited from base.css */
   letter-spacing: 0.2px;
   position: relative;
   z-index: 1;

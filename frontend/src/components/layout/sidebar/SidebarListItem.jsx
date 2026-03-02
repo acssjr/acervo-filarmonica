@@ -19,7 +19,6 @@ const SidebarListItem = ({ label, count, isActive, onClick }) => {
         borderRadius: '8px',
         color: isActive ? '#D4AF37' : 'rgba(244, 228, 188, 0.85)',
         cursor: 'pointer',
-        fontFamily: 'Outfit, sans-serif',
         fontSize: count !== undefined ? '14px' : '13px',
         fontWeight: '500',
         transition: 'all 0.2s ease',

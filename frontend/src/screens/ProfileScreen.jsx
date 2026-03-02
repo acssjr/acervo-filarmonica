@@ -79,7 +79,7 @@ const ProfileScreen = () => {
             border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center',
             margin: '0 auto 20px', color: 'var(--text-muted)'
           }}><div style={{ width: '32px', height: '32px' }}><Icons.User /></div></div>
-          <h3 style={{ fontFamily: "Outfit, sans-serif", fontSize: '20px', fontWeight: '700', marginBottom: '8px', color: 'var(--text-primary)' }}>Bem-vindo!</h3>
+          <h3 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '8px', color: 'var(--text-primary)' }}>Bem-vindo!</h3>
           <p style={{ color: 'var(--text-muted)', marginBottom: '24px', fontSize: '14px' }}>Faça login para acessar o acervo</p>
         </div>
       </div>
@@ -120,7 +120,6 @@ const ProfileScreen = () => {
       </div>
       <div style={{ flex: 1, textAlign: 'left' }}>
         <p style={{
-          fontFamily: 'Outfit, sans-serif',
           fontSize: '14px',
           fontWeight: '500',
           color: danger ? '#D64545' : 'var(--text-primary)',
@@ -128,7 +127,6 @@ const ProfileScreen = () => {
         }}>{label}</p>
         {value && (
           <p style={{
-            fontFamily: 'Outfit, sans-serif',
             fontSize: '12px',
             color: 'var(--text-muted)'
           }}>{value}</p>
@@ -162,7 +160,6 @@ const ProfileScreen = () => {
             fontSize: '36px',
             fontWeight: '700',
             color: '#F4E4BC',
-            fontFamily: "Outfit, sans-serif",
             border: '3px solid #D4AF37',
             boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
           }}>
@@ -210,7 +207,6 @@ const ProfileScreen = () => {
               value={editedName}
               onChange={e => setEditedName(e.target.value)}
               style={{
-                fontFamily: 'Outfit, sans-serif',
                 fontSize: '22px',
                 fontWeight: '700',
                 textAlign: 'center',
@@ -232,7 +228,7 @@ const ProfileScreen = () => {
             onClick={() => setIsEditingName(true)}
             style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '4px' }}
           >
-            <h2 style={{ fontFamily: "Outfit, sans-serif", fontSize: '22px', fontWeight: '700', color: 'var(--text-primary)' }}>
+            <h2 style={{ fontSize: '22px', fontWeight: '700', color: 'var(--text-primary)' }}>
               {user.name}
             </h2>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2">
@@ -263,7 +259,6 @@ const ProfileScreen = () => {
       <div style={{ padding: '0 20px 20px' }}>
         {/* Seção: Conta */}
         <p style={{
-          fontFamily: 'Outfit, sans-serif',
           fontSize: '12px',
           fontWeight: '600',
           color: 'var(--text-muted)',
@@ -291,7 +286,6 @@ const ProfileScreen = () => {
 
         {/* Seção: Contato */}
         <p style={{
-          fontFamily: 'Outfit, sans-serif',
           fontSize: '12px',
           fontWeight: '600',
           color: 'var(--text-muted)',
@@ -313,7 +307,6 @@ const ProfileScreen = () => {
 
         {/* Seção: Sobre */}
         <p style={{
-          fontFamily: 'Outfit, sans-serif',
           fontSize: '12px',
           fontWeight: '600',
           color: 'var(--text-muted)',

@@ -47,8 +47,7 @@ const StatCard = ({ icon, label, value, color, loading }) => {
       padding: isMobile ? '12px' : '16px',
       textAlign: 'center',
       border: '1px solid var(--border)',
-      fontFamily: 'Outfit, sans-serif'
-    }}>
+      }}>
       <div style={{ marginBottom: isMobile ? '8px' : '10px', display: 'flex', justifyContent: 'center' }}>
         <div style={{
           width: isMobile ? '36px' : '44px',
@@ -67,15 +66,13 @@ const StatCard = ({ icon, label, value, color, loading }) => {
         fontWeight: '700',
         color: color || 'var(--text-primary)',
         marginBottom: '2px',
-        fontFamily: 'Outfit, sans-serif'
-      }}>
+        }}>
         {loading ? '...' : value}
       </div>
       <div style={{
         fontSize: isMobile ? '11px' : '12px',
         color: 'var(--text-secondary)',
-        fontFamily: 'Outfit, sans-serif'
-      }}>
+        }}>
         {label}
       </div>
     </div>

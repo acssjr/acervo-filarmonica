@@ -29,7 +29,7 @@
   border: none;
   outline: none;
   color: var(--text-primary);
-  font-family: 'Outfit', sans-serif;
+  /* font-family inherited from base.css */
   font-size: 15px;
   font-weight: 400;
 }

@@ -288,7 +288,6 @@ const ShareCartModal = () => {
               <h2
                 id="share-cart-title"
                 style={{
-                  fontFamily: 'Outfit, sans-serif',
                   fontSize: '16px',
                   fontWeight: '700',
                   color: 'var(--text-primary)',
@@ -298,7 +297,6 @@ const ShareCartModal = () => {
                 Carrinho de Envio
               </h2>
               <p style={{
-                fontFamily: 'Outfit, sans-serif',
                 fontSize: '12px',
                 color: 'var(--text-muted)',
                 margin: 0
@@ -354,7 +352,6 @@ const ShareCartModal = () => {
             <div key={sheetId} style={{ marginBottom: '16px' }}>
               {/* Titulo da partitura */}
               <p style={{
-                fontFamily: 'Outfit, sans-serif',
                 fontSize: '11px',
                 fontWeight: '600',
                 color: 'var(--text-muted)',
@@ -384,7 +381,6 @@ const ShareCartModal = () => {
                         <Icons.Music />
                       </div>
                       <span style={{
-                        fontFamily: 'Outfit, sans-serif',
                         fontSize: '13px',
                         fontWeight: '500',
                         color: 'var(--text-primary)'
@@ -427,7 +423,6 @@ const ShareCartModal = () => {
                 <Icons.Music />
               </div>
               <p style={{
-                fontFamily: 'Outfit, sans-serif',
                 fontSize: '14px'
               }}>
                 Nenhuma parte selecionada
@@ -437,7 +432,6 @@ const ShareCartModal = () => {
 
           {prepareError && (
             <p style={{
-              fontFamily: 'Outfit, sans-serif',
               fontSize: '12px',
               color: '#e74c3c',
               textAlign: 'center',
@@ -466,7 +460,6 @@ const ShareCartModal = () => {
               background: 'var(--bg-secondary)',
               border: '1px solid var(--border)',
               color: shareCart.length === 0 ? 'var(--text-muted)' : 'var(--text-primary)',
-              fontFamily: 'Outfit, sans-serif',
               fontSize: '13px',
               fontWeight: '600',
               cursor: shareCart.length === 0 ? 'not-allowed' : 'pointer',
@@ -486,7 +479,6 @@ const ShareCartModal = () => {
               background: !isReady ? 'var(--bg-secondary)' : 'linear-gradient(145deg, #25D366 0%, #128C7E 100%)',
               border: 'none',
               color: !isReady ? 'var(--text-muted)' : '#FFFFFF',
-              fontFamily: 'Outfit, sans-serif',
               fontSize: '13px',
               fontWeight: '600',
               cursor: !isReady || sharing ? 'not-allowed' : 'pointer',

@@ -75,7 +75,6 @@ const ComposerCard = memo(function ComposerCard({ composer, featured = false, on
           fontSize: '9px',
           fontWeight: '600',
           color: '#1a1a1a',
-          fontFamily: 'Outfit, sans-serif',
           textTransform: 'uppercase',
           letterSpacing: '0.5px'
         }}>
@@ -97,7 +96,6 @@ const ComposerCard = memo(function ComposerCard({ composer, featured = false, on
         textAlign: 'left'
       }}>
         <h3 style={{
-          fontFamily: 'Outfit, sans-serif',
           fontSize: featured ? '13px' : '12px',
           fontWeight: '600',
           color: '#fff',
@@ -111,7 +109,6 @@ const ComposerCard = memo(function ComposerCard({ composer, featured = false, on
           {composer.name}
         </h3>
         <p style={{
-          fontFamily: 'Outfit, sans-serif',
           fontSize: '10px',
           color: 'rgba(255, 255, 255, 0.75)',
           display: 'flex',
@@ -240,7 +237,6 @@ const ComposersScreen = ({ composerSlugFromUrl }) => {
             border: 'none',
             color: 'var(--text-muted)',
             cursor: 'pointer',
-            fontFamily: 'Outfit, sans-serif',
             fontSize: '14px',
             marginBottom: '16px',
             padding: '0'
@@ -252,7 +248,6 @@ const ComposersScreen = ({ composerSlugFromUrl }) => {
           Voltar
         </button>
         <h1 style={{
-          fontFamily: 'Outfit, sans-serif',
           fontSize: '28px',
           fontWeight: '700',
           color: 'var(--text-primary)',
@@ -261,7 +256,6 @@ const ComposersScreen = ({ composerSlugFromUrl }) => {
           Compositores
         </h1>
         <p style={{
-          fontFamily: 'Outfit, sans-serif',
           fontSize: '15px',
           color: 'var(--text-muted)'
         }}>
@@ -305,7 +299,6 @@ const ComposersScreen = ({ composerSlugFromUrl }) => {
           {featuredComposers.length > 0 && !searchQuery && (
             <div style={{ marginBottom: '40px' }}>
               <h2 style={{
-                fontFamily: 'Outfit, sans-serif',
                 fontSize: '16px',
                 fontWeight: '600',
                 color: '#D4AF37',
@@ -342,7 +335,6 @@ const ComposersScreen = ({ composerSlugFromUrl }) => {
                 marginBottom: '12px'
               }}>
                 <h2 style={{
-                  fontFamily: 'Outfit, sans-serif',
                   fontSize: '16px',
                   fontWeight: '600',
                   color: 'var(--text-secondary)'
@@ -364,7 +356,6 @@ const ComposersScreen = ({ composerSlugFromUrl }) => {
                     style={{
                       padding: '5px 10px',
                       fontSize: '12px',
-                      fontFamily: 'Outfit, sans-serif',
                       fontWeight: '500',
                       border: 'none',
                       borderRadius: '6px',
@@ -381,7 +372,6 @@ const ComposersScreen = ({ composerSlugFromUrl }) => {
                     style={{
                       padding: '5px 10px',
                       fontSize: '12px',
-                      fontFamily: 'Outfit, sans-serif',
                       fontWeight: '500',
                       border: 'none',
                       borderRadius: '6px',
@@ -426,7 +416,6 @@ const ComposersScreen = ({ composerSlugFromUrl }) => {
                     onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                   >
                     <span style={{
-                      fontFamily: 'Outfit, sans-serif',
                       fontSize: '14px',
                       fontWeight: '500',
                       color: 'var(--text-primary)'
@@ -434,7 +423,6 @@ const ComposersScreen = ({ composerSlugFromUrl }) => {
                       {comp.name}
                     </span>
                     <span style={{
-                      fontFamily: 'Outfit, sans-serif',
                       fontSize: '12px',
                       color: 'var(--text-muted)',
                       display: 'flex',

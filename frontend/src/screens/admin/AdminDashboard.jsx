@@ -31,10 +31,10 @@ const AdminDashboard = () => {
   }, []);
 
   return (
-    <div className="page-transition" style={{ padding: isMobile ? '16px' : '32px', maxWidth: '1200px', margin: '0 auto', fontFamily: 'Outfit, sans-serif' }}>
+    <div className="page-transition" style={{ padding: isMobile ? '16px' : '32px', maxWidth: '1200px', margin: '0 auto', }}>
       {/* Header com saudação */}
       <div style={{ marginBottom: isMobile ? '20px' : '32px' }}>
-        <div style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '4px', fontFamily: 'Outfit, sans-serif' }}>
+        <div style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '4px', }}>
           Olá,
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px', flexWrap: 'wrap' }}>
@@ -45,7 +45,6 @@ const AdminDashboard = () => {
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
             backgroundClip: 'text',
-            fontFamily: 'Outfit, sans-serif',
             margin: 0,
             display: 'inline',
             filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.1))'
@@ -59,13 +58,12 @@ const AdminDashboard = () => {
             borderRadius: '20px',
             fontSize: '12px',
             fontWeight: '600',
-            fontFamily: 'Outfit, sans-serif',
             textTransform: 'uppercase'
           }}>
             Admin
           </span>
         </div>
-        <p style={{ color: 'var(--text-secondary)', fontFamily: 'Outfit, sans-serif', margin: 0 }}>
+        <p style={{ color: 'var(--text-secondary)', margin: 0 }}>
           Acervo Digital - Sociedade Filarmônica 25 de Março
         </p>
       </div>
@@ -96,7 +94,6 @@ const AdminDashboard = () => {
           fontWeight: '600',
           marginBottom: '16px',
           color: 'var(--text-primary)',
-          fontFamily: 'Outfit, sans-serif',
           display: 'flex',
           alignItems: 'center',
           gap: '8px'
@@ -126,7 +123,6 @@ const AdminDashboard = () => {
             fontWeight: '600',
             marginBottom: '16px',
             color: 'var(--text-primary)',
-            fontFamily: 'Outfit, sans-serif',
             display: 'flex',
             alignItems: 'center',
             gap: '8px'
@@ -160,14 +156,13 @@ const AdminDashboard = () => {
                     fontWeight: '700',
                     fontSize: '14px',
                     color: i < 3 ? '#fff' : 'var(--text-secondary)',
-                    fontFamily: 'Outfit, sans-serif'
-                  }}>{i + 1}</span>
+                    }}>{i + 1}</span>
                   <div>
-                    <div style={{ fontWeight: '500', color: 'var(--text-primary)', fontFamily: 'Outfit, sans-serif' }}>{p.titulo}</div>
-                    <div style={{ fontSize: '13px', color: 'var(--text-secondary)', fontFamily: 'Outfit, sans-serif' }}>{p.compositor}</div>
+                    <div style={{ fontWeight: '500', color: 'var(--text-primary)', }}>{p.titulo}</div>
+                    <div style={{ fontSize: '13px', color: 'var(--text-secondary)', }}>{p.compositor}</div>
                   </div>
                 </div>
-                <div style={{ fontWeight: '600', color: 'var(--accent)', fontFamily: 'Outfit, sans-serif' }}>{p.downloads} downloads</div>
+                <div style={{ fontWeight: '600', color: 'var(--accent)', }}>{p.downloads} downloads</div>
               </div>
             ))}
           </div>
@@ -187,7 +182,6 @@ const AdminDashboard = () => {
           fontWeight: '600',
           marginBottom: '16px',
           color: 'var(--text-primary)',
-          fontFamily: 'Outfit, sans-serif',
           display: 'flex',
           alignItems: 'center',
           gap: '8px'
@@ -228,21 +222,19 @@ const AdminDashboard = () => {
                       fontWeight: '500',
                       color: 'var(--text-primary)',
                       fontSize: '14px',
-                      fontFamily: 'Outfit, sans-serif',
                       whiteSpace: 'nowrap',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis'
                     }}>
                       {info.action}: {a.titulo}
                     </div>
-                    <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'Outfit, sans-serif' }}>
+                    <div style={{ fontSize: '12px', color: 'var(--text-muted)', }}>
                       {a.usuario_nome || 'Sistema'} {a.detalhes && `• ${a.detalhes}`}
                     </div>
                   </div>
                   <div style={{
                     fontSize: '12px',
                     color: 'var(--text-muted)',
-                    fontFamily: 'Outfit, sans-serif',
                     flexShrink: 0
                   }}>
                     {formatTimeAgo(a.criado_em, true)}

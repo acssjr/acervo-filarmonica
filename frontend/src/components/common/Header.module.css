@@ -33,7 +33,7 @@
 }
 
 .title {
-  font-family: 'Outfit', sans-serif;
+  /* font-family inherited from base.css */
   font-weight: 700;
   letter-spacing: -0.5px;
   color: var(--text-primary);

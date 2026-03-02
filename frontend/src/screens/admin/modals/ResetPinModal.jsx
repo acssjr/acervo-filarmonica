@@ -23,14 +23,14 @@ const ResetPinModal = ({ usuario, onReset, onClose }) => {
         width: '100%',
         maxWidth: '360px'
       }} onClick={e => e.stopPropagation()}>
-        <h2 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '8px', color: 'var(--text-primary)', fontFamily: 'Outfit, sans-serif' }}>
+        <h2 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '8px', color: 'var(--text-primary)', }}>
           Resetar PIN
         </h2>
-        <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '20px', fontFamily: 'Outfit, sans-serif' }}>
+        <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '20px', }}>
           Resetar PIN de <strong>{usuario.nome}</strong>
         </p>
 
-        <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', marginBottom: '6px', color: 'var(--text-secondary)', fontFamily: 'Outfit, sans-serif' }}>
+        <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', marginBottom: '6px', color: 'var(--text-secondary)', }}>
           Novo PIN (4 digitos)
         </label>
         <input
@@ -47,8 +47,7 @@ const ResetPinModal = ({ usuario, onReset, onClose }) => {
             textAlign: 'center',
             letterSpacing: '8px',
             marginBottom: '20px',
-            fontFamily: 'Outfit, sans-serif'
-          }}
+            }}
           value={newPin}
           onChange={e => setNewPin(e.target.value.replace(/\D/g, ''))}
         />
@@ -63,8 +62,7 @@ const ResetPinModal = ({ usuario, onReset, onClose }) => {
             color: 'var(--text-primary)',
             fontSize: '14px',
             cursor: 'pointer',
-            fontFamily: 'Outfit, sans-serif'
-          }}>
+            }}>
             Cancelar
           </button>
           <button
@@ -81,8 +79,7 @@ const ResetPinModal = ({ usuario, onReset, onClose }) => {
               fontWeight: '500',
               cursor: 'pointer',
               opacity: newPin.length !== 4 ? 0.5 : 1,
-              fontFamily: 'Outfit, sans-serif'
-            }}
+              }}
           >
             Resetar
           </button>

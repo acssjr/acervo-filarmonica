@@ -1,6 +1,6 @@
 // ===== ADMIN ANALYTICS =====
 // Dashboard de Analytics & Insights — Filarmônica 25 de Março
-// Design consistente com AdminDashboard: cards, grids, tipografia Outfit
+// Design consistente com AdminDashboard: cards, grids, tipografia Plus Jakarta Sans
 
 import { useState, useEffect, useMemo } from 'react';
 import { API } from '@services/api';
@@ -78,7 +78,7 @@ const AdminAnalytics = () => {
                     borderRadius: '50%',
                     animation: 'spin 0.8s linear infinite'
                 }} />
-                <span style={{ color: 'var(--text-muted)', fontFamily: 'Outfit', fontSize: '14px' }}>
+                <span style={{ color: 'var(--text-muted)', fontSize: '14px' }}>
                     Carregando analytics...
                 </span>
             </div>
@@ -99,7 +99,7 @@ const AdminAnalytics = () => {
                 }}>
                     <AlertTriangle size={28} color={COLORS.red} />
                 </div>
-                <p style={{ color: 'var(--text-primary)', fontWeight: '600', margin: 0, fontFamily: 'Outfit' }}>
+                <p style={{ color: 'var(--text-primary)', fontWeight: '600', margin: 0, }}>
                     Erro ao carregar analytics
                 </p>
                 <p style={{ color: 'var(--text-muted)', fontSize: '14px', margin: 0, textAlign: 'center' }}>
@@ -109,8 +109,7 @@ const AdminAnalytics = () => {
                     display: 'flex', alignItems: 'center', gap: '8px',
                     padding: '10px 24px', background: GOLD_GRADIENT,
                     border: 'none', borderRadius: '10px', color: '#fff',
-                    fontWeight: '600', cursor: 'pointer', fontFamily: 'Outfit',
-                    marginTop: '8px'
+                    fontWeight: '600', cursor: 'pointer', marginTop: '8px'
                 }}>
                     <RefreshCw size={16} /> Tentar novamente
                 </button>
@@ -131,7 +130,6 @@ const AdminAnalytics = () => {
         <div className="page-transition" style={{
             padding: isMobile ? '16px' : '32px',
             maxWidth: '1200px', margin: '0 auto',
-            fontFamily: 'Outfit, sans-serif'
         }}>
 
             {/* ====== HEADER ====== */}
@@ -160,7 +158,7 @@ const AdminAnalytics = () => {
                     padding: '8px 16px', background: 'var(--bg-secondary)',
                     border: '1px solid var(--border)', borderRadius: '10px',
                     color: 'var(--text-muted)', cursor: 'pointer',
-                    fontFamily: 'Outfit', fontSize: '13px', fontWeight: '500',
+                    fontSize: '13px', fontWeight: '500',
                     transition: 'all 0.2s', whiteSpace: 'nowrap'
                 }}>
                     <RefreshCw size={14} /> Atualizar
@@ -218,7 +216,7 @@ const AdminAnalytics = () => {
                             color: activeTab === tab.id ? GOLD : 'var(--text-muted)',
                             fontWeight: activeTab === tab.id ? '600' : '400',
                             cursor: 'pointer', transition: 'all 0.2s',
-                            fontFamily: 'Outfit', fontSize: isMobile ? '12px' : '14px',
+                            fontSize: isMobile ? '12px' : '14px',
                             whiteSpace: 'nowrap', flex: isMobile ? '1' : 'none',
                             justifyContent: 'center',
                             boxShadow: activeTab === tab.id ? '0 1px 3px rgba(0,0,0,0.08)' : 'none'
@@ -425,13 +423,13 @@ const KpiCard = ({ icon: Icon, label, value, color, isMobile }) => (
         <div style={{
             fontSize: isMobile ? '22px' : '28px',
             fontWeight: '700', color,
-            marginBottom: '2px', fontFamily: 'Outfit'
+            marginBottom: '2px',
         }}>
             {typeof value === 'number' ? value.toLocaleString('pt-BR') : value}
         </div>
         <div style={{
             fontSize: isMobile ? '11px' : '12px',
-            color: 'var(--text-muted)', fontFamily: 'Outfit'
+            color: 'var(--text-muted)',
         }}>
             {label}
         </div>
@@ -453,7 +451,7 @@ const Panel = ({ title, icon, children }) => (
             {icon}
             <h3 style={{
                 margin: 0, fontSize: '16px', fontWeight: '600',
-                color: 'var(--text-primary)', fontFamily: 'Outfit'
+                color: 'var(--text-primary)',
             }}>
                 {title}
             </h3>
@@ -478,7 +476,7 @@ const EmptyState = ({ icon: Icon, message, positive }) => (
         </div>
         <span style={{
             color: positive ? COLORS.green : 'var(--text-muted)',
-            fontSize: '14px', fontFamily: 'Outfit', textAlign: 'center'
+            fontSize: '14px', textAlign: 'center'
         }}>
             {message}
         </span>
@@ -512,8 +510,7 @@ const RankingList = ({ items, renderItem, accentColor, showAvatar, isMobile }) =
                             background: isTop3 ? `${badgeColors[i]}18` : 'var(--bg-secondary)',
                             color: isTop3 ? badgeColors[i] : 'var(--text-muted)',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontSize: '12px', fontWeight: '700', fontFamily: 'Outfit',
-                            flexShrink: 0,
+                            fontSize: '12px', fontWeight: '700', flexShrink: 0,
                             border: isTop3 ? `1px solid ${badgeColors[i]}30` : '1px solid var(--border)'
                         }}>
                             {i + 1}
@@ -533,7 +530,7 @@ const RankingList = ({ items, renderItem, accentColor, showAvatar, isMobile }) =
                                 ) : (
                                     <span style={{
                                         fontSize: '13px', fontWeight: '700',
-                                        color: accentColor, fontFamily: 'Outfit'
+                                        color: accentColor,
                                     }}>
                                         {initials || '?'}
                                     </span>
@@ -547,14 +544,12 @@ const RankingList = ({ items, renderItem, accentColor, showAvatar, isMobile }) =
                                 fontWeight: '500', color: 'var(--text-primary)',
                                 fontSize: isMobile ? '13px' : '14px',
                                 whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                                fontFamily: 'Outfit'
                             }}>
                                 {primary}
                             </div>
                             {secondary && (
                                 <div style={{
                                     fontSize: '12px', color: 'var(--text-muted)',
-                                    fontFamily: 'Outfit'
                                 }}>
                                     {secondary}
                                 </div>
@@ -565,7 +560,7 @@ const RankingList = ({ items, renderItem, accentColor, showAvatar, isMobile }) =
                         <div style={{
                             fontWeight: '600', fontSize: '13px',
                             color: isTop3 ? accentColor : 'var(--text-muted)',
-                            whiteSpace: 'nowrap', fontFamily: 'Outfit'
+                            whiteSpace: 'nowrap',
                         }}>
                             {value} <span style={{ fontWeight: '400', fontSize: '11px' }}>{suffix}</span>
                         </div>
@@ -633,7 +628,7 @@ const AccessTable = ({ data, isMobile, highlight }) => {
                             ) : (
                                 <span style={{
                                     fontSize: '13px', fontWeight: '700',
-                                    color: statusColor, fontFamily: 'Outfit'
+                                    color: statusColor,
                                 }}>
                                     {m.nome?.charAt(0) || '?'}
                                 </span>
@@ -644,13 +639,12 @@ const AccessTable = ({ data, isMobile, highlight }) => {
                         <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{
                                 fontWeight: '500', fontSize: '13px',
-                                color: 'var(--text-primary)', fontFamily: 'Outfit',
-                                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
+                                color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
                             }}>
                                 {m.nome}
                             </div>
                             <div style={{
-                                fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'Outfit'
+                                fontSize: '11px', color: 'var(--text-muted)',
                             }}>
                                 {m.instrumento || 'Sem instrumento'}
                             </div>
@@ -667,7 +661,7 @@ const AccessTable = ({ data, isMobile, highlight }) => {
                             }} />
                             <span style={{
                                 fontSize: '11px', color: statusColor,
-                                fontWeight: '500', fontFamily: 'Outfit', whiteSpace: 'nowrap'
+                                fontWeight: '500', whiteSpace: 'nowrap'
                             }}>
                                 {formatDate(m.ultimo_acesso)}
                             </span>
@@ -744,7 +738,7 @@ const ActivityFeed = ({ items }) => {
                         <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{
                                 fontSize: '13px', color: 'var(--text-primary)',
-                                fontFamily: 'Outfit', fontWeight: '500',
+                                fontWeight: '500',
                                 whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
                             }}>
                                 {primaryText}
@@ -752,7 +746,6 @@ const ActivityFeed = ({ items }) => {
                             {secondaryText && (
                                 <div style={{
                                     fontSize: '12px', color: 'var(--text-muted)',
-                                    fontFamily: 'Outfit',
                                     whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
                                 }}>
                                     {secondaryText}
@@ -761,7 +754,7 @@ const ActivityFeed = ({ items }) => {
                             {tertiaryText && (
                                 <div style={{
                                     fontSize: '11px', color: 'var(--text-muted)',
-                                    fontFamily: 'Outfit', opacity: 0.8,
+                                    opacity: 0.8,
                                     whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
                                 }}>
                                     {tertiaryText}
@@ -770,7 +763,7 @@ const ActivityFeed = ({ items }) => {
                         </div>
                         <span style={{
                             fontSize: '11px', color: 'var(--text-muted)',
-                            fontFamily: 'Outfit', whiteSpace: 'nowrap', flexShrink: 0
+                            whiteSpace: 'nowrap', flexShrink: 0
                         }}>
                             {formatDate(item.criado_em)}
                         </span>

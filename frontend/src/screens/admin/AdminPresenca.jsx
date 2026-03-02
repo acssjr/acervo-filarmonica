@@ -223,7 +223,6 @@ const DatePickerCalendar = ({ value, onChange, max }) => {
           border: `1px solid ${open ? '#D4AF37' : 'var(--border)'}`,
           borderRadius: '10px',
           color: 'var(--text-primary)',
-          fontFamily: 'Outfit, sans-serif',
           fontSize: '15px',
           cursor: 'pointer',
           transition: 'border-color 0.2s',
@@ -281,7 +280,6 @@ const DatePickerCalendar = ({ value, onChange, max }) => {
               <ChevronLeft size={18} />
             </button>
             <span style={{
-              fontFamily: 'Outfit, sans-serif',
               fontSize: '15px',
               fontWeight: '700',
               color: 'var(--text-primary)'
@@ -320,7 +318,6 @@ const DatePickerCalendar = ({ value, onChange, max }) => {
             {DIAS_SEMANA_PT.map(d => (
               <div key={d} style={{
                 textAlign: 'center',
-                fontFamily: 'Outfit, sans-serif',
                 fontSize: '12px',
                 fontWeight: '600',
                 color: 'var(--text-muted)',
@@ -382,7 +379,6 @@ const DatePickerCalendar = ({ value, onChange, max }) => {
                     color,
                     border,
                     borderRadius: '8px',
-                    fontFamily: 'Outfit, sans-serif',
                     fontSize: '14px',
                     fontWeight,
                     cursor: isDisabled ? 'default' : 'pointer',
@@ -423,7 +419,6 @@ const DatePickerCalendar = ({ value, onChange, max }) => {
                 border: '1px solid rgba(212, 175, 55, 0.3)'
               }} />
               <span style={{
-                fontFamily: 'Outfit, sans-serif',
                 fontSize: '11px',
                 color: 'var(--text-muted)'
               }}>Dia de ensaio</span>
@@ -434,7 +429,6 @@ const DatePickerCalendar = ({ value, onChange, max }) => {
                 border: '2px solid #D4AF37'
               }} />
               <span style={{
-                fontFamily: 'Outfit, sans-serif',
                 fontSize: '11px',
                 color: 'var(--text-muted)'
               }}>Hoje</span>
@@ -877,8 +871,7 @@ const AdminPresenca = () => {
           background: isSelected ? `${accentColor}08` : 'transparent',
           cursor: 'pointer',
           transition: 'all 0.15s',
-          fontFamily: 'Outfit, sans-serif'
-        }}
+          }}
         onMouseEnter={(e) => {
           if (!isSelected) e.currentTarget.style.background = 'rgba(212,175,55, 0.04)';
         }}
@@ -901,7 +894,6 @@ const AdminPresenca = () => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          fontFamily: 'Outfit, sans-serif',
           fontWeight: '700',
           fontSize: '14px',
           color: '#FFFFFF',
@@ -943,7 +935,6 @@ const AdminPresenca = () => {
       {/* Header */}
       <div style={{ marginBottom: '32px' }}>
         <h1 style={{
-          fontFamily: 'Outfit, sans-serif',
           fontSize: '28px',
           fontWeight: '700',
           marginBottom: '8px',
@@ -953,7 +944,6 @@ const AdminPresenca = () => {
           Controle de Presença
         </h1>
         <p style={{
-          fontFamily: 'Outfit, sans-serif',
           fontSize: '14px',
           color: 'var(--text-muted)',
           lineHeight: '1.5'
@@ -983,7 +973,6 @@ const AdminPresenca = () => {
               color: modoMarcacao === 'presentes' ? '#FFFFFF' : 'var(--text-muted)',
               border: 'none',
               borderRight: '1px solid var(--border)',
-              fontFamily: 'Outfit, sans-serif',
               fontSize: '13px',
               fontWeight: '600',
               cursor: 'pointer',
@@ -1003,7 +992,6 @@ const AdminPresenca = () => {
               background: modoMarcacao === 'ausentes' ? '#E85A4F' : 'transparent',
               color: modoMarcacao === 'ausentes' ? '#FFFFFF' : 'var(--text-muted)',
               border: 'none',
-              fontFamily: 'Outfit, sans-serif',
               fontSize: '13px',
               fontWeight: '600',
               cursor: 'pointer',
@@ -1036,7 +1024,6 @@ const AdminPresenca = () => {
             <div className="ap-section-title">
               <UsersIcon size={20} color="#D4AF37" />
               <h2 style={{
-                fontFamily: 'Outfit, sans-serif',
                 fontSize: '15px',
                 fontWeight: '700',
                 color: 'var(--text-primary)',
@@ -1045,7 +1032,6 @@ const AdminPresenca = () => {
                 Músicos
               </h2>
               <span style={{
-                fontFamily: 'Outfit, sans-serif',
                 fontSize: '12px',
                 color: 'var(--text-muted)',
                 fontWeight: '500'
@@ -1070,7 +1056,6 @@ const AdminPresenca = () => {
                     color: 'var(--text-muted)',
                     border: '1px solid var(--border)',
                     borderRadius: '6px',
-                    fontFamily: 'Outfit, sans-serif',
                     fontSize: '12px',
                     fontWeight: '500',
                     cursor: 'pointer',
@@ -1106,7 +1091,6 @@ const AdminPresenca = () => {
                 textAlign: 'center',
                 padding: '40px 20px',
                 color: 'var(--text-muted)',
-                fontFamily: 'Outfit, sans-serif',
                 fontSize: '14px'
               }}>
                 Nenhum músico cadastrado
@@ -1126,7 +1110,6 @@ const AdminPresenca = () => {
                     }}>
                       <span style={{ fontSize: '14px' }}>🎼</span>
                       <span style={{
-                        fontFamily: 'Outfit, sans-serif',
                         fontSize: '12px',
                         fontWeight: '700',
                         color: '#D4AF37',
@@ -1164,7 +1147,6 @@ const AdminPresenca = () => {
                           flexShrink: 0
                         }} />
                         <span style={{
-                          fontFamily: 'Outfit, sans-serif',
                           fontSize: '12px',
                           fontWeight: '700',
                           color: 'var(--text-muted)',
@@ -1175,7 +1157,6 @@ const AdminPresenca = () => {
                           {familia}
                         </span>
                         <span style={{
-                          fontFamily: 'Outfit, sans-serif',
                           fontSize: '11px',
                           color: 'var(--text-muted)',
                           fontWeight: '500'
@@ -1213,7 +1194,6 @@ const AdminPresenca = () => {
                   color: '#FFFFFF',
                   border: 'none',
                   borderRadius: '10px',
-                  fontFamily: 'Outfit, sans-serif',
                   fontSize: '14px',
                   fontWeight: '700',
                   cursor: submitting ? 'not-allowed' : 'pointer',
@@ -1250,7 +1230,6 @@ const AdminPresenca = () => {
             <div className="ap-section-title" style={{ marginBottom: '12px' }}>
               <MusicIcon size={20} color="#D4AF37" />
               <h2 style={{
-                fontFamily: 'Outfit, sans-serif',
                 fontSize: '15px',
                 fontWeight: '700',
                 color: 'var(--text-primary)',
@@ -1259,7 +1238,6 @@ const AdminPresenca = () => {
                 Partituras Tocadas
               </h2>
               <span style={{
-                fontFamily: 'Outfit, sans-serif',
                 fontSize: '12px',
                 color: 'var(--text-muted)',
                 fontWeight: '500'
@@ -1292,7 +1270,6 @@ const AdminPresenca = () => {
                   border: '1px solid var(--border)',
                   borderRadius: '8px',
                   color: 'var(--text-primary)',
-                  fontFamily: 'Outfit, sans-serif',
                   fontSize: '13px'
                 }}
               />
@@ -1315,8 +1292,7 @@ const AdminPresenca = () => {
                     textAlign: 'center',
                     color: 'var(--text-muted)',
                     fontSize: '13px',
-                    fontFamily: 'Outfit, sans-serif'
-                  }}>
+                    }}>
                     Nenhuma partitura encontrada
                   </div>
                 ) : (
@@ -1332,7 +1308,6 @@ const AdminPresenca = () => {
                         borderBottom: '1px solid var(--border)',
                         textAlign: 'left',
                         cursor: 'pointer',
-                        fontFamily: 'Outfit, sans-serif',
                         display: 'flex',
                         alignItems: 'center',
                         gap: '10px',
@@ -1397,7 +1372,6 @@ const AdminPresenca = () => {
                 textAlign: 'center',
                 padding: '40px 20px',
                 color: 'var(--text-muted)',
-                fontFamily: 'Outfit, sans-serif',
                 fontSize: '14px'
               }}>
                 Nenhuma partitura adicionada
@@ -1413,7 +1387,6 @@ const AdminPresenca = () => {
                     gap: '14px',
                     padding: '12px 16px',
                     borderBottom: '1px solid var(--border)',
-                    fontFamily: 'Outfit, sans-serif',
                     transition: 'background 0.15s'
                   }}
                   onMouseEnter={(e) => {
@@ -1513,7 +1486,6 @@ const AdminPresenca = () => {
       {/* Histórico de Ensaios */}
       <div>
         <h2 style={{
-          fontFamily: 'Outfit, sans-serif',
           fontSize: '20px',
           fontWeight: '700',
           color: 'var(--text-primary)',
@@ -1531,7 +1503,6 @@ const AdminPresenca = () => {
             padding: '48px 24px',
             textAlign: 'center',
             color: 'var(--text-muted)',
-            fontFamily: 'Outfit, sans-serif',
             fontSize: '15px'
           }}>
             Nenhum ensaio registrado
@@ -1592,7 +1563,6 @@ const AdminPresenca = () => {
                       fontSize: '16px',
                       fontWeight: '800',
                       color: '#3D1011',
-                      fontFamily: 'Outfit, sans-serif',
                       lineHeight: 1
                     }}>
                       {(() => {
@@ -1608,7 +1578,6 @@ const AdminPresenca = () => {
                       fontSize: '9px',
                       fontWeight: '600',
                       color: '#3D1011',
-                      fontFamily: 'Outfit, sans-serif',
                       textTransform: 'uppercase',
                       marginTop: '1px'
                     }}>
@@ -1629,7 +1598,6 @@ const AdminPresenca = () => {
                       fontSize: '14px',
                       fontWeight: '600',
                       color: 'var(--text-primary)',
-                      fontFamily: 'Outfit, sans-serif',
                       marginBottom: '4px'
                     }}>
                       {formatDatePt(ensaio.data_ensaio)}
@@ -1653,8 +1621,7 @@ const AdminPresenca = () => {
                       gap: '0',
                       fontSize: '12px',
                       color: 'var(--text-muted)',
-                      fontFamily: 'Outfit, sans-serif'
-                    }}>
+                      }}>
                       <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <UsersIcon size={13} color="var(--text-muted)" /> {ensaio.total_presencas} músicos
                       </span>
@@ -1682,7 +1649,6 @@ const AdminPresenca = () => {
                         color: 'var(--text-muted)',
                         border: '1px solid var(--border)',
                         borderRadius: '6px',
-                        fontFamily: 'Outfit, sans-serif',
                         fontSize: '12px',
                         fontWeight: '500',
                         cursor: 'pointer',
@@ -1737,7 +1703,7 @@ const AdminPresenca = () => {
                     background: 'rgba(212,175,55,0.03)'
                   }}>
                     {carregandoDetalhe ? (
-                      <div style={{ textAlign: 'center', padding: '12px', color: 'var(--text-muted)', fontFamily: 'Outfit, sans-serif', fontSize: '13px' }}>
+                      <div style={{ textAlign: 'center', padding: '12px', color: 'var(--text-muted)', fontSize: '13px' }}>
                         Carregando...
                       </div>
                     ) : detalheEnsaio ? (
@@ -1746,13 +1712,13 @@ const AdminPresenca = () => {
                         <div style={{ minWidth: 0 }}>
                           <div style={{
                             fontSize: '11px', fontWeight: '600', color: 'var(--text-muted)',
-                            fontFamily: 'Outfit, sans-serif', textTransform: 'uppercase',
+                            textTransform: 'uppercase',
                             letterSpacing: '0.5px', marginBottom: '10px'
                           }}>
                             Presentes ({detalheEnsaio.total_presentes})
                           </div>
                           {(detalheEnsaio.presentes || []).length === 0 ? (
-                            <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontFamily: 'Outfit, sans-serif' }}>
+                            <span style={{ fontSize: '13px', color: 'var(--text-muted)', }}>
                               Nenhum presente
                             </span>
                           ) : (() => {
@@ -1766,7 +1732,7 @@ const AdminPresenca = () => {
                                   <>
                                     <div style={{
                                       fontSize: '10px', fontWeight: '700', color: '#D4AF37',
-                                      fontFamily: 'Outfit, sans-serif', textTransform: 'uppercase',
+                                      textTransform: 'uppercase',
                                       letterSpacing: '0.5px', padding: '4px 0 2px',
                                       display: 'flex', alignItems: 'center', gap: '4px'
                                     }}>
@@ -1774,8 +1740,7 @@ const AdminPresenca = () => {
                                     </div>
                                     {regentes.map(p => (
                                       <div key={p.usuario_id} style={{
-                                        fontSize: '13px', fontFamily: 'Outfit, sans-serif',
-                                        color: 'var(--text-primary)', padding: '2px 0 2px 16px',
+                                        fontSize: '13px', color: 'var(--text-primary)', padding: '2px 0 2px 16px',
                                         display: 'flex', alignItems: 'center', gap: '6px'
                                       }}>
                                         <span>{p.nome}</span>
@@ -1789,7 +1754,7 @@ const AdminPresenca = () => {
                                   <React.Fragment key={familia}>
                                     <div style={{
                                       fontSize: '10px', fontWeight: '700', color: 'var(--text-muted)',
-                                      fontFamily: 'Outfit, sans-serif', textTransform: 'uppercase',
+                                      textTransform: 'uppercase',
                                       letterSpacing: '0.5px', padding: '6px 0 2px',
                                       display: 'flex', alignItems: 'center', gap: '6px'
                                     }}>
@@ -1801,8 +1766,7 @@ const AdminPresenca = () => {
                                     </div>
                                     {musicos.map(p => (
                                       <div key={p.usuario_id} style={{
-                                        fontSize: '13px', fontFamily: 'Outfit, sans-serif',
-                                        color: 'var(--text-primary)', padding: '2px 0 2px 16px',
+                                        fontSize: '13px', color: 'var(--text-primary)', padding: '2px 0 2px 16px',
                                         display: 'flex', alignItems: 'center', gap: '6px'
                                       }}>
                                         <span>{p.nome}</span>
@@ -1823,7 +1787,7 @@ const AdminPresenca = () => {
                         <div style={{ minWidth: 0 }}>
                           <div style={{
                             fontSize: '11px', fontWeight: '600', color: 'var(--text-muted)',
-                            fontFamily: 'Outfit, sans-serif', textTransform: 'uppercase',
+                            textTransform: 'uppercase',
                             letterSpacing: '0.5px', marginBottom: '10px'
                           }}>
                             Partituras ({detalheEnsaio.total_partituras})
@@ -1831,8 +1795,7 @@ const AdminPresenca = () => {
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                             {(detalheEnsaio.partituras || []).map(p => (
                               <div key={p.id} style={{
-                                fontSize: '13px', fontFamily: 'Outfit, sans-serif',
-                                color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px',
+                                fontSize: '13px', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px',
                                 flexWrap: 'wrap'
                               }}>
                                 <span>{p.titulo}</span>
@@ -1855,7 +1818,7 @@ const AdminPresenca = () => {
                               </div>
                             ))}
                             {(detalheEnsaio.partituras || []).length === 0 && (
-                              <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontFamily: 'Outfit, sans-serif' }}>
+                              <span style={{ fontSize: '13px', color: 'var(--text-muted)', }}>
                                 Nenhuma partitura
                               </span>
                             )}
@@ -1879,7 +1842,6 @@ const AdminPresenca = () => {
                   border: 'none',
                   borderTop: '1px solid var(--border)',
                   color: '#D4AF37',
-                  fontFamily: 'Outfit, sans-serif',
                   fontSize: '13px',
                   fontWeight: '600',
                   cursor: 'pointer',

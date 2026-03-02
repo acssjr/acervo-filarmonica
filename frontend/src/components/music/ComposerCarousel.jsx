@@ -88,7 +88,6 @@ const ComposerCarousel = ({ composers = [] }) => {
         marginBottom: '16px'
       }}>
         <h2 style={{
-          fontFamily: "Outfit, sans-serif",
           fontSize: '18px',
           fontWeight: '700'
         }}>
@@ -102,8 +101,7 @@ const ComposerCarousel = ({ composers = [] }) => {
             fontSize: '14px',
             fontWeight: '500',
             cursor: 'pointer',
-            fontFamily: 'Outfit, sans-serif'
-          }}
+            }}
           onClick={() => navigate('/compositores')}
         >
           Ver Todos
@@ -195,7 +193,6 @@ const ComposerCarousel = ({ composers = [] }) => {
                   textAlign: 'left'
                 }}>
                   <p style={{
-                    fontFamily: 'Outfit, sans-serif',
                     fontSize: '14px',
                     fontWeight: '700',
                     color: '#FFFFFF',
@@ -205,7 +202,6 @@ const ComposerCarousel = ({ composers = [] }) => {
                     {composer.name}
                   </p>
                   <p style={{
-                    fontFamily: 'Outfit, sans-serif',
                     fontSize: '11px',
                     color: 'rgba(255, 255, 255, 0.8)',
                     display: 'flex',
@@ -233,7 +229,6 @@ const ComposerCarousel = ({ composers = [] }) => {
                     fontSize: '10px',
                     fontWeight: '600',
                     color: '#1A1A1A',
-                    fontFamily: 'Outfit, sans-serif',
                     boxShadow: '0 2px 8px rgba(212, 175, 55, 0.4)'
                   }}>
                     Destaque

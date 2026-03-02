@@ -32,7 +32,6 @@ const EmptyState = ({ icon: Icon, title, subtitle, size = 'default' }) => {
       )}
       {title && (
         <p style={{
-          fontFamily: 'Outfit, sans-serif',
           fontSize: `${s.title}px`,
           marginBottom: subtitle ? '8px' : 0
         }}>
@@ -41,7 +40,6 @@ const EmptyState = ({ icon: Icon, title, subtitle, size = 'default' }) => {
       )}
       {subtitle && (
         <p style={{
-          fontFamily: 'Outfit, sans-serif',
           fontSize: `${s.subtitle}px`,
           opacity: 0.7
         }}>

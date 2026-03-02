@@ -109,7 +109,6 @@ const LoginScreen = ({ onClose, required = false }) => {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
-                fontFamily: 'Outfit, sans-serif',
                 fontSize: '13px',
                 fontWeight: '600',
                 color: 'rgba(244, 228, 188, 0.8)',
@@ -195,7 +194,6 @@ const LoginScreen = ({ onClose, required = false }) => {
                   border: `1px solid ${getInputBorderColor()}`,
                   color: '#F4E4BC',
                   fontSize: '16px',
-                  fontFamily: 'Outfit, sans-serif',
                   outline: 'none',
                   transition: 'all 0.2s ease',
                   boxSizing: 'border-box'
@@ -257,7 +255,6 @@ const LoginScreen = ({ onClose, required = false }) => {
                     animation: 'spin 0.6s cubic-bezier(0.5, 0.1, 0.4, 0.9) infinite'
                   }} />
                   <span style={{
-                    fontFamily: 'Outfit, sans-serif',
                     fontSize: '13px',
                     fontWeight: '600',
                     color: '#D4AF37',
@@ -289,7 +286,6 @@ const LoginScreen = ({ onClose, required = false }) => {
                     <line x1="9" y1="9" x2="15" y2="15" />
                   </svg>
                   <span style={{
-                    fontFamily: 'Outfit, sans-serif',
                     fontSize: '12px',
                     fontWeight: '600',
                     color: '#EF4444'
@@ -333,7 +329,6 @@ const LoginScreen = ({ onClose, required = false }) => {
                 )}
               </div>
               <span style={{
-                fontFamily: 'Outfit, sans-serif',
                 fontSize: '13px',
                 color: 'rgba(244, 228, 188, 0.7)'
               }}>
@@ -357,8 +352,7 @@ const LoginScreen = ({ onClose, required = false }) => {
               gap: '6px',
               color: 'rgba(244, 228, 188, 0.4)',
               fontSize: '11px',
-              fontFamily: 'Outfit, sans-serif'
-            }}>
+              }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
               </svg>
@@ -370,7 +364,6 @@ const LoginScreen = ({ onClose, required = false }) => {
             textAlign: 'center',
             marginTop: '16px',
             fontSize: '11px',
-            fontFamily: 'Outfit, sans-serif',
             color: 'rgba(244, 228, 188, 0.3)'
           }}>
             Sociedade Filarmônica 25 de Março • Fundada em 1868

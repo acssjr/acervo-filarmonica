@@ -7,8 +7,9 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-html, body {
-  font-family: 'Outfit', sans-serif;
+html,
+body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
   background: var(--bg-primary);
   color: var(--text-primary);
   min-height: 100vh;
@@ -31,8 +32,11 @@ html, body {
 }
 
 /* Form elements */
-input, select, textarea, button {
-  font-family: 'Outfit', sans-serif;
+input,
+select,
+textarea,
+button {
+  font-family: 'Plus Jakarta Sans', sans-serif;
   color: inherit;
 }
 
@@ -56,15 +60,25 @@ input::-ms-reveal {
   -webkit-appearance: none;
 }
 
-input:focus, select:focus {
+input:focus,
+select:focus {
   outline: none;
   border-color: var(--primary) !important;
 }
 
 /* Scrollbar */
-::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--text-muted); border-radius: 2px; }
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--text-muted);
+  border-radius: 2px;
+}
 
 /* Modal scroll lock - aplicado via JS quando modal abre */
 html.modal-open,

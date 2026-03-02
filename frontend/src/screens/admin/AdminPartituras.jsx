@@ -827,13 +827,12 @@ const AdminPartituras = () => {
   const selectedCategoria = categorias.find(c => c.id === filterCategoria);
 
   return (
-    <div className="page-transition" style={{ padding: '32px', maxWidth: '1000px', margin: '0 auto', fontFamily: 'Outfit, sans-serif' }}>
+    <div className="page-transition" style={{ padding: '32px', maxWidth: '1000px', margin: '0 auto', }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
         <h1 style={{
           fontSize: '24px',
           fontWeight: '700',
           color: 'var(--text-primary)',
-          fontFamily: 'Outfit, sans-serif',
           display: 'flex',
           alignItems: 'center',
           gap: '10px'
@@ -865,7 +864,6 @@ const AdminPartituras = () => {
               fontSize: '14px',
               fontWeight: '500',
               cursor: (tutorialPending || showTutorial) ? 'not-allowed' : 'pointer',
-              fontFamily: 'Outfit, sans-serif',
               opacity: (tutorialPending || showTutorial) ? 0.7 : 1,
               transition: 'all 0.2s ease'
             }}
@@ -895,7 +893,6 @@ const AdminPartituras = () => {
               fontSize: '14px',
               fontWeight: '500',
               cursor: (tutorialPending || showTutorial) ? 'not-allowed' : 'pointer',
-              fontFamily: 'Outfit, sans-serif',
               opacity: (tutorialPending || showTutorial) ? 0.7 : 1,
               transition: 'all 0.2s ease'
             }}
@@ -947,7 +944,6 @@ const AdminPartituras = () => {
               background: 'var(--bg-card)',
               color: selectedCategoria ? 'var(--text-primary)' : 'var(--text-muted)',
               fontSize: '14px',
-              fontFamily: 'Outfit, sans-serif',
               textAlign: 'left',
               cursor: 'pointer',
               display: 'flex',
@@ -1006,7 +1002,6 @@ const AdminPartituras = () => {
                   background: !filterCategoria ? 'rgba(212, 175, 55, 0.1)' : 'transparent',
                   color: !filterCategoria ? '#D4AF37' : 'var(--text-primary)',
                   fontSize: '14px',
-                  fontFamily: 'Outfit, sans-serif',
                   textAlign: 'left',
                   cursor: 'pointer',
                   display: 'flex',
@@ -1027,7 +1022,6 @@ const AdminPartituras = () => {
                     background: filterCategoria === cat.id ? 'rgba(212, 175, 55, 0.1)' : 'transparent',
                     color: filterCategoria === cat.id ? '#D4AF37' : 'var(--text-primary)',
                     fontSize: '14px',
-                    fontFamily: 'Outfit, sans-serif',
                     textAlign: 'left',
                     cursor: 'pointer',
                     display: 'flex',
@@ -1055,13 +1049,13 @@ const AdminPartituras = () => {
         </div>
       </div>
 
-      <div style={{ marginBottom: '20px', color: 'var(--text-secondary)', fontSize: '14px', fontFamily: 'Outfit, sans-serif' }}>
+      <div style={{ marginBottom: '20px', color: 'var(--text-secondary)', fontSize: '14px', }}>
         {filtered.length} partitura(s) {search && `para "${search}"`}
       </div>
 
       {/* Lista agrupada por letra */}
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)', fontFamily: 'Outfit, sans-serif' }}>
+        <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)', }}>
           Carregando...
         </div>
       ) : filtered.length === 0 ? (
@@ -1069,8 +1063,7 @@ const AdminPartituras = () => {
           textAlign: 'center',
           padding: '60px 20px',
           color: 'var(--text-secondary)',
-          fontFamily: 'Outfit, sans-serif'
-        }}>
+          }}>
           <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ opacity: 0.5, marginBottom: '16px' }}>
             <circle cx="11" cy="11" r="8" />
             <path d="m21 21-4.35-4.35" />
@@ -1101,12 +1094,11 @@ const AdminPartituras = () => {
                   fontSize: '18px',
                   fontWeight: '700',
                   color: '#fff',
-                  fontFamily: 'Outfit, sans-serif',
                   boxShadow: '0 2px 6px rgba(212, 175, 55, 0.3)'
                 }}>
                   {letter}
                 </div>
-                <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontFamily: 'Outfit, sans-serif' }}>
+                <span style={{ fontSize: '13px', color: 'var(--text-muted)', }}>
                   {groupedByLetter[letter].length} {groupedByLetter[letter].length === 1 ? 'partitura' : 'partituras'}
                 </span>
               </div>
@@ -1376,7 +1368,6 @@ const AdminPartituras = () => {
                                               background: 'var(--bg-primary)',
                                               color: 'var(--text-primary)',
                                               fontSize: '12px',
-                                              fontFamily: 'Outfit, sans-serif',
                                               outline: 'none',
                                               minWidth: 0,
                                               opacity: renamingParteSaving ? 0.6 : 1
@@ -1826,15 +1817,13 @@ const AdminPartituras = () => {
                     fontSize: '20px',
                     fontWeight: '700',
                     color: 'var(--text-primary)',
-                    fontFamily: 'Outfit, sans-serif'
-                  }}>
+                    }}>
                     Editar Partitura
                   </h2>
                   <p style={{
                     margin: '4px 0 0',
                     fontSize: '13px',
                     color: 'var(--text-muted)',
-                    fontFamily: 'Outfit, sans-serif',
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis'
@@ -1877,8 +1866,7 @@ const AdminPartituras = () => {
                   fontWeight: '600',
                   color: 'var(--text-secondary)',
                   marginBottom: '8px',
-                  fontFamily: 'Outfit, sans-serif'
-                }}>
+                  }}>
                   Título da Partitura
                 </label>
                 <input
@@ -1894,7 +1882,6 @@ const AdminPartituras = () => {
                     background: 'var(--bg-primary)',
                     color: 'var(--text-primary)',
                     fontSize: '15px',
-                    fontFamily: 'Outfit, sans-serif',
                     outline: 'none',
                     transition: 'border-color 0.2s, box-shadow 0.2s',
                     boxSizing: 'border-box'
@@ -1918,8 +1905,7 @@ const AdminPartituras = () => {
                   fontWeight: '600',
                   color: 'var(--text-secondary)',
                   marginBottom: '8px',
-                  fontFamily: 'Outfit, sans-serif'
-                }}>
+                  }}>
                   Compositor
                 </label>
                 <input
@@ -1935,7 +1921,6 @@ const AdminPartituras = () => {
                     background: 'var(--bg-primary)',
                     color: 'var(--text-primary)',
                     fontSize: '15px',
-                    fontFamily: 'Outfit, sans-serif',
                     outline: 'none',
                     transition: 'border-color 0.2s, box-shadow 0.2s',
                     boxSizing: 'border-box'
@@ -1959,8 +1944,7 @@ const AdminPartituras = () => {
                   fontWeight: '600',
                   color: 'var(--text-secondary)',
                   marginBottom: '8px',
-                  fontFamily: 'Outfit, sans-serif'
-                }}>
+                  }}>
                   Arranjador
                 </label>
                 <input
@@ -1976,7 +1960,6 @@ const AdminPartituras = () => {
                     background: 'var(--bg-primary)',
                     color: 'var(--text-primary)',
                     fontSize: '15px',
-                    fontFamily: 'Outfit, sans-serif',
                     outline: 'none',
                     transition: 'border-color 0.2s, box-shadow 0.2s',
                     boxSizing: 'border-box'
@@ -2000,8 +1983,7 @@ const AdminPartituras = () => {
                   fontWeight: '600',
                   color: 'var(--text-secondary)',
                   marginBottom: '8px',
-                  fontFamily: 'Outfit, sans-serif'
-                }}>
+                  }}>
                   Categoria
                 </label>
                 <div style={{ position: 'relative' }}>
@@ -2017,7 +1999,6 @@ const AdminPartituras = () => {
                       background: 'var(--bg-primary)',
                       color: 'var(--text-primary)',
                       fontSize: '15px',
-                      fontFamily: 'Outfit, sans-serif',
                       outline: 'none',
                       cursor: 'pointer',
                       appearance: 'none',
@@ -2066,7 +2047,6 @@ const AdminPartituras = () => {
                     color: 'var(--text-secondary)',
                     fontSize: '15px',
                     fontWeight: '600',
-                    fontFamily: 'Outfit, sans-serif',
                     cursor: 'pointer',
                     transition: 'all 0.2s'
                   }}
@@ -2088,7 +2068,6 @@ const AdminPartituras = () => {
                     color: '#fff',
                     fontSize: '15px',
                     fontWeight: '600',
-                    fontFamily: 'Outfit, sans-serif',
                     cursor: savingEdit || !editForm.titulo.trim() ? 'not-allowed' : 'pointer',
                     display: 'flex',
                     alignItems: 'center',

@@ -240,7 +240,6 @@ const DownloadModal = ({
             margin: 0,
             fontSize: '17px',
             fontWeight: '700',
-            fontFamily: 'Outfit, sans-serif',
             color: 'var(--text-primary)'
           }}>
             Baixar Partituras
@@ -276,7 +275,6 @@ const DownloadModal = ({
             fontSize: '10px',
             color: 'var(--text-muted)',
             marginBottom: '8px',
-            fontFamily: 'Outfit, sans-serif',
             textTransform: 'uppercase',
             letterSpacing: '0.5px',
             fontWeight: '600'
@@ -295,7 +293,6 @@ const DownloadModal = ({
                   background: 'linear-gradient(145deg, #722F37 0%, #5C1A1B 100%)',
                   border: 'none',
                   color: '#F4E4BC',
-                  fontFamily: 'Outfit, sans-serif',
                   fontSize: '13px',
                   fontWeight: '600',
                   cursor: 'pointer',
@@ -329,7 +326,6 @@ const DownloadModal = ({
                   background: 'var(--bg-secondary)',
                   border: '1px solid var(--border)',
                   color: 'var(--text-primary)',
-                  fontFamily: 'Outfit, sans-serif',
                   fontSize: '13px',
                   fontWeight: '600',
                   cursor: 'pointer',
@@ -359,7 +355,6 @@ const DownloadModal = ({
                 background: 'linear-gradient(145deg, #722F37 0%, #5C1A1B 100%)',
                 border: 'none',
                 color: '#F4E4BC',
-                fontFamily: 'Outfit, sans-serif',
                 fontSize: '13px',
                 fontWeight: '600',
                 cursor: 'pointer',
@@ -410,7 +405,6 @@ const DownloadModal = ({
                         border: 'none',
                         borderBottom: idx < filteredInstruments.length - 1 ? '1px solid var(--border)' : 'none',
                         color: isUserInst ? 'var(--accent)' : 'var(--text-primary)',
-                        fontFamily: 'Outfit, sans-serif',
                         fontSize: '13px',
                         fontWeight: isUserInst ? '600' : '500',
                         cursor: 'pointer',
@@ -446,7 +440,6 @@ const DownloadModal = ({
                   background: 'transparent',
                   border: '1px solid var(--border)',
                   color: 'var(--text-muted)',
-                  fontFamily: 'Outfit, sans-serif',
                   fontSize: '12px',
                   fontWeight: '600',
                   cursor: 'pointer',
@@ -486,7 +479,6 @@ const DownloadModal = ({
                     border: 'none',
                     borderBottom: idx < filteredInstruments.length - 1 ? '1px solid var(--border)' : 'none',
                     color: 'var(--text-primary)',
-                    fontFamily: 'Outfit, sans-serif',
                     fontSize: '13px',
                     fontWeight: '500',
                     cursor: 'pointer',
@@ -512,7 +504,6 @@ const DownloadModal = ({
                   fontSize: '10px',
                   color: 'var(--text-muted)',
                   margin: 0,
-                  fontFamily: 'Outfit, sans-serif',
                   textTransform: 'uppercase',
                   letterSpacing: '0.5px',
                   fontWeight: '600'
@@ -528,8 +519,7 @@ const DownloadModal = ({
                     fontSize: '11px',
                     fontWeight: '600',
                     cursor: 'pointer',
-                    fontFamily: 'Outfit, sans-serif'
-                  }}
+                    }}
                 >
                   {allSelected ? 'Desmarcar' : 'Todas'}
                 </button>
@@ -556,7 +546,6 @@ const DownloadModal = ({
                         border: 'none',
                         borderBottom: idx < sheets.length - 1 ? '1px solid var(--border)' : 'none',
                         color: 'var(--text-primary)',
-                        fontFamily: 'Outfit, sans-serif',
                         fontSize: '13px',
                         cursor: 'pointer',
                         display: 'flex',
@@ -612,7 +601,6 @@ const DownloadModal = ({
                     fontSize: '13px',
                     fontWeight: '700',
                     cursor: selectedIds.size > 0 ? 'pointer' : 'not-allowed',
-                    fontFamily: 'Outfit, sans-serif',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -648,7 +636,6 @@ const DownloadModal = ({
                     fontSize: '13px',
                     fontWeight: '700',
                     cursor: selectedIds.size > 0 ? 'pointer' : 'not-allowed',
-                    fontFamily: 'Outfit, sans-serif',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -673,7 +660,6 @@ const DownloadModal = ({
                     fontSize: '13px',
                     fontWeight: '700',
                     cursor: selectedIds.size > 0 ? 'pointer' : 'not-allowed',
-                    fontFamily: 'Outfit, sans-serif',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -868,24 +854,116 @@ const RepertorioScreen = () => {
 
       {/* Ações */}
       <div style={{ padding: '0 16px', marginBottom: '16px' }}>
-        {/* Data da apresentação */}
-        {repertorio.data_apresentacao && (
-          <p style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '8px',
-            fontSize: '14px',
-            color: 'var(--text-muted)',
-            margin: '0 0 12px 0'
-          }}>
-            <span style={{ width: '16px', height: '16px' }}><Icons.Calendar /></span>
-            {(() => {
-              const [y, m, d] = repertorio.data_apresentacao.split('T')[0].split('-');
-              return `${d}/${m}/${y}`;
-            })()}
-          </p>
-        )}
+        {/* Card de Data da Apresentação + Botão */}
+        {repertorio.data_apresentacao && (() => {
+          const [y, m, d] = repertorio.data_apresentacao.split('T')[0].split('-');
+          const dateObj = new Date(Number(y), Number(m) - 1, Number(d));
+          const hoje = new Date();
+          hoje.setHours(0, 0, 0, 0);
+          const diffMs = dateObj.getTime() - hoje.getTime();
+          const diffDias = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+          const diasSemana = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+          const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+          const diaSemana = diasSemana[dateObj.getDay()];
+          const mesNome = meses[dateObj.getMonth()];
+
+          let countdownText = '';
+          let countdownColor = '';
+          if (diffDias < 0) {
+            countdownText = `Há ${Math.abs(diffDias)} dia${Math.abs(diffDias) !== 1 ? 's' : ''}`;
+            countdownColor = 'rgba(231, 76, 60, 0.15)';
+          } else if (diffDias === 0) {
+            countdownText = 'Hoje!';
+            countdownColor = 'rgba(46, 204, 113, 0.2)';
+          } else if (diffDias === 1) {
+            countdownText = 'Amanhã!';
+            countdownColor = 'rgba(241, 196, 15, 0.2)';
+          } else if (diffDias <= 7) {
+            countdownText = `Em ${diffDias} dias`;
+            countdownColor = 'rgba(52, 152, 219, 0.15)';
+          } else {
+            countdownText = `Em ${diffDias} dias`;
+            countdownColor = 'rgba(155, 89, 182, 0.12)';
+          }
+          const countdownTextColor = diffDias < 0 ? '#e74c3c' : diffDias === 0 ? '#2ecc71' : diffDias === 1 ? '#f1c40f' : diffDias <= 7 ? '#3498db' : '#9b59b6';
+
+          return (
+            <div style={{
+              background: 'linear-gradient(145deg, rgba(212, 175, 55, 0.08) 0%, rgba(212, 175, 55, 0.02) 100%)',
+              border: '1px solid rgba(212, 175, 55, 0.2)',
+              borderRadius: '16px',
+              padding: '18px 20px',
+              marginBottom: '16px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '16px'
+            }}>
+              {/* Ícone calendário grande */}
+              <div style={{
+                width: '52px',
+                height: '52px',
+                borderRadius: '14px',
+                background: 'linear-gradient(145deg, rgba(212, 175, 55, 0.2) 0%, rgba(212, 175, 55, 0.08) 100%)',
+                border: '1px solid rgba(212, 175, 55, 0.25)',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0
+              }}>
+                <span style={{
+                  fontSize: '10px',
+                  fontWeight: '700',
+                  color: '#D4AF37',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                  lineHeight: 1,
+                  }}>{mesNome.substring(0, 3)}</span>
+                <span style={{
+                  fontSize: '22px',
+                  fontWeight: '800',
+                  color: 'var(--text-primary)',
+                  lineHeight: 1.1,
+                  }}>{d}</span>
+              </div>
+
+              {/* Info da data */}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{
+                  fontSize: '15px',
+                  fontWeight: '600',
+                  color: 'var(--text-primary)',
+                  margin: 0,
+                  lineHeight: 1.3
+                }}>
+                  {diaSemana}
+                </p>
+                <p style={{
+                  fontSize: '13px',
+                  color: 'var(--text-muted)',
+                  margin: '2px 0 0',
+                  }}>
+                  {`${d} de ${mesNome} de ${y}`}
+                </p>
+              </div>
+
+              {/* Badge de countdown */}
+              <span style={{
+                padding: '5px 12px',
+                borderRadius: '20px',
+                background: countdownColor,
+                color: countdownTextColor,
+                fontSize: '12px',
+                fontWeight: '700',
+                whiteSpace: 'nowrap',
+                flexShrink: 0
+              }}>
+                {countdownText}
+              </span>
+            </div>
+          );
+        })()}
 
         {/* Botão centralizado */}
         <div style={{ display: 'flex', justifyContent: 'center' }}>

@@ -186,7 +186,6 @@ const DesktopHeader = () => {
           alignItems: 'flex-start'
         }}>
           <span style={{
-            fontFamily: 'Outfit, sans-serif',
             fontSize: '13px',
             color: 'var(--text-muted)',
             whiteSpace: 'nowrap'
@@ -200,7 +199,6 @@ const DesktopHeader = () => {
               background: '#D4AF37',
               color: '#3D1518',
               fontSize: '10px',
-              fontFamily: 'Outfit, sans-serif',
               fontWeight: '700',
               padding: '5px 10px',
               borderRadius: '8px',
@@ -225,7 +223,6 @@ const DesktopHeader = () => {
                 animation: 'pulse 2s ease-in-out infinite'
               }} />
               <span style={{
-                fontFamily: 'Outfit, sans-serif',
                 fontSize: '13px',
                 fontWeight: '700',
                 color: '#22C55E'
@@ -240,7 +237,6 @@ const DesktopHeader = () => {
               gap: '8px'
             }}>
               <span style={{
-                fontFamily: 'Outfit, sans-serif',
                 fontSize: '12px',
                 fontWeight: '700',
                 color: 'var(--text-muted)'
@@ -257,7 +253,6 @@ const DesktopHeader = () => {
               }}>
                 {rehearsalInfo.days > 0 && (
                   <span style={{
-                    fontFamily: 'Outfit, sans-serif',
                     fontSize: '14px',
                     fontWeight: '800',
                     color: '#D4AF37'
@@ -266,7 +261,6 @@ const DesktopHeader = () => {
                   </span>
                 )}
                 <span style={{
-                  fontFamily: 'Outfit, sans-serif',
                   fontSize: '14px',
                   fontWeight: '800',
                   color: '#D4AF37'
@@ -274,7 +268,6 @@ const DesktopHeader = () => {
                   {rehearsalInfo.hours}h{rehearsalInfo.minutes > 0 ? ` ${rehearsalInfo.minutes}m` : ''}
                 </span>
                 <span style={{
-                  fontFamily: 'Outfit, sans-serif',
                   fontSize: '12px',
                   color: 'var(--text-muted)',
                   fontWeight: '500'
@@ -361,7 +354,6 @@ const DesktopHeader = () => {
                 color: '#fff',
                 fontSize: '11px',
                 fontWeight: '700',
-                fontFamily: 'Outfit, sans-serif',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -393,7 +385,6 @@ const DesktopHeader = () => {
           boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
         }}>
           <p style={{
-            fontFamily: 'Outfit, sans-serif',
             fontSize: '12px',
             color: 'var(--text-muted)',
             marginBottom: '12px',
@@ -445,7 +436,6 @@ const DesktopHeader = () => {
 
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <p style={{
-                    fontFamily: 'Outfit, sans-serif',
                     fontSize: '14px',
                     fontWeight: '600',
                     color: 'var(--text-primary)',
@@ -456,7 +446,6 @@ const DesktopHeader = () => {
                     {sheet.title}
                   </p>
                   <p style={{
-                    fontFamily: 'Outfit, sans-serif',
                     fontSize: '12px',
                     color: 'var(--text-muted)'
                   }}>
@@ -498,7 +487,7 @@ const DesktopHeader = () => {
               padding: '20px',
               color: 'var(--text-muted)'
             }}>
-              <p style={{ fontFamily: 'Outfit, sans-serif', fontSize: '14px' }}>
+              <p style={{ fontSize: '14px' }}>
                 Nenhuma partitura encontrada para &ldquo;{searchQuery}&rdquo;
               </p>
             </div>

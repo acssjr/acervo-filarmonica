@@ -317,7 +317,6 @@ const UploadPastaModal = ({ isOpen, onClose, onSuccess, initialFiles }) => {
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden',
-        fontFamily: 'Outfit, sans-serif',
         transition: 'max-width 0.3s ease'
       }}>
         {/* ===== HEADER FIXO ===== */}

@@ -142,7 +142,7 @@ const NotificationsPanel = () => {
           padding: '16px 20px',
           borderBottom: '1px solid var(--border)'
         }}>
-          <h3 style={{ fontFamily: 'Outfit, sans-serif', fontSize: '18px', fontWeight: '700', color: 'var(--text-primary)' }}>
+          <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-primary)' }}>
             Notificações
           </h3>
           {notifications.some(n => !n.read) && (
@@ -155,8 +155,7 @@ const NotificationsPanel = () => {
                 fontSize: '13px',
                 fontWeight: '600',
                 cursor: 'pointer',
-                fontFamily: 'Outfit, sans-serif'
-              }}
+                }}
             >
               Marcar como lidas
             </button>
@@ -176,7 +175,7 @@ const NotificationsPanel = () => {
                 margin: '0 auto 12px',
                 animation: 'spin 1s linear infinite'
               }} />
-              <p style={{ fontSize: '14px', color: 'var(--text-muted)', fontFamily: 'Outfit, sans-serif' }}>
+              <p style={{ fontSize: '14px', color: 'var(--text-muted)', }}>
                 Carregando...
               </p>
             </div>
@@ -221,7 +220,6 @@ const NotificationsPanel = () => {
                     fontWeight: notification.read ? '500' : '600',
                     color: 'var(--text-primary)',
                     marginBottom: '2px',
-                    fontFamily: 'Outfit, sans-serif',
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis'
@@ -231,14 +229,13 @@ const NotificationsPanel = () => {
                   <p style={{
                     fontSize: '13px',
                     color: 'var(--text-muted)',
-                    fontFamily: 'Outfit, sans-serif',
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis'
                   }}>
                     {notification.composer || 'Compositor desconhecido'}
                   </p>
-                  <p style={{ fontSize: '11px', color: 'var(--text-muted)', opacity: 0.6, fontFamily: 'Outfit, sans-serif', marginTop: '2px' }}>
+                  <p style={{ fontSize: '11px', color: 'var(--text-muted)', opacity: 0.6, marginTop: '2px' }}>
                     {formatDate(notification.date)}
                   </p>
                 </div>

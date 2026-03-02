@@ -4,11 +4,12 @@
 :root {
   --ps-bg: linear-gradient(145deg, rgba(255, 255, 255, 0.7) 0%, rgba(244, 228, 188, 0.4) 100%);
   --ps-border: rgba(212, 175, 55, 0.3);
-  --ps-text-main: #5C1A1B; /* Vinho escuro para texto no modo claro */
+  --ps-text-main: #5C1A1B;
+  /* Vinho escuro para texto no modo claro */
   --ps-text-sub: rgba(92, 26, 27, 0.7);
   --ps-streak-number: #722F37;
   --ps-shadow: 0 8px 32px rgba(212, 175, 55, 0.15);
-  
+
   /* Cards de presença no modo claro */
   --ps-card-present-bg: linear-gradient(145deg, rgba(74, 180, 74, 0.15) 0%, rgba(74, 180, 74, 0.08) 100%);
   --ps-card-present-border: rgba(74, 180, 74, 0.3);
@@ -72,7 +73,7 @@
 }
 
 .streakNumber {
-  font-family: Outfit, sans-serif;
+  /* font-family inherited from base.css */
   font-size: 32px;
   font-weight: 800;
   color: var(--ps-streak-number);
@@ -145,7 +146,7 @@
 }
 
 .calendarTitle {
-  font-family: Outfit, sans-serif;
+  /* font-family inherited from base.css */
   font-size: 13px;
   font-weight: 700;
   color: var(--ps-text-sub);
@@ -172,7 +173,8 @@
   cursor: pointer;
   transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   position: relative;
-  background: var(--bg-card); /* Fallback */
+  background: var(--bg-card);
+  /* Fallback */
 }
 
 .calendarDay.present {
@@ -194,7 +196,7 @@
 }
 
 .calendarMonth {
-  font-family: Outfit, sans-serif;
+  /* font-family inherited from base.css */
   font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
@@ -202,7 +204,7 @@
 }
 
 .calendarDayNumber {
-  font-family: Outfit, sans-serif;
+  /* font-family inherited from base.css */
   font-size: 20px;
   font-weight: 800;
   line-height: 1;
@@ -211,7 +213,7 @@
 }
 
 .calendarWeekday {
-  font-family: Outfit, sans-serif;
+  /* font-family inherited from base.css */
   font-size: 11px;
   font-weight: 500;
   color: var(--ps-text-sub);
@@ -220,15 +222,41 @@
 
 /* ===== ANIMATIONS ===== */
 @keyframes fire-flicker {
-  0%, 100% { transform: scale(1) rotate(0deg); opacity: 1; }
-  25% { transform: scale(1.1) rotate(-3deg); opacity: 0.9; }
-  50% { transform: scale(0.95) rotate(2deg); opacity: 1; }
-  75% { transform: scale(1.05) rotate(-1deg); opacity: 0.95; }
+
+  0%,
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+
+  25% {
+    transform: scale(1.1) rotate(-3deg);
+    opacity: 0.9;
+  }
+
+  50% {
+    transform: scale(0.95) rotate(2deg);
+    opacity: 1;
+  }
+
+  75% {
+    transform: scale(1.05) rotate(-1deg);
+    opacity: 0.95;
+  }
 }
 
 @keyframes badge-pulse {
-  0%, 100% { transform: scale(1); box-shadow: 0 2px 6px rgba(212, 175, 55, 0.4); }
-  50% { transform: scale(1.15); box-shadow: 0 4px 12px rgba(212, 175, 55, 0.6); }
+
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 2px 6px rgba(212, 175, 55, 0.4);
+  }
+
+  50% {
+    transform: scale(1.15);
+    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.6);
+  }
 }
 
 /* Empty placeholder styles */
@@ -256,10 +284,29 @@
   animation: pulse 1.5s infinite;
 }
 
-.skeletonBar { width: 60px; background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
-.skeletonCalendar { flex: 1; background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
+.skeletonBar {
+  width: 60px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
 
-@keyframes pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 0.8; } }
+.skeletonCalendar {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+
+@keyframes pulse {
+
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+
+  50% {
+    opacity: 0.8;
+  }
+}
 
 /* Error styles */
 .error {
@@ -269,7 +316,7 @@
   background: rgba(239, 68, 68, 0.1);
   border: 1px solid rgba(239, 68, 68, 0.2);
   border-radius: 16px;
-  font-family: Outfit, sans-serif;
+  /* font-family inherited from base.css */
   font-size: 14px;
 }
 

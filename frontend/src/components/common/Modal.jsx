@@ -31,7 +31,7 @@ const Modal = ({ isOpen, onClose, title, children }) => {
         <div style={{ width: '36px', height: '4px', background: 'var(--border)', borderRadius: '2px', margin: '10px auto' }} />
         <div style={{ padding: '0 20px 24px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-            <h2 style={{ fontFamily: "Outfit, sans-serif", fontSize: '20px', fontWeight: '700' }}>{title}</h2>
+            <h2 style={{ fontSize: '20px', fontWeight: '700' }}>{title}</h2>
             <IconButton icon={Icons.Close} onClick={onClose} />
           </div>
           {children}

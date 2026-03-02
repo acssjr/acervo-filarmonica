@@ -112,7 +112,7 @@ const FeaturedSheets = ({ sheets, onToggleFavorite, favoritesSet }) => {
         padding: isDesktop ? '0' : '0 20px', marginBottom: '16px'
       }}>
         <div>
-          <h2 style={{ fontFamily: 'Outfit, sans-serif', fontSize: '18px', fontWeight: '700', marginBottom: '2px' }}>
+          <h2 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '2px' }}>
             Em Destaque
           </h2>
           <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Partituras em estudo</p>

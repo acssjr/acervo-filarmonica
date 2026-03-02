@@ -134,8 +134,7 @@ const AdminAvisos = () => {
                 padding: isMobile ? '16px' : '32px',
                 maxWidth: '1200px',
                 margin: '0 auto',
-                fontFamily: 'Outfit, sans-serif'
-            }}
+                }}
         >
             {/* Header */}
             <div style={{
@@ -191,7 +190,7 @@ const AdminAvisos = () => {
                                 width: '100%', padding: '18px', borderRadius: '16px',
                                 background: 'var(--bg-primary)', border: '1px solid var(--border)',
                                 color: 'var(--text-primary)', outline: 'none', boxSizing: 'border-box',
-                                fontFamily: 'Outfit, sans-serif', fontSize: '16px',
+                                fontSize: '16px',
                                 boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)'
                             }}
                         />
@@ -209,7 +208,7 @@ const AdminAvisos = () => {
                                 background: 'var(--bg-primary)', border: '1px solid var(--border)',
                                 color: 'var(--text-primary)', outline: 'none', resize: 'vertical',
                                 boxSizing: 'border-box', lineHeight: '1.7',
-                                fontFamily: 'Outfit, sans-serif', fontSize: '16px',
+                                fontSize: '16px',
                                 boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)'
                             }}
                         />
@@ -222,7 +221,7 @@ const AdminAvisos = () => {
                                 style={{
                                     padding: '14px 28px', borderRadius: '14px', background: 'transparent',
                                     border: '1px solid var(--border)', color: 'var(--text-secondary)',
-                                    cursor: 'pointer', fontFamily: 'Outfit, sans-serif', fontWeight: '700'
+                                    cursor: 'pointer', fontWeight: '700'
                                 }}
                             >Descartar</button>
                         )}
@@ -238,7 +237,6 @@ const AdminAvisos = () => {
                                 color: (saving || !titulo.trim() || !mensagem.trim()) ? 'var(--text-muted)' : '#1A0507',
                                 fontWeight: '900',
                                 cursor: (saving || !titulo.trim() || !mensagem.trim()) ? 'default' : 'pointer',
-                                fontFamily: 'Outfit, sans-serif',
                                 fontSize: '15px',
                                 boxShadow: '0 8px 25px rgba(184, 134, 11, 0.4)',
                                 opacity: (saving || !titulo.trim() || !mensagem.trim()) ? 0.6 : 1,
@@ -333,8 +331,7 @@ const AdminAvisos = () => {
                                 <h2 style={{
                                     fontSize: '22px', fontWeight: '800', color: '#fff',
                                     marginBottom: '20px', lineHeight: '1.3',
-                                    fontFamily: 'Outfit, sans-serif'
-                                }}>{titulo || 'Título do Aviso'}</h2>
+                                    }}>{titulo || 'Título do Aviso'}</h2>
 
                                 <div style={{
                                     background: 'rgba(255,255,255,0.05)', borderRadius: '16px',
@@ -345,8 +342,7 @@ const AdminAvisos = () => {
                                     <p style={{
                                         fontSize: '15px', color: 'rgba(255,255,255,0.9)',
                                         lineHeight: '1.6', whiteSpace: 'pre-wrap', margin: 0,
-                                        fontFamily: 'Outfit, sans-serif'
-                                    }}>
+                                        }}>
                                         <FormattedMessage text={mensagem || 'A mensagem formatada aparecerá aqui...'} isPreview={true} />
                                     </p>
                                 </div>

@@ -44,10 +44,10 @@ const ToggleOption = ({ checked, onChange, color, title, description }) => (
       style={{ display: 'none' }}
     />
     <div>
-      <span style={{ color: 'var(--text-primary)', fontWeight: '500', fontSize: '14px', fontFamily: 'Outfit, sans-serif' }}>
+      <span style={{ color: 'var(--text-primary)', fontWeight: '500', fontSize: '14px', }}>
         {title}
       </span>
-      <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '4px 0 0 0', fontFamily: 'Outfit, sans-serif' }}>
+      <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '4px 0 0 0', }}>
         {description}
       </p>
     </div>
@@ -143,7 +143,7 @@ const UsuarioFormModal = ({ usuario, instrumentos, onSave, onClose }) => {
 
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '28px' }}>
-          <h2 style={{ fontSize: '22px', fontWeight: '600', color: 'var(--text-primary)', margin: 0, fontFamily: 'Outfit, sans-serif' }}>
+          <h2 style={{ fontSize: '22px', fontWeight: '600', color: 'var(--text-primary)', margin: 0, }}>
             {usuario ? 'Editar Músico' : 'Novo Músico'}
           </h2>
           <button onClick={onClose} style={{
@@ -166,7 +166,7 @@ const UsuarioFormModal = ({ usuario, instrumentos, onSave, onClose }) => {
         </div>
 
         {/* Nome Completo */}
-        <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '8px', color: 'var(--text-secondary)', fontFamily: 'Outfit, sans-serif' }}>
+        <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '8px', color: 'var(--text-secondary)', }}>
           Nome Completo <span style={{ color: '#e74c3c' }}>*</span>
         </label>
         <input
@@ -184,8 +184,7 @@ const UsuarioFormModal = ({ usuario, instrumentos, onSave, onClose }) => {
             fontSize: '15px',
             marginBottom: '20px',
             transition: 'border-color 0.2s',
-            fontFamily: 'Outfit, sans-serif'
-          }}
+            }}
         />
 
         {!usuario && (
@@ -194,7 +193,7 @@ const UsuarioFormModal = ({ usuario, instrumentos, onSave, onClose }) => {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
               {/* Username */}
               <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '8px', color: 'var(--text-secondary)', fontFamily: 'Outfit, sans-serif' }}>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '8px', color: 'var(--text-secondary)', }}>
                   Login <span style={{ color: '#e74c3c' }}>*</span>
                 </label>
                 <div style={{ position: 'relative' }}>
@@ -213,8 +212,7 @@ const UsuarioFormModal = ({ usuario, instrumentos, onSave, onClose }) => {
                       color: 'var(--text-primary)',
                       fontSize: '15px',
                       transition: 'border-color 0.2s',
-                      fontFamily: 'Outfit, sans-serif'
-                    }}
+                      }}
                   />
                   <button onClick={gerarUsername} title="Gerar automaticamente" style={{
                     position: 'absolute',
@@ -239,7 +237,7 @@ const UsuarioFormModal = ({ usuario, instrumentos, onSave, onClose }) => {
 
               {/* PIN */}
               <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '8px', color: 'var(--text-secondary)', fontFamily: 'Outfit, sans-serif' }}>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '8px', color: 'var(--text-secondary)', }}>
                   PIN <span style={{ color: '#e74c3c' }}>*</span>
                 </label>
                 <div style={{ position: 'relative' }}>
@@ -260,8 +258,7 @@ const UsuarioFormModal = ({ usuario, instrumentos, onSave, onClose }) => {
                       fontSize: '15px',
                       letterSpacing: '4px',
                       transition: 'border-color 0.2s',
-                      fontFamily: 'Outfit, sans-serif'
-                    }}
+                      }}
                   />
                   <button onClick={gerarPin} title="Gerar novo PIN" style={{
                     position: 'absolute',
@@ -285,14 +282,14 @@ const UsuarioFormModal = ({ usuario, instrumentos, onSave, onClose }) => {
               </div>
             </div>
 
-            <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '-12px', marginBottom: '20px', fontFamily: 'Outfit, sans-serif' }}>
+            <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '-12px', marginBottom: '20px', }}>
               Campos gerados automaticamente. Clique nos ícones para regenerar.
             </p>
           </>
         )}
 
         {/* Instrumento - Dropdown customizado */}
-        <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '8px', color: 'var(--text-secondary)', fontFamily: 'Outfit, sans-serif' }}>
+        <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '8px', color: 'var(--text-secondary)', }}>
           Instrumento
         </label>
         <div style={{ position: 'relative', marginBottom: '20px' }}>
@@ -313,8 +310,7 @@ const UsuarioFormModal = ({ usuario, instrumentos, onSave, onClose }) => {
               alignItems: 'center',
               justifyContent: 'space-between',
               transition: 'border-color 0.2s',
-              fontFamily: 'Outfit, sans-serif'
-            }}
+              }}
           >
             <span>{selectedInstrumento ? selectedInstrumento.nome : 'Selecione o instrumento'}</span>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{
@@ -355,8 +351,7 @@ const UsuarioFormModal = ({ usuario, instrumentos, onSave, onClose }) => {
                     background: 'var(--bg-primary)',
                     color: 'var(--text-primary)',
                     fontSize: '14px',
-                    fontFamily: 'Outfit, sans-serif'
-                  }}
+                    }}
                 />
               </div>
 
@@ -374,8 +369,7 @@ const UsuarioFormModal = ({ usuario, instrumentos, onSave, onClose }) => {
                     textAlign: 'left',
                     cursor: 'pointer',
                     transition: 'background 0.15s',
-                    fontFamily: 'Outfit, sans-serif'
-                  }}
+                    }}
                 >
                   Nenhum instrumento
                 </button>
@@ -394,8 +388,7 @@ const UsuarioFormModal = ({ usuario, instrumentos, onSave, onClose }) => {
                       cursor: 'pointer',
                       transition: 'background 0.15s',
                       fontWeight: instrumentoId == inst.id ? '500' : '400',
-                      fontFamily: 'Outfit, sans-serif'
-                    }}
+                      }}
                   >
                     {inst.nome}
                   </button>
@@ -436,8 +429,7 @@ const UsuarioFormModal = ({ usuario, instrumentos, onSave, onClose }) => {
             fontWeight: '500',
             cursor: 'pointer',
             transition: 'all 0.15s',
-            fontFamily: 'Outfit, sans-serif'
-          }}>
+            }}>
             Cancelar
           </button>
           <button onClick={handleSubmit} disabled={saving} style={{
@@ -452,8 +444,7 @@ const UsuarioFormModal = ({ usuario, instrumentos, onSave, onClose }) => {
             cursor: 'pointer',
             opacity: saving ? 0.7 : 1,
             transition: 'all 0.15s',
-            fontFamily: 'Outfit, sans-serif'
-          }}>
+            }}>
             {saving ? 'Salvando...' : (usuario ? 'Salvar Alterações' : 'Cadastrar Músico')}
           </button>
         </div>

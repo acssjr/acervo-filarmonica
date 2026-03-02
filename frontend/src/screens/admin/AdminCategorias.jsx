@@ -112,14 +112,13 @@ const AdminCategorias = () => {
   };
 
   return (
-    <div className="page-transition" style={{ padding: '32px', maxWidth: '800px', margin: '0 auto', fontFamily: 'Outfit, sans-serif' }}>
+    <div className="page-transition" style={{ padding: '32px', maxWidth: '800px', margin: '0 auto', }}>
       {/* Header */}
       <div style={{ marginBottom: '32px', textAlign: 'center' }}>
         <h1 style={{
           fontSize: '26px',
           fontWeight: '700',
           color: 'var(--text-primary)',
-          fontFamily: 'Outfit, sans-serif',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -153,7 +152,6 @@ const AdminCategorias = () => {
             fontSize: '15px',
             fontWeight: '600',
             cursor: 'pointer',
-            fontFamily: 'Outfit, sans-serif',
             boxShadow: '0 4px 16px rgba(212, 175, 55, 0.3)'
           }}
         >
@@ -268,7 +266,7 @@ const AdminCategorias = () => {
             boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
           }} onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
-              <h2 style={{ fontSize: '20px', fontWeight: '600', color: 'var(--text-primary)', margin: 0, fontFamily: 'Outfit, sans-serif' }}>
+              <h2 style={{ fontSize: '20px', fontWeight: '600', color: 'var(--text-primary)', margin: 0, }}>
                 {editingCategoria ? 'Editar Categoria' : 'Nova Categoria'}
               </h2>
               <button onClick={() => setShowModal(false)} style={{
@@ -289,7 +287,7 @@ const AdminCategorias = () => {
               </button>
             </div>
 
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '8px', color: 'var(--text-secondary)', fontFamily: 'Outfit, sans-serif' }}>
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '8px', color: 'var(--text-secondary)', }}>
               Nome da Categoria <span style={{ color: '#e74c3c' }}>*</span>
             </label>
             <input
@@ -306,8 +304,7 @@ const AdminCategorias = () => {
                 color: 'var(--text-primary)',
                 fontSize: '15px',
                 marginBottom: '24px',
-                fontFamily: 'Outfit, sans-serif'
-              }}
+                }}
             />
 
             <div style={{ display: 'flex', gap: '12px' }}>
@@ -321,8 +318,7 @@ const AdminCategorias = () => {
                 fontSize: '14px',
                 fontWeight: '500',
                 cursor: 'pointer',
-                fontFamily: 'Outfit, sans-serif'
-              }}>
+                }}>
                 Cancelar
               </button>
               <button onClick={handleSave} disabled={saving} className="btn-primary-hover" style={{
@@ -336,8 +332,7 @@ const AdminCategorias = () => {
                 fontWeight: '600',
                 cursor: 'pointer',
                 opacity: saving ? 0.7 : 1,
-                fontFamily: 'Outfit, sans-serif'
-              }}>
+                }}>
                 {saving ? 'Salvando...' : (editingCategoria ? 'Salvar' : 'Criar')}
               </button>
             </div>
