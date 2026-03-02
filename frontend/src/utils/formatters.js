@@ -11,7 +11,9 @@ export const formatTimeAgo = (dateString, short = false) => {
   // D1/SQLite retorna timestamps sem timezone (ex: '2026-03-02 18:00:00')
   // Adicionamos 'Z' para interpretar como UTC corretamente
   let normalized = dateString;
-  if (dateString && !dateString.endsWith('Z') && !dateString.includes('+')) {
+  if (dateString instanceof Date) {
+    normalized = dateString;
+  } else if (typeof dateString === 'string' && !dateString.endsWith('Z') && !/[+-]\d{2}:\d{2}$/.test(dateString)) {
     normalized = dateString.replace(' ', 'T') + 'Z';
   }
   const date = new Date(normalized);

@@ -233,7 +233,8 @@ export async function updatePartitura(id, request, env, user) {
     const data = await request.json();
     const { titulo, compositor, arranjador, categoria, categoria_id, ano, descricao, destaque } = data;
 
-    if (!titulo) {
+    const tituloFinal = typeof titulo === 'string' ? titulo.trim() : '';
+    if (!tituloFinal) {
       return errorResponse('Título é obrigatório', 400, request);
     }
 
@@ -243,12 +244,12 @@ export async function updatePartitura(id, request, env, user) {
       return errorResponse('Categoria é obrigatória', 400, request);
     }
 
-    await env.DB.prepare(`
+    const updateResult = await env.DB.prepare(`
       UPDATE partituras
       SET titulo = ?, compositor = ?, arranjador = ?, categoria_id = ?, ano = ?, descricao = ?, destaque = ?, atualizado_em = CURRENT_TIMESTAMP
       WHERE id = ?
     `).bind(
-      titulo,
+      tituloFinal,
       compositor ?? null,
       arranjador ?? null,
       categoriaFinal,
@@ -258,7 +259,11 @@ export async function updatePartitura(id, request, env, user) {
       id
     ).run();
 
-    await registrarAtividade(env, 'update_partitura', titulo, 'Partitura atualizada', user.id);
+    if (updateResult.meta?.changes === 0) {
+      return errorResponse('Partitura não encontrada', 404, request);
+    }
+
+    await registrarAtividade(env, 'update_partitura', tituloFinal, 'Partitura atualizada', user.id);
 
     return jsonResponse({ success: true, message: 'Partitura atualizada!' }, 200, request);
   } catch (error) {

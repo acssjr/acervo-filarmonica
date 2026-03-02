@@ -858,10 +858,11 @@ const RepertorioScreen = () => {
         {repertorio.data_apresentacao && (() => {
           const [y, m, d] = repertorio.data_apresentacao.split('T')[0].split('-');
           const dateObj = new Date(Number(y), Number(m) - 1, Number(d));
-          const hoje = new Date();
-          hoje.setHours(0, 0, 0, 0);
-          const diffMs = dateObj.getTime() - hoje.getTime();
-          const diffDias = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+          const now = new Date();
+          const dateUTC = Date.UTC(Number(y), Number(m) - 1, Number(d));
+          const hojeUTC = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+          const diffMs = dateUTC - hojeUTC;
+          const diffDias = Math.round(diffMs / (1000 * 60 * 60 * 24));
 
           const diasSemana = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
           const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];

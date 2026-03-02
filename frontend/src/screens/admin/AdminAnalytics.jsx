@@ -74,10 +74,18 @@ const AdminAnalytics = () => {
             const offset = data.atividade_recente?.length || 0;
             const result = await API.getAnalyticsDashboard(`?atividades_limit=30&atividades_offset=${offset}`);
             if (result.atividade_recente?.length > 0) {
-                setData(prev => ({
-                    ...prev,
-                    atividade_recente: [...(prev.atividade_recente || []), ...result.atividade_recente]
-                }));
+                setData(prev => {
+                    const merged = [...(prev.atividade_recente || []), ...result.atividade_recente];
+                    const deduped = Array.from(
+                        new Map(
+                            merged.map((a, idx) => [
+                                a.id ?? `${a.criado_em}-${a.tipo}-${a.usuario_nome ?? ''}-${idx}`,
+                                a
+                            ])
+                        ).values()
+                    );
+                    return { ...prev, atividade_recente: deduped };
+                });
             }
         } catch (err) {
             console.error('Erro ao carregar mais atividades:', err);
@@ -791,9 +799,10 @@ const ActivityFeed = ({ items, totalCount, onLoadMore, loadingMore }) => {
                     const titulo = item.tipo === 'login'
                         ? (item.usuario_nome || 'Usuário')
                         : item.titulo;
+                    const activityKey = item.id ?? `${item.criado_em}-${item.tipo}-${item.usuario_nome ?? ''}-${i}`;
 
                     return (
-                        <div key={i} style={{
+                        <div key={activityKey} style={{
                             display: 'flex', alignItems: 'flex-start', gap: '10px',
                             padding: '10px 12px', borderRadius: '10px',
                             background: i % 2 === 0 ? 'transparent' : 'var(--bg-primary)',

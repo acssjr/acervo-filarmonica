@@ -2,6 +2,7 @@
 // Deleta arquivos do R2 via wrangler CLI
 
 import { execSync } from 'child_process';
+import { fileURLToPath } from 'url';
 
 const arquivos = [
     // Partitura id 68 (provavelmente existem no R2)
@@ -67,7 +68,7 @@ for (const arquivo of arquivos) {
     try {
         execSync(`npx wrangler r2 object delete "acervo-pdfs/${arquivo}"`, {
             stdio: 'pipe',
-            cwd: new URL('..', import.meta.url).pathname.replace(/^\//, '')
+            cwd: fileURLToPath(new URL('..', import.meta.url))
         });
         console.log(`✅ Deletado: ${arquivo}`);
         removidos++;

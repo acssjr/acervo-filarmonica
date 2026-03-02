@@ -95,7 +95,10 @@ export const findPartesCorrespondentes = (instrumento, partes) => {
  * Encontra parte exata pelo nome do instrumento
  */
 export const findParteExata = (instrumento, partes) => {
-  return partes.find(p => p.instrumento.toLowerCase() === instrumento.toLowerCase());
+  if (typeof instrumento !== 'string' || !Array.isArray(partes)) return undefined;
+  return partes.find(
+    p => typeof p.instrumento === 'string' && p.instrumento.toLowerCase() === instrumento.toLowerCase()
+  );
 };
 
 /**

@@ -129,11 +129,14 @@ export async function getAnalyticsDashboard(request, env, _params, _context) {
 
     // === 11. ATIVIDADE RECENTE (com paginação) ===
     const url = new URL(request.url);
-    const atividadesLimit = Math.min(parseInt(url.searchParams.get('atividades_limit') || '15'), 100);
-    const atividadesOffset = parseInt(url.searchParams.get('atividades_offset') || '0');
+    const rawLimit = Number.parseInt(url.searchParams.get('atividades_limit') ?? '', 10);
+    const rawOffset = Number.parseInt(url.searchParams.get('atividades_offset') ?? '', 10);
+    const atividadesLimit = Math.min(Number.isFinite(rawLimit) && rawLimit > 0 ? rawLimit : 15, 100);
+    const atividadesOffset = Number.isFinite(rawOffset) && rawOffset > 0 ? rawOffset : 0;
 
     const atividadeRecente = await env.DB.prepare(`
       SELECT
+        a.id,
         a.tipo,
         a.titulo,
         a.detalhes,
