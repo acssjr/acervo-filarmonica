@@ -80,7 +80,7 @@ export async function downloadParte(parteId, request, env, user) {
     const action = url.searchParams.get('action');
     const userIsAdmin = user?.admin === 1 || user?._isAdmin === true;
     const isAdmin = action === 'admin' && userIsAdmin;
-    const isView = action === 'view';
+    const isView = action === 'view' && request.headers.get('X-Requested-With') === 'XMLHttpRequest';
 
     // Admin preview: não conta nada (sem tracking, sem incremento)
     if (!isAdmin) {
