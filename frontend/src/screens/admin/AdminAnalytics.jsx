@@ -37,6 +37,7 @@ const AdminAnalytics = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [activeTab, setActiveTab] = useState('overview');
+    const [loadingMoreAtividades, setLoadingMoreAtividades] = useState(false);
     const isMobile = useMediaQuery('(max-width: 767px)');
 
     useEffect(() => { loadAnalytics(); }, []);
@@ -64,6 +65,26 @@ const AdminAnalytics = () => {
             return new Date(m.ultimo_acesso).getTime() < limite;
         });
     }, [data]);
+
+    // Carrega mais atividades (paginação)
+    const loadMoreAtividades = async () => {
+        if (!data || loadingMoreAtividades) return;
+        setLoadingMoreAtividades(true);
+        try {
+            const offset = data.atividade_recente?.length || 0;
+            const result = await API.getAnalyticsDashboard(`?atividades_limit=30&atividades_offset=${offset}`);
+            if (result.atividade_recente?.length > 0) {
+                setData(prev => ({
+                    ...prev,
+                    atividade_recente: [...(prev.atividade_recente || []), ...result.atividade_recente]
+                }));
+            }
+        } catch (err) {
+            console.error('Erro ao carregar mais atividades:', err);
+        } finally {
+            setLoadingMoreAtividades(false);
+        }
+    };
 
     if (loading) {
         return (
@@ -262,7 +283,12 @@ const AdminAnalytics = () => {
                             </Panel>
 
                             <Panel title="Atividade Recente" icon={<Activity size={18} color={COLORS.blue} />}>
-                                <ActivityFeed items={data.atividade_recente} />
+                                <ActivityFeed
+                                    items={data.atividade_recente}
+                                    totalCount={data.total_atividades}
+                                    onLoadMore={loadMoreAtividades}
+                                    loadingMore={loadingMoreAtividades}
+                                />
                             </Panel>
                         </div>
                     </>
@@ -299,97 +325,105 @@ const AdminAnalytics = () => {
                         </div>
 
                         <Panel title="Último Acesso dos Músicos" icon={<Clock size={18} color={COLORS.orange} />}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', marginTop: '-8px' }}>
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2"><polyline points="6 9 12 15 18 9" /></svg>
+                                <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontStyle: 'italic' }}>Ordenado do mais recente ao mais antigo</span>
+                            </div>
                             <AccessTable data={data.ultimo_acesso} isMobile={isMobile} />
                         </Panel>
                     </>
                 )}
 
                 {/* ---------- ENGAGEMENT ---------- */}
-                {activeTab === 'engagement' && (
-                    <>
-                        <Panel title="Quem Mais Baixou Partituras" icon={<Flame size={18} color={COLORS.orange} />}>
-                            <RankingList
-                                items={data.musicos_mais_ativos}
-                                renderItem={(item) => ({
-                                    primary: item.nome,
-                                    secondary: item.instrumento,
-                                    value: item.total_downloads,
-                                    suffix: 'downloads',
-                                    avatar: item.foto_url,
-                                    initials: item.nome?.charAt(0)
-                                })}
-                                accentColor={COLORS.orange}
-                                showAvatar
-                                isMobile={isMobile}
-                            />
-                        </Panel>
-
-                        <Panel title="Tendência de Presença" icon={<TrendingUp size={18} color={COLORS.green} />}>
-                            {data.tendencia_presenca?.length > 0 ? (
-                                <LineChart
-                                    data={data.tendencia_presenca}
-                                    xAxisKey="data"
-                                    dataKey="presentes"
-                                    color={COLORS.green} unit="músicos"
+                {
+                    activeTab === 'engagement' && (
+                        <>
+                            <Panel title="Quem Mais Baixou Partituras" icon={<Flame size={18} color={COLORS.orange} />}>
+                                <RankingList
+                                    items={data.musicos_mais_ativos}
+                                    renderItem={(item) => ({
+                                        primary: item.nome,
+                                        secondary: item.instrumento,
+                                        value: item.total_downloads,
+                                        suffix: 'downloads',
+                                        avatar: item.foto_url,
+                                        initials: item.nome?.charAt(0)
+                                    })}
+                                    accentColor={COLORS.orange}
+                                    showAvatar
+                                    isMobile={isMobile}
                                 />
-                            ) : (
-                                <EmptyState icon={TrendingUp} message="Sem dados de presença" />
-                            )}
-                        </Panel>
+                            </Panel>
 
-                        <Panel title="Músicos Inativos (+30 dias)" icon={<AlertTriangle size={18} color={COLORS.red} />}>
-                            {musicosInativos.length > 0 ? (
-                                <AccessTable data={musicosInativos} isMobile={isMobile} highlight="danger" />
-                            ) : (
-                                <EmptyState icon={UserCheck} message="Todos os músicos acessaram recentemente 🎉" positive />
-                            )}
-                        </Panel>
-                    </>
-                )}
+                            <Panel title="Tendência de Presença" icon={<TrendingUp size={18} color={COLORS.green} />}>
+                                {data.tendencia_presenca?.length > 0 ? (
+                                    <LineChart
+                                        data={data.tendencia_presenca}
+                                        xAxisKey="data"
+                                        dataKey="presentes"
+                                        color={COLORS.green} unit="músicos"
+                                    />
+                                ) : (
+                                    <EmptyState icon={TrendingUp} message="Sem dados de presença" />
+                                )}
+                            </Panel>
+
+                            <Panel title="Músicos Inativos (+30 dias)" icon={<AlertTriangle size={18} color={COLORS.red} />}>
+                                {musicosInativos.length > 0 ? (
+                                    <AccessTable data={musicosInativos} isMobile={isMobile} highlight="danger" />
+                                ) : (
+                                    <EmptyState icon={UserCheck} message="Todos os músicos acessaram recentemente 🎉" positive />
+                                )}
+                            </Panel>
+                        </>
+                    )
+                }
 
                 {/* ---------- SEARCH ---------- */}
-                {activeTab === 'search' && (
-                    <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
-                        gap: isMobile ? '16px' : '24px'
-                    }}>
-                        <Panel title="Buscas sem Resultado" icon={<AlertTriangle size={18} color={COLORS.red} />}>
-                            <p style={{
-                                fontSize: '13px', color: 'var(--text-muted)',
-                                margin: '0 0 16px 0', lineHeight: '1.5'
-                            }}>
-                                Termos que retornaram 0 resultados. Priorize digitalizar estas obras.
-                            </p>
-                            <RankingList
-                                items={data.failed_search_terms}
-                                renderItem={(item) => ({
-                                    primary: item.termo,
-                                    value: item.tentativas,
-                                    suffix: 'tentativas'
-                                })}
-                                accentColor={COLORS.red}
-                                isMobile={isMobile}
-                            />
-                        </Panel>
+                {
+                    activeTab === 'search' && (
+                        <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
+                            gap: isMobile ? '16px' : '24px'
+                        }}>
+                            <Panel title="Buscas sem Resultado" icon={<AlertTriangle size={18} color={COLORS.red} />}>
+                                <p style={{
+                                    fontSize: '13px', color: 'var(--text-muted)',
+                                    margin: '0 0 16px 0', lineHeight: '1.5'
+                                }}>
+                                    Termos que retornaram 0 resultados. Priorize digitalizar estas obras.
+                                </p>
+                                <RankingList
+                                    items={data.failed_search_terms}
+                                    renderItem={(item) => ({
+                                        primary: item.termo,
+                                        value: item.tentativas,
+                                        suffix: 'tentativas'
+                                    })}
+                                    accentColor={COLORS.red}
+                                    isMobile={isMobile}
+                                />
+                            </Panel>
 
-                        <Panel title="Termos Mais Buscados" icon={<Eye size={18} color={COLORS.blue} />}>
-                            <RankingList
-                                items={data.top_search_terms}
-                                renderItem={(item) => ({
-                                    primary: item.termo,
-                                    value: item.total,
-                                    suffix: 'buscas'
-                                })}
-                                accentColor={COLORS.blue}
-                                isMobile={isMobile}
-                            />
-                        </Panel>
-                    </div>
-                )}
+                            <Panel title="Termos Mais Buscados" icon={<Eye size={18} color={COLORS.blue} />}>
+                                <RankingList
+                                    items={data.top_search_terms}
+                                    renderItem={(item) => ({
+                                        primary: item.termo,
+                                        value: item.total,
+                                        suffix: 'buscas'
+                                    })}
+                                    accentColor={COLORS.blue}
+                                    isMobile={isMobile}
+                                />
+                            </Panel>
+                        </div>
+                    )
+                }
 
-            </div>
-        </div>
+            </div >
+        </div >
     );
 };
 
@@ -673,8 +707,8 @@ const AccessTable = ({ data, isMobile, highlight }) => {
     );
 };
 
-// Activity Feed — atividade recente
-const ActivityFeed = ({ items }) => {
+// Activity Feed — atividade recente (com paginação)
+const ActivityFeed = ({ items, totalCount, onLoadMore, loadingMore }) => {
     if (!items || items.length === 0) {
         return <EmptyState icon={Activity} message="Sem atividades recentes" />;
     }
@@ -683,11 +717,27 @@ const ActivityFeed = ({ items }) => {
         const map = {
             'upload': Download,
             'download': Download,
+            'visualizacao': Eye,
             'login': Users,
             'cadastro': UserCheck,
             'admin': Award,
+            'nova_partitura': Music,
+            'favorito': Award,
         };
         return map[tipo] || Activity;
+    };
+
+    const getColor = (tipo) => {
+        const map = {
+            'download': COLORS.blue,
+            'visualizacao': COLORS.cyan,
+            'login': '#95a5a6',
+            'nova_partitura': COLORS.green,
+            'favorito': COLORS.pink,
+            'novo_repertorio': COLORS.purple,
+            'add_repertorio': COLORS.purple,
+        };
+        return map[tipo] || COLORS.blue;
     };
 
     const formatDate = (dateStr) => {
@@ -705,71 +755,107 @@ const ActivityFeed = ({ items }) => {
         if (diffMin < 1) return 'agora';
         if (diffMin < 60) return `${diffMin} min`;
         if (diffH < 24) return `${diffH} h`;
+        if (diffD === 1) return 'ontem';
         if (diffD < 7) return `${diffD} d`;
         return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
     };
 
-    return (
-        <div style={{
-            display: 'flex', flexDirection: 'column', gap: '2px',
-            maxHeight: '360px', overflowY: 'auto'
-        }}>
-            {items.slice(0, 10).map((item, i) => {
-                const Icon = getIcon(item.tipo);
-                // Lógica de exibição: Nome do usuário > Título da Ação > Detalhes
-                const primaryText = item.usuario_nome || item.titulo;
-                const secondaryText = item.usuario_nome ? item.titulo : item.detalhes;
-                const tertiaryText = item.usuario_nome && item.detalhes ? item.detalhes : null;
+    const getActionLabel = (tipo) => {
+        const map = {
+            'download': 'Download',
+            'visualizacao': 'Visualização',
+            'login': 'Login',
+            'nova_partitura': 'Nova partitura',
+            'favorito': 'Favorito',
+            'novo_repertorio': 'Novo repertório',
+            'add_repertorio': 'Adicionado ao repertório',
+            'update_partitura': 'Atualização',
+            'delete_partitura': 'Remoção',
+        };
+        return map[tipo] || tipo;
+    };
 
-                return (
-                    <div key={i} style={{
-                        display: 'flex', alignItems: 'flex-start', gap: '10px',
-                        padding: '10px 12px', borderRadius: '10px',
-                        background: i % 2 === 0 ? 'transparent' : 'var(--bg-primary)',
-                    }}>
-                        <div style={{
-                            width: '28px', height: '28px', borderRadius: '8px',
-                            background: `${COLORS.blue}12`,
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            flexShrink: 0, marginTop: '1px'
+    const hasMore = totalCount > items.length;
+
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <div style={{
+                maxHeight: '500px', overflowY: 'auto',
+                display: 'flex', flexDirection: 'column', gap: '2px'
+            }}>
+                {items.map((item, i) => {
+                    const Icon = getIcon(item.tipo);
+                    const color = getColor(item.tipo);
+                    // Para login, não mostrar detalhes (contém IP)
+                    const detalhes = item.tipo === 'login' ? null : item.detalhes;
+                    const titulo = item.tipo === 'login'
+                        ? (item.usuario_nome || 'Usuário')
+                        : item.titulo;
+
+                    return (
+                        <div key={i} style={{
+                            display: 'flex', alignItems: 'flex-start', gap: '10px',
+                            padding: '10px 12px', borderRadius: '10px',
+                            background: i % 2 === 0 ? 'transparent' : 'var(--bg-primary)',
                         }}>
-                            <Icon size={14} color={COLORS.blue} />
-                        </div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{
-                                fontSize: '13px', color: 'var(--text-primary)',
-                                fontWeight: '500',
-                                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
+                                width: '28px', height: '28px', borderRadius: '8px',
+                                background: `${color}12`,
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                flexShrink: 0, marginTop: '1px'
                             }}>
-                                {primaryText}
+                                <Icon size={14} color={color} />
                             </div>
-                            {secondaryText && (
+                            <div style={{ flex: 1, minWidth: 0 }}>
                                 <div style={{
-                                    fontSize: '12px', color: 'var(--text-muted)',
+                                    fontSize: '13px', color: 'var(--text-primary)',
+                                    fontWeight: '500',
                                     whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
                                 }}>
-                                    {secondaryText}
+                                    {getActionLabel(item.tipo)}: {titulo}
                                 </div>
-                            )}
-                            {tertiaryText && (
-                                <div style={{
-                                    fontSize: '11px', color: 'var(--text-muted)',
-                                    opacity: 0.8,
-                                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
-                                }}>
-                                    {tertiaryText}
-                                </div>
-                            )}
+                                {(item.usuario_nome && item.tipo !== 'login') && (
+                                    <div style={{
+                                        fontSize: '12px', color: 'var(--text-muted)',
+                                        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
+                                    }}>
+                                        {item.usuario_nome} {detalhes && `• ${detalhes}`}
+                                    </div>
+                                )}
+                            </div>
+                            <span style={{
+                                fontSize: '11px', color: 'var(--text-muted)',
+                                whiteSpace: 'nowrap', flexShrink: 0
+                            }}>
+                                {formatDate(item.criado_em)}
+                            </span>
                         </div>
-                        <span style={{
-                            fontSize: '11px', color: 'var(--text-muted)',
-                            whiteSpace: 'nowrap', flexShrink: 0
-                        }}>
-                            {formatDate(item.criado_em)}
-                        </span>
-                    </div>
-                );
-            })}
+                    );
+                })}
+            </div>
+
+            {/* Rodapé: contagem + botão carregar mais */}
+            <div style={{
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                padding: '12px 12px 4px', borderTop: '1px solid var(--border)', marginTop: '8px'
+            }}>
+                <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                    {items.length} de {totalCount || items.length} atividades
+                </span>
+                {hasMore && onLoadMore && (
+                    <button onClick={onLoadMore} disabled={loadingMore} style={{
+                        display: 'flex', alignItems: 'center', gap: '6px',
+                        padding: '6px 14px', background: 'var(--bg-primary)',
+                        border: '1px solid var(--border)', borderRadius: '8px',
+                        color: GOLD, fontSize: '12px', fontWeight: '500',
+                        cursor: loadingMore ? 'not-allowed' : 'pointer',
+                        opacity: loadingMore ? 0.6 : 1,
+                        transition: 'all 0.2s'
+                    }}>
+                        {loadingMore ? 'Carregando...' : 'Carregar mais'}
+                    </button>
+                )}
+            </div>
         </div>
     );
 };

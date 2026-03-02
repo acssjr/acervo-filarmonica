@@ -401,6 +401,111 @@ describe('CRUD de Categorias', () => {
   });
 });
 
+describe('CRUD de Partituras - Update', () => {
+  let adminToken: string;
+  let userToken: string;
+  let testPartituraId: number;
+
+  beforeAll(async () => {
+    adminToken = await createTestToken(1, true);
+    userToken = await createTestToken(2, false);
+
+    // Cria uma partitura de teste para o update
+    const id = await env.DB.prepare(`
+      INSERT INTO partituras (titulo, compositor, arranjador, categoria_id, arquivo_nome, arquivo_tamanho, destaque, ativo)
+      VALUES ('Partitura Teste Update', 'Compositor Teste', 'Arranjador Teste', 1, 'teste.pdf', 100, 0, 1) RETURNING id
+    `).first('id') as number;
+    testPartituraId = id;
+  });
+
+  it('rejeita sem token (401 ou 403)', async () => {
+    const response = await SELF.fetch(`https://test.local/api/partituras/${testPartituraId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ titulo: 'Novo Titulo', categoria_id: 1 }),
+    });
+    expect([401, 403]).toContain(response.status);
+  });
+
+  it('rejeita com token de usuário comum (403)', async () => {
+    const response = await SELF.fetch(`https://test.local/api/partituras/${testPartituraId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${userToken}`,
+      },
+      body: JSON.stringify({ titulo: 'Novo Titulo', categoria_id: 1 }),
+    });
+    expect(response.status).toBe(403);
+  });
+
+  it('atualiza com campos mínimos enviados pelo frontend (sem ano/descricao)', async () => {
+    // Reproduz EXATAMENTE o que o frontend envia no edit modal:
+    // ...editingPartitura + campos do form (SEM ano e descricao)
+    const response = await SELF.fetch(`https://test.local/api/partituras/${testPartituraId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${adminToken}`,
+      },
+      body: JSON.stringify({
+        id: testPartituraId,
+        titulo: 'Partitura Renomeada',
+        compositor: 'Novo Compositor',
+        arranjador: null,
+        categoria_id: 1,
+        // NÃO envia ano, descricao - estes eram undefined e causavam 500
+        destaque: 0,
+        ativo: 1,
+        arquivo_nome: 'teste.pdf',
+        downloads: 0,
+      }),
+    });
+
+    // O bug original causava 500 aqui
+    expect(response.status).toBe(200);
+    const data = await response.json() as { success: boolean };
+    expect(data.success).toBe(true);
+
+    // Verifica que o título foi atualizado
+    const check = await env.DB.prepare(
+      'SELECT titulo, compositor FROM partituras WHERE id = ?'
+    ).bind(testPartituraId).first() as { titulo: string; compositor: string };
+    expect(check.titulo).toBe('Partitura Renomeada');
+    expect(check.compositor).toBe('Novo Compositor');
+  });
+
+  it('rejeita update sem título', async () => {
+    const response = await SELF.fetch(`https://test.local/api/partituras/${testPartituraId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${adminToken}`,
+      },
+      body: JSON.stringify({
+        titulo: '',
+        categoria_id: 1,
+      }),
+    });
+    expect(response.status).toBe(400);
+  });
+
+  it('rejeita update sem categoria', async () => {
+    const response = await SELF.fetch(`https://test.local/api/partituras/${testPartituraId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${adminToken}`,
+      },
+      body: JSON.stringify({
+        titulo: 'Algum Titulo',
+        // sem categoria nem categoria_id
+      }),
+    });
+    expect(response.status).toBe(400);
+  });
+});
+
 describe('CRUD de Repertórios', () => {
   let adminToken: string;
 

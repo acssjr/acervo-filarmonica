@@ -127,7 +127,11 @@ export async function getAnalyticsDashboard(request, env, _params, _context) {
       LIMIT 10
     `).all();
 
-    // === 11. ATIVIDADE RECENTE (com nome do usuário) ===
+    // === 11. ATIVIDADE RECENTE (com paginação) ===
+    const url = new URL(request.url);
+    const atividadesLimit = Math.min(parseInt(url.searchParams.get('atividades_limit') || '15'), 100);
+    const atividadesOffset = parseInt(url.searchParams.get('atividades_offset') || '0');
+
     const atividadeRecente = await env.DB.prepare(`
       SELECT
         a.tipo,
@@ -138,8 +142,13 @@ export async function getAnalyticsDashboard(request, env, _params, _context) {
       FROM atividades a
       LEFT JOIN usuarios u ON a.usuario_id = u.id
       ORDER BY a.criado_em DESC
-      LIMIT 15
-    `).all();
+      LIMIT ? OFFSET ?
+    `).bind(atividadesLimit, atividadesOffset).all();
+
+    // Total de atividades (para paginação)
+    const totalAtividades = await env.DB.prepare(
+      'SELECT COUNT(*) as total FROM atividades'
+    ).first();
 
     return jsonResponse({
       resumo: resumo || {},
@@ -152,7 +161,8 @@ export async function getAnalyticsDashboard(request, env, _params, _context) {
       tendencia_presenca: tendenciaPresenca.results?.reverse() || [],
       top_search_terms: topTermos.results,
       failed_search_terms: termosSemResultado.results,
-      atividade_recente: atividadeRecente.results
+      atividade_recente: atividadeRecente.results,
+      total_atividades: totalAtividades?.total || 0
     }, 200, request);
 
   } catch (error) {
