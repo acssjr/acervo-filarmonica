@@ -31,10 +31,10 @@ const AdminDashboard = () => {
   }, []);
 
   return (
-    <div className="page-transition" style={{ padding: isMobile ? '16px' : '32px', maxWidth: '1200px', margin: '0 auto', fontFamily: 'Outfit, sans-serif' }}>
+    <div className="page-transition" style={{ padding: isMobile ? '16px' : '32px', maxWidth: '1200px', margin: '0 auto', }}>
       {/* Header com saudação */}
       <div style={{ marginBottom: isMobile ? '20px' : '32px' }}>
-        <div style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '4px', fontFamily: 'Outfit, sans-serif' }}>
+        <div style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '4px', }}>
           Olá,
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px', flexWrap: 'wrap' }}>
@@ -45,7 +45,6 @@ const AdminDashboard = () => {
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
             backgroundClip: 'text',
-            fontFamily: 'Outfit, sans-serif',
             margin: 0,
             display: 'inline',
             filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.1))'
@@ -59,13 +58,12 @@ const AdminDashboard = () => {
             borderRadius: '20px',
             fontSize: '12px',
             fontWeight: '600',
-            fontFamily: 'Outfit, sans-serif',
             textTransform: 'uppercase'
           }}>
             Admin
           </span>
         </div>
-        <p style={{ color: 'var(--text-secondary)', fontFamily: 'Outfit, sans-serif', margin: 0 }}>
+        <p style={{ color: 'var(--text-secondary)', margin: 0 }}>
           Acervo Digital - Sociedade Filarmônica 25 de Março
         </p>
       </div>
@@ -96,13 +94,12 @@ const AdminDashboard = () => {
           fontWeight: '600',
           marginBottom: '16px',
           color: 'var(--text-primary)',
-          fontFamily: 'Outfit, sans-serif',
           display: 'flex',
           alignItems: 'center',
           gap: '8px'
         }}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
           </svg>
           Ações Rápidas
         </h2>
@@ -126,14 +123,13 @@ const AdminDashboard = () => {
             fontWeight: '600',
             marginBottom: '16px',
             color: 'var(--text-primary)',
-            fontFamily: 'Outfit, sans-serif',
             display: 'flex',
             alignItems: 'center',
             gap: '8px'
           }}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
-              <polyline points="17 6 23 6 23 12"/>
+              <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
+              <polyline points="17 6 23 6 23 12" />
             </svg>
             Partituras Mais Baixadas
           </h2>
@@ -160,14 +156,13 @@ const AdminDashboard = () => {
                     fontWeight: '700',
                     fontSize: '14px',
                     color: i < 3 ? '#fff' : 'var(--text-secondary)',
-                    fontFamily: 'Outfit, sans-serif'
                   }}>{i + 1}</span>
                   <div>
-                    <div style={{ fontWeight: '500', color: 'var(--text-primary)', fontFamily: 'Outfit, sans-serif' }}>{p.titulo}</div>
-                    <div style={{ fontSize: '13px', color: 'var(--text-secondary)', fontFamily: 'Outfit, sans-serif' }}>{p.compositor}</div>
+                    <div style={{ fontWeight: '500', color: 'var(--text-primary)', }}>{p.titulo}</div>
+                    <div style={{ fontSize: '13px', color: 'var(--text-secondary)', }}>{p.compositor}</div>
                   </div>
                 </div>
-                <div style={{ fontWeight: '600', color: 'var(--accent)', fontFamily: 'Outfit, sans-serif' }}>{p.downloads} downloads</div>
+                <div style={{ fontWeight: '600', color: 'var(--accent)', }}>{p.downloads} downloads</div>
               </div>
             ))}
           </div>
@@ -187,14 +182,13 @@ const AdminDashboard = () => {
           fontWeight: '600',
           marginBottom: '16px',
           color: 'var(--text-primary)',
-          fontFamily: 'Outfit, sans-serif',
           display: 'flex',
           alignItems: 'center',
           gap: '8px'
         }}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="10"/>
-            <polyline points="12 6 12 12 16 14"/>
+            <circle cx="12" cy="12" r="10" />
+            <polyline points="12 6 12 12 16 14" />
           </svg>
           Atividade Recente
         </h2>
@@ -206,6 +200,10 @@ const AdminDashboard = () => {
           ) : (
             atividades.slice(0, 10).map((a, i) => {
               const info = getAtividadeInfo(a.tipo, true);
+              // Para login, não mostrar detalhes (contém IP)
+              const detalhes = a.tipo === 'login' ? null : a.detalhes;
+              // Título: para login, mostrar nome do usuário; para outros, o título da atividade
+              const titulo = a.tipo === 'login' ? (a.usuario_nome || 'Usuário') : a.titulo;
               return (
                 <div key={a.id || i} style={{
                   display: 'flex',
@@ -228,21 +226,19 @@ const AdminDashboard = () => {
                       fontWeight: '500',
                       color: 'var(--text-primary)',
                       fontSize: '14px',
-                      fontFamily: 'Outfit, sans-serif',
                       whiteSpace: 'nowrap',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis'
                     }}>
-                      {info.action}: {a.titulo}
+                      {info.action}: {titulo}
                     </div>
-                    <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'Outfit, sans-serif' }}>
-                      {a.usuario_nome || 'Sistema'} {a.detalhes && `• ${a.detalhes}`}
+                    <div style={{ fontSize: '12px', color: 'var(--text-muted)', }}>
+                      {a.usuario_nome || 'Sistema'} {detalhes && `• ${detalhes}`}
                     </div>
                   </div>
                   <div style={{
                     fontSize: '12px',
                     color: 'var(--text-muted)',
-                    fontFamily: 'Outfit, sans-serif',
                     flexShrink: 0
                   }}>
                     {formatTimeAgo(a.criado_em, true)}

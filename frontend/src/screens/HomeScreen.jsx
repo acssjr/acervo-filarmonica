@@ -119,9 +119,9 @@ const HomeScreen = () => {
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 20px', marginBottom: '16px' }}>
-        <h2 style={{ fontFamily: "Outfit, sans-serif", fontSize: '18px', fontWeight: '700' }}>Gêneros Musicais</h2>
+        <h2 style={{ fontSize: '18px', fontWeight: '700' }}>Gêneros Musicais</h2>
         <button
-          style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: '14px', fontWeight: '500', cursor: 'pointer', fontFamily: 'Outfit, sans-serif' }}
+          style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: '14px', fontWeight: '500', cursor: 'pointer', }}
           onClick={() => navigate('/generos')}
         >
           Ver Todos
@@ -151,9 +151,9 @@ const HomeScreen = () => {
       {isMobile ? <ComposerCarousel composers={topComposers} /> : null}
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 20px', marginBottom: '12px' }}>
-        <h2 style={{ fontFamily: "Outfit, sans-serif", fontSize: '18px', fontWeight: '700' }}>Partituras Populares</h2>
+        <h2 style={{ fontSize: '18px', fontWeight: '700' }}>Partituras Populares</h2>
         <button
-          style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: '14px', fontWeight: '500', cursor: 'pointer', fontFamily: 'Outfit, sans-serif' }}
+          style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: '14px', fontWeight: '500', cursor: 'pointer', }}
           onClick={() => navigate('/acervo')}
         >
           Ver Todas
@@ -185,10 +185,10 @@ const HomeScreen = () => {
         borderTop: '1px solid var(--border)',
         margin: '0 20px'
       }}>
-        <p style={{ fontSize: '13px', color: 'var(--text-muted)', fontFamily: 'Outfit, sans-serif', marginBottom: '8px' }}>
+        <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '8px' }}>
           Filarmônica 25 de Março
         </p>
-        <p style={{ fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'Outfit, sans-serif', opacity: 0.7 }}>
+        <p style={{ fontSize: '12px', color: 'var(--text-muted)', opacity: 0.7 }}>
           Acervo Digital de Partituras • Versão {PROFILE_ABOUT_CONFIG.infoCards[0].value}
         </p>
       </div>

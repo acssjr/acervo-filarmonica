@@ -84,7 +84,6 @@ const PartePicker = ({
           <h3
             id="parte-picker-title"
             style={{
-              fontFamily: 'Outfit, sans-serif',
               fontSize: '18px',
               fontWeight: '700',
               color: 'var(--text-primary)',
@@ -94,7 +93,6 @@ const PartePicker = ({
             Escolha sua parte
           </h3>
           <p style={{
-            fontFamily: 'Outfit, sans-serif',
             fontSize: '13px',
             color: 'var(--text-muted)'
           }}>
@@ -131,7 +129,6 @@ const PartePicker = ({
                 background: 'var(--bg-secondary)',
                 border: '1px solid var(--border)',
                 color: 'var(--text-primary)',
-                fontFamily: 'Outfit, sans-serif',
                 fontSize: '14px',
                 fontWeight: '500',
                 cursor: downloading ? 'wait' : 'pointer',
@@ -181,7 +178,6 @@ const PartePicker = ({
             background: 'transparent',
             border: '1px solid var(--border)',
             color: 'var(--text-muted)',
-            fontFamily: 'Outfit, sans-serif',
             fontSize: '14px',
             fontWeight: '500',
             cursor: 'pointer'

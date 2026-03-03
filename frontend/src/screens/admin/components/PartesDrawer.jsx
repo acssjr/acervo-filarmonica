@@ -173,8 +173,7 @@ const PartesDrawer = ({ isOpen, onClose, partitura, categorias, onUpdate }) => {
         transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
         display: 'flex',
         flexDirection: 'column',
-        fontFamily: 'Outfit, sans-serif'
-      }}>
+        }}>
         {/* Header */}
         <div style={{
           padding: '20px 24px',
@@ -322,7 +321,6 @@ const PartesDrawer = ({ isOpen, onClose, partitura, categorias, onUpdate }) => {
                               background: 'var(--bg-primary)',
                               color: 'var(--text-primary)',
                               fontSize: '13px',
-                              fontFamily: 'Outfit, sans-serif',
                               outline: 'none',
                               minWidth: 0,
                               opacity: renamingSaving ? 0.6 : 1
@@ -548,7 +546,6 @@ const PartesDrawer = ({ isOpen, onClose, partitura, categorias, onUpdate }) => {
                   background: 'var(--bg-primary)',
                   color: 'var(--text-primary)',
                   fontSize: '14px',
-                  fontFamily: 'Outfit, sans-serif',
                   outline: 'none'
                 }}
               />
@@ -564,8 +561,7 @@ const PartesDrawer = ({ isOpen, onClose, partitura, categorias, onUpdate }) => {
                     color: 'var(--text-primary)',
                     fontSize: '13px',
                     cursor: 'pointer',
-                    fontFamily: 'Outfit, sans-serif'
-                  }}
+                    }}
                 >
                   Cancelar
                 </button>
@@ -582,7 +578,6 @@ const PartesDrawer = ({ isOpen, onClose, partitura, categorias, onUpdate }) => {
                     fontSize: '13px',
                     fontWeight: '500',
                     cursor: newPartInstrumento.trim() && !addingPart ? 'pointer' : 'not-allowed',
-                    fontFamily: 'Outfit, sans-serif',
                     textAlign: 'center',
                     display: 'flex',
                     alignItems: 'center',
@@ -636,7 +631,6 @@ const PartesDrawer = ({ isOpen, onClose, partitura, categorias, onUpdate }) => {
                 color: 'var(--text-secondary)',
                 fontSize: '14px',
                 cursor: 'pointer',
-                fontFamily: 'Outfit, sans-serif',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',

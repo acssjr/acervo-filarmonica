@@ -72,7 +72,6 @@ const HeaderActions = ({ inDarkHeader = false }) => {
             color: '#fff',
             fontSize: '10px',
             fontWeight: '700',
-            fontFamily: 'Outfit, sans-serif',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',

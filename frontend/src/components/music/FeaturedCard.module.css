@@ -70,7 +70,7 @@
   background: #D4AF37;
   color: #3D1518;
   font-size: 9px;
-  font-family: 'Outfit', sans-serif;
+  /* font-family inherited from base.css */
   font-weight: 700;
   padding: 4px 8px;
   border-radius: 8px;
@@ -111,7 +111,7 @@
   font-weight: 700;
   margin-bottom: 4px;
   color: #FFFFFF;
-  font-family: 'Outfit', sans-serif;
+  /* font-family inherited from base.css */
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -120,7 +120,7 @@
 /* Compositor */
 .composer {
   font-size: 13px;
-  font-family: 'Outfit', sans-serif;
+  /* font-family inherited from base.css */
   color: rgba(255, 255, 255, 0.7);
   margin-bottom: 14px;
   white-space: nowrap;
@@ -149,7 +149,7 @@
 
 .categoryText {
   font-size: 11px;
-  font-family: 'Outfit', sans-serif;
+  /* font-family inherited from base.css */
   color: #D4AF37;
   font-weight: 600;
   white-space: nowrap;

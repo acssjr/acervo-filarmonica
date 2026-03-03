@@ -8,7 +8,15 @@
  * @returns {string} Tempo formatado
  */
 export const formatTimeAgo = (dateString, short = false) => {
-  const date = new Date(dateString);
+  // D1/SQLite retorna timestamps sem timezone (ex: '2026-03-02 18:00:00')
+  // Adicionamos 'Z' para interpretar como UTC corretamente
+  let normalized = dateString;
+  if (dateString instanceof Date) {
+    normalized = dateString;
+  } else if (typeof dateString === 'string' && !dateString.endsWith('Z') && !/[+-]\d{2}:\d{2}$/.test(dateString)) {
+    normalized = dateString.replace(' ', 'T') + 'Z';
+  }
+  const date = new Date(normalized);
   const now = new Date();
   const diffMs = now - date;
   const diffMins = Math.floor(diffMs / 60000);
@@ -45,7 +53,9 @@ export const getAtividadeInfo = (tipo, short = false) => {
   const mapLong = {
     'nova_partitura': { action: 'Nova partitura adicionada', color: '#43B97F' },
     'download': { action: 'Partitura baixada', color: '#5B8DEF' },
+    'visualizacao': { action: 'Partitura visualizada', color: '#3498db' },
     'favorito': { action: 'Favorito adicionado', color: '#E54D87' },
+    'login': { action: 'Acesso ao sistema', color: '#95a5a6' },
     'novo_repertorio': { action: 'Novo repertório criado', color: '#9B59D0' },
     'add_repertorio': { action: 'Adição ao repertório', color: '#9B59D0' }
   };
@@ -53,7 +63,9 @@ export const getAtividadeInfo = (tipo, short = false) => {
   const mapShort = {
     'nova_partitura': { action: 'Nova partitura', color: '#43B97F' },
     'download': { action: 'Download', color: '#5B8DEF' },
+    'visualizacao': { action: 'Visualização', color: '#3498db' },
     'favorito': { action: 'Favorito', color: '#E54D87' },
+    'login': { action: 'Login', color: '#95a5a6' },
     'novo_repertorio': { action: 'Novo repertório', color: '#9B59D0' },
     'add_repertorio': { action: 'Adicionado ao repertório', color: '#9B59D0' }
   };

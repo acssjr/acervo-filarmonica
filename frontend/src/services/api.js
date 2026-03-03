@@ -446,8 +446,8 @@ export const API = {
     return this.request('/api/admin/estatisticas');
   },
 
-  async getAnalyticsDashboard() {
-    return this.request('/api/admin/analytics/dashboard');
+  async getAnalyticsDashboard(queryString = '') {
+    return this.request(`/api/admin/analytics/dashboard${queryString}`);
   },
 
   async trackSearch(termo, resultadosCount) {

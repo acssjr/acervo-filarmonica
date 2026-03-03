@@ -181,7 +181,6 @@ const ThemeSelector = ({ inDarkHeader = false, compact = false, inline = false }
                   borderRadius: '8px',
                   color: isActive ? '#fff' : 'var(--text-primary)',
                   cursor: 'pointer',
-                  fontFamily: 'Outfit, sans-serif',
                   fontSize: '13px',
                   fontWeight: isActive ? '600' : '500',
                   transition: 'all 0.15s ease'

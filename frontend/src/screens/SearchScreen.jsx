@@ -239,7 +239,6 @@ const SearchScreen = () => {
               border: 'none',
               background: 'transparent',
               outline: 'none',
-              fontFamily: 'Outfit, sans-serif',
               fontSize: '15px',
               color: 'var(--text-primary)',
               WebkitAppearance: 'none',
@@ -288,10 +287,10 @@ const SearchScreen = () => {
           }}>
             <Icons.Search />
           </div>
-          <p style={{ fontFamily: 'Outfit, sans-serif', fontSize: '15px', marginBottom: '8px' }}>
+          <p style={{ fontSize: '15px', marginBottom: '8px' }}>
             Digite para buscar
           </p>
-          <p style={{ fontFamily: 'Outfit, sans-serif', fontSize: '13px', opacity: 0.7 }}>
+          <p style={{ fontSize: '13px', opacity: 0.7 }}>
             Busque por título, compositor ou gênero
           </p>
         </div>
@@ -305,10 +304,10 @@ const SearchScreen = () => {
           color: 'var(--text-muted)',
           animation: 'fadeIn 0.3s ease'
         }}>
-          <p style={{ fontFamily: 'Outfit, sans-serif', fontSize: '15px' }}>
+          <p style={{ fontSize: '15px' }}>
             Nenhum resultado para &quot;<strong>{searchQuery}</strong>&quot;
           </p>
-          <p style={{ fontFamily: 'Outfit, sans-serif', fontSize: '13px', opacity: 0.7, marginTop: '8px' }}>
+          <p style={{ fontSize: '13px', opacity: 0.7, marginTop: '8px' }}>
             Tente outro termo de busca
           </p>
         </div>
@@ -321,8 +320,7 @@ const SearchScreen = () => {
             padding: '0 20px 12px',
             color: 'var(--text-muted)',
             fontSize: '13px',
-            fontFamily: 'Outfit, sans-serif'
-          }}>
+            }}>
             {searchResults.length} resultado{searchResults.length !== 1 ? 's' : ''} encontrado{searchResults.length !== 1 ? 's' : ''}
           </p>
 
@@ -367,7 +365,6 @@ const SearchScreen = () => {
 
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <p style={{
-                    fontFamily: 'Outfit, sans-serif',
                     fontSize: '15px',
                     fontWeight: '600',
                     color: 'var(--text-primary)',
@@ -379,7 +376,6 @@ const SearchScreen = () => {
                     {sheet.title}
                   </p>
                   <p style={{
-                    fontFamily: 'Outfit, sans-serif',
                     fontSize: '13px',
                     color: 'var(--text-muted)'
                   }}>

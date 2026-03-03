@@ -124,7 +124,6 @@ const ChangePinModal = ({ isOpen = true, onClose }) => {
     <div>
       <label style={{
         display: 'block',
-        fontFamily: 'Outfit, sans-serif',
         fontSize: '13px',
         fontWeight: '600',
         color: 'var(--text-muted)',
@@ -151,7 +150,6 @@ const ChangePinModal = ({ isOpen = true, onClose }) => {
               border: digit ? '2px solid var(--primary)' : '1px solid var(--border)',
               color: 'var(--text-primary)',
               fontSize: '20px',
-              fontFamily: 'Outfit, sans-serif',
               fontWeight: '700',
               textAlign: 'center',
               outline: 'none',
@@ -193,7 +191,7 @@ const ChangePinModal = ({ isOpen = true, onClose }) => {
       }}>
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-          <h3 style={{ fontFamily: 'Outfit, sans-serif', fontSize: '18px', fontWeight: '700', color: 'var(--text-primary)' }}>
+          <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-primary)' }}>
             Alterar PIN
           </h3>
           <button onClick={onClose} style={{
@@ -256,7 +254,7 @@ const ChangePinModal = ({ isOpen = true, onClose }) => {
             marginTop: '16px',
             textAlign: 'center'
           }}>
-            <p style={{ fontFamily: 'Outfit, sans-serif', fontSize: '13px', color: 'var(--text-muted)' }}>
+            <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
               {MESSAGES.loading.changingPin}
             </p>
           </div>
@@ -271,7 +269,7 @@ const ChangePinModal = ({ isOpen = true, onClose }) => {
             borderRadius: '8px',
             textAlign: 'center'
           }}>
-            <p style={{ fontFamily: 'Outfit, sans-serif', fontSize: '13px', color: COLORS.error.light }}>{error}</p>
+            <p style={{ fontSize: '13px', color: COLORS.error.light }}>{error}</p>
           </div>
         )}
 
@@ -287,7 +285,6 @@ const ChangePinModal = ({ isOpen = true, onClose }) => {
             border: '1px solid var(--border)',
             borderRadius: '10px',
             color: 'var(--text-muted)',
-            fontFamily: 'Outfit, sans-serif',
             fontSize: '14px',
             fontWeight: '500',
             cursor: isLoading ? 'not-allowed' : 'pointer',

@@ -187,7 +187,6 @@ const AvisoModal = () => {
                                 fontSize: '10px', fontWeight: '900',
                                 color: '#D4AF37', textTransform: 'uppercase',
                                 letterSpacing: '3px',
-                                fontFamily: 'Outfit, sans-serif',
                                 marginBottom: '12px',
                                 flexShrink: 0
                             }}>
@@ -203,7 +202,6 @@ const AvisoModal = () => {
                                     fontSize: '24px', fontWeight: '800', // Reduzido (era 26)
                                     color: '#fff',
                                     marginBottom: '20px',
-                                    fontFamily: 'Outfit, sans-serif',
                                     lineHeight: '1.2',
                                     textShadow: '0 4px 15px rgba(0,0,0,0.5)',
                                     flexShrink: 0
@@ -229,7 +227,6 @@ const AvisoModal = () => {
                                     fontSize: '15px', // Reduzido (era 16)
                                     color: 'rgba(255,255,255,0.95)',
                                     lineHeight: '1.6',
-                                    fontFamily: 'Outfit, sans-serif',
                                     margin: 0,
                                     whiteSpace: 'pre-wrap'
                                 }}>
@@ -251,7 +248,6 @@ const AvisoModal = () => {
                                     fontSize: '14px', // Reduzido (era 15)
                                     fontWeight: '900',
                                     cursor: 'pointer',
-                                    fontFamily: 'Outfit, sans-serif',
                                     boxShadow: '0 12px 35px rgba(184, 134, 11, 0.35)',
                                     textTransform: 'uppercase',
                                     letterSpacing: '1px',

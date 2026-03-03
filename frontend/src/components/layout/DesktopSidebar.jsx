@@ -167,7 +167,6 @@ const DesktopSidebar = ({ activeTab }) => {
         <nav style={{ padding: '0 12px', marginBottom: '20px' }}>
           {!sidebarCollapsed ? (
             <p style={{
-              fontFamily: 'Outfit, sans-serif',
               fontSize: '10px',
               fontWeight: '600',
               color: 'rgba(255,255,255,0.4)',

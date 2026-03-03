@@ -53,7 +53,6 @@ const InstrumentSelector = ({
           border: '1px solid var(--border)',
           borderBottom: isOpen ? 'none' : '1px solid var(--border)',
           color: 'var(--text-primary)',
-          fontFamily: 'Outfit, sans-serif',
           fontSize: '13px',
           fontWeight: '600',
           cursor: 'pointer',
@@ -133,7 +132,6 @@ const InstrumentSelector = ({
                 >
                   <span style={{
                     color: isHighlighted ? 'var(--accent)' : 'var(--text-primary)',
-                    fontFamily: 'Outfit, sans-serif',
                     fontSize: '13px',
                     fontWeight: isHighlighted ? '600' : '500',
                     whiteSpace: 'nowrap',

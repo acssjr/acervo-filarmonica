@@ -54,7 +54,6 @@ const DownloadConfirm = ({
         <h3
           id="download-confirm-title"
           style={{
-            fontFamily: 'Outfit, sans-serif',
             fontSize: '16px',
             fontWeight: '700',
             color: 'var(--text-primary)',
@@ -67,7 +66,6 @@ const DownloadConfirm = ({
         <p
           id="download-confirm-desc"
           style={{
-            fontFamily: 'Outfit, sans-serif',
             fontSize: '14px',
             color: 'var(--text-muted)',
             marginBottom: '20px',
@@ -89,7 +87,6 @@ const DownloadConfirm = ({
               background: 'var(--bg-secondary)',
               border: '1px solid var(--border)',
               color: 'var(--text-primary)',
-              fontFamily: 'Outfit, sans-serif',
               fontSize: '14px',
               fontWeight: '600',
               cursor: 'pointer'
@@ -107,7 +104,6 @@ const DownloadConfirm = ({
               background: 'linear-gradient(145deg, #722F37 0%, #5C1A1B 100%)',
               border: 'none',
               color: '#F4E4BC',
-              fontFamily: 'Outfit, sans-serif',
               fontSize: '14px',
               fontWeight: '600',
               cursor: downloading ? 'wait' : 'pointer',

@@ -227,7 +227,7 @@ const AdminApp = () => {
 
   return (
     <AdminContext.Provider value={{ stats, loading, refreshData: loadStats }}>
-      <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-primary)', fontFamily: 'Outfit, sans-serif' }}>
+      <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-primary)', }}>
 
         {/* Header Mobile */}
         {isMobile && (
@@ -387,8 +387,8 @@ const AdminApp = () => {
                 </div>
                 {(!sidebarCollapsed || isMobile) && (
                   <div>
-                    <div style={{ fontWeight: '700', color: '#F4E4BC', fontSize: '14px', fontFamily: 'Outfit, sans-serif' }}>S.F. 25 de Março</div>
-                    <div style={{ fontSize: '11px', color: '#D4AF37', fontFamily: 'Outfit, sans-serif' }}>PAINEL ADMIN</div>
+                    <div style={{ fontWeight: '700', color: '#F4E4BC', fontSize: '14px', }}>S.F. 25 de Março</div>
+                    <div style={{ fontSize: '11px', color: '#D4AF37', }}>PAINEL ADMIN</div>
                   </div>
                 )}
               </div>
@@ -481,7 +481,6 @@ const AdminApp = () => {
           {/* Label MENU */}
           {(!sidebarCollapsed || isMobile) && (
             <p style={{
-              fontFamily: 'Outfit, sans-serif',
               fontSize: '10px',
               fontWeight: '600',
               color: 'rgba(255,255,255,0.4)',
@@ -520,7 +519,6 @@ const AdminApp = () => {
                     transition: 'all 0.2s',
                     width: '100%',
                     justifyContent: sidebarCollapsed && !isMobile ? 'center' : 'flex-start',
-                    fontFamily: 'Outfit, sans-serif',
                     fontSize: '14px',
                     fontWeight: activeSection === item.id ? '600' : '500'
                   }}
@@ -562,7 +560,6 @@ const AdminApp = () => {
                 transition: 'all 0.2s',
                 width: '100%',
                 justifyContent: sidebarCollapsed && !isMobile ? 'center' : 'flex-start',
-                fontFamily: 'Outfit, sans-serif',
                 fontSize: '14px',
                 fontWeight: '500'
               }}
@@ -613,7 +610,6 @@ const AdminApp = () => {
             }}>
               {/* Data atual */}
               <span style={{
-                fontFamily: 'Outfit, sans-serif',
                 fontSize: '14px',
                 color: 'var(--text-muted)',
                 textTransform: 'capitalize'

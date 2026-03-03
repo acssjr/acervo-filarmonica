@@ -58,7 +58,6 @@ const SidebarLogo = ({ collapsed }) => {
       </div>
       <div>
         <h1 style={{
-          fontFamily: 'Outfit, sans-serif',
           fontSize: '15px',
           fontWeight: '700',
           color: '#F4E4BC',
@@ -67,11 +66,10 @@ const SidebarLogo = ({ collapsed }) => {
         }}>
           S.F. 25 de Março
         </h1>
-        <p style={{ fontFamily: 'Outfit, sans-serif', fontSize: '10px', color: 'rgba(255,255,255,0.5)', marginBottom: '4px' }}>
+        <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)', marginBottom: '4px' }}>
           Feira de Santana - BA
         </p>
         <p style={{
-          fontFamily: 'Outfit, sans-serif',
           fontSize: '9px',
           fontWeight: '600',
           color: '#D4AF37',

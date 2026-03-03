@@ -382,7 +382,6 @@ const TutorialOverlay = ({
           opacity: isAnimating ? 0 : 1,
           transform: isAnimating ? 'translateY(12px) scale(0.98)' : 'translateY(0) scale(1)',
           transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
-          fontFamily: 'Outfit, sans-serif',
           willChange: 'transform, opacity, top, left'
         }}
       >
@@ -477,8 +476,7 @@ const TutorialOverlay = ({
                 justifyContent: 'center',
                 gap: '6px',
                 transition: 'all 0.2s ease',
-                fontFamily: 'Outfit, sans-serif'
-              }}
+                }}
               onMouseEnter={e => {
                 e.currentTarget.style.background = '#eee';
               }}
@@ -513,7 +511,6 @@ const TutorialOverlay = ({
               boxShadow: highlightNextButton
                 ? '0 0 0 4px rgba(212, 175, 55, 0.4), 0 8px 25px rgba(212, 175, 55, 0.6)'
                 : '0 4px 15px rgba(212, 175, 55, 0.4)',
-              fontFamily: 'Outfit, sans-serif',
               transform: highlightNextButton ? 'scale(1.05)' : 'scale(1)',
               animation: highlightNextButton ? 'pulse-next 0.6s ease-in-out 2' : 'none'
             }}
@@ -565,7 +562,6 @@ const TutorialOverlay = ({
             gap: '6px',
             fontSize: '12px',
             fontWeight: '400',
-            fontFamily: 'Outfit, sans-serif',
             transition: 'all 0.2s ease',
             alignSelf: 'center'
           }}

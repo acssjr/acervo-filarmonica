@@ -34,7 +34,7 @@ const CategoryCard = memo(({ category, count, onClick, index }) => {
       </div>
       <div style={{ minWidth: 0 }}>
         <h3 style={{
-          fontFamily: "Outfit, sans-serif", fontSize: '14px', fontWeight: '600',
+          fontSize: '14px', fontWeight: '600',
           color: 'var(--text-primary)', marginBottom: '1px',
           whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
         }}>{category.name}</h3>

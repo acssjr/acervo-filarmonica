@@ -226,13 +226,13 @@ const EditarEnsaioModal = ({ ensaio, usuarios, onClose, onUpdate, addNotificatio
         }}>
           <div>
             <h3 style={{
-              fontFamily: 'Outfit, sans-serif', fontSize: '20px', fontWeight: '700',
+              fontSize: '20px', fontWeight: '700',
               color: 'var(--text-primary)', margin: 0
             }}>
               Editar Ensaio {ensaio.numero_ensaio ? `#${ensaio.numero_ensaio}` : ''}
             </h3>
             <p style={{
-              fontFamily: 'Outfit, sans-serif', fontSize: '14px', color: 'var(--text-muted)',
+              fontSize: '14px', color: 'var(--text-muted)',
               margin: '4px 0 0'
             }}>
               {formatDatePt(ensaio.data_ensaio)}
@@ -256,7 +256,7 @@ const EditarEnsaioModal = ({ ensaio, usuarios, onClose, onUpdate, addNotificatio
             { id: 'partituras', label: `Partituras (${detalhe?.total_partituras || 0})` }
           ].map(tab => (
             <button key={tab.id} onClick={() => setAbaAtiva(tab.id)} style={{
-              padding: '10px 20px', fontFamily: 'Outfit, sans-serif', fontSize: '14px',
+              padding: '10px 20px', fontSize: '14px',
               fontWeight: abaAtiva === tab.id ? '600' : '400', border: 'none', background: 'none',
               color: abaAtiva === tab.id ? COLORS.gold.primary : 'var(--text-muted)',
               borderBottom: abaAtiva === tab.id ? `2px solid ${COLORS.gold.primary}` : '2px solid transparent',
@@ -270,19 +270,18 @@ const EditarEnsaioModal = ({ ensaio, usuarios, onClose, onUpdate, addNotificatio
         {/* Content */}
         <div style={{ flex: 1, overflow: 'auto', padding: '16px 24px' }}>
           {loading ? (
-            <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)', fontFamily: 'Outfit, sans-serif' }}>
+            <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)', }}>
               Carregando...
             </div>
           ) : !detalhe ? (
-            <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)', fontFamily: 'Outfit, sans-serif' }}>
+            <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)', }}>
               Erro ao carregar dados
             </div>
           ) : abaAtiva === 'presencas' ? (
             <div>
               {/* Summary bar */}
               <div style={{
-                fontSize: '13px', color: 'var(--text-muted)', fontFamily: 'Outfit, sans-serif',
-                marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px'
+                fontSize: '13px', color: 'var(--text-muted)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px'
               }}>
                 <span style={{ fontWeight: '600', color: 'var(--text-primary)' }}>
                   {presentesCount}
@@ -299,8 +298,7 @@ const EditarEnsaioModal = ({ ensaio, usuarios, onClose, onUpdate, addNotificatio
                   type="text" value={buscaMusico} onChange={e => setBuscaMusico(e.target.value)}
                   placeholder="Buscar músico para adicionar..."
                   style={{
-                    width: '100%', padding: '10px 12px 10px 36px', fontFamily: 'Outfit, sans-serif',
-                    fontSize: '14px', border: '1px solid var(--border)', borderRadius: '8px',
+                    width: '100%', padding: '10px 12px 10px 36px', fontSize: '14px', border: '1px solid var(--border)', borderRadius: '8px',
                     background: 'var(--bg)', color: 'var(--text-primary)', outline: 'none',
                     boxSizing: 'border-box'
                   }}
@@ -315,7 +313,7 @@ const EditarEnsaioModal = ({ ensaio, usuarios, onClose, onUpdate, addNotificatio
                   <div style={{ border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden', display: 'flex', flexDirection: 'column', maxHeight: '300px' }}>
                     <div style={{
                       fontSize: '11px', fontWeight: '700', color: COLORS.green,
-                      fontFamily: 'Outfit, sans-serif', padding: '10px 14px',
+                      padding: '10px 14px',
                       background: 'rgba(76, 175, 80, 0.08)', textTransform: 'uppercase', letterSpacing: '0.5px',
                       display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                       borderBottom: '1px solid var(--border)'
@@ -330,8 +328,7 @@ const EditarEnsaioModal = ({ ensaio, usuarios, onClose, onUpdate, addNotificatio
                           style={{
                             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                             padding: '10px 14px', borderBottom: '1px solid var(--border)',
-                            fontSize: '14px', fontFamily: 'Outfit, sans-serif',
-                            cursor: 'pointer', transition: 'background 0.1s'
+                            fontSize: '14px', cursor: 'pointer', transition: 'background 0.1s'
                           }}
                           onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-card-hover)'}
                           onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
@@ -372,7 +369,7 @@ const EditarEnsaioModal = ({ ensaio, usuarios, onClose, onUpdate, addNotificatio
                 <div style={{ border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden', display: 'flex', flexDirection: 'column', maxHeight: '400px' }}>
                   <div style={{
                     fontSize: '11px', fontWeight: '700', color: COLORS.gold.primary,
-                    fontFamily: 'Outfit, sans-serif', padding: '10px 14px',
+                    padding: '10px 14px',
                     background: 'rgba(212, 175, 55, 0.08)', textTransform: 'uppercase', letterSpacing: '0.5px',
                     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                     borderBottom: '1px solid var(--border)'
@@ -387,8 +384,7 @@ const EditarEnsaioModal = ({ ensaio, usuarios, onClose, onUpdate, addNotificatio
                         style={{
                           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                           padding: '10px 14px', borderBottom: '1px solid var(--border)',
-                          fontSize: '14px', fontFamily: 'Outfit, sans-serif',
-                          cursor: 'pointer', transition: 'background 0.1s'
+                          fontSize: '14px', cursor: 'pointer', transition: 'background 0.1s'
                         }}
                         onMouseEnter={e => e.currentTarget.style.background = 'rgba(232, 90, 79, 0.05)'}
                         onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
@@ -418,8 +414,7 @@ const EditarEnsaioModal = ({ ensaio, usuarios, onClose, onUpdate, addNotificatio
                     {(detalhe.presentes || []).length === 0 && (
                       <div style={{
                         padding: '30px', textAlign: 'center', color: 'var(--text-muted)',
-                        fontSize: '14px', fontFamily: 'Outfit, sans-serif'
-                      }}>
+                        fontSize: '14px', }}>
                         Nenhum músico presente
                       </div>
                     )}
@@ -439,8 +434,7 @@ const EditarEnsaioModal = ({ ensaio, usuarios, onClose, onUpdate, addNotificatio
                   type="text" value={buscaPartitura} onChange={e => buscarPartituras(e.target.value)}
                   placeholder="Buscar partitura para adicionar..."
                   style={{
-                    width: '100%', padding: '10px 12px 10px 36px', fontFamily: 'Outfit, sans-serif',
-                    fontSize: '14px', border: '1px solid var(--border)', borderRadius: '8px',
+                    width: '100%', padding: '10px 12px 10px 36px', fontSize: '14px', border: '1px solid var(--border)', borderRadius: '8px',
                     background: 'var(--bg)', color: 'var(--text-primary)', outline: 'none',
                     boxSizing: 'border-box'
                   }}
@@ -454,7 +448,7 @@ const EditarEnsaioModal = ({ ensaio, usuarios, onClose, onUpdate, addNotificatio
                 }}>
                   <div style={{
                     fontSize: '11px', fontWeight: '600', color: 'var(--text-muted)',
-                    fontFamily: 'Outfit, sans-serif', padding: '8px 12px',
+                    padding: '8px 12px',
                     background: 'var(--bg)', textTransform: 'uppercase', letterSpacing: '0.5px'
                   }}>
                     Resultados
@@ -463,8 +457,7 @@ const EditarEnsaioModal = ({ ensaio, usuarios, onClose, onUpdate, addNotificatio
                     <div key={p.id} style={{
                       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                       padding: '8px 12px', borderTop: '1px solid var(--border)',
-                      fontSize: '14px', fontFamily: 'Outfit, sans-serif'
-                    }}>
+                      fontSize: '14px', }}>
                       <div>
                         <span style={{ color: 'var(--text-primary)' }}>{p.titulo}</span>
                         {p.compositor && (
@@ -486,8 +479,7 @@ const EditarEnsaioModal = ({ ensaio, usuarios, onClose, onUpdate, addNotificatio
                         background: 'none', border: '1px solid var(--border)', borderRadius: '6px',
                         padding: '4px 8px', cursor: 'pointer', color: COLORS.green,
                         display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px',
-                        fontFamily: 'Outfit, sans-serif'
-                      }}>
+                        }}>
                         <PlusIcon size={14} color={COLORS.green} /> Adicionar
                       </button>
                     </div>
@@ -496,7 +488,7 @@ const EditarEnsaioModal = ({ ensaio, usuarios, onClose, onUpdate, addNotificatio
               )}
 
               {buscandoPartituras && (
-                <div style={{ textAlign: 'center', padding: '8px', color: 'var(--text-muted)', fontSize: '13px', fontFamily: 'Outfit' }}>
+                <div style={{ textAlign: 'center', padding: '8px', color: 'var(--text-muted)', fontSize: '13px', }}>
                   Buscando...
                 </div>
               )}
@@ -505,7 +497,7 @@ const EditarEnsaioModal = ({ ensaio, usuarios, onClose, onUpdate, addNotificatio
               <div style={{ border: '1px solid var(--border)', borderRadius: '8px', overflow: 'hidden' }}>
                 <div style={{
                   fontSize: '11px', fontWeight: '600', color: 'var(--text-muted)',
-                  fontFamily: 'Outfit, sans-serif', padding: '8px 12px',
+                  padding: '8px 12px',
                   background: 'var(--bg)', textTransform: 'uppercase', letterSpacing: '0.5px'
                 }}>
                   Partituras do ensaio
@@ -514,8 +506,7 @@ const EditarEnsaioModal = ({ ensaio, usuarios, onClose, onUpdate, addNotificatio
                   <div key={p.id} style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                     padding: '8px 12px', borderTop: '1px solid var(--border)',
-                    fontSize: '14px', fontFamily: 'Outfit, sans-serif'
-                  }}>
+                    fontSize: '14px', }}>
                     <div>
                       <span style={{ color: 'var(--text-primary)' }}>{p.titulo}</span>
                       {p.compositor && (
@@ -547,8 +538,7 @@ const EditarEnsaioModal = ({ ensaio, usuarios, onClose, onUpdate, addNotificatio
                 {(detalhe?.partituras || []).length === 0 && (
                   <div style={{
                     padding: '24px', textAlign: 'center', color: 'var(--text-muted)',
-                    fontSize: '14px', fontFamily: 'Outfit, sans-serif'
-                  }}>
+                    fontSize: '14px', }}>
                     Nenhuma partitura registrada
                   </div>
                 )}
@@ -563,15 +553,13 @@ const EditarEnsaioModal = ({ ensaio, usuarios, onClose, onUpdate, addNotificatio
           display: 'flex', justifyContent: 'space-between', alignItems: 'center'
         }}>
           <span style={{
-            fontSize: '13px', color: 'var(--text-muted)', fontFamily: 'Outfit, sans-serif'
-          }}>
+            fontSize: '13px', color: 'var(--text-muted)', }}>
             {detalhe?.total_presentes || 0} presentes ({percentual}%) · {detalhe?.total_partituras || 0} partituras
           </span>
           <div style={{ display: 'flex', gap: '12px' }}>
             <button onClick={onClose} disabled={saving} style={{
               padding: '10px 24px', background: 'transparent', color: 'var(--text-muted)',
-              border: '1px solid var(--border)', borderRadius: '8px', fontFamily: 'Outfit, sans-serif',
-              fontSize: '14px', fontWeight: '600', cursor: 'pointer'
+              border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', fontWeight: '600', cursor: 'pointer'
             }}>
               Cancelar
             </button>
@@ -580,8 +568,7 @@ const EditarEnsaioModal = ({ ensaio, usuarios, onClose, onUpdate, addNotificatio
               padding: '10px 24px',
               background: (saving || !hasChanges) ? 'var(--border)' : COLORS.gold.primary,
               color: (saving || !hasChanges) ? 'var(--text-muted)' : '#1A0507',
-              border: 'none', borderRadius: '8px', fontFamily: 'Outfit, sans-serif',
-              fontSize: '14px', fontWeight: '700',
+              border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: '700',
               cursor: (saving || !hasChanges) ? 'default' : 'pointer',
               opacity: (saving || !hasChanges) ? 0.7 : 1,
               transition: 'all 0.2s',

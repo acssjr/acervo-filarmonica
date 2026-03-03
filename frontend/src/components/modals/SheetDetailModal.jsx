@@ -306,7 +306,6 @@ const SheetDetailModal = () => {
                   <h2
                     id="sheet-detail-title"
                     style={{
-                      fontFamily: 'Outfit, sans-serif',
                       fontSize: '17px',
                       fontWeight: '700',
                       color: 'var(--text-primary)',
@@ -317,14 +316,12 @@ const SheetDetailModal = () => {
                     {selectedSheet.title}
                   </h2>
                   <p style={{
-                    fontFamily: 'Outfit, sans-serif',
                     fontSize: '13px',
                     color: 'var(--text-muted)',
                     marginBottom: selectedSheet.arranger ? '2px' : '6px'
                   }}>{selectedSheet.composer}</p>
                   {selectedSheet.arranger && (
                     <p style={{
-                      fontFamily: 'Outfit, sans-serif',
                       fontSize: '12px',
                       color: 'var(--text-muted)',
                       marginBottom: '6px'
@@ -340,8 +337,7 @@ const SheetDetailModal = () => {
                     borderRadius: '6px',
                     fontSize: '10px',
                     fontWeight: '600',
-                    fontFamily: 'Outfit, sans-serif'
-                  }}>{category?.name}</span>
+                    }}>{category?.name}</span>
                 </div>
 
                 <button
@@ -383,20 +379,20 @@ const SheetDetailModal = () => {
                   gap: '6px'
                 }}>
                   <div style={{ width: '12px', height: '12px', color: 'var(--text-muted)' }}><Icons.Download /></div>
-                  <span style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-primary)', fontFamily: 'Outfit, sans-serif' }}>
+                  <span style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-primary)', }}>
                     {selectedSheet.downloads || 0}
                   </span>
                 </div>
                 {selectedSheet.year && (
                   <div style={{ background: 'var(--bg-secondary)', padding: '8px 12px', borderRadius: '8px' }}>
-                    <span style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-primary)', fontFamily: 'Outfit, sans-serif' }}>
+                    <span style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-primary)', }}>
                       {selectedSheet.year}
                     </span>
                   </div>
                 )}
                 {selectedSheet.featured && (
                   <div style={{ background: 'rgba(212, 175, 55, 0.15)', padding: '8px 12px', borderRadius: '8px' }}>
-                    <span style={{ fontSize: '12px', fontWeight: '600', color: 'var(--accent)', fontFamily: 'Outfit, sans-serif', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <span style={{ fontSize: '12px', fontWeight: '600', color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="var(--accent)" stroke="none" aria-hidden="true">
                         <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
                       </svg>
@@ -412,7 +408,6 @@ const SheetDetailModal = () => {
                   fontSize: '10px',
                   color: 'var(--text-muted)',
                   marginBottom: '8px',
-                  fontFamily: 'Outfit, sans-serif',
                   textTransform: 'uppercase',
                   letterSpacing: '0.5px',
                   fontWeight: '600'
@@ -430,7 +425,6 @@ const SheetDetailModal = () => {
                       background: 'rgba(52, 152, 219, 0.1)',
                       border: '1.5px solid rgba(52, 152, 219, 0.3)',
                       color: '#3498db',
-                      fontFamily: 'Outfit, sans-serif',
                       fontSize: '12px',
                       fontWeight: '600',
                       cursor: (isMaestro && !hasGrade) || download.downloading || loadingPartes ? 'not-allowed' : 'pointer',
@@ -454,7 +448,6 @@ const SheetDetailModal = () => {
                       background: 'rgba(46, 204, 113, 0.1)',
                       border: '1.5px solid rgba(46, 204, 113, 0.3)',
                       color: '#2ecc71',
-                      fontFamily: 'Outfit, sans-serif',
                       fontSize: '12px',
                       fontWeight: '600',
                       cursor: (isMaestro && !hasGrade) || download.downloading || loadingPartes ? 'not-allowed' : 'pointer',
@@ -482,7 +475,6 @@ const SheetDetailModal = () => {
                     background: (loadingPartes || download.downloading || (isMaestro && !hasGrade)) ? 'var(--bg-secondary)' : 'linear-gradient(145deg, #722F37 0%, #5C1A1B 100%)',
                     border: 'none',
                     color: (loadingPartes || download.downloading || (isMaestro && !hasGrade)) ? 'var(--text-muted)' : '#F4E4BC',
-                    fontFamily: 'Outfit, sans-serif',
                     fontSize: '13px',
                     fontWeight: '600',
                     cursor: (isMaestro && !hasGrade) ? 'not-allowed' : ((loadingPartes || download.downloading) ? 'wait' : 'pointer'),
@@ -541,7 +533,6 @@ const SheetDetailModal = () => {
                       background: (isMaestro && !hasGrade) ? 'var(--bg-secondary)' : 'rgba(37, 211, 102, 0.1)',
                       border: (isMaestro && !hasGrade) ? '1.5px solid var(--border)' : '1.5px solid rgba(37, 211, 102, 0.3)',
                       color: (isMaestro && !hasGrade) ? 'var(--text-muted)' : '#25D366',
-                      fontFamily: 'Outfit, sans-serif',
                       fontSize: '12px',
                       fontWeight: '600',
                       cursor: (isMaestro && !hasGrade) || download.downloading || loadingPartes ? 'not-allowed' : 'pointer',
@@ -568,7 +559,6 @@ const SheetDetailModal = () => {
                     background: isFavorite ? 'rgba(232,90,79,0.1)' : 'transparent',
                     border: isFavorite ? '1.5px solid var(--primary)' : '1.5px solid var(--border)',
                     color: isFavorite ? 'var(--primary)' : 'var(--text-muted)',
-                    fontFamily: 'Outfit, sans-serif',
                     fontSize: '12px',
                     fontWeight: '600',
                     cursor: 'pointer',

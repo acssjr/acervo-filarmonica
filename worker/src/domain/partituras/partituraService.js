@@ -229,29 +229,47 @@ export async function uploadPastaPartitura(request, env, admin) {
  * Extraido de: worker/index.js linhas 880-908
  */
 export async function updatePartitura(id, request, env, user) {
-  const data = await request.json();
-  const { titulo, compositor, arranjador, categoria, categoria_id, ano, descricao, destaque } = data;
+  try {
+    const data = await request.json();
+    const { titulo, compositor, arranjador, categoria, categoria_id, ano, descricao, destaque } = data;
 
-  const categoriaFinal = categoria || categoria_id;
+    const tituloFinal = typeof titulo === 'string' ? titulo.trim() : '';
+    if (!tituloFinal) {
+      return errorResponse('Título é obrigatório', 400, request);
+    }
 
-  await env.DB.prepare(`
-    UPDATE partituras
-    SET titulo = ?, compositor = ?, arranjador = ?, categoria_id = ?, ano = ?, descricao = ?, destaque = ?, atualizado_em = CURRENT_TIMESTAMP
-    WHERE id = ?
-  `).bind(
-    titulo,
-    compositor,
-    arranjador || null,
-    categoriaFinal,
-    ano || null,
-    descricao || null,
-    destaque ? 1 : 0,
-    id
-  ).run();
+    const categoriaFinal = categoria ?? categoria_id ?? null;
 
-  await registrarAtividade(env, 'update_partitura', titulo, 'Partitura atualizada', user.id);
+    if (!categoriaFinal) {
+      return errorResponse('Categoria é obrigatória', 400, request);
+    }
 
-  return jsonResponse({ success: true, message: 'Partitura atualizada!' }, 200, request);
+    const updateResult = await env.DB.prepare(`
+      UPDATE partituras
+      SET titulo = ?, compositor = ?, arranjador = ?, categoria_id = ?, ano = ?, descricao = ?, destaque = ?, atualizado_em = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `).bind(
+      tituloFinal,
+      compositor ?? null,
+      arranjador ?? null,
+      categoriaFinal,
+      ano ?? null,
+      descricao ?? null,
+      destaque ? 1 : 0,
+      id
+    ).run();
+
+    if (updateResult.meta?.changes === 0) {
+      return errorResponse('Partitura não encontrada', 404, request);
+    }
+
+    await registrarAtividade(env, 'update_partitura', tituloFinal, 'Partitura atualizada', user.id);
+
+    return jsonResponse({ success: true, message: 'Partitura atualizada!' }, 200, request);
+  } catch (error) {
+    console.error('Erro ao atualizar partitura:', error);
+    return errorResponse('Erro ao atualizar partitura', 500, request);
+  }
 }
 
 export async function deletePartitura(id, request, env, user) {
@@ -357,24 +375,24 @@ export async function corrigirBombardinosPartitura(partituraId, request, env) {
     // Usar batch para atomicidade no DB
     const uploadedFiles = [];
     const batch = [];
-    
+
     for (const item of novosArquivos) {
       await env.BUCKET.put(item.nomeArquivoStorage, item.arrayBuffer, {
         httpMetadata: { contentType: 'application/pdf' }
       });
       uploadedFiles.push(item.nomeArquivoStorage);
-      
+
       const stmt = env.DB.prepare(
         'INSERT INTO partes (partitura_id, instrumento, arquivo_nome) VALUES (?, ?, ?)'
       ).bind(partituraId, item.instrumento, item.nomeArquivoStorage);
       batch.push(stmt);
     }
-    
+
     // Executar inserts em batch (atômico)
     if (batch.length > 0) {
       await env.DB.batch(batch);
     }
-    
+
     const partesAdicionadas = uploadedFiles.length;
 
     return jsonResponse({

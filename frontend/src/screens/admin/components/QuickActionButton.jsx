@@ -49,7 +49,6 @@ const QuickActionButton = ({ icon, label, onClick }) => {
       fontWeight: '500',
       cursor: 'pointer',
       transition: 'all 0.2s',
-      fontFamily: 'Outfit, sans-serif',
       boxShadow: '0 2px 6px rgba(0,0,0,0.15)'
     }}>
       <ActionIcon type={icon} />

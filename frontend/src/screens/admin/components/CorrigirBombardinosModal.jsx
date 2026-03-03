@@ -326,7 +326,6 @@ const CorrigirBombardinosModal = ({ isOpen, onClose, onSuccess, partituras }) =>
                     zIndex: 10000,
                     display: 'flex',
                     flexDirection: 'column',
-                    fontFamily: 'Outfit, sans-serif',
                     animation: 'scaleIn 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
                 }}>
                 {/* Header */}
@@ -713,8 +712,7 @@ const CorrigirBombardinosModal = ({ isOpen, onClose, onSuccess, partituras }) =>
                                     color: 'var(--text-primary)',
                                     fontSize: '13px',
                                     cursor: 'pointer',
-                                    fontFamily: 'Outfit, sans-serif'
-                                }}
+                                    }}
                             >
                                 Voltar
                             </button>
@@ -732,7 +730,6 @@ const CorrigirBombardinosModal = ({ isOpen, onClose, onSuccess, partituras }) =>
                                     fontSize: '13px',
                                     fontWeight: '500',
                                     cursor: matchedCount > 0 ? 'pointer' : 'not-allowed',
-                                    fontFamily: 'Outfit, sans-serif',
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: '8px'
@@ -758,8 +755,7 @@ const CorrigirBombardinosModal = ({ isOpen, onClose, onSuccess, partituras }) =>
                                 fontSize: '14px',
                                 fontWeight: '500',
                                 cursor: 'pointer',
-                                fontFamily: 'Outfit, sans-serif'
-                            }}
+                                }}
                         >
                             Fechar
                         </button>

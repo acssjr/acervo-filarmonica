@@ -31,7 +31,6 @@ const SidebarNavItem = ({ icon: Icon, label, isActive, collapsed, onClick, dange
         borderRadius: '10px',
         color: danger ? dangerColor : (isActive ? '#fff' : 'rgba(255,255,255,0.7)'),
         cursor: 'pointer',
-        fontFamily: 'Outfit, sans-serif',
         fontSize: '14px',
         fontWeight: isActive ? '600' : '500',
         transition: 'all 0.2s ease',

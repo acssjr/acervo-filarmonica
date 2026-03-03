@@ -36,7 +36,6 @@ const SidebarSection = ({
       >
         <span
           style={{
-            fontFamily: 'Outfit, sans-serif',
             fontSize: '10px',
             fontWeight: '600',
             color: 'rgba(244, 228, 188, 0.6)',
@@ -91,7 +90,6 @@ const SidebarSection = ({
             borderRadius: '8px',
             color: '#D4AF37',
             cursor: 'pointer',
-            fontFamily: 'Outfit, sans-serif',
             fontSize: '13px',
             fontWeight: '500',
             transition: 'all 0.2s ease',

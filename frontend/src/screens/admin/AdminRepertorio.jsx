@@ -160,7 +160,7 @@ const AdminRepertorio = () => {
   const historico = repertorios.filter(r => r.ativo !== 1);
 
   return (
-    <div className="page-transition" style={{ padding: '32px', maxWidth: '900px', margin: '0 auto', fontFamily: 'Outfit, sans-serif' }}>
+    <div className="page-transition" style={{ padding: '32px', maxWidth: '900px', margin: '0 auto', }}>
       {/* Header */}
       <div style={{
         display: 'flex',
@@ -179,8 +179,7 @@ const AdminRepertorio = () => {
             display: 'flex',
             alignItems: 'center',
             gap: '10px',
-            fontFamily: 'Outfit, sans-serif'
-          }}>
+            }}>
             <div style={{ width: '24px', height: '24px' }}><Icons.ListMusic /></div>
             Repertório
           </h1>
@@ -188,8 +187,7 @@ const AdminRepertorio = () => {
             fontSize: '14px',
             color: 'var(--text-muted)',
             margin: '6px 0 0',
-            fontFamily: 'Outfit, sans-serif'
-          }}>Gerencie os repertórios das apresentações</p>
+            }}>Gerencie os repertórios das apresentações</p>
         </div>
         <button
           onClick={openCreateModal}
@@ -206,7 +204,6 @@ const AdminRepertorio = () => {
             fontSize: '14px',
             fontWeight: '600',
             cursor: 'pointer',
-            fontFamily: 'Outfit, sans-serif',
             boxShadow: '0 4px 16px rgba(212, 175, 55, 0.3)',
             transition: 'all 0.2s ease'
           }}
@@ -222,7 +219,7 @@ const AdminRepertorio = () => {
             <circle cx="12" cy="12" r="10" strokeOpacity="0.25" />
             <path d="M12 2a10 10 0 0 1 10 10" strokeLinecap="round" />
           </svg>
-          <p style={{ marginTop: '12px', fontFamily: 'Outfit, sans-serif' }}>Carregando repertórios...</p>
+          <p style={{ marginTop: '12px', }}>Carregando repertórios...</p>
         </div>
       ) : (
         <>
@@ -249,8 +246,7 @@ const AdminRepertorio = () => {
                 margin: 0,
                 textTransform: 'uppercase',
                 letterSpacing: '0.5px',
-                fontFamily: 'Outfit, sans-serif'
-              }}>Repertório Ativo</h2>
+                }}>Repertório Ativo</h2>
             </div>
 
             {activeRepertorio ? (
@@ -286,8 +282,8 @@ const AdminRepertorio = () => {
                 }}>
                   <div style={{ width: '24px', height: '24px', color: '#D4AF37' }}><Icons.ListMusic /></div>
                 </div>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '15px', margin: '0 0 4px', fontFamily: 'Outfit, sans-serif' }}>Nenhum repertório ativo</p>
-                <p style={{ color: 'var(--text-muted)', fontSize: '13px', margin: '0 0 20px', fontFamily: 'Outfit, sans-serif' }}>Crie um repertório para organizar as músicas da próxima apresentação</p>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '15px', margin: '0 0 4px', }}>Nenhum repertório ativo</p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '13px', margin: '0 0 20px', }}>Crie um repertório para organizar as músicas da próxima apresentação</p>
                 <button
                   onClick={openCreateModal}
                   className="btn-primary-hover"
@@ -300,8 +296,7 @@ const AdminRepertorio = () => {
                     cursor: 'pointer',
                     fontSize: '13px',
                     fontWeight: '600',
-                    fontFamily: 'Outfit, sans-serif'
-                  }}
+                    }}
                 >
                   Criar Repertório
                 </button>
@@ -326,16 +321,14 @@ const AdminRepertorio = () => {
                   margin: 0,
                   textTransform: 'uppercase',
                   letterSpacing: '0.5px',
-                  fontFamily: 'Outfit, sans-serif'
-                }}>Histórico</h2>
+                  }}>Histórico</h2>
                 <span style={{
                   fontSize: '11px',
                   color: 'var(--text-muted)',
                   background: 'var(--bg-secondary)',
                   padding: '2px 8px',
                   borderRadius: '10px',
-                  fontFamily: 'Outfit, sans-serif'
-                }}>{historico.length}</span>
+                  }}>{historico.length}</span>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -418,11 +411,10 @@ const AdminRepertorio = () => {
                     fontWeight: '600',
                     color: 'var(--text-primary)',
                     margin: 0,
-                    fontFamily: 'Outfit, sans-serif'
-                  }}>
+                    }}>
                     {editingRepertorio ? 'Editar Repertório' : 'Novo Repertório'}
                   </h3>
-                  <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '2px 0 0', fontFamily: 'Outfit, sans-serif' }}>
+                  <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '2px 0 0', }}>
                     {editingRepertorio ? 'Altere as informações abaixo' : 'Preencha as informações do repertório'}
                   </p>
                 </div>
@@ -454,7 +446,7 @@ const AdminRepertorio = () => {
             <div style={{ padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
               {/* Nome */}
               <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '8px', fontFamily: 'Outfit, sans-serif' }}>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '8px', }}>
                   Nome do Repertório
                 </label>
                 <input
@@ -471,7 +463,6 @@ const AdminRepertorio = () => {
                     background: 'var(--bg-primary)',
                     color: 'var(--text-primary)',
                     fontSize: '15px',
-                    fontFamily: 'Outfit, sans-serif',
                     outline: 'none',
                     transition: 'border-color 0.2s, box-shadow 0.2s',
                     boxSizing: 'border-box'
@@ -489,7 +480,7 @@ const AdminRepertorio = () => {
 
               {/* Descrição */}
               <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '8px', fontFamily: 'Outfit, sans-serif' }}>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '8px', }}>
                   Descrição
                 </label>
                 <textarea
@@ -505,7 +496,6 @@ const AdminRepertorio = () => {
                     background: 'var(--bg-primary)',
                     color: 'var(--text-primary)',
                     fontSize: '15px',
-                    fontFamily: 'Outfit, sans-serif',
                     outline: 'none',
                     resize: 'vertical',
                     transition: 'border-color 0.2s, box-shadow 0.2s',
@@ -524,7 +514,7 @@ const AdminRepertorio = () => {
 
               {/* Data */}
               <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '8px', fontFamily: 'Outfit, sans-serif' }}>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '8px', }}>
                   Data da Apresentação
                 </label>
                 <input
@@ -539,7 +529,6 @@ const AdminRepertorio = () => {
                     background: 'var(--bg-primary)',
                     color: 'var(--text-primary)',
                     fontSize: '15px',
-                    fontFamily: 'Outfit, sans-serif',
                     outline: 'none',
                     transition: 'border-color 0.2s, box-shadow 0.2s',
                     boxSizing: 'border-box'
@@ -596,10 +585,10 @@ const AdminRepertorio = () => {
                   }} />
                 </div>
                 <div>
-                  <span style={{ fontSize: '14px', color: 'var(--text-primary)', fontWeight: '500', fontFamily: 'Outfit, sans-serif' }}>
+                  <span style={{ fontSize: '14px', color: 'var(--text-primary)', fontWeight: '500', }}>
                     Definir como repertório ativo
                   </span>
-                  <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '2px 0 0', fontFamily: 'Outfit, sans-serif' }}>
+                  <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '2px 0 0', }}>
                     {form.ativo ? 'O repertório anterior será arquivado' : 'Ativar este repertório para exibição'}
                   </p>
                 </div>
@@ -624,7 +613,6 @@ const AdminRepertorio = () => {
                   color: 'var(--text-secondary)',
                   fontSize: '15px',
                   fontWeight: '600',
-                  fontFamily: 'Outfit, sans-serif',
                   cursor: 'pointer',
                   transition: 'all 0.2s'
                 }}
@@ -646,7 +634,6 @@ const AdminRepertorio = () => {
                   color: '#fff',
                   fontSize: '15px',
                   fontWeight: '600',
-                  fontFamily: 'Outfit, sans-serif',
                   cursor: saving || !form.nome.trim() ? 'not-allowed' : 'pointer',
                   display: 'flex',
                   alignItems: 'center',
@@ -756,7 +743,10 @@ const RepertorioCard = ({
   const formatDate = (dateStr) => {
     if (!dateStr) return null;
     try {
-      return new Date(dateStr).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      // Evita bug de fuso horário: new Date("2026-03-07") interpreta como UTC,
+      // que no Brasil (UTC-3) vira dia 06. Splitando a string evita isso.
+      const [year, month, day] = dateStr.split('T')[0].split('-');
+      return `${day}/${month}/${year}`;
     } catch { return dateStr; }
   };
 
@@ -799,7 +789,7 @@ const RepertorioCard = ({
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <h3 style={{
                   fontSize: '15px', fontWeight: '600', color: 'var(--text-primary)', margin: 0,
-                  fontFamily: 'Outfit, sans-serif', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
+                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
                 }}>
                   {repertorio.nome}
                 </h3>
@@ -808,7 +798,7 @@ const RepertorioCard = ({
                     padding: '2px 8px', borderRadius: '6px',
                     background: 'rgba(46, 204, 113, 0.15)', color: '#2ecc71',
                     fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px',
-                    fontFamily: 'Outfit, sans-serif', flexShrink: 0
+                    flexShrink: 0
                   }}>
                     Ativo
                   </span>
@@ -816,8 +806,7 @@ const RepertorioCard = ({
               </div>
               <div style={{
                 display: 'flex', alignItems: 'center', gap: '14px', marginTop: '4px',
-                fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'Outfit, sans-serif'
-              }}>
+                fontSize: '12px', color: 'var(--text-muted)', }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                   <div style={{ width: '12px', height: '12px' }}><Icons.Music /></div>
                   {repertorio.total_partituras || 0} músicas
@@ -922,8 +911,7 @@ const RepertorioCard = ({
             fontSize: '11px', fontWeight: '600', color: 'var(--text-muted)',
             textTransform: 'uppercase', letterSpacing: '0.5px',
             marginTop: '16px', marginBottom: '12px',
-            fontFamily: 'Outfit, sans-serif'
-          }}>
+            }}>
             Músicas do repertório
           </p>
           {!partituras ? (
@@ -934,7 +922,7 @@ const RepertorioCard = ({
               </svg>
             </div>
           ) : partituras.length === 0 ? (
-            <p style={{ color: 'var(--text-muted)', fontSize: '13px', fontFamily: 'Outfit, sans-serif', textAlign: 'center', padding: '16px' }}>
+            <p style={{ color: 'var(--text-muted)', fontSize: '13px', textAlign: 'center', padding: '16px' }}>
               Nenhuma música adicionada
             </p>
           ) : (
@@ -981,8 +969,7 @@ const RepertorioCard = ({
                     background: 'linear-gradient(145deg, rgba(212, 175, 55, 0.2) 0%, rgba(212, 175, 55, 0.1) 100%)',
                     color: '#D4AF37', fontSize: '11px', fontWeight: '700',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    flexShrink: 0, fontFamily: 'Outfit, sans-serif'
-                  }}>
+                    flexShrink: 0, }}>
                     {i + 1}
                   </span>
 
@@ -990,8 +977,7 @@ const RepertorioCard = ({
                   <span style={{
                     fontSize: '13px', color: 'var(--text-primary)', fontWeight: '500',
                     whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                    flex: 1, fontFamily: 'Outfit, sans-serif'
-                  }}>
+                    flex: 1, }}>
                     {p.titulo}
                   </span>
                 </div>

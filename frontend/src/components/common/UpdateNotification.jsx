@@ -146,8 +146,7 @@ const UpdateNotification = () => {
               fontSize: '13px',
               fontWeight: '600',
               color: 'var(--text-primary)',
-              fontFamily: 'Outfit, sans-serif'
-            }}
+              }}
           >
             Nova versao disponivel
           </p>
@@ -156,8 +155,7 @@ const UpdateNotification = () => {
               margin: '2px 0 0',
               fontSize: '11px',
               color: 'var(--text-muted)',
-              fontFamily: 'Outfit, sans-serif'
-            }}
+              }}
           >
             v{CURRENT_VERSION} → v{newVersion}
           </p>
@@ -174,7 +172,6 @@ const UpdateNotification = () => {
             color: '#fff',
             fontSize: '12px',
             fontWeight: '600',
-            fontFamily: 'Outfit, sans-serif',
             cursor: 'pointer',
             whiteSpace: 'nowrap',
             transition: 'transform 0.2s, box-shadow 0.2s'

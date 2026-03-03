@@ -31,7 +31,6 @@ const LoginHeader = () => {
       </div>
 
       <h1 style={{
-        fontFamily: 'Outfit, sans-serif',
         fontSize: '24px',
         fontWeight: '700',
         color: '#F4E4BC',
@@ -41,7 +40,6 @@ const LoginHeader = () => {
       </h1>
 
       <p style={{
-        fontFamily: 'Outfit, sans-serif',
         fontSize: '14px',
         color: 'rgba(244, 228, 188, 0.6)'
       }}>
@@ -67,7 +65,6 @@ const LoginHeader = () => {
           animation: 'pulse 2s ease-in-out infinite'
         }} />
         <span style={{
-          fontFamily: 'Outfit, sans-serif',
           fontSize: '11px',
           fontWeight: '600',
           color: '#22C55E',

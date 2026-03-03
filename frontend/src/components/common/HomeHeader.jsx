@@ -35,7 +35,6 @@ const HomeHeader = ({ userName, instrument, actions }) => {
             <LogoBadge size={38} variant="dark" />
             <div>
               <h2 style={{
-                fontFamily: 'Outfit, sans-serif',
                 fontSize: '14px',
                 fontWeight: '700',
                 color: '#F4E4BC',
@@ -45,7 +44,6 @@ const HomeHeader = ({ userName, instrument, actions }) => {
                 S.F. 25 de Março
               </h2>
               <p style={{
-                fontFamily: 'Outfit, sans-serif',
                 fontSize: '9px',
                 fontWeight: '600',
                 color: '#D4AF37',
@@ -72,7 +70,6 @@ const HomeHeader = ({ userName, instrument, actions }) => {
         <div style={{ flex: 1 }}>
           {/* Saudação pequena */}
           <p style={{
-            fontFamily: 'Outfit, sans-serif',
             fontSize: '14px',
             color: isDark ? 'rgba(255,255,255,0.7)' : 'rgba(26,26,26,0.6)',
             marginBottom: '2px'
@@ -89,7 +86,6 @@ const HomeHeader = ({ userName, instrument, actions }) => {
           }}>
             {/* Nome com destaque */}
             <h1 style={{
-              fontFamily: 'Outfit, sans-serif',
               fontSize: '28px',
               fontWeight: '800',
               letterSpacing: '-0.5px',
@@ -112,7 +108,6 @@ const HomeHeader = ({ userName, instrument, actions }) => {
               background: '#D4AF37',
               color: '#3D1518',
               fontSize: '10px',
-              fontFamily: 'Outfit, sans-serif',
               fontWeight: '700',
               padding: '5px 10px',
               borderRadius: '8px',
@@ -136,7 +131,6 @@ const HomeHeader = ({ userName, instrument, actions }) => {
                 background: '#D4AF37',
                 color: '#3D1518',
                 fontSize: '10px',
-                fontFamily: 'Outfit, sans-serif',
                 fontWeight: '700',
                 padding: '5px 10px',
                 borderRadius: '8px',
@@ -164,7 +158,6 @@ const HomeHeader = ({ userName, instrument, actions }) => {
                   animation: 'pulse 2s ease-in-out infinite'
                 }} />
                 <span style={{
-                  fontFamily: 'Outfit, sans-serif',
                   fontSize: '14px',
                   fontWeight: '700',
                   color: '#22C55E'
@@ -180,7 +173,6 @@ const HomeHeader = ({ userName, instrument, actions }) => {
                 marginTop: '12px'
               }}>
                 <span style={{
-                  fontFamily: 'Outfit, sans-serif',
                   fontSize: '13px',
                   fontWeight: '700',
                   color: 'var(--text-muted)'
@@ -197,7 +189,6 @@ const HomeHeader = ({ userName, instrument, actions }) => {
                 }}>
                   {rehearsalInfo.days > 0 && (
                     <span style={{
-                      fontFamily: 'Outfit, sans-serif',
                       fontSize: '14px',
                       fontWeight: '800',
                       color: '#D4AF37'
@@ -206,7 +197,6 @@ const HomeHeader = ({ userName, instrument, actions }) => {
                     </span>
                   )}
                   <span style={{
-                    fontFamily: 'Outfit, sans-serif',
                     fontSize: '14px',
                     fontWeight: '800',
                     color: '#D4AF37'
@@ -214,7 +204,6 @@ const HomeHeader = ({ userName, instrument, actions }) => {
                     {rehearsalInfo.hours}h{rehearsalInfo.minutes > 0 ? ` ${rehearsalInfo.minutes}m` : ''}
                   </span>
                   <span style={{
-                    fontFamily: 'Outfit, sans-serif',
                     fontSize: '12px',
                     color: 'var(--text-muted)',
                     fontWeight: '500'

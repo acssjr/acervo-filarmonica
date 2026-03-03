@@ -57,7 +57,6 @@ const ShareCartFAB = () => {
         color: '#FFFFFF',
         fontSize: '12px',
         fontWeight: '700',
-        fontFamily: 'Outfit, sans-serif',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',

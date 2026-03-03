@@ -293,7 +293,6 @@ const PDFViewerModal = ({
               <polyline points="14 2 14 8 20 8"/>
             </svg>
             <span style={{
-              fontFamily: 'Outfit, sans-serif',
               fontSize: '15px',
               fontWeight: '600',
               color: '#fff',
@@ -345,7 +344,6 @@ const PDFViewerModal = ({
             </button>
 
             <span style={{
-              fontFamily: 'Outfit, sans-serif',
               fontSize: '13px',
               color: '#fff',
               padding: '0 8px',
@@ -430,7 +428,6 @@ const PDFViewerModal = ({
                 border: 'none',
                 background: 'transparent',
                 color: '#fff',
-                fontFamily: 'Outfit, sans-serif',
                 fontSize: '12px',
                 fontWeight: '500',
                 cursor: 'pointer',
@@ -487,7 +484,6 @@ const PDFViewerModal = ({
               border: 'none',
               background: 'linear-gradient(135deg, #D4AF37 0%, #B8860B 100%)',
               color: '#fff',
-              fontFamily: 'Outfit, sans-serif',
               fontSize: '13px',
               fontWeight: '500',
               cursor: 'pointer',
@@ -571,7 +567,6 @@ const PDFViewerModal = ({
               <path d="M12 2a10 10 0 0 1 10 10" strokeLinecap="round"/>
             </svg>
             <span style={{
-              fontFamily: 'Outfit, sans-serif',
               fontSize: '14px',
               color: 'rgba(255, 255, 255, 0.6)'
             }}>
@@ -595,7 +590,6 @@ const PDFViewerModal = ({
               <line x1="9" y1="9" x2="15" y2="15"/>
             </svg>
             <span style={{
-              fontFamily: 'Outfit, sans-serif',
               fontSize: '14px',
               color: '#e74c3c'
             }}>
