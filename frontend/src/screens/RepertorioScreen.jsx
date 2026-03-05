@@ -12,6 +12,7 @@ import Storage from '@services/storage';
 import { Icons } from '@constants/icons';
 import Header from '@components/common/Header';
 import EmptyState from '@components/common/EmptyState';
+import CompartilharCardModal from '@components/CompartilharCardModal';
 
 // ============ SKELETON LOADING ============
 const RepertorioSkeleton = () => (
@@ -690,6 +691,7 @@ const RepertorioScreen = () => {
   const { user } = useAuth();
   const { showToast, setSelectedSheet } = useUI();
   const { favoritesSet, toggleFavorite, categoriesMap } = useData();
+  const [showCardModal, setShowCardModal] = useState(false);
 
   const [repertorio, setRepertorio] = useState(null);
   const [repertorioInstrumentos, setRepertorioInstrumentos] = useState([]);
@@ -967,7 +969,7 @@ const RepertorioScreen = () => {
         })()}
 
         {/* Botão centralizado */}
-        <div style={{ display: 'flex', justifyContent: 'center' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', flexWrap: 'wrap' }}>
           <button
             onClick={() => setShowDownloadModal(true)}
             disabled={!repertorio.partituras?.length}
@@ -990,6 +992,35 @@ const RepertorioScreen = () => {
             <div style={{ width: '18px', height: '18px' }}><Icons.Archive /></div>
             Baixar Tudo
           </button>
+          {user?.admin && (
+          <button
+            onClick={() => setShowCardModal(true)}
+            disabled={!repertorio.partituras?.length}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '12px 24px',
+              borderRadius: '12px',
+              background: 'linear-gradient(135deg, #722F37 0%, #5C1A1B 100%)',
+              color: '#F4E4BC',
+              border: '1px solid rgba(212,175,55,0.2)',
+              fontSize: '14px',
+              fontWeight: '700',
+              cursor: 'pointer',
+              opacity: repertorio.partituras?.length ? 1 : 0.5,
+              boxShadow: '0 4px 12px rgba(114,47,55,0.3)',
+              fontFamily: 'inherit',
+              transition: 'opacity 0.2s',
+            }}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/>
+              <line x1="4" y1="22" x2="4" y2="15"/>
+            </svg>
+            Compartilhar Repertório
+          </button>
+          )}
         </div>
       </div>
 
@@ -1136,6 +1167,13 @@ const RepertorioScreen = () => {
             );
           })}
         </div>
+      )}
+
+      {showCardModal && (
+        <CompartilharCardModal
+          repertorio={repertorio}
+          onClose={() => setShowCardModal(false)}
+        />
       )}
 
       {/* Modal de Download */}
