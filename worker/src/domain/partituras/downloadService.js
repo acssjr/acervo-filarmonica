@@ -128,20 +128,27 @@ export async function downloadParte(parteId, request, env, user) {
       }
     }
 
-    // PostHog: capture individual parte download event
-    const posthog = createPostHogClient(env);
-    if (posthog) {
-      posthog.capture({
-        distinctId: `user_${user.id}`,
-        event: 'parte_downloaded',
-        properties: {
-          parte_id: parteId,
-          partitura_id: parte.partitura_id,
-          partitura_titulo: parte.partitura_titulo,
-          instrumento: parte.instrumento,
-        },
-      });
-      await shutdownPostHog(posthog);
+    // PostHog: capture individual parte download event (skip admin previews)
+    if (!isAdmin) {
+      try {
+        const posthog = createPostHogClient(env);
+        if (posthog) {
+          posthog.capture({
+            distinctId: `user_${user.id}`,
+            event: 'parte_downloaded',
+            properties: {
+              parte_id: parteId,
+              partitura_id: parte.partitura_id,
+              partitura_titulo: parte.partitura_titulo,
+              instrumento: parte.instrumento,
+              is_view: isView,
+            },
+          });
+          await shutdownPostHog(posthog);
+        }
+      } catch (e) {
+        console.error('PostHog capture failed:', e);
+      }
     }
 
     const nomeArquivo = `${parte.partitura_titulo} - ${parte.instrumento}.pdf`;

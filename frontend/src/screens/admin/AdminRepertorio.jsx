@@ -106,7 +106,15 @@ const AdminRepertorio = () => {
         const novo = await API.createRepertorio(form);
         const id = novo?.id || novo?.repertorio?.id;
         if (id && selectedIds.length > 0) {
-          await Promise.all(selectedIds.map(pid => API.addPartituraToRepertorio(id, pid)));
+          const results = await Promise.allSettled(selectedIds.map(pid => API.addPartituraToRepertorio(id, pid)));
+          const added = results.filter(r => r.status === 'fulfilled').length;
+          const failed = results.filter(r => r.status === 'rejected').length;
+          if (failed > 0) {
+            showToast(`Repertório criado. ${added} músicas adicionadas, ${failed} falharam.`, 'warning');
+            closeModal();
+            loadRepertorios();
+            return;
+          }
         }
         showToast(`Repertório criado com ${selectedIds.length} música${selectedIds.length !== 1 ? 's' : ''}!`);
       }
