@@ -20,6 +20,12 @@ const AdminRepertorio = () => {
   const [expandedId, setExpandedId] = useState(null);
   const [expandedPartituras, setExpandedPartituras] = useState({});
 
+  // Seleção de partituras no modal de criação
+  const [allPartituras, setAllPartituras] = useState([]);
+  const [loadingPartituras, setLoadingPartituras] = useState(false);
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [partituraSearch, setPartituraSearch] = useState('');
+
   const handleGenerateCard = async (rep) => {
     let partituras = expandedPartituras[rep.id];
     if (!partituras) {
@@ -49,10 +55,20 @@ const AdminRepertorio = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- carrega apenas na montagem
   }, []);
 
-  const openCreateModal = () => {
+  const openCreateModal = async () => {
     setEditingRepertorio(null);
     setForm({ nome: '', descricao: '', data_apresentacao: '', ativo: true });
+    setSelectedIds([]);
+    setPartituraSearch('');
     setShowModal(true);
+    setLoadingPartituras(true);
+    try {
+      const data = await API.getPartituras();
+      setAllPartituras(data?.partituras || data || []);
+    } catch {
+      setAllPartituras([]);
+    }
+    setLoadingPartituras(false);
   };
 
   const openEditModal = (rep) => {
@@ -70,6 +86,9 @@ const AdminRepertorio = () => {
     setShowModal(false);
     setEditingRepertorio(null);
     setForm({ nome: '', descricao: '', data_apresentacao: '', ativo: false });
+    setSelectedIds([]);
+    setPartituraSearch('');
+    setAllPartituras([]);
   };
 
   const handleSave = async () => {
@@ -84,8 +103,12 @@ const AdminRepertorio = () => {
         await API.updateRepertorio(editingRepertorio.id, form);
         showToast('Repertório atualizado!');
       } else {
-        await API.createRepertorio(form);
-        showToast('Repertório criado!');
+        const novo = await API.createRepertorio(form);
+        const id = novo?.id || novo?.repertorio?.id;
+        if (id && selectedIds.length > 0) {
+          await Promise.all(selectedIds.map(pid => API.addPartituraToRepertorio(id, pid)));
+        }
+        showToast(`Repertório criado com ${selectedIds.length} música${selectedIds.length !== 1 ? 's' : ''}!`);
       }
       closeModal();
       loadRepertorios();
@@ -124,6 +147,17 @@ const AdminRepertorio = () => {
       loadRepertorios();
     } catch (err) {
       showToast(err.message || 'Erro ao ativar', 'error');
+    }
+  };
+
+  const handleDeactivate = async (rep) => {
+    if (!window.confirm('Desativar este repertório?')) return;
+    try {
+      await API.updateRepertorio(rep.id, { ...rep, ativo: false });
+      showToast('Repertório desativado!');
+      loadRepertorios();
+    } catch (err) {
+      showToast(err.message || 'Erro ao desativar', 'error');
     }
   };
 
@@ -273,8 +307,10 @@ const AdminRepertorio = () => {
                 onEdit={() => openEditModal(activeRepertorio)}
                 onDelete={() => handleDelete(activeRepertorio.id)}
                 onDuplicate={() => handleDuplicate(activeRepertorio.id)}
+                onDeactivate={() => handleDeactivate(activeRepertorio)}
                 onToggleExpand={() => toggleExpand(activeRepertorio)}
                 onReorder={(from, to) => handleMovePartitura(activeRepertorio.id, from, to)}
+                onGenerateCard={() => handleGenerateCard(activeRepertorio)}
               />
             ) : (
               <div style={{
@@ -368,319 +404,32 @@ const AdminRepertorio = () => {
         </>
       )}
 
-      {/* Modal — Criar/Editar Repertório */}
-      {showModal && (
-        <>
-          {/* Backdrop */}
-          <div
-            onClick={closeModal}
-            style={{
-              position: 'fixed',
-              inset: 0,
-              background: 'rgba(0, 0, 0, 0.7)',
-              backdropFilter: 'blur(4px)',
-              zIndex: 1000,
-              animation: 'fadeIn 0.2s ease'
-            }}
-          />
-          {/* Modal */}
-          <div style={{
-            position: 'fixed',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            width: '100%',
-            maxWidth: '480px',
-            background: 'var(--bg-card)',
-            borderRadius: '20px',
-            boxShadow: '0 24px 80px rgba(0, 0, 0, 0.5)',
-            zIndex: 1001,
-            overflow: 'hidden',
-            animation: 'scaleIn 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
-            border: '1px solid rgba(212, 175, 55, 0.15)'
-          }}>
-            {/* Header do Modal */}
-            <div style={{
-              padding: '24px 28px 20px',
-              borderBottom: '1px solid var(--border)',
-              background: 'var(--bg-secondary)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <div style={{
-                  width: '40px',
-                  height: '40px',
-                  borderRadius: '12px',
-                  background: 'linear-gradient(145deg, rgba(212, 175, 55, 0.15) 0%, rgba(212, 175, 55, 0.05) 100%)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  border: '1px solid rgba(212, 175, 55, 0.25)'
-                }}>
-                  <div style={{ width: '20px', height: '20px', color: '#D4AF37' }}><Icons.ListMusic /></div>
-                </div>
-                <div>
-                  <h3 style={{
-                    fontSize: '17px',
-                    fontWeight: '600',
-                    color: 'var(--text-primary)',
-                    margin: 0,
-                    }}>
-                    {editingRepertorio ? 'Editar Repertório' : 'Novo Repertório'}
-                  </h3>
-                  <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '2px 0 0', }}>
-                    {editingRepertorio ? 'Altere as informações abaixo' : 'Preencha as informações do repertório'}
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={closeModal}
-                style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '50%',
-                  background: 'var(--bg-primary)',
-                  border: '1px solid var(--border)',
-                  color: 'var(--text-secondary)',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'all 0.2s'
-                }}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="18" y1="6" x2="6" y2="18" />
-                  <line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
-              </button>
-            </div>
+      {/* Modal — Editar Repertório (simples) */}
+      {showModal && editingRepertorio && (
+        <ModalSimples
+          form={form}
+          setForm={setForm}
+          saving={saving}
+          onClose={closeModal}
+          onSave={handleSave}
+        />
+      )}
 
-            {/* Corpo */}
-            <div style={{ padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              {/* Nome */}
-              <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '8px', }}>
-                  Nome do Repertório
-                </label>
-                <input
-                  type="text"
-                  value={form.nome}
-                  onChange={(e) => setForm({ ...form, nome: e.target.value })}
-                  placeholder="Ex: Apresentação 7 de Setembro"
-                  autoFocus
-                  style={{
-                    width: '100%',
-                    padding: '14px 16px',
-                    borderRadius: '12px',
-                    border: '1.5px solid var(--border)',
-                    background: 'var(--bg-primary)',
-                    color: 'var(--text-primary)',
-                    fontSize: '15px',
-                    outline: 'none',
-                    transition: 'border-color 0.2s, box-shadow 0.2s',
-                    boxSizing: 'border-box'
-                  }}
-                  onFocus={(e) => {
-                    e.target.style.borderColor = '#D4AF37';
-                    e.target.style.boxShadow = '0 0 0 3px rgba(212, 175, 55, 0.15)';
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.borderColor = 'var(--border)';
-                    e.target.style.boxShadow = 'none';
-                  }}
-                />
-              </div>
-
-              {/* Descrição */}
-              <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '8px', }}>
-                  Descrição
-                </label>
-                <textarea
-                  value={form.descricao}
-                  onChange={(e) => setForm({ ...form, descricao: e.target.value })}
-                  placeholder="Descrição opcional..."
-                  rows={3}
-                  style={{
-                    width: '100%',
-                    padding: '14px 16px',
-                    borderRadius: '12px',
-                    border: '1.5px solid var(--border)',
-                    background: 'var(--bg-primary)',
-                    color: 'var(--text-primary)',
-                    fontSize: '15px',
-                    outline: 'none',
-                    resize: 'vertical',
-                    transition: 'border-color 0.2s, box-shadow 0.2s',
-                    boxSizing: 'border-box'
-                  }}
-                  onFocus={(e) => {
-                    e.target.style.borderColor = '#D4AF37';
-                    e.target.style.boxShadow = '0 0 0 3px rgba(212, 175, 55, 0.15)';
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.borderColor = 'var(--border)';
-                    e.target.style.boxShadow = 'none';
-                  }}
-                />
-              </div>
-
-              {/* Data */}
-              <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '8px', }}>
-                  Data da Apresentação
-                </label>
-                <input
-                  type="date"
-                  value={form.data_apresentacao}
-                  onChange={(e) => setForm({ ...form, data_apresentacao: e.target.value })}
-                  style={{
-                    width: '100%',
-                    padding: '14px 16px',
-                    borderRadius: '12px',
-                    border: '1.5px solid var(--border)',
-                    background: 'var(--bg-primary)',
-                    color: 'var(--text-primary)',
-                    fontSize: '15px',
-                    outline: 'none',
-                    transition: 'border-color 0.2s, box-shadow 0.2s',
-                    boxSizing: 'border-box'
-                  }}
-                  onFocus={(e) => {
-                    e.target.style.borderColor = '#D4AF37';
-                    e.target.style.boxShadow = '0 0 0 3px rgba(212, 175, 55, 0.15)';
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.borderColor = 'var(--border)';
-                    e.target.style.boxShadow = 'none';
-                  }}
-                />
-              </div>
-
-              {/* Toggle Ativo */}
-              <div
-                onClick={() => setForm({ ...form, ativo: !form.ativo })}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '14px',
-                  padding: '14px 16px',
-                  borderRadius: '12px',
-                  background: form.ativo ? 'rgba(46, 204, 113, 0.08)' : 'var(--bg-primary)',
-                  border: form.ativo ? '1.5px solid rgba(46, 204, 113, 0.3)' : '1.5px solid var(--border)',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                {/* Custom toggle */}
-                <div style={{
-                  width: '44px',
-                  height: '24px',
-                  borderRadius: '12px',
-                  background: form.ativo
-                    ? 'linear-gradient(135deg, #2ecc71 0%, #27ae60 100%)'
-                    : 'var(--bg-secondary)',
-                  border: form.ativo ? 'none' : '1px solid var(--border)',
-                  position: 'relative',
-                  transition: 'all 0.3s ease',
-                  flexShrink: 0
-                }}>
-                  <div style={{
-                    width: '20px',
-                    height: '20px',
-                    borderRadius: '50%',
-                    background: '#fff',
-                    position: 'absolute',
-                    top: '2px',
-                    left: form.ativo ? '22px' : '2px',
-                    transition: 'left 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                    boxShadow: '0 1px 4px rgba(0,0,0,0.2)'
-                  }} />
-                </div>
-                <div>
-                  <span style={{ fontSize: '14px', color: 'var(--text-primary)', fontWeight: '500', }}>
-                    Definir como repertório ativo
-                  </span>
-                  <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '2px 0 0', }}>
-                    {form.ativo ? 'O repertório anterior será arquivado' : 'Ativar este repertório para exibição'}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div style={{
-              padding: '16px 28px 24px',
-              display: 'flex',
-              gap: '12px'
-            }}>
-              <button
-                onClick={closeModal}
-                className="btn-ghost-hover"
-                style={{
-                  flex: 1,
-                  padding: '14px 20px',
-                  borderRadius: '12px',
-                  border: '1.5px solid var(--border)',
-                  background: 'transparent',
-                  color: 'var(--text-secondary)',
-                  fontSize: '15px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s'
-                }}
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleSave}
-                disabled={saving || !form.nome.trim()}
-                className="btn-primary-hover"
-                style={{
-                  flex: 1,
-                  padding: '14px 20px',
-                  borderRadius: '12px',
-                  border: 'none',
-                  background: saving || !form.nome.trim()
-                    ? 'linear-gradient(135deg, rgba(212, 175, 55, 0.5) 0%, rgba(184, 134, 11, 0.5) 100%)'
-                    : 'linear-gradient(135deg, #D4AF37 0%, #B8860B 100%)',
-                  color: '#fff',
-                  fontSize: '15px',
-                  fontWeight: '600',
-                  cursor: saving || !form.nome.trim() ? 'not-allowed' : 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  transition: 'all 0.2s',
-                  boxShadow: saving || !form.nome.trim() ? 'none' : '0 4px 12px rgba(212, 175, 55, 0.3)'
-                }}
-              >
-                {saving ? (
-                  <>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: 'spin 1s linear infinite' }}>
-                      <circle cx="12" cy="12" r="10" strokeOpacity="0.25" />
-                      <path d="M12 2a10 10 0 0 1 10 10" strokeLinecap="round" />
-                    </svg>
-                    Salvando...
-                  </>
-                ) : (
-                  <>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-                      <polyline points="17 21 17 13 7 13 7 21" />
-                      <polyline points="7 3 7 8 15 8" />
-                    </svg>
-                    {editingRepertorio ? 'Salvar Alterações' : 'Criar Repertório'}
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </>
+      {/* Modal — Criar Repertório (com seleção de músicas) */}
+      {showModal && !editingRepertorio && (
+        <ModalCriar
+          form={form}
+          setForm={setForm}
+          saving={saving}
+          allPartituras={allPartituras}
+          loadingPartituras={loadingPartituras}
+          selectedIds={selectedIds}
+          setSelectedIds={setSelectedIds}
+          partituraSearch={partituraSearch}
+          setPartituraSearch={setPartituraSearch}
+          onClose={closeModal}
+          onSave={handleSave}
+        />
       )}
 
       {/* Estilos */}
@@ -727,6 +476,7 @@ const RepertorioCard = ({
   onDelete,
   onDuplicate,
   onActivate,
+  onDeactivate,
   onToggleExpand,
   onReorder,
   onGenerateCard,
@@ -862,6 +612,23 @@ const RepertorioCard = ({
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="20 6 9 17 4 12" />
+              </svg>
+            </button>
+          )}
+          {isActive && onDeactivate && (
+            <button
+              onClick={onDeactivate}
+              title="Desativar repertório"
+              style={{
+                width: '34px', height: '34px', borderRadius: '10px',
+                background: 'rgba(243, 156, 18, 0.1)', border: '1px solid rgba(243, 156, 18, 0.3)',
+                color: '#f39c12', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s'
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="6" y="4" width="4" height="16" />
+                <rect x="14" y="4" width="4" height="16" />
               </svg>
             </button>
           )}
@@ -1028,6 +795,409 @@ const RepertorioCard = ({
         </div>
       )}
     </div>
+  );
+};
+
+// ===== Componentes de Modal =====
+
+const inputStyle = {
+  width: '100%',
+  padding: '12px 14px',
+  borderRadius: '10px',
+  border: '1.5px solid var(--border)',
+  background: 'var(--bg-primary)',
+  color: 'var(--text-primary)',
+  fontSize: '14px',
+  outline: 'none',
+  transition: 'border-color 0.2s, box-shadow 0.2s',
+  boxSizing: 'border-box'
+};
+
+const focusInput = (e) => {
+  e.target.style.borderColor = '#D4AF37';
+  e.target.style.boxShadow = '0 0 0 3px rgba(212, 175, 55, 0.15)';
+};
+const blurInput = (e) => {
+  e.target.style.borderColor = 'var(--border)';
+  e.target.style.boxShadow = 'none';
+};
+
+const ModalBackdrop = ({ onClose }) => (
+  <div onClick={onClose} style={{
+    position: 'fixed', inset: 0,
+    background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(4px)',
+    zIndex: 1000, animation: 'fadeIn 0.2s ease'
+  }} />
+);
+
+const ModalHeader = ({ title, subtitle, onClose }) => (
+  <div style={{
+    padding: '20px 24px', borderBottom: '1px solid var(--border)',
+    background: 'var(--bg-secondary)',
+    display: 'flex', alignItems: 'center', justifyContent: 'space-between'
+  }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+      <div style={{
+        width: '38px', height: '38px', borderRadius: '10px',
+        background: 'linear-gradient(145deg, rgba(212,175,55,0.15) 0%, rgba(212,175,55,0.05) 100%)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        border: '1px solid rgba(212,175,55,0.25)', flexShrink: 0
+      }}>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
+        </svg>
+      </div>
+      <div>
+        <h3 style={{ fontSize: '16px', fontWeight: '600', color: 'var(--text-primary)', margin: 0 }}>{title}</h3>
+        <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '2px 0 0' }}>{subtitle}</p>
+      </div>
+    </div>
+    <button onClick={onClose} style={{
+      width: '30px', height: '30px', borderRadius: '50%',
+      background: 'var(--bg-primary)', border: '1px solid var(--border)',
+      color: 'var(--text-muted)', cursor: 'pointer',
+      display: 'flex', alignItems: 'center', justifyContent: 'center'
+    }}>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+  </div>
+);
+
+const ActiveToggle = ({ value, onChange }) => (
+  <div onClick={onChange} style={{
+    display: 'flex', alignItems: 'center', gap: '12px',
+    padding: '12px 14px', borderRadius: '10px', cursor: 'pointer',
+    background: value ? 'rgba(46,204,113,0.08)' : 'var(--bg-primary)',
+    border: value ? '1.5px solid rgba(46,204,113,0.3)' : '1.5px solid var(--border)',
+    transition: 'all 0.2s'
+  }}>
+    <div style={{
+      width: '40px', height: '22px', borderRadius: '11px', flexShrink: 0,
+      background: value ? 'linear-gradient(135deg,#2ecc71,#27ae60)' : 'var(--bg-secondary)',
+      border: value ? 'none' : '1px solid var(--border)',
+      position: 'relative', transition: 'all 0.3s'
+    }}>
+      <div style={{
+        width: '18px', height: '18px', borderRadius: '50%', background: '#fff',
+        position: 'absolute', top: '2px',
+        left: value ? '20px' : '2px',
+        transition: 'left 0.3s cubic-bezier(0.4,0,0.2,1)',
+        boxShadow: '0 1px 4px rgba(0,0,0,0.2)'
+      }} />
+    </div>
+    <div>
+      <span style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: '500' }}>
+        Definir como repertório ativo
+      </span>
+      <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '1px 0 0' }}>
+        {value ? 'O repertório anterior será arquivado' : 'Ativar para exibição imediata'}
+      </p>
+    </div>
+  </div>
+);
+
+const SaveButton = ({ saving, disabled, onClick, label }) => (
+  <button onClick={onClick} disabled={saving || disabled} style={{
+    flex: 2, padding: '13px 20px', borderRadius: '10px', border: 'none',
+    background: saving || disabled
+      ? 'linear-gradient(135deg,rgba(212,175,55,0.4),rgba(184,134,11,0.4))'
+      : 'linear-gradient(135deg,#D4AF37,#B8860B)',
+    color: '#fff', fontSize: '14px', fontWeight: '600',
+    cursor: saving || disabled ? 'not-allowed' : 'pointer',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+    boxShadow: saving || disabled ? 'none' : '0 4px 12px rgba(212,175,55,0.3)'
+  }}>
+    {saving ? (
+      <>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: 'spin 1s linear infinite' }}>
+          <circle cx="12" cy="12" r="10" strokeOpacity="0.25"/>
+          <path d="M12 2a10 10 0 0 1 10 10" strokeLinecap="round"/>
+        </svg>
+        Salvando...
+      </>
+    ) : label}
+  </button>
+);
+
+// Modal simples — só para EDITAR
+const ModalSimples = ({ form, setForm, saving, onClose, onSave }) => (
+  <>
+    <ModalBackdrop onClose={onClose} />
+    <div style={{
+      position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)',
+      width: '100%', maxWidth: '460px', background: 'var(--bg-card)',
+      borderRadius: '18px', boxShadow: '0 24px 80px rgba(0,0,0,0.5)',
+      zIndex: 1001, overflow: 'hidden',
+      animation: 'scaleIn 0.25s cubic-bezier(0.4,0,0.2,1)',
+      border: '1px solid rgba(212,175,55,0.15)'
+    }}>
+      <ModalHeader title="Editar Repertório" subtitle="Altere as informações abaixo" onClose={onClose} />
+      <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div>
+          <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '6px' }}>Nome</label>
+          <input type="text" value={form.nome} autoFocus
+            onChange={(e) => setForm({ ...form, nome: e.target.value })}
+            placeholder="Ex: Apresentação 7 de Setembro"
+            style={inputStyle} onFocus={focusInput} onBlur={blurInput} />
+        </div>
+        <div>
+          <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '6px' }}>Data da Apresentação</label>
+          <input type="date" value={form.data_apresentacao}
+            onChange={(e) => setForm({ ...form, data_apresentacao: e.target.value })}
+            style={inputStyle} onFocus={focusInput} onBlur={blurInput} />
+        </div>
+        <ActiveToggle value={form.ativo} onChange={() => setForm({ ...form, ativo: !form.ativo })} />
+      </div>
+      <div style={{ padding: '0 24px 20px', display: 'flex', gap: '10px' }}>
+        <button onClick={onClose} style={{
+          flex: 1, padding: '13px', borderRadius: '10px',
+          border: '1.5px solid var(--border)', background: 'transparent',
+          color: 'var(--text-secondary)', fontSize: '14px', fontWeight: '600', cursor: 'pointer'
+        }}>Cancelar</button>
+        <SaveButton saving={saving} disabled={!form.nome.trim()} onClick={onSave} label="Salvar Alterações" />
+      </div>
+    </div>
+  </>
+);
+
+// Modal de criação — com seleção de músicas
+const ModalCriar = ({
+  form, setForm, saving, allPartituras, loadingPartituras,
+  selectedIds, setSelectedIds, partituraSearch, setPartituraSearch,
+  onClose, onSave
+}) => {
+  const filtradas = allPartituras.filter(p =>
+    p.titulo?.toLowerCase().includes(partituraSearch.toLowerCase()) ||
+    p.compositor?.toLowerCase().includes(partituraSearch.toLowerCase())
+  );
+
+  const toggleSelect = (id) => {
+    setSelectedIds(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
+  };
+
+  const toggleAll = () => {
+    if (selectedIds.length === filtradas.length && filtradas.length > 0) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(filtradas.map(p => p.id));
+    }
+  };
+
+  return (
+    <>
+      <ModalBackdrop onClose={onClose} />
+      <style>{`
+        .modal-criar {
+          position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
+          width: calc(100% - 32px); max-width: 920px; height: 68vh; min-height: 480px;
+          background: var(--bg-card); border-radius: 18px;
+          box-shadow: 0 24px 80px rgba(0,0,0,0.5);
+          z-index: 1001; display: flex; flex-direction: column;
+          animation: scaleIn 0.25s cubic-bezier(0.4,0,0.2,1);
+          border: 1px solid rgba(212,175,55,0.15);
+        }
+        .modal-criar-body {
+          display: flex; flex: 1; overflow: hidden;
+        }
+        .modal-criar-info {
+          width: 300px; flex-shrink: 0; padding: 20px;
+          border-right: 1px solid var(--border);
+          display: flex; flex-direction: column; gap: 14px;
+          overflow-y: auto;
+        }
+        .modal-criar-lista {
+          flex: 1; display: flex; flex-direction: column; overflow: hidden;
+        }
+        @media (max-width: 600px) {
+          .modal-criar {
+            width: 100%; height: 100%; max-width: 100%;
+            border-radius: 0; top: 0; left: 0; transform: none;
+            min-height: unset;
+          }
+          .modal-criar-body {
+            flex-direction: column;
+          }
+          .modal-criar-info {
+            width: 100%; border-right: none;
+            border-bottom: 1px solid var(--border);
+            padding: 14px 16px; gap: 10px; flex-shrink: 0;
+          }
+          .modal-criar-info-row {
+            flex-direction: column !important;
+          }
+        }
+      `}</style>
+
+      <div className="modal-criar">
+        <ModalHeader title="Novo Repertório" subtitle="Defina as informações e selecione as músicas" onClose={onClose} />
+
+        <div className="modal-criar-body">
+          {/* Painel esquerdo — informações */}
+          <div className="modal-criar-info">
+            <div>
+              <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Nome *</label>
+              <input type="text" value={form.nome} autoFocus
+                onChange={(e) => setForm({ ...form, nome: e.target.value })}
+                placeholder="Ex: Apresentação 7 de Setembro"
+                style={inputStyle} onFocus={focusInput} onBlur={blurInput} />
+            </div>
+
+            <div className="modal-criar-info-row" style={{ display: 'flex', gap: '10px' }}>
+              <div style={{ flex: 1 }}>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Data</label>
+                <input type="date" value={form.data_apresentacao}
+                  onChange={(e) => setForm({ ...form, data_apresentacao: e.target.value })}
+                  style={inputStyle} onFocus={focusInput} onBlur={blurInput} />
+              </div>
+            </div>
+
+            <ActiveToggle value={form.ativo} onChange={() => setForm({ ...form, ativo: !form.ativo })} />
+
+            {/* Contador de selecionadas — fica no fundo */}
+            <div style={{ flex: 1 }} />
+            <div style={{
+              padding: '12px 14px', borderRadius: '10px',
+              background: selectedIds.length > 0 ? 'rgba(212,175,55,0.08)' : 'var(--bg-secondary)',
+              border: selectedIds.length > 0 ? '1px solid rgba(212,175,55,0.25)' : '1px solid var(--border)',
+              transition: 'all 0.2s'
+            }}>
+              <p style={{ margin: 0, fontSize: '13px', fontWeight: '600', color: selectedIds.length > 0 ? '#D4AF37' : 'var(--text-muted)' }}>
+                {selectedIds.length > 0
+                  ? `${selectedIds.length} música${selectedIds.length !== 1 ? 's' : ''} selecionada${selectedIds.length !== 1 ? 's' : ''}`
+                  : 'Nenhuma música selecionada'}
+              </p>
+              <p style={{ margin: '2px 0 0', fontSize: '11px', color: 'var(--text-muted)' }}>
+                Selecione na lista ao lado
+              </p>
+            </div>
+          </div>
+
+          {/* Painel direito — lista de músicas */}
+          <div className="modal-criar-lista">
+            {/* Busca */}
+            <div style={{ padding: '12px 14px', borderBottom: '1px solid var(--border)' }}>
+              <div style={{ position: 'relative' }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2"
+                  style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
+                  <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                </svg>
+                <input type="text" placeholder="Buscar por título ou compositor..."
+                  value={partituraSearch}
+                  onChange={(e) => setPartituraSearch(e.target.value)}
+                  style={{ ...inputStyle, paddingLeft: '36px', fontSize: '13px' }}
+                  onFocus={focusInput} onBlur={blurInput} />
+              </div>
+            </div>
+
+            {/* Barra de contagem + selecionar todas */}
+            {!loadingPartituras && filtradas.length > 0 && (
+              <div style={{
+                padding: '7px 14px', display: 'flex', alignItems: 'center',
+                justifyContent: 'space-between', borderBottom: '1px solid var(--border)',
+                background: 'var(--bg-secondary)'
+              }}>
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  {filtradas.length} música{filtradas.length !== 1 ? 's' : ''}
+                </span>
+                <button onClick={toggleAll} style={{
+                  fontSize: '11px', color: '#D4AF37', background: 'none',
+                  border: 'none', cursor: 'pointer', fontWeight: '600', padding: '2px 6px'
+                }}>
+                  {selectedIds.length === filtradas.length && filtradas.length > 0 ? 'Desmarcar todas' : 'Selecionar todas'}
+                </button>
+              </div>
+            )}
+
+            {/* Lista scrollável */}
+            <div style={{ flex: 1, overflowY: 'auto' }}>
+              {loadingPartituras ? (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '10px', color: 'var(--text-muted)' }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2" style={{ animation: 'spin 1s linear infinite' }}>
+                    <circle cx="12" cy="12" r="10" strokeOpacity="0.25"/>
+                    <path d="M12 2a10 10 0 0 1 10 10" strokeLinecap="round"/>
+                  </svg>
+                  <span style={{ fontSize: '13px' }}>Carregando músicas...</span>
+                </div>
+              ) : filtradas.length === 0 ? (
+                <div style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
+                  {partituraSearch ? 'Nenhuma música encontrada' : 'Nenhuma música disponível'}
+                </div>
+              ) : (
+                <div style={{ padding: '6px 8px' }}>
+                  {filtradas.map((p) => {
+                    const selected = selectedIds.includes(p.id);
+                    return (
+                      <div key={p.id} onClick={() => toggleSelect(p.id)} style={{
+                        display: 'flex', alignItems: 'center', gap: '10px',
+                        padding: '8px 10px', borderRadius: '8px',
+                        cursor: 'pointer', transition: 'background 0.12s',
+                        background: selected ? 'rgba(212,175,55,0.08)' : 'transparent',
+                        border: selected ? '1px solid rgba(212,175,55,0.2)' : '1px solid transparent',
+                        marginBottom: '2px'
+                      }}>
+                        <div style={{
+                          width: '18px', height: '18px', borderRadius: '5px', flexShrink: 0,
+                          background: selected ? 'linear-gradient(135deg,#D4AF37,#B8860B)' : 'var(--bg-primary)',
+                          border: selected ? 'none' : '1.5px solid var(--border)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s'
+                        }}>
+                          {selected && (
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                          )}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <p style={{
+                            margin: 0, fontSize: '13px', fontWeight: '500',
+                            color: selected ? 'var(--text-primary)' : 'var(--text-secondary)',
+                            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
+                          }}>{p.titulo}</p>
+                          {p.compositor && (
+                            <p style={{ margin: 0, fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {p.compositor}
+                            </p>
+                          )}
+                        </div>
+                        {p.categoria_nome && (
+                          <span style={{
+                            fontSize: '10px', padding: '2px 7px', borderRadius: '5px',
+                            background: 'var(--bg-primary)', color: 'var(--text-muted)',
+                            flexShrink: 0, border: '1px solid var(--border)', whiteSpace: 'nowrap'
+                          }}>{p.categoria_nome}</span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div style={{
+          padding: '12px 20px', borderTop: '1px solid var(--border)',
+          display: 'flex', gap: '10px', background: 'var(--bg-secondary)', flexShrink: 0
+        }}>
+          <button onClick={onClose} style={{
+            flex: 1, padding: '12px', borderRadius: '10px',
+            border: '1.5px solid var(--border)', background: 'transparent',
+            color: 'var(--text-secondary)', fontSize: '14px', fontWeight: '600', cursor: 'pointer'
+          }}>Cancelar</button>
+          <SaveButton
+            saving={saving}
+            disabled={!form.nome.trim()}
+            onClick={onSave}
+            label={`Criar Repertório${selectedIds.length > 0 ? ` (${selectedIds.length})` : ''}`}
+          />
+        </div>
+      </div>
+    </>
   );
 };
 

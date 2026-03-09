@@ -1,6 +1,7 @@
 // worker/src/domain/favoritos/favoritoService.js
 import { jsonResponse, errorResponse } from '../../infrastructure/index.js';
 import { registrarAtividade } from '../atividades/index.js';
+import { createPostHogClient, shutdownPostHog } from '../../infrastructure/posthog/posthogClient.js';
 
 /**
  * Listar favoritos do usuário
@@ -53,6 +54,20 @@ export async function addFavorito(partituraId, request, env, user) {
     ).bind(user.id, partituraId).run();
 
     await registrarAtividade(env, 'favorito', partitura.titulo, null, user.id);
+
+    // PostHog: capture favorito added event
+    const posthog = createPostHogClient(env);
+    if (posthog) {
+      posthog.capture({
+        distinctId: `user_${user.id}`,
+        event: 'favorito_added',
+        properties: {
+          partitura_id: partituraId,
+          partitura_titulo: partitura.titulo,
+        },
+      });
+      await shutdownPostHog(posthog);
+    }
   } catch (e) {
     // Já é favorito
   }
@@ -69,6 +84,19 @@ export async function removeFavorito(partituraId, request, env, user) {
   await env.DB.prepare(
     'DELETE FROM favoritos WHERE usuario_id = ? AND partitura_id = ?'
   ).bind(user.id, partituraId).run();
+
+  // PostHog: capture favorito removed event
+  const posthog = createPostHogClient(env);
+  if (posthog) {
+    posthog.capture({
+      distinctId: `user_${user.id}`,
+      event: 'favorito_removed',
+      properties: {
+        partitura_id: partituraId,
+      },
+    });
+    await shutdownPostHog(posthog);
+  }
 
   return jsonResponse({ success: true, message: 'Removido dos favoritos!' }, 200, request);
 }

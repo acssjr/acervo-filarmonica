@@ -101,11 +101,11 @@ const UploadPastaModal = ({ isOpen, onClose, onSuccess, initialFiles }) => {
 
   // Processa arquivos pré-carregados (drag & drop global)
   useEffect(() => {
-    if (isOpen && initialFiles && initialFiles.files && initialFiles.files.length > 0 && categorias.length > 0) {
+    if (isOpen && initialFiles && initialFiles.files && initialFiles.files.length > 0) {
       processFiles(initialFiles.files, initialFiles.folderName + '/');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- processFiles é função local estável
-  }, [isOpen, initialFiles, categorias]);
+  }, [isOpen, initialFiles]);
 
   // Processa os arquivos
   const processFiles = (pdfFiles, folderPath) => {

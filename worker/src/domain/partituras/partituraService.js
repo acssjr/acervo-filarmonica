@@ -1,6 +1,7 @@
 // worker/src/domain/partituras/partituraService.js
 import { jsonResponse, errorResponse } from '../../infrastructure/index.js';
 import { registrarAtividade } from '../atividades/index.js';
+import { createPostHogClient, shutdownPostHog } from '../../infrastructure/posthog/posthogClient.js';
 
 /**
  * Listar todas as partituras
@@ -120,6 +121,25 @@ export async function createPartitura(request, env, admin) {
   // Registra atividade
   await registrarAtividade(env, 'nova_partitura', titulo, compositor, admin.id);
 
+  // PostHog: capture partitura creation event
+  const posthog = createPostHogClient(env);
+  if (posthog) {
+    posthog.capture({
+      distinctId: `user_${admin.id}`,
+      event: 'partitura_created',
+      properties: {
+        partitura_id: result.meta.last_row_id,
+        titulo,
+        compositor,
+        arranjador: arranjador || null,
+        categoria_id: categoria,
+        destaque: destaque === 1,
+        upload_type: 'single',
+      },
+    });
+    await shutdownPostHog(posthog);
+  }
+
   return jsonResponse({
     success: true,
     id: result.meta.last_row_id,
@@ -209,6 +229,24 @@ export async function uploadPastaPartitura(request, env, admin) {
     }
 
     await registrarAtividade(env, 'nova_partitura', titulo, `${compositor} • ${partesAdicionadas} partes`, admin.id);
+
+    // PostHog: capture folder upload event
+    const posthog = createPostHogClient(env);
+    if (posthog) {
+      posthog.capture({
+        distinctId: `user_${admin.id}`,
+        event: 'partitura_uploaded_with_parts',
+        properties: {
+          partitura_id: partituraId,
+          titulo,
+          compositor,
+          categoria_id: categoria,
+          partes_count: partesAdicionadas,
+          upload_type: 'folder',
+        },
+      });
+      await shutdownPostHog(posthog);
+    }
 
     return jsonResponse({
       success: true,
@@ -306,6 +344,20 @@ export async function deletePartitura(id, request, env, user) {
   ]);
 
   await registrarAtividade(env, 'delete_partitura', partitura.titulo, 'Partitura removida permanentemente', user.id);
+
+  // PostHog: capture partitura deletion event
+  const posthog = createPostHogClient(env);
+  if (posthog) {
+    posthog.capture({
+      distinctId: `user_${user.id}`,
+      event: 'partitura_deleted',
+      properties: {
+        partitura_id: id,
+        titulo: partitura.titulo,
+      },
+    });
+    await shutdownPostHog(posthog);
+  }
 
   return jsonResponse({ success: true, message: 'Partitura removida permanentemente!' }, 200, request);
 }
