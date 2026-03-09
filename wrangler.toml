@@ -6,6 +6,7 @@
 name = "acervo-filarmonica-api"
 main = "worker/src/index.js"
 compatibility_date = "2024-01-01"
+compatibility_flags = ["nodejs_compat"]
 workers_dev = true
 
 # Banco de dados D1
@@ -29,6 +30,8 @@ bucket_name = "acervo-pdfs"
 [vars]
 ENVIRONMENT = "production"
 JWT_SECRET = "acervo-jwt-2e8dc4fb-4f78-45fe-filarmonica25marco"
+POSTHOG_HOST = "https://us.i.posthog.com"
+# POSTHOG_API_KEY is set as a secret via: npx wrangler secret put POSTHOG_API_KEY
 
 # ============================================================
 # COMANDOS ÚTEIS

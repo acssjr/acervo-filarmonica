@@ -12,6 +12,7 @@ import {
 } from '../../infrastructure/index.js';
 import { registrarAtividade } from '../atividades/atividadeService.js';
 import { JWT_EXPIRY_HOURS, JWT_EXPIRY_HOURS_REMEMBER } from '../../config/index.js';
+import { createPostHogClient, shutdownPostHog } from '../../infrastructure/posthog/posthogClient.js';
 
 /**
  * Verificar se usuário existe (para o tick verde no login)
@@ -155,6 +156,37 @@ export async function login(request, env) {
   // Super admin sempre mostra nome generico
   const nomeExibido = user.username === 'admin' ? 'Administrador' : user.nome;
 
+  // PostHog: identify user and capture login event
+  const posthog = createPostHogClient(env);
+  if (posthog) {
+    const distinctId = `user_${user.id}`;
+    posthog.identify({
+      distinctId,
+      properties: {
+        $set: {
+          username: user.username,
+          nome: nomeExibido,
+          is_admin: user.admin === 1,
+          instrumento: instrumentoNome || null,
+        },
+        $set_once: {
+          first_login: new Date().toISOString(),
+        },
+      },
+    });
+    posthog.capture({
+      distinctId,
+      event: 'user_logged_in',
+      properties: {
+        username: user.username,
+        is_admin: user.admin === 1,
+        instrumento: instrumentoNome || null,
+        remember_me: !!rememberMe,
+      },
+    });
+    await shutdownPostHog(posthog);
+  }
+
   return jsonResponse({
     success: true,
     user: {
@@ -223,6 +255,19 @@ export async function changePin(request, env, user) {
     username: user.username,
     isAdmin: user.admin === 1
   }, getJwtSecret(env));
+
+  // PostHog: capture pin change event
+  const posthog = createPostHogClient(env);
+  if (posthog) {
+    posthog.capture({
+      distinctId: `user_${user.id}`,
+      event: 'user_pin_changed',
+      properties: {
+        username: user.username,
+      },
+    });
+    await shutdownPostHog(posthog);
+  }
 
   return jsonResponse({
     success: true,

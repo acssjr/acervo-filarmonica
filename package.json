@@ -41,7 +41,8 @@
   "homepage": "https://github.com/acssjr/acervo-filarmonica#readme",
   "dependencies": {
     "fflate": "^0.8.2",
-    "pdf-lib": "^1.17.1"
+    "pdf-lib": "^1.17.1",
+    "posthog-node": "^5.26.2"
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.10.15",

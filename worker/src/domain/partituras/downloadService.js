@@ -1,6 +1,7 @@
 // worker/src/domain/partituras/downloadService.js
 import { errorResponse, getCorsHeaders } from '../../infrastructure/index.js';
 import { registrarAtividade } from '../atividades/index.js';
+import { createPostHogClient, shutdownPostHog } from '../../infrastructure/posthog/posthogClient.js';
 
 /**
  * Download de partitura - REQUER AUTENTICAÇÃO
@@ -37,6 +38,21 @@ export async function downloadPartitura(id, request, env, user) {
       ).bind(id, request.headers.get('CF-Connecting-IP'), user.id).run();
     } catch (logError) {
       console.error('Erro ao registrar log:', logError);
+    }
+
+    // PostHog: capture partitura download event
+    const posthog = createPostHogClient(env);
+    if (posthog) {
+      posthog.capture({
+        distinctId: `user_${user.id}`,
+        event: 'partitura_downloaded',
+        properties: {
+          partitura_id: id,
+          partitura_titulo: partitura.titulo,
+          compositor: partitura.compositor,
+        },
+      });
+      await shutdownPostHog(posthog);
     }
 
     return new Response(arquivo.body, {
@@ -109,6 +125,29 @@ export async function downloadParte(parteId, request, env, user) {
         } catch (logError) {
           console.error('Erro ao registrar log:', logError);
         }
+      }
+    }
+
+    // PostHog: capture individual parte download event (skip admin previews)
+    if (!isAdmin) {
+      try {
+        const posthog = createPostHogClient(env);
+        if (posthog) {
+          posthog.capture({
+            distinctId: `user_${user.id}`,
+            event: 'parte_downloaded',
+            properties: {
+              parte_id: parteId,
+              partitura_id: parte.partitura_id,
+              partitura_titulo: parte.partitura_titulo,
+              instrumento: parte.instrumento,
+              is_view: isView,
+            },
+          });
+          await shutdownPostHog(posthog);
+        }
+      } catch (e) {
+        console.error('PostHog capture failed:', e);
       }
     }
 
