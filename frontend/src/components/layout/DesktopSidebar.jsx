@@ -58,7 +58,8 @@ const DesktopSidebar = ({ activeTab }) => {
   const navItems = [
     { id: 'home', path: '/', icon: Icons.Home, label: 'Inicio' },
     { id: 'repertorio', path: '/repertorio', icon: Icons.ListMusic, label: 'Repertorio' },
-    { id: 'favorites', path: '/favoritos', icon: Icons.Heart, label: 'Favoritos' }
+    { id: 'favorites', path: '/favoritos', icon: Icons.Heart, label: 'Favoritos' },
+    { id: 'profile', path: '/perfil', icon: Icons.User, label: 'Perfil' }
   ];
 
   // Bloqueia scroll da pagina quando mouse esta na sidebar

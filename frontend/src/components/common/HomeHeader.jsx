@@ -14,9 +14,13 @@ const HomeHeader = ({ userName, instrument, actions }) => {
   const isDark = theme === 'dark';
   const isDesktop = useMediaQuery('(min-width: 1024px)');
   const [modoRecesso, setModoRecesso] = useState(false);
+  const [diasEnsaio, setDiasEnsaio] = useState({ dias: [1, 3], hora: 19 });
 
   useEffect(() => {
     API.getModoRecesso().then(res => setModoRecesso(res.ativo));
+    API.getDiasEnsaio().then(res => {
+      setDiasEnsaio({ dias: res.dias || [1, 3], hora: res.hora || 19 });
+    });
   }, []);
 
   return (
@@ -142,7 +146,7 @@ const HomeHeader = ({ userName, instrument, actions }) => {
               </div>
             </div>
           ) : (() => {
-            const rehearsalInfo = getNextRehearsal();
+            const rehearsalInfo = getNextRehearsal(diasEnsaio.dias, diasEnsaio.hora);
             return rehearsalInfo.isNow ? (
               <div style={{
                 display: 'flex',

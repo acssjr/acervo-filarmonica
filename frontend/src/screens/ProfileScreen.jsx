@@ -7,6 +7,7 @@ import { useUI } from '@contexts/UIContext';
 import { useNotifications } from '@contexts/NotificationContext';
 import { Icons } from '@constants/icons';
 import { Storage } from '@services/storage';
+import { API } from '@services/api';
 import Header from '@components/common/Header';
 import ChangePinModal from '@components/modals/ChangePinModal';
 import { AboutModal, PROFILE_CHANGELOG, PROFILE_LEGACY_VERSIONS, PROFILE_ABOUT_CONFIG } from '@components/modals/AboutModal';
@@ -20,6 +21,7 @@ const ProfileScreen = () => {
   const [profilePhoto, setProfilePhoto] = useState(() => Storage.get(`profilePhoto_${user?.id}`, null));
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState(user?.name || '');
+  const [isSavingName, setIsSavingName] = useState(false);
   const fileInputRef = useRef(null);
 
   // Atualiza foto do perfil quando usuario muda
@@ -52,12 +54,23 @@ const ProfileScreen = () => {
   };
 
   // Salvar nome editado
-  const handleSaveName = () => {
-    if (editedName.trim() && editedName !== user.name) {
+  const handleSaveName = async () => {
+    if (!editedName.trim() || editedName.trim() === user.name) {
+      setIsEditingName(false);
+      return;
+    }
+    setIsSavingName(true);
+    try {
+      await API.updatePerfil({ nome: editedName.trim() });
       setUser({ ...user, name: editedName.trim() });
       showToast('Nome atualizado!');
+    } catch {
+      showToast('Erro ao atualizar nome', 'error');
+      setEditedName(user.name); // revert
+    } finally {
+      setIsSavingName(false);
+      setIsEditingName(false);
     }
-    setIsEditingName(false);
   };
 
   const handleLogout = () => {
@@ -219,6 +232,7 @@ const ProfileScreen = () => {
                 width: '200px'
               }}
               autoFocus
+              disabled={isSavingName}
               onKeyDown={e => e.key === 'Enter' && handleSaveName()}
               onBlur={handleSaveName}
             />
@@ -324,7 +338,7 @@ const ProfileScreen = () => {
             <line x1="12" y1="8" x2="12.01" y2="8" />
           </svg>}
           label="Acervo Digital"
-          value={`Versão ${PROFILE_ABOUT_CONFIG.infoCards[0].value} - Dezembro 2025`}
+          value={`Versão ${PROFILE_ABOUT_CONFIG.infoCards[0].value} - Março 2026`}
           onClick={() => setShowAboutModal(true)}
         />
 

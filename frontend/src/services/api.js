@@ -579,6 +579,17 @@ export const API = {
     });
   },
 
+  async getDiasEnsaio() {
+    return this.request('/api/config/dias-ensaio');
+  },
+
+  async setDiasEnsaio(dias, hora) {
+    return this.request('/api/config/dias-ensaio', {
+      method: 'PUT',
+      body: JSON.stringify({ dias, hora })
+    });
+  },
+
   // ============ PRESENÇA ============
 
   async getMinhaPresenca() {
@@ -619,6 +630,13 @@ export const API = {
 
   async getPartiturasEnsaio(dataEnsaio) {
     return this.request(`/api/ensaios/${dataEnsaio}/partituras`);
+  },
+
+  async updateEnsaioConfig(dataEnsaio, youtubeUrl) {
+    return this.request(`/api/ensaios/${dataEnsaio}/config`, {
+      method: 'PATCH',
+      body: JSON.stringify({ youtube_url: youtubeUrl })
+    });
   },
 
   async addPartituraEnsaio(dataEnsaio, partituraId) {
