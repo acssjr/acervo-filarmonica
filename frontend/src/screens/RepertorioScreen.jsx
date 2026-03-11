@@ -862,7 +862,7 @@ const RepertorioScreen = () => {
           const dateObj = new Date(Number(y), Number(m) - 1, Number(d));
           const now = new Date();
           const dateUTC = Date.UTC(Number(y), Number(m) - 1, Number(d));
-          const hojeUTC = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+          const hojeUTC = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
           const diffMs = dateUTC - hojeUTC;
           const diffDias = Math.round(diffMs / (1000 * 60 * 60 * 24));
 

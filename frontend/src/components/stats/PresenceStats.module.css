@@ -157,11 +157,20 @@
 .calendarGrid {
   display: flex;
   gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.calendarGrid::-webkit-scrollbar {
+  display: none;
 }
 
 .calendarDay {
-  flex: 1;
-  min-width: 0;
+  flex: 0 0 auto;
+  min-width: 52px;
+  width: 52px;
   height: 80px;
   border-radius: 14px;
   display: flex;
@@ -338,6 +347,8 @@
   }
 
   .calendarDay {
+    min-width: 46px;
+    width: 46px;
     height: 72px;
   }
 

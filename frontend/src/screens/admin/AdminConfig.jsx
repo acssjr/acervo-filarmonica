@@ -18,12 +18,28 @@ const AdminConfig = () => {
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [modoRecesso, setModoRecesso] = useState(false);
   const [loadingRecesso, setLoadingRecesso] = useState(true);
+  const [diasEnsaio, setDiasEnsaio] = useState([1, 3]);
+  const [horaEnsaio, setHoraEnsaio] = useState(19);
+  const [loadingDias, setLoadingDias] = useState(true);
+  const [savingDias, setSavingDias] = useState(false);
 
   useEffect(() => {
     API.getModoRecesso().then(res => {
       setModoRecesso(res.ativo);
       setLoadingRecesso(false);
     });
+    API.getDiasEnsaio()
+      .then(res => {
+        setDiasEnsaio(Array.isArray(res.dias) ? res.dias : [1, 3]);
+        setHoraEnsaio(res.hora ?? 19);
+      })
+      .catch(() => {
+        setDiasEnsaio([1, 3]);
+        setHoraEnsaio(19);
+      })
+      .finally(() => {
+        setLoadingDias(false);
+      });
   }, []);
 
   const handleToggleRecesso = async () => {
@@ -36,6 +52,32 @@ const AdminConfig = () => {
       setModoRecesso(!novoValor);
       showToast('Erro ao atualizar configuração', 'error');
     }
+  };
+
+  const handleSaveDiasEnsaio = async () => {
+    if (diasEnsaio.length === 0) {
+      showToast('Selecione pelo menos um dia de ensaio', 'error');
+      return;
+    }
+    if (!Number.isInteger(horaEnsaio) || horaEnsaio < 0 || horaEnsaio > 23) {
+      showToast('Informe um horário entre 0h e 23h', 'error');
+      return;
+    }
+    setSavingDias(true);
+    try {
+      await API.setDiasEnsaio(diasEnsaio, horaEnsaio);
+      showToast('Dias de ensaio atualizados!');
+    } catch {
+      showToast('Erro ao salvar', 'error');
+    } finally {
+      setSavingDias(false);
+    }
+  };
+
+  const toggleDia = (dia) => {
+    setDiasEnsaio(prev =>
+      prev.includes(dia) ? prev.filter(d => d !== dia) : [...prev, dia].sort()
+    );
   };
 
   const handleLogout = () => {
@@ -320,6 +362,108 @@ const AdminConfig = () => {
             }} />
           </button>
         </div>
+      </div>
+
+      {/* Dias de Ensaio */}
+      <div style={{
+        background: 'var(--bg-secondary)',
+        borderRadius: '16px',
+        padding: '20px',
+        marginBottom: '20px',
+        border: '1px solid var(--border)',
+        opacity: loadingDias ? 0.5 : 1
+      }}>
+        <h3 style={{
+          fontSize: '16px',
+          fontWeight: '600',
+          marginBottom: '16px',
+          color: 'var(--text-primary)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px'
+        }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+            <line x1="16" y1="2" x2="16" y2="6"/>
+            <line x1="8" y1="2" x2="8" y2="6"/>
+            <line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+          Dias de Ensaio
+        </h3>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '16px' }}>
+          {[
+            { label: 'Dom', value: 0 }, { label: 'Seg', value: 1 },
+            { label: 'Ter', value: 2 }, { label: 'Qua', value: 3 },
+            { label: 'Qui', value: 4 }, { label: 'Sex', value: 5 },
+            { label: 'Sáb', value: 6 }
+          ].map(({ label, value }) => {
+            const active = diasEnsaio.includes(value);
+            return (
+              <button
+                key={value}
+                onClick={() => toggleDia(value)}
+                style={{
+                  padding: '8px 14px', borderRadius: '10px', cursor: 'pointer',
+                  fontSize: '13px', fontWeight: '600',
+                  background: active ? 'rgba(212,175,55,0.15)' : 'var(--bg-card)',
+                  border: active ? '1px solid rgba(212,175,55,0.4)' : '1px solid var(--border)',
+                  color: active ? '#D4AF37' : 'var(--text-muted)',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+          <label style={{ fontSize: '14px', color: 'var(--text-primary)', fontWeight: '500' }}>
+            Horário de início:
+          </label>
+          <input
+            type="number"
+            min="0"
+            max="23"
+            value={horaEnsaio}
+            onChange={e => setHoraEnsaio(Number(e.target.value))}
+            style={{
+              width: '64px',
+              padding: '6px 10px',
+              borderRadius: '8px',
+              border: '1px solid var(--border)',
+              background: 'var(--bg-primary)',
+              color: 'var(--text-primary)',
+              fontSize: '14px',
+              fontWeight: '600',
+              textAlign: 'center'
+            }}
+          />
+          <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>h</span>
+        </div>
+        <button
+          onClick={handleSaveDiasEnsaio}
+          disabled={
+            savingDias ||
+            loadingDias ||
+            diasEnsaio.length === 0 ||
+            !Number.isInteger(horaEnsaio) ||
+            horaEnsaio < 0 ||
+            horaEnsaio > 23
+          }
+          style={{
+            padding: '10px 20px',
+            borderRadius: '10px',
+            background: 'var(--accent)',
+            border: 'none',
+            color: '#fff',
+            fontSize: '14px',
+            fontWeight: '500',
+            cursor: (savingDias || loadingDias || diasEnsaio.length === 0) ? 'not-allowed' : 'pointer',
+            opacity: (savingDias || loadingDias || diasEnsaio.length === 0 || !Number.isInteger(horaEnsaio) || horaEnsaio < 0 || horaEnsaio > 23) ? 0.5 : 1
+          }}
+        >
+          {savingDias ? 'Salvando...' : 'Salvar'}
+        </button>
       </div>
 
       {/* Sobre */}
