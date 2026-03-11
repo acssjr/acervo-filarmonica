@@ -20,7 +20,14 @@ export async function getPartiturasEnsaio(env, dataEnsaio) {
     ORDER BY ep.ordem ASC
   `).bind(dataEnsaio).all();
 
-  return { partituras: result.results || [] };
+  const config = await env.DB.prepare(
+    'SELECT youtube_url FROM ensaios_config WHERE data_ensaio = ?'
+  ).bind(dataEnsaio).first();
+
+  return {
+    partituras: result.results || [],
+    youtube_url: config?.youtube_url || null
+  };
 }
 
 /**
@@ -72,6 +79,25 @@ export async function reorderPartiturasEnsaio(env, dataEnsaio, ordens) {
       WHERE id = ? AND data_ensaio = ?
     `).bind(item.ordem, item.id, dataEnsaio).run();
   }
+
+  return { sucesso: true };
+}
+
+/**
+ * Atualiza a configuração de um ensaio (ex: youtube_url)
+ * @param {Object} env - Cloudflare Worker environment
+ * @param {string} dataEnsaio - Data do ensaio (YYYY-MM-DD)
+ * @param {string|null} youtubeUrl - URL do YouTube (ou null para remover)
+ * @returns {Promise<Object>} - Resultado da operação
+ */
+export async function updateEnsaioConfig(env, dataEnsaio, youtubeUrl) {
+  await env.DB.prepare(`
+    INSERT INTO ensaios_config (data_ensaio, youtube_url, atualizado_em)
+    VALUES (?, ?, datetime('now'))
+    ON CONFLICT(data_ensaio) DO UPDATE SET
+      youtube_url = excluded.youtube_url,
+      atualizado_em = datetime('now')
+  `).bind(dataEnsaio, youtubeUrl || null).run();
 
   return { sucesso: true };
 }

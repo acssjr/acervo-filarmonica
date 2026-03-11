@@ -76,4 +76,20 @@ export function setupEnsaioRoutes(router) {
       return errorResponse('Erro ao reordenar partituras', 500, request);
     }
   }, [authMiddleware, adminMiddleware]);
+
+  // PATCH /api/ensaios/:data/config - Atualizar config do ensaio (admin)
+  router.patch('/api/ensaios/:data/config', async (request, env, params, context) => {
+    const user = context?.user;
+    if (!user?.admin) {
+      return errorResponse('Acesso negado', 403, request);
+    }
+    try {
+      const { youtube_url } = await request.json();
+      const result = await EnsaioService.updateEnsaioConfig(env, params.data, youtube_url);
+      return jsonResponse(result, 200, request);
+    } catch (error) {
+      console.error('Erro ao atualizar config do ensaio:', error);
+      return errorResponse('Erro interno', 500, request);
+    }
+  }, [authMiddleware]);
 }
