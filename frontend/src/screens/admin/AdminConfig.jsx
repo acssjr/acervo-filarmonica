@@ -28,11 +28,18 @@ const AdminConfig = () => {
       setModoRecesso(res.ativo);
       setLoadingRecesso(false);
     });
-    API.getDiasEnsaio().then(res => {
-      setDiasEnsaio(res.dias || [1, 3]);
-      setHoraEnsaio(res.hora || 19);
-      setLoadingDias(false);
-    });
+    API.getDiasEnsaio()
+      .then(res => {
+        setDiasEnsaio(Array.isArray(res.dias) ? res.dias : [1, 3]);
+        setHoraEnsaio(res.hora ?? 19);
+      })
+      .catch(() => {
+        setDiasEnsaio([1, 3]);
+        setHoraEnsaio(19);
+      })
+      .finally(() => {
+        setLoadingDias(false);
+      });
   }, []);
 
   const handleToggleRecesso = async () => {
@@ -48,6 +55,14 @@ const AdminConfig = () => {
   };
 
   const handleSaveDiasEnsaio = async () => {
+    if (diasEnsaio.length === 0) {
+      showToast('Selecione pelo menos um dia de ensaio', 'error');
+      return;
+    }
+    if (!Number.isInteger(horaEnsaio) || horaEnsaio < 0 || horaEnsaio > 23) {
+      showToast('Informe um horário entre 0h e 23h', 'error');
+      return;
+    }
     setSavingDias(true);
     try {
       await API.setDiasEnsaio(diasEnsaio, horaEnsaio);
@@ -427,7 +442,14 @@ const AdminConfig = () => {
         </div>
         <button
           onClick={handleSaveDiasEnsaio}
-          disabled={savingDias || loadingDias}
+          disabled={
+            savingDias ||
+            loadingDias ||
+            diasEnsaio.length === 0 ||
+            !Number.isInteger(horaEnsaio) ||
+            horaEnsaio < 0 ||
+            horaEnsaio > 23
+          }
           style={{
             padding: '10px 20px',
             borderRadius: '10px',
@@ -436,8 +458,8 @@ const AdminConfig = () => {
             color: '#fff',
             fontSize: '14px',
             fontWeight: '500',
-            cursor: savingDias || loadingDias ? 'wait' : 'pointer',
-            opacity: savingDias || loadingDias ? 0.7 : 1
+            cursor: (savingDias || loadingDias || diasEnsaio.length === 0) ? 'not-allowed' : 'pointer',
+            opacity: (savingDias || loadingDias || diasEnsaio.length === 0 || !Number.isInteger(horaEnsaio) || horaEnsaio < 0 || horaEnsaio > 23) ? 0.5 : 1
           }}
         >
           {savingDias ? 'Salvando...' : 'Salvar'}

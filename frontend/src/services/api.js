@@ -634,7 +634,7 @@ export const API = {
 
   async updateEnsaioConfig(dataEnsaio, youtubeUrl) {
     return this.request(`/api/ensaios/${dataEnsaio}/config`, {
-      method: 'PATCH',
+      method: 'PUT',
       body: JSON.stringify({ youtube_url: youtubeUrl })
     });
   },

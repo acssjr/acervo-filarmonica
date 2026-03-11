@@ -17,10 +17,10 @@ const HomeHeader = ({ userName, instrument, actions }) => {
   const [diasEnsaio, setDiasEnsaio] = useState({ dias: [1, 3], hora: 19 });
 
   useEffect(() => {
-    API.getModoRecesso().then(res => setModoRecesso(res.ativo));
+    API.getModoRecesso().then(res => setModoRecesso(res.ativo)).catch(() => {});
     API.getDiasEnsaio().then(res => {
       setDiasEnsaio({ dias: res.dias || [1, 3], hora: res.hora || 19 });
-    });
+    }).catch(() => {});
   }, []);
 
   return (

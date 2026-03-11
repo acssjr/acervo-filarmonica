@@ -55,7 +55,9 @@ const ProfileScreen = () => {
 
   // Salvar nome editado
   const handleSaveName = async () => {
+    if (isSavingName) return;
     if (!editedName.trim() || editedName.trim() === user.name) {
+      setEditedName(user.name);
       setIsEditingName(false);
       return;
     }
@@ -233,7 +235,12 @@ const ProfileScreen = () => {
               }}
               autoFocus
               disabled={isSavingName}
-              onKeyDown={e => e.key === 'Enter' && handleSaveName()}
+              onKeyDown={e => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  e.currentTarget.blur();
+                }
+              }}
               onBlur={handleSaveName}
             />
           </div>
