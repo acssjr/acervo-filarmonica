@@ -1,10 +1,10 @@
 // ===== HOME HEADER =====
 // Header especial para tela inicial com nome e instrumento
 
-import { useState, useEffect } from 'react';
+import { useMemo } from 'react';
 import { useUI } from '@contexts/UIContext';
-import { getNextRehearsal } from '@hooks/useNextRehearsal';
-import { API } from '@services/api';
+import { useData } from '@contexts/DataContext';
+import { getNextRehearsal } from '@utils/rehearsal';
 import { useMediaQuery } from '@hooks/useMediaQuery';
 import HeaderActions from './HeaderActions';
 import LogoBadge from './LogoBadge';
@@ -13,15 +13,12 @@ const HomeHeader = ({ userName, instrument, actions }) => {
   const { theme } = useUI();
   const isDark = theme === 'dark';
   const isDesktop = useMediaQuery('(min-width: 1024px)');
-  const [modoRecesso, setModoRecesso] = useState(false);
-  const [diasEnsaio, setDiasEnsaio] = useState({ dias: [1, 3], hora: 19 });
+  const { diasEnsaio, modoRecesso } = useData();
 
-  useEffect(() => {
-    API.getModoRecesso().then(res => setModoRecesso(res.ativo)).catch(() => {});
-    API.getDiasEnsaio().then(res => {
-      setDiasEnsaio({ dias: res.dias || [1, 3], hora: res.hora || 19 });
-    }).catch(() => {});
-  }, []);
+  const rehearsalInfo = useMemo(
+    () => getNextRehearsal(diasEnsaio.dias, diasEnsaio.hora),
+    [diasEnsaio]
+  );
 
   return (
     <>
@@ -65,7 +62,7 @@ const HomeHeader = ({ userName, instrument, actions }) => {
       {/* Header de saudação */}
       <header style={{
         padding: isDesktop ? '20px 0 24px' : '16px 20px 20px',
-        paddingTop: isDesktop ? 'max(env(safe-area-inset-top), 20px)' : '16px',
+        paddingTop: isDesktop ? '20px' : '16px',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'flex-start',
@@ -145,79 +142,76 @@ const HomeHeader = ({ userName, instrument, actions }) => {
                 EM RECESSO
               </div>
             </div>
-          ) : (() => {
-            const rehearsalInfo = getNextRehearsal(diasEnsaio.dias, diasEnsaio.hora);
-            return rehearsalInfo.isNow ? (
+          ) : rehearsalInfo.isNow ? (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              marginTop: '12px'
+            }}>
+              <div style={{
+                width: '10px',
+                height: '10px',
+                borderRadius: '50%',
+                background: '#22C55E',
+                animation: 'pulse 2s ease-in-out infinite'
+              }} />
+              <span style={{
+                fontSize: '14px',
+                fontWeight: '700',
+                color: '#22C55E'
+              }}>
+                Ensaio acontecendo agora!
+              </span>
+            </div>
+          ) : (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              marginTop: '12px'
+            }}>
+              <span style={{
+                fontSize: '13px',
+                fontWeight: '700',
+                color: 'var(--text-muted)'
+              }}>
+                Próximo ensaio:
+              </span>
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '8px',
-                marginTop: '12px'
+                gap: '6px',
+                background: 'rgba(212, 175, 55, 0.15)',
+                padding: '4px 10px',
+                borderRadius: '8px'
               }}>
-                <div style={{
-                  width: '10px',
-                  height: '10px',
-                  borderRadius: '50%',
-                  background: '#22C55E',
-                  animation: 'pulse 2s ease-in-out infinite'
-                }} />
-                <span style={{
-                  fontSize: '14px',
-                  fontWeight: '700',
-                  color: '#22C55E'
-                }}>
-                  Ensaio acontecendo agora!
-                </span>
-              </div>
-            ) : (
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                marginTop: '12px'
-              }}>
-                <span style={{
-                  fontSize: '13px',
-                  fontWeight: '700',
-                  color: 'var(--text-muted)'
-                }}>
-                  Próximo ensaio:
-                </span>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  background: 'rgba(212, 175, 55, 0.15)',
-                  padding: '4px 10px',
-                  borderRadius: '8px'
-                }}>
-                  {rehearsalInfo.days > 0 && (
-                    <span style={{
-                      fontSize: '14px',
-                      fontWeight: '800',
-                      color: '#D4AF37'
-                    }}>
-                      {rehearsalInfo.days}d
-                    </span>
-                  )}
+                {rehearsalInfo.days > 0 && (
                   <span style={{
                     fontSize: '14px',
                     fontWeight: '800',
                     color: '#D4AF37'
                   }}>
-                    {rehearsalInfo.hours}h{rehearsalInfo.minutes > 0 ? ` ${rehearsalInfo.minutes}m` : ''}
+                    {rehearsalInfo.days}d
                   </span>
-                  <span style={{
-                    fontSize: '12px',
-                    color: 'var(--text-muted)',
-                    fontWeight: '500'
-                  }}>
-                    ({rehearsalInfo.dayName})
-                  </span>
-                </div>
+                )}
+                <span style={{
+                  fontSize: '14px',
+                  fontWeight: '800',
+                  color: '#D4AF37'
+                }}>
+                  {rehearsalInfo.hours}h{rehearsalInfo.minutes > 0 ? ` ${rehearsalInfo.minutes}m` : ''}
+                </span>
+                <span style={{
+                  fontSize: '12px',
+                  color: 'var(--text-muted)',
+                  fontWeight: '500'
+                }}>
+                  ({rehearsalInfo.dayName})
+                </span>
               </div>
-            );
-          })())}
+            </div>
+          ))}
         </div>
 
         {/* Actions no desktop */}

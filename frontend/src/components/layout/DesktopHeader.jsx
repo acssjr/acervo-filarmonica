@@ -10,9 +10,8 @@ import { Icons } from '@constants/icons';
 import CategoryIcon from '@components/common/CategoryIcon';
 import ThemeSelector from '@components/common/ThemeSelector';
 import AdminToggle from '@components/common/AdminToggle';
-import { getNextRehearsal } from '@hooks/useNextRehearsal';
+import { getNextRehearsal } from '@utils/rehearsal';
 import { levenshtein } from '@utils/search';
-import { API } from '@services/api';
 
 // Normaliza texto para busca (estilo YouTube)
 const normalize = (str) => {
@@ -51,15 +50,10 @@ const transliterate = (str) => {
 const DesktopHeader = () => {
   const navigate = useNavigate();
   const { setShowNotifications } = useUI();
-  const { sheets, favoritesSet, toggleFavorite, categoriesMap } = useData();
+  const { sheets, favoritesSet, toggleFavorite, categoriesMap, diasEnsaio, modoRecesso } = useData();
   const { unreadCount } = useNotifications();
   const [searchQuery, setSearchQuery] = useState('');
   const [showResults, setShowResults] = useState(false);
-  const [modoRecesso, setModoRecesso] = useState(false);
-
-  useEffect(() => {
-    API.getModoRecesso().then(res => setModoRecesso(res.ativo));
-  }, []);
 
   // Busca fuzzy nos sheets com transliteracao - TODAS as palavras devem ser encontradas
   const searchResults = useMemo(() => {
@@ -159,8 +153,10 @@ const DesktopHeader = () => {
     }
   }, [searchQuery]);
 
-  // Usa a função global getNextRehearsal
-  const rehearsalInfo = getNextRehearsal();
+  const rehearsalInfo = useMemo(
+    () => getNextRehearsal(diasEnsaio.dias, diasEnsaio.hora),
+    [diasEnsaio]
+  );
 
   return (
     <header style={{

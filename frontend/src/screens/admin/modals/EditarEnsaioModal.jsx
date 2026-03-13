@@ -42,6 +42,8 @@ const EditarEnsaioModal = ({ ensaio, usuarios, onClose, onUpdate, addNotificatio
   const [partiturasDisponiveis, setPartiturasDisponiveis] = useState([]);
   const [buscandoPartituras, setBuscandoPartituras] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [youtubeUrl, setYoutubeUrl] = useState('');
+  const [originalYoutubeUrl, setOriginalYoutubeUrl] = useState('');
 
   // States for batch saving
   const [originalPresenteIds, setOriginalPresenteIds] = useState(new Set());
@@ -59,6 +61,13 @@ const EditarEnsaioModal = ({ ensaio, usuarios, onClose, onUpdate, addNotificatio
       setOriginalPresenteIds(new Set((data.presentes || []).map(p => p.usuario_id)));
       setPartiturasRemovidasIds(new Set());
       setHasChanges(false);
+
+      // Also fetch youtube_url for this ensaio
+      API.getPartiturasEnsaio(ensaio.data_ensaio).then(res => {
+        const url = res.youtube_url || '';
+        setYoutubeUrl(url);
+        setOriginalYoutubeUrl(url);
+      }).catch(() => {});
 
     } catch (error) {
       addNotification?.('Erro ao carregar detalhes do ensaio', 'error');
@@ -178,6 +187,12 @@ const EditarEnsaioModal = ({ ensaio, usuarios, onClose, onUpdate, addNotificatio
 
       await Promise.all(promises);
 
+      // Save youtube URL if changed
+      if (youtubeUrl !== originalYoutubeUrl) {
+        await API.updateEnsaioConfig(ensaio.data_ensaio, youtubeUrl);
+        setOriginalYoutubeUrl(youtubeUrl);
+      }
+
       onUpdate?.(); // Refreshes parent data
       onClose();    // Closes modal
       addNotification?.('Ensaio atualizado com sucesso', 'success');
@@ -237,6 +252,33 @@ const EditarEnsaioModal = ({ ensaio, usuarios, onClose, onUpdate, addNotificatio
             }}>
               {formatDatePt(ensaio.data_ensaio)}
             </p>
+            {/* YouTube URL */}
+            <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="#E85A4F">
+                <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+              </svg>
+              <input
+                type="url"
+                value={youtubeUrl}
+                onChange={e => setYoutubeUrl(e.target.value)}
+                placeholder="Link do YouTube (gravação do ensaio)"
+                style={{
+                  flex: 1, padding: '6px 10px', fontSize: '13px',
+                  border: '1px solid var(--border)', borderRadius: '6px',
+                  background: 'var(--bg)', color: 'var(--text-primary)', outline: 'none'
+                }}
+              />
+              {youtubeUrl && (
+                <button
+                  onClick={() => setYoutubeUrl('')}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '2px' }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+                  </svg>
+                </button>
+              )}
+            </div>
           </div>
           <button onClick={onClose} style={{
             background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)',
@@ -564,15 +606,15 @@ const EditarEnsaioModal = ({ ensaio, usuarios, onClose, onUpdate, addNotificatio
               Cancelar
             </button>
 
-            <button onClick={handleSalvar} disabled={saving || !hasChanges} style={{
+            <button onClick={handleSalvar} disabled={saving || (!hasChanges && youtubeUrl === originalYoutubeUrl)} style={{
               padding: '10px 24px',
-              background: (saving || !hasChanges) ? 'var(--border)' : COLORS.gold.primary,
-              color: (saving || !hasChanges) ? 'var(--text-muted)' : '#1A0507',
+              background: (saving || (!hasChanges && youtubeUrl === originalYoutubeUrl)) ? 'var(--border)' : COLORS.gold.primary,
+              color: (saving || (!hasChanges && youtubeUrl === originalYoutubeUrl)) ? 'var(--text-muted)' : '#1A0507',
               border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: '700',
-              cursor: (saving || !hasChanges) ? 'default' : 'pointer',
-              opacity: (saving || !hasChanges) ? 0.7 : 1,
+              cursor: (saving || (!hasChanges && youtubeUrl === originalYoutubeUrl)) ? 'default' : 'pointer',
+              opacity: (saving || (!hasChanges && youtubeUrl === originalYoutubeUrl)) ? 0.7 : 1,
               transition: 'all 0.2s',
-              boxShadow: (saving || !hasChanges) ? 'none' : '0 4px 12px rgba(212, 175, 55, 0.3)'
+              boxShadow: (saving || (!hasChanges && youtubeUrl === originalYoutubeUrl)) ? 'none' : '0 4px 12px rgba(212, 175, 55, 0.3)'
             }}>
               {saving ? 'Salvando...' : 'Salvar Alterações'}
             </button>

@@ -578,7 +578,8 @@ describe('API Service', () => {
 
         expect(result).toEqual({ ativo: false });
         expect(global.fetch).toHaveBeenCalledWith(
-          expect.stringContaining('/api/config/recesso')
+          expect.stringContaining('/api/config/recesso'),
+          expect.anything()
         );
       });
 
@@ -613,8 +614,8 @@ describe('API Service', () => {
       });
 
       it('nao requer autenticacao (nao usa this.request)', async () => {
-        // getModoRecesso usa fetch diretamente, nao this.request
-        // Isso significa que nao precisa de token
+        // getModoRecesso usa skipAuthCheck: true, entao nao adiciona Authorization
+        // mesmo que haja token armazenado (sem token, o header nao e incluido)
         mockStorage.get.mockReturnValue(null);
 
         global.fetch = jest.fn().mockResolvedValue({
@@ -626,7 +627,7 @@ describe('API Service', () => {
 
         // Verifica que fetch foi chamado sem header Authorization
         const fetchCall = global.fetch.mock.calls[0];
-        expect(fetchCall[1]).toBeUndefined(); // Nao passa options, entao nao tem Authorization
+        expect(fetchCall[1].headers.Authorization).toBeUndefined();
       });
     });
 

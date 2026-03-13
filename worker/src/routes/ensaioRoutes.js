@@ -77,26 +77,11 @@ export function setupEnsaioRoutes(router) {
     }
   }, [authMiddleware, adminMiddleware]);
 
-  // PUT /api/ensaios/:data/config - Atualizar config do ensaio (admin)
-  router.put('/api/ensaios/:data/config', async (request, env, params) => {
+  // PATCH /api/ensaios/:data/config - Atualizar config do ensaio (admin)
+  router.patch('/api/ensaios/:data/config', async (request, env, params) => {
     try {
       const { youtube_url } = await request.json();
-      const normalizedUrl = typeof youtube_url === 'string' ? youtube_url.trim() : youtube_url;
-
-      if (normalizedUrl) {
-        let parsedUrl;
-        try {
-          parsedUrl = new URL(normalizedUrl);
-        } catch {
-          return errorResponse('URL do YouTube inválida', 400, request);
-        }
-        const allowedHosts = new Set(['youtube.com', 'www.youtube.com', 'm.youtube.com', 'youtu.be']);
-        if (parsedUrl.protocol !== 'https:' || !allowedHosts.has(parsedUrl.hostname)) {
-          return errorResponse('URL do YouTube inválida', 400, request);
-        }
-      }
-
-      const result = await EnsaioService.updateEnsaioConfig(env, params.data, normalizedUrl || null);
+      const result = await EnsaioService.updateEnsaioConfig(env, params.data, youtube_url);
       return jsonResponse(result, 200, request);
     } catch (error) {
       console.error('Erro ao atualizar config do ensaio:', error);

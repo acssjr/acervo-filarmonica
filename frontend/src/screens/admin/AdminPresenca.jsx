@@ -2,6 +2,11 @@
 // Gerenciamento de presenças em ensaios + partituras tocadas
 
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import {
+  Users, Music, Search, Plus, Trash2, Edit3,
+  Calendar, CheckCircle2, XCircle, Youtube, ChevronDown,
+  ChevronLeft, ChevronRight, RotateCcw, Crown
+} from 'lucide-react';
 import { useUI } from '@contexts/UIContext';
 import { API } from '@services/api';
 import { COLORS } from '@constants/colors';
@@ -9,89 +14,12 @@ import { UserListSkeleton } from '@components/common/Skeleton';
 import CustomCheckbox from '@components/common/CustomCheckbox';
 import EditarEnsaioModal from './modals/EditarEnsaioModal';
 
-// ===== SVG ICONS MODERNOS =====
-const CalendarIcon = ({ size = 20, color = 'currentColor' }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-    <line x1="16" y1="2" x2="16" y2="6" />
-    <line x1="8" y1="2" x2="8" y2="6" />
-    <line x1="3" y1="10" x2="21" y2="10" />
-  </svg>
-);
-
-const CheckCircleIcon = ({ size = 20, color = 'currentColor' }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-    <polyline points="22 4 12 14.01 9 11.01" />
-  </svg>
-);
-
-const XCircleIcon = ({ size = 20, color = 'currentColor' }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="10" />
-    <line x1="15" y1="9" x2="9" y2="15" />
-    <line x1="9" y1="9" x2="15" y2="15" />
-  </svg>
-);
-
-const MusicIcon = ({ size = 20, color = 'currentColor' }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M9 18V5l12-2v13" />
-    <circle cx="6" cy="18" r="3" />
-    <circle cx="18" cy="16" r="3" />
-  </svg>
-);
-
-const UsersIcon = ({ size = 20, color = 'currentColor' }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-    <circle cx="9" cy="7" r="4" />
-    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-  </svg>
-);
-
-const SearchIcon = ({ size = 20, color = 'currentColor' }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="11" cy="11" r="8" />
-    <path d="m21 21-4.35-4.35" />
-  </svg>
-);
-
-const TrashIcon = ({ size = 20, color = 'currentColor' }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="3 6 5 6 21 6" />
-    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-  </svg>
-);
-
-const EditIcon = ({ size = 20, color = 'currentColor' }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-  </svg>
-);
-
-const RefreshIcon = ({ size = 20, color = 'currentColor' }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="1 4 1 10 7 10" />
-    <polyline points="23 20 23 14 17 14" />
-    <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15" />
-  </svg>
-);
-
-const PlusIcon = ({ size = 20, color = 'currentColor' }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <line x1="12" y1="5" x2="12" y2="19" />
-    <line x1="5" y1="12" x2="19" y2="12" />
-  </svg>
-);
-
-const ChevronDownIcon = ({ size = 16, color = 'currentColor' }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="6 9 12 15 18 9" />
-  </svg>
-);
+// ===== DESIGN TOKENS =====
+const GOLD = '#D4AF37';
+const GOLD_DARK = '#B8860B';
+const GOLD_GRADIENT = `linear-gradient(135deg, ${GOLD} 0%, ${GOLD_DARK} 100%)`;
+const GREEN = '#34C759';
+const RED = '#E74C3C';
 
 // ===== CUSTOM DATE PICKER =====
 const MESES_PT = [
@@ -100,18 +28,6 @@ const MESES_PT = [
 ];
 const DIAS_SEMANA_PT = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 const DIAS_SEMANA_FULL = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
-
-const ChevronLeft = ({ size = 20, color = 'currentColor' }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="15 18 9 12 15 6" />
-  </svg>
-);
-
-const ChevronRight = ({ size = 20, color = 'currentColor' }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="9 18 15 12 9 6" />
-  </svg>
-);
 
 const getLocalDateString = () => {
   const now = new Date();
@@ -220,7 +136,7 @@ const DatePickerCalendar = ({ value, onChange, max }) => {
           width: '100%',
           padding: '14px 16px',
           background: 'var(--bg)',
-          border: `1px solid ${open ? '#D4AF37' : 'var(--border)'}`,
+          border: `1px solid ${open ? GOLD : 'var(--border)'}`,
           borderRadius: '10px',
           color: 'var(--text-primary)',
           fontSize: '15px',
@@ -232,7 +148,7 @@ const DatePickerCalendar = ({ value, onChange, max }) => {
           gap: '10px'
         }}
       >
-        <CalendarIcon size={18} color="#D4AF37" />
+        <Calendar size={18} color={GOLD} />
         <span style={{ flex: 1 }}>
           {value ? formatDatePt(value) : 'Selecionar data'}
         </span>
@@ -351,12 +267,12 @@ const DatePickerCalendar = ({ value, onChange, max }) => {
               let opacity = isDisabled && !cell.outside ? 0.35 : cell.outside ? 0.3 : 1;
 
               if (isSelected) {
-                bg = '#D4AF37';
+                bg = GOLD;
                 color = '#1a1a1a';
                 fontWeight = '700';
                 opacity = 1;
               } else if (isToday && !cell.outside) {
-                border = '2px solid #D4AF37';
+                border = `2px solid ${GOLD}`;
                 fontWeight = '600';
               } else if (isRehearsalDay && !isDisabled) {
                 bg = 'rgba(212, 175, 55, 0.1)';
@@ -426,7 +342,7 @@ const DatePickerCalendar = ({ value, onChange, max }) => {
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <div style={{
                 width: '10px', height: '10px', borderRadius: '3px',
-                border: '2px solid #D4AF37'
+                border: `2px solid ${GOLD}`
               }} />
               <span style={{
                 fontSize: '11px',
@@ -573,6 +489,8 @@ const AdminPresenca = () => {
   const [partituras, setPartituras] = useState([]);
   const [partiturasEnsaio, setPartiturasEnsaio] = useState([]);
   const [buscaPartitura, setBuscaPartitura] = useState('');
+  const [youtubeUrl, setYoutubeUrl] = useState('');
+  const partiturasRequestRef = useRef(0);
 
   // Estado para edição/exclusão
   const [ensaioEditando, setEnsaioEditando] = useState(null);
@@ -612,12 +530,27 @@ const AdminPresenca = () => {
 
   // Carregar partituras do ensaio selecionado
   const loadPartiturasEnsaio = async (data) => {
+    const requestId = ++partiturasRequestRef.current;
+    setPartiturasEnsaio([]);
+    setYoutubeUrl('');
     try {
       const result = await API.getPartiturasEnsaio(data);
+      if (requestId !== partiturasRequestRef.current) return;
       setPartiturasEnsaio(result.partituras || []);
+      setYoutubeUrl(result.youtube_url || '');
     } catch (error) {
+      if (requestId !== partiturasRequestRef.current) return;
       console.error('Erro ao carregar partituras do ensaio:', error);
       setPartiturasEnsaio([]);
+      setYoutubeUrl('');
+    }
+  };
+
+  const handleSaveYoutubeUrl = async () => {
+    try {
+      await API.updateEnsaioConfig(dataEnsaio, youtubeUrl);
+    } catch (error) {
+      showToast(error.message || 'Erro ao salvar link', 'error');
     }
   };
 
@@ -830,10 +763,6 @@ const AdminPresenca = () => {
 
       const presentes = totalMusicos - ausentesMusicos;
 
-      // Contagem de ausentes total (inclui regente se marcado, ou nao? O texto diz "X ausentes")
-      // O usuário pediu para não contar o maestro no número de "músicos" presentes.
-      // Vou mostrar X presentes (músicos), Y ausentes (músicos)
-
       return `${presentes} presente${presentes !== 1 ? 's' : ''}, ${ausentesMusicos} ausente${ausentesMusicos !== 1 ? 's' : ''}`;
     }
   }, [modoMarcacao, selecionados, usuarios]);
@@ -850,6 +779,25 @@ const AdminPresenca = () => {
     return historico.slice(0, 5);
   }, [historico, mostrarTodoHistorico]);
 
+  // Stats para pills na toolbar
+  const toolbarStats = useMemo(() => {
+    const total = usuarios.filter(u => !isRegente(u)).length;
+    const ausentesMusicos = selecionados.filter(id => {
+      const u = usuarios.find(user => user.id === id);
+      return u && !isRegente(u);
+    }).length;
+
+    if (modoMarcacao === 'presentes') {
+      const presentes = selecionados.filter(id => {
+        const u = usuarios.find(user => user.id === id);
+        return u && !isRegente(u);
+      }).length;
+      return { total, presentes, ausentes: total - presentes };
+    } else {
+      return { total, presentes: total - ausentesMusicos, ausentes: ausentesMusicos };
+    }
+  }, [modoMarcacao, selecionados, usuarios]);
+
   if (loading) return <UserListSkeleton />;
 
   const accentColor = modoMarcacao === 'presentes' ? COLORS.success.primary : '#E85A4F';
@@ -864,14 +812,14 @@ const AdminPresenca = () => {
           display: 'flex',
           alignItems: 'center',
           gap: '12px',
-          padding: '14px 16px',
+          padding: '8px 16px',
           paddingLeft: isSelected ? '13px' : '16px',
           borderBottom: '1px solid var(--border)',
           borderLeft: isSelected ? `3px solid ${accentColor}` : '3px solid transparent',
-          background: isSelected ? `${accentColor}08` : 'transparent',
+          background: isSelected ? `${accentColor}12` : 'transparent',
           cursor: 'pointer',
           transition: 'all 0.15s',
-          }}
+        }}
         onMouseEnter={(e) => {
           if (!isSelected) e.currentTarget.style.background = 'rgba(212,175,55, 0.04)';
         }}
@@ -887,15 +835,15 @@ const AdminPresenca = () => {
         />
         {/* Avatar */}
         <div style={{
-          width: '36px',
-          height: '36px',
+          width: '30px',
+          height: '30px',
           borderRadius: '50%',
-          background: familiaColor,
+          background: `linear-gradient(135deg, ${familiaColor} 0%, ${familiaColor}88 100%)`,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          fontWeight: '700',
-          fontSize: '14px',
+          fontWeight: '800',
+          fontSize: '13px',
           color: '#FFFFFF',
           flexShrink: 0
         }}>
@@ -937,8 +885,10 @@ const AdminPresenca = () => {
         <h1 style={{
           fontSize: '28px',
           fontWeight: '700',
-          marginBottom: '8px',
-          color: 'var(--text-primary)',
+          margin: '0 0 6px 0',
+          background: GOLD_GRADIENT,
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
           letterSpacing: '-0.5px'
         }}>
           Controle de Presença
@@ -946,13 +896,14 @@ const AdminPresenca = () => {
         <p style={{
           fontSize: '14px',
           color: 'var(--text-muted)',
-          lineHeight: '1.5'
+          lineHeight: '1.5',
+          margin: 0
         }}>
           Registre a presença dos músicos e gerencie as partituras tocadas nos ensaios
         </p>
       </div>
 
-      {/* Toolbar Compacta: Data + Mode Toggle */}
+      {/* Toolbar Compacta: Data + Mode Toggle + Stats pills */}
       <div className="admin-presenca-toolbar">
         {/* DatePicker à esquerda */}
         <div className="ap-toolbar-date">
@@ -982,7 +933,7 @@ const AdminPresenca = () => {
               gap: '6px'
             }}
           >
-            <CheckCircleIcon size={15} />
+            <CheckCircle2 size={15} />
             Presentes
           </button>
           <button
@@ -1001,9 +952,40 @@ const AdminPresenca = () => {
               gap: '6px'
             }}
           >
-            <XCircleIcon size={15} />
+            <XCircle size={15} />
             Ausentes
           </button>
+        </div>
+      </div>
+
+      {/* Stats pills abaixo da toolbar */}
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', flexWrap: 'wrap' }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: '6px',
+          padding: '5px 12px', borderRadius: '20px',
+          background: 'var(--bg-card)', border: '1px solid var(--border)',
+          fontSize: '12px', fontWeight: '600', color: 'var(--text-muted)'
+        }}>
+          <Users size={12} color="var(--text-muted)" />
+          <span>{toolbarStats.total} músicos</span>
+        </div>
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: '6px',
+          padding: '5px 12px', borderRadius: '20px',
+          background: 'rgba(52,199,89,0.08)', border: '1px solid rgba(52,199,89,0.2)',
+          fontSize: '12px', fontWeight: '600', color: GREEN
+        }}>
+          <CheckCircle2 size={12} color={GREEN} />
+          <span>{toolbarStats.presentes} presentes</span>
+        </div>
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: '6px',
+          padding: '5px 12px', borderRadius: '20px',
+          background: 'rgba(231,76,60,0.08)', border: '1px solid rgba(231,76,60,0.2)',
+          fontSize: '12px', fontWeight: '600', color: RED
+        }}>
+          <XCircle size={12} color={RED} />
+          <span>{toolbarStats.ausentes} ausentes</span>
         </div>
       </div>
 
@@ -1022,9 +1004,16 @@ const AdminPresenca = () => {
           {/* Header da Seção */}
           <div className="ap-section-header">
             <div className="ap-section-title">
-              <UsersIcon size={20} color="#D4AF37" />
+              <div style={{
+                width: '32px', height: '32px', borderRadius: '10px',
+                background: 'rgba(212,175,55,0.12)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                flexShrink: 0
+              }}>
+                <Users size={16} color={GOLD} />
+              </div>
               <h2 style={{
-                fontSize: '15px',
+                fontSize: '14px',
                 fontWeight: '700',
                 color: 'var(--text-primary)',
                 margin: 0
@@ -1045,7 +1034,7 @@ const AdminPresenca = () => {
               {[
                 { label: 'Todos', onClick: marcarTodos },
                 { label: 'Limpar', onClick: desmarcarTodos },
-                { label: 'Inverter', onClick: inverterSelecao, icon: <RefreshIcon size={12} /> }
+                { label: 'Inverter', onClick: inverterSelecao, icon: <RotateCcw size={12} /> }
               ].map(btn => (
                 <button
                   key={btn.label}
@@ -1065,7 +1054,7 @@ const AdminPresenca = () => {
                     gap: '4px'
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = '#D4AF37';
+                    e.currentTarget.style.borderColor = GOLD;
                     e.currentTarget.style.color = 'var(--text-primary)';
                   }}
                   onMouseLeave={(e) => {
@@ -1101,18 +1090,18 @@ const AdminPresenca = () => {
                 {regentes.length > 0 && (
                   <div>
                     <div style={{
-                      padding: '8px 20px',
+                      padding: '6px 16px',
                       background: 'var(--bg)',
                       borderBottom: '1px solid var(--border)',
                       display: 'flex',
                       alignItems: 'center',
                       gap: '8px'
                     }}>
-                      <span style={{ fontSize: '14px' }}>🎼</span>
+                      <Crown size={13} color={GOLD} />
                       <span style={{
                         fontSize: '12px',
                         fontWeight: '700',
-                        color: '#D4AF37',
+                        color: GOLD,
                         textTransform: 'uppercase',
                         letterSpacing: '0.5px',
                         flex: 1
@@ -1120,7 +1109,7 @@ const AdminPresenca = () => {
                         Regência
                       </span>
                     </div>
-                    {regentes.map(u => renderMusicoRow(u, '#D4AF37'))}
+                    {regentes.map(u => renderMusicoRow(u, GOLD))}
                   </div>
                 )}
 
@@ -1132,7 +1121,7 @@ const AdminPresenca = () => {
                   return (
                     <div key={familia}>
                       <div style={{
-                        padding: '8px 20px',
+                        padding: '6px 16px',
                         background: 'var(--bg)',
                         borderBottom: '1px solid var(--border)',
                         display: 'flex',
@@ -1190,7 +1179,9 @@ const AdminPresenca = () => {
                 style={{
                   width: '100%',
                   padding: '12px 16px',
-                  background: accentColor,
+                  background: modoMarcacao === 'presentes'
+                    ? `linear-gradient(135deg, ${GREEN} 0%, #28A745 100%)`
+                    : `linear-gradient(135deg, ${RED} 0%, #C0392B 100%)`,
                   color: '#FFFFFF',
                   border: 'none',
                   borderRadius: '10px',
@@ -1206,9 +1197,9 @@ const AdminPresenca = () => {
                 }}
               >
                 {modoMarcacao === 'presentes' ? (
-                  <CheckCircleIcon size={18} />
+                  <CheckCircle2 size={18} />
                 ) : (
-                  <XCircleIcon size={18} />
+                  <XCircle size={18} />
                 )}
                 {submitting ? 'Registrando...' : `Marcar ${contadorTexto}`}
               </button>
@@ -1225,28 +1216,63 @@ const AdminPresenca = () => {
           display: 'flex',
           flexDirection: 'column'
         }}>
-          {/* Header da Seção */}
-          <div className="ap-section-header">
-            <div className="ap-section-title" style={{ marginBottom: '12px' }}>
-              <MusicIcon size={20} color="#D4AF37" />
-              <h2 style={{
-                fontSize: '15px',
-                fontWeight: '700',
-                color: 'var(--text-primary)',
-                margin: 0
-              }}>
+          {/* Header da Seção Partituras */}
+          <div style={{
+            padding: '14px 16px',
+            borderBottom: '1px solid var(--border)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px'
+          }}>
+            <div style={{
+              width: '32px', height: '32px', borderRadius: '10px',
+              background: 'rgba(212,175,55,0.12)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center'
+            }}>
+              <Music size={16} color={GOLD} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <span style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)' }}>
                 Partituras Tocadas
-              </h2>
-              <span style={{
-                fontSize: '12px',
-                color: 'var(--text-muted)',
-                fontWeight: '500'
-              }}>
-                {partiturasEnsaio.length}
               </span>
             </div>
+            <span style={{
+              fontSize: '12px', fontWeight: '600', color: 'var(--text-muted)',
+              background: 'var(--bg)', border: '1px solid var(--border)',
+              borderRadius: '8px', padding: '2px 8px'
+            }}>
+              {partiturasEnsaio.length}
+            </span>
+          </div>
 
-            {/* Campo de Busca */}
+          {/* Campo YouTube inline */}
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '8px',
+            padding: '8px 16px', borderBottom: '1px solid var(--border)',
+            background: 'rgba(235, 90, 79, 0.04)'
+          }}>
+            <Youtube size={14} color="#E85A4F" />
+            <span style={{ fontSize: '12px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+              YouTube
+            </span>
+            <input
+              type="url"
+              value={youtubeUrl}
+              onChange={e => setYoutubeUrl(e.target.value)}
+              onBlur={handleSaveYoutubeUrl}
+              placeholder="Link do vídeo (opcional)"
+              style={{
+                flex: 1, padding: '5px 10px',
+                background: 'transparent', border: 'none',
+                borderBottom: '1px solid var(--border)',
+                color: 'var(--text-primary)', fontSize: '13px',
+                outline: 'none'
+              }}
+            />
+          </div>
+
+          {/* Campo de Busca */}
+          <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>
             <div style={{ position: 'relative' }}>
               <div style={{
                 position: 'absolute',
@@ -1256,7 +1282,7 @@ const AdminPresenca = () => {
                 pointerEvents: 'none',
                 display: 'flex'
               }}>
-                <SearchIcon size={16} color="#D4AF37" />
+                <Search size={16} color={GOLD} />
               </div>
               <input
                 type="text"
@@ -1292,7 +1318,7 @@ const AdminPresenca = () => {
                     textAlign: 'center',
                     color: 'var(--text-muted)',
                     fontSize: '13px',
-                    }}>
+                  }}>
                     Nenhuma partitura encontrada
                   </div>
                 ) : (
@@ -1320,7 +1346,7 @@ const AdminPresenca = () => {
                         e.currentTarget.style.background = 'transparent';
                       }}
                     >
-                      <PlusIcon size={14} color="#D4AF37" />
+                      <Plus size={14} color={GOLD} />
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{
                           fontSize: '13px',
@@ -1346,10 +1372,10 @@ const AdminPresenca = () => {
                               fontSize: '9px', padding: '1px 5px',
                               borderRadius: '3px',
                               background: p.categoria_cor ? `${p.categoria_cor}20` : 'rgba(212,175,55,0.12)',
-                              color: p.categoria_cor || '#D4AF37',
+                              color: p.categoria_cor || GOLD,
                               fontWeight: '600'
                             }}>
-                              {p.categoria_emoji} {p.categoria_nome}
+                              {p.categoria_nome}
                             </span>
                           )}
                         </div>
@@ -1439,12 +1465,12 @@ const AdminPresenca = () => {
                           padding: '2px 6px',
                           borderRadius: '4px',
                           background: p.categoria_cor ? `${p.categoria_cor}20` : 'rgba(212,175,55,0.12)',
-                          color: p.categoria_cor || '#D4AF37',
+                          color: p.categoria_cor || GOLD,
                           fontWeight: '600',
                           flexShrink: 0,
                           whiteSpace: 'nowrap'
                         }}>
-                          {p.categoria_emoji} {p.categoria_nome}
+                          {p.categoria_nome}
                         </span>
                       )}
                     </div>
@@ -1468,13 +1494,14 @@ const AdminPresenca = () => {
                       cursor: 'pointer',
                       color: '#E85A4F',
                       transition: 'opacity 0.15s',
+                      opacity: 0,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       borderRadius: '6px'
                     }}
                   >
-                    <TrashIcon size={16} />
+                    <Trash2 size={16} />
                   </button>
                 </div>
               ))
@@ -1547,12 +1574,12 @@ const AdminPresenca = () => {
                     if (btns) btns.style.opacity = '0';
                   }}
                 >
-                  {/* Date badge compacto */}
+                  {/* Date badge com gradiente signature */}
                   <div style={{
                     width: '40px',
                     height: '40px',
                     borderRadius: '10px',
-                    background: 'linear-gradient(145deg, #D4AF37, #F4E4BC)',
+                    background: GOLD_GRADIENT,
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
@@ -1562,7 +1589,7 @@ const AdminPresenca = () => {
                     <div style={{
                       fontSize: '16px',
                       fontWeight: '800',
-                      color: '#3D1011',
+                      color: '#1a1a1a',
                       lineHeight: 1
                     }}>
                       {(() => {
@@ -1576,8 +1603,8 @@ const AdminPresenca = () => {
                     </div>
                     <div style={{
                       fontSize: '9px',
-                      fontWeight: '600',
-                      color: '#3D1011',
+                      fontWeight: '700',
+                      color: '#1a1a1a',
                       textTransform: 'uppercase',
                       marginTop: '1px'
                     }}>
@@ -1605,7 +1632,7 @@ const AdminPresenca = () => {
                         <span style={{
                           marginLeft: '8px',
                           background: 'rgba(212, 175, 55, 0.15)',
-                          color: '#D4AF37',
+                          color: GOLD,
                           padding: '2px 6px',
                           borderRadius: '4px',
                           fontSize: '10px',
@@ -1621,13 +1648,13 @@ const AdminPresenca = () => {
                       gap: '0',
                       fontSize: '12px',
                       color: 'var(--text-muted)',
-                      }}>
+                    }}>
                       <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <UsersIcon size={13} color="var(--text-muted)" /> {ensaio.total_presencas} músicos
+                        <Users size={13} color="var(--text-muted)" /> {ensaio.total_presencas} músicos
                       </span>
                       <span style={{ margin: '0 8px', color: 'var(--border)', fontSize: '11px' }}>|</span>
                       <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <MusicIcon size={13} color="var(--text-muted)" /> {ensaio.total_partituras} partituras
+                        <Music size={13} color="var(--text-muted)" /> {ensaio.total_partituras} partituras
                       </span>
                     </div>
                   </div>
@@ -1658,7 +1685,7 @@ const AdminPresenca = () => {
                         gap: '4px'
                       }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.borderColor = '#D4AF37';
+                        e.currentTarget.style.borderColor = GOLD;
                         e.currentTarget.style.color = 'var(--text-primary)';
                       }}
                       onMouseLeave={(e) => {
@@ -1666,7 +1693,7 @@ const AdminPresenca = () => {
                         e.currentTarget.style.color = 'var(--text-muted)';
                       }}
                     >
-                      <EditIcon size={13} />
+                      <Edit3 size={13} />
                       Editar
                     </button>
                     <button
@@ -1692,7 +1719,7 @@ const AdminPresenca = () => {
                         e.currentTarget.style.color = 'var(--text-muted)';
                       }}
                     >
-                      <TrashIcon size={14} />
+                      <Trash2 size={14} />
                     </button>
                   </div>
                 </div>
@@ -1718,27 +1745,27 @@ const AdminPresenca = () => {
                             Presentes ({detalheEnsaio.total_presentes})
                           </div>
                           {(detalheEnsaio.presentes || []).length === 0 ? (
-                            <span style={{ fontSize: '13px', color: 'var(--text-muted)', }}>
+                            <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
                               Nenhum presente
                             </span>
                           ) : (() => {
                             const presentes = detalheEnsaio.presentes || [];
-                            const { regentes, gruposPorFamilia } = groupMusiciansByFamily(presentes);
+                            const { regentes: regs, gruposPorFamilia: grupos } = groupMusiciansByFamily(presentes);
 
                             return (
                               <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                                 {/* Regente(s) */}
-                                {regentes.length > 0 && (
+                                {regs.length > 0 && (
                                   <>
                                     <div style={{
-                                      fontSize: '10px', fontWeight: '700', color: '#D4AF37',
+                                      fontSize: '10px', fontWeight: '700', color: GOLD,
                                       textTransform: 'uppercase',
                                       letterSpacing: '0.5px', padding: '4px 0 2px',
                                       display: 'flex', alignItems: 'center', gap: '4px'
                                     }}>
-                                      <span style={{ fontSize: '12px' }}>🎼</span> Regência
+                                      <Crown size={12} color={GOLD} /> Regência
                                     </div>
-                                    {regentes.map(p => (
+                                    {regs.map(p => (
                                       <div key={p.usuario_id} style={{
                                         fontSize: '13px', color: 'var(--text-primary)', padding: '2px 0 2px 16px',
                                         display: 'flex', alignItems: 'center', gap: '6px'
@@ -1750,7 +1777,7 @@ const AdminPresenca = () => {
                                 )}
 
                                 {/* Sections */}
-                                {gruposPorFamilia.map(({ familia, musicos }) => (
+                                {grupos.map(({ familia, musicos }) => (
                                   <React.Fragment key={familia}>
                                     <div style={{
                                       fontSize: '10px', fontWeight: '700', color: 'var(--text-muted)',
@@ -1804,10 +1831,10 @@ const AdminPresenca = () => {
                                     fontSize: '10px', padding: '1px 6px',
                                     borderRadius: '4px',
                                     background: p.categoria_cor ? `${p.categoria_cor}20` : 'rgba(212,175,55,0.12)',
-                                    color: p.categoria_cor || '#D4AF37',
+                                    color: p.categoria_cor || GOLD,
                                     fontWeight: '600', whiteSpace: 'nowrap'
                                   }}>
-                                    {p.categoria_emoji} {p.categoria_nome}
+                                    {p.categoria_nome}
                                   </span>
                                 )}
                                 {p.compositor && (
@@ -1818,7 +1845,7 @@ const AdminPresenca = () => {
                               </div>
                             ))}
                             {(detalheEnsaio.partituras || []).length === 0 && (
-                              <span style={{ fontSize: '13px', color: 'var(--text-muted)', }}>
+                              <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
                                 Nenhuma partitura
                               </span>
                             )}
@@ -1841,7 +1868,7 @@ const AdminPresenca = () => {
                   background: 'transparent',
                   border: 'none',
                   borderTop: '1px solid var(--border)',
-                  color: '#D4AF37',
+                  color: GOLD,
                   fontSize: '13px',
                   fontWeight: '600',
                   cursor: 'pointer',
@@ -1858,9 +1885,9 @@ const AdminPresenca = () => {
                   e.currentTarget.style.background = 'transparent';
                 }}
               >
-                <ChevronDownIcon
+                <ChevronDown
                   size={14}
-                  color="#D4AF37"
+                  color={GOLD}
                 />
                 {mostrarTodoHistorico
                   ? 'Ver menos'

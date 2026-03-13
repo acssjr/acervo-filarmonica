@@ -4,8 +4,10 @@
 // URL da API
 // Em localhost (dev/preview): usa proxy do Vite (URL relativa)
 // Em produção: usa URL completa do Cloudflare Workers
-// TEMP: Apontando para API de produção para teste local
-export const API_BASE_URL = 'https://acervo-filarmonica-api.acssjr.workers.dev';
+// Em dev: string vazia — usa proxy do Vite (/api → localhost:8787 ou prod)
+// Em produção (build): pode ser injetada via VITE_API_BASE_URL no .env ou CI
+// Nota: import.meta.env?.X usa optional chaining para compatibilidade com Jest
+export const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL || '';
 
 // Tempo de expiração do token (em segundos)
 export const TOKEN_EXPIRY_SECONDS = 24 * 60 * 60; // 24 horas

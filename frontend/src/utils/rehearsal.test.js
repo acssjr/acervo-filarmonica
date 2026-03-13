@@ -1,9 +1,9 @@
-// ===== USE NEXT REHEARSAL TESTS =====
-// Testes unitarios para o hook de proximo ensaio
+// ===== REHEARSAL UTILS TESTS =====
+// Testes unitarios para a funcao de proximo ensaio
 // Ensaios: Segunda e Quarta, das 19h as 21h
 
 import { jest, describe, it, expect, afterEach } from '@jest/globals';
-import { getNextRehearsal } from './useNextRehearsal';
+import { getNextRehearsal } from '@utils/rehearsal';
 
 describe('getNextRehearsal', () => {
   // Helper para criar mock de Date

@@ -71,6 +71,10 @@ export class Router {
     this.register('DELETE', path, handler, middleware);
   }
 
+  patch(path, handler, middleware = []) {
+    this.register('PATCH', path, handler, middleware);
+  }
+
   /**
    * Extrai path params da URL
    * @param {RegExp} regex - Regex da rota
