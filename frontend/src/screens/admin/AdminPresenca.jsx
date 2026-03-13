@@ -573,6 +573,7 @@ const AdminPresenca = () => {
   const [partituras, setPartituras] = useState([]);
   const [partiturasEnsaio, setPartiturasEnsaio] = useState([]);
   const [buscaPartitura, setBuscaPartitura] = useState('');
+  const [youtubeUrl, setYoutubeUrl] = useState('');
 
   // Estado para edição/exclusão
   const [ensaioEditando, setEnsaioEditando] = useState(null);
@@ -615,9 +616,19 @@ const AdminPresenca = () => {
     try {
       const result = await API.getPartiturasEnsaio(data);
       setPartiturasEnsaio(result.partituras || []);
+      setYoutubeUrl(result.youtube_url || '');
     } catch (error) {
       console.error('Erro ao carregar partituras do ensaio:', error);
       setPartiturasEnsaio([]);
+      setYoutubeUrl('');
+    }
+  };
+
+  const handleSaveYoutubeUrl = async () => {
+    try {
+      await API.updateEnsaioConfig(dataEnsaio, youtubeUrl);
+    } catch (error) {
+      showToast(error.message || 'Erro ao salvar link', 'error');
     }
   };
 
@@ -1244,6 +1255,29 @@ const AdminPresenca = () => {
               }}>
                 {partiturasEnsaio.length}
               </span>
+            </div>
+
+            {/* Link YouTube */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="#E85A4F" style={{ flexShrink: 0 }}>
+                <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+              </svg>
+              <input
+                type="url"
+                value={youtubeUrl}
+                onChange={e => setYoutubeUrl(e.target.value)}
+                onBlur={handleSaveYoutubeUrl}
+                placeholder="Link do YouTube (opcional)"
+                style={{
+                  flex: 1,
+                  padding: '8px 12px',
+                  background: 'var(--bg)',
+                  border: '1px solid var(--border)',
+                  borderRadius: '8px',
+                  color: 'var(--text-primary)',
+                  fontSize: '13px'
+                }}
+              />
             </div>
 
             {/* Campo de Busca */}
