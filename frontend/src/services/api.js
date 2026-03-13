@@ -632,9 +632,26 @@ export const API = {
   },
 
   async updateEnsaioConfig(dataEnsaio, youtubeUrl) {
+    let normalizedUrl = youtubeUrl;
+    if (youtubeUrl) {
+      normalizedUrl = youtubeUrl.trim();
+      if (normalizedUrl) {
+        let parsedUrl;
+        try {
+          parsedUrl = new URL(normalizedUrl);
+        } catch {
+          throw new Error('Informe um link válido do YouTube');
+        }
+        const host = parsedUrl.hostname.replace(/^www\./, '');
+        const allowedHosts = new Set(['youtube.com', 'm.youtube.com', 'youtu.be']);
+        if (!['http:', 'https:'].includes(parsedUrl.protocol) || !allowedHosts.has(host)) {
+          throw new Error('Informe um link válido do YouTube');
+        }
+      }
+    }
     return this.request(`/api/ensaios/${dataEnsaio}/config`, {
       method: 'PATCH',
-      body: JSON.stringify({ youtube_url: youtubeUrl })
+      body: JSON.stringify({ youtube_url: normalizedUrl || null })
     });
   },
 
