@@ -1,6 +1,6 @@
 // ===== ENSAIO DETAIL MODAL =====
 // Modal informativo de ensaio — design seguindo SheetDetailModal
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMediaQuery } from '@hooks/useMediaQuery';
@@ -12,6 +12,65 @@ const EnsaioDetailModal = ({ ensaio, isOpen, onClose }) => {
   const [loading, setLoading] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const isDesktop = useMediaQuery('(min-width: 1024px)');
+  const closeButtonRef = useRef(null);
+  const modalRef = useRef(null);
+  const previousFocusRef = useRef(null);
+
+  // Stable close handler ref to avoid re-running effect on every render
+  const onCloseRef = useRef(onClose);
+  useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
+
+  // Focus management: enter, trap, Escape, and restore
+  useEffect(() => {
+    if (!isOpen) return;
+
+    // Save previously focused element to restore on close
+    previousFocusRef.current = document.activeElement;
+
+    // Move focus into modal (close button) after a frame so the DOM is ready
+    const rafId = requestAnimationFrame(() => {
+      closeButtonRef.current?.focus();
+    });
+
+    const handleKeyDown = (e) => {
+      // Escape to close
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        onCloseRef.current?.();
+        return;
+      }
+
+      // Focus trap: keep Tab / Shift+Tab inside modal
+      if (e.key === 'Tab' && modalRef.current) {
+        const focusable = modalRef.current.querySelectorAll(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey) {
+          if (document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+          }
+        } else {
+          if (document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+          }
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      document.removeEventListener('keydown', handleKeyDown);
+      // Restore focus to the element that opened the modal
+      previousFocusRef.current?.focus();
+    };
+  }, [isOpen]);
 
   // Body scroll lock
   useEffect(() => {
@@ -74,6 +133,7 @@ const EnsaioDetailModal = ({ ensaio, isOpen, onClose }) => {
         <>
           {/* Backdrop */}
           <motion.div
+            aria-hidden="true"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -90,6 +150,7 @@ const EnsaioDetailModal = ({ ensaio, isOpen, onClose }) => {
 
           {/* Modal */}
           <motion.div
+            ref={modalRef}
             role="dialog"
             aria-modal="true"
             initial={isDesktop ? { opacity: 0, scale: 0.95 } : { y: '100%' }}
@@ -168,13 +229,13 @@ const EnsaioDetailModal = ({ ensaio, isOpen, onClose }) => {
                 >
                   {expanded ? (
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                      <polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/>
-                      <line x1="10" y1="14" x2="3" y2="21"/><line x1="21" y1="3" x2="14" y2="10"/>
+                      <polyline points="4 14 10 14 10 20" /><polyline points="20 10 14 10 14 4" />
+                      <line x1="10" y1="14" x2="3" y2="21" /><line x1="21" y1="3" x2="14" y2="10" />
                     </svg>
                   ) : (
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                      <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
-                      <line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>
+                      <polyline points="15 3 21 3 21 9" /><polyline points="9 21 3 21 3 15" />
+                      <line x1="21" y1="3" x2="14" y2="10" /><line x1="3" y1="21" x2="10" y2="14" />
                     </svg>
                   )}
                 </button>
@@ -182,6 +243,7 @@ const EnsaioDetailModal = ({ ensaio, isOpen, onClose }) => {
 
               {/* Botão fechar */}
               <button
+                ref={closeButtonRef}
                 onClick={onClose}
                 aria-label="Fechar"
                 style={{
@@ -209,15 +271,15 @@ const EnsaioDetailModal = ({ ensaio, isOpen, onClose }) => {
                 marginBottom: '12px'
               }}>
                 <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                  <line x1="16" y1="2" x2="16" y2="6"/>
-                  <line x1="8" y1="2" x2="8" y2="6"/>
-                  <line x1="3" y1="10" x2="21" y2="10"/>
-                  <line x1="8" y1="14" x2="8" y2="14" strokeWidth="2.5"/>
-                  <line x1="12" y1="14" x2="12" y2="14" strokeWidth="2.5"/>
-                  <line x1="16" y1="14" x2="16" y2="14" strokeWidth="2.5"/>
-                  <line x1="8" y1="18" x2="8" y2="18" strokeWidth="2.5"/>
-                  <line x1="12" y1="18" x2="12" y2="18" strokeWidth="2.5"/>
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                  <line x1="16" y1="2" x2="16" y2="6" />
+                  <line x1="8" y1="2" x2="8" y2="6" />
+                  <line x1="3" y1="10" x2="21" y2="10" />
+                  <line x1="8" y1="14" x2="8" y2="14" strokeWidth="2.5" />
+                  <line x1="12" y1="14" x2="12" y2="14" strokeWidth="2.5" />
+                  <line x1="16" y1="14" x2="16" y2="14" strokeWidth="2.5" />
+                  <line x1="8" y1="18" x2="8" y2="18" strokeWidth="2.5" />
+                  <line x1="12" y1="18" x2="12" y2="18" strokeWidth="2.5" />
                 </svg>
               </div>
 
@@ -298,7 +360,7 @@ const EnsaioDetailModal = ({ ensaio, isOpen, onClose }) => {
                   }}
                 >
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
                   </svg>
                   Reassistir ensaio
                 </a>
@@ -313,7 +375,7 @@ const EnsaioDetailModal = ({ ensaio, isOpen, onClose }) => {
                   cursor: 'not-allowed', boxSizing: 'border-box'
                 }}>
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style={{ opacity: 0.4 }}>
-                    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
                   </svg>
                   Gravação não disponível
                 </div>

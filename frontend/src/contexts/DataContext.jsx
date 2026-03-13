@@ -119,7 +119,7 @@ export const DataProvider = ({ children }) => {
 
           // Atualiza configurações de ensaio
           if (diasEnsaioApi) {
-            setDiasEnsaio({ dias: diasEnsaioApi.dias || [1, 3], hora: diasEnsaioApi.hora || 19 });
+            setDiasEnsaio({ dias: diasEnsaioApi.dias || [1, 3], hora: diasEnsaioApi.hora ?? 19 });
           }
           if (modoRecessoApi) {
             setModoRecesso(modoRecessoApi.ativo ?? false);
