@@ -1,4 +1,4 @@
-// ===== HOOK: PRÓXIMO ENSAIO =====
+// ===== UTILS: PRÓXIMO ENSAIO =====
 // Calcula tempo restante para o próximo ensaio
 // Usa sempre hora local (nunca UTC) para evitar problemas de timezone
 
@@ -18,14 +18,15 @@ export const getNextRehearsal = (rehearsalDays = [1, 3], rehearsalHour = 19, reh
   const now = new Date();
   const currentDay = now.getDay();     // local day of week
   const currentHour = now.getHours();  // local hour
-  const currentMinute = now.getMinutes();
 
   // Verifica se está em ensaio agora
   const isRehearsalDay = rehearsalDays.includes(currentDay);
   const isDuringRehearsal = isRehearsalDay && currentHour >= rehearsalHour && currentHour < rehearsalEndHour;
 
   if (isDuringRehearsal) {
-    const minutesLeft = (rehearsalEndHour - currentHour - 1) * 60 + (60 - currentMinute);
+    const endTime = new Date(now);
+    endTime.setHours(rehearsalEndHour, 0, 0, 0);
+    const minutesLeft = Math.round((endTime - now) / 60000);
     return { isNow: true, minutesLeft };
   }
 
@@ -61,5 +62,3 @@ export const getNextRehearsal = (rehearsalDays = [1, 3], rehearsalHour = 19, reh
 
   return { isNow: false, days, hours, minutes, dayName };
 };
-
-export default getNextRehearsal;

@@ -1,9 +1,10 @@
 // ===== ADMIN CONFIG =====
 // Configurações do admin
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useAuth } from '@contexts/AuthContext';
 import { useUI } from '@contexts/UIContext';
+import { useData } from '@contexts/DataContext';
 import { useNotifications } from '@contexts/NotificationContext';
 import { API } from '@services/api';
 import { Storage } from '@services/storage';
@@ -13,34 +14,13 @@ const AdminConfig = () => {
   const { user, setUser } = useAuth();
   const { showToast } = useUI();
   const { clearNotifications } = useNotifications();
+  const { modoRecesso, setModoRecesso, diasEnsaio: diasEnsaioCtx, setDiasEnsaio: setDiasEnsaioCtx } = useData();
   const [showChangePin, setShowChangePin] = useState(false);
   const [showAboutModal, setShowAboutModal] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
-  const [modoRecesso, setModoRecesso] = useState(false);
-  const [loadingRecesso, setLoadingRecesso] = useState(true);
-  const [diasEnsaio, setDiasEnsaio] = useState([1, 3]);
-  const [horaEnsaio, setHoraEnsaio] = useState(19);
-  const [loadingDias, setLoadingDias] = useState(true);
+  const [diasEnsaio, setDiasEnsaio] = useState(diasEnsaioCtx.dias);
+  const [horaEnsaio, setHoraEnsaio] = useState(diasEnsaioCtx.hora);
   const [savingDias, setSavingDias] = useState(false);
-
-  useEffect(() => {
-    API.getModoRecesso().then(res => {
-      setModoRecesso(res.ativo);
-      setLoadingRecesso(false);
-    });
-    API.getDiasEnsaio()
-      .then(res => {
-        setDiasEnsaio(Array.isArray(res.dias) ? res.dias : [1, 3]);
-        setHoraEnsaio(res.hora ?? 19);
-      })
-      .catch(() => {
-        setDiasEnsaio([1, 3]);
-        setHoraEnsaio(19);
-      })
-      .finally(() => {
-        setLoadingDias(false);
-      });
-  }, []);
 
   const handleToggleRecesso = async () => {
     const novoValor = !modoRecesso;
@@ -55,17 +35,10 @@ const AdminConfig = () => {
   };
 
   const handleSaveDiasEnsaio = async () => {
-    if (diasEnsaio.length === 0) {
-      showToast('Selecione pelo menos um dia de ensaio', 'error');
-      return;
-    }
-    if (!Number.isInteger(horaEnsaio) || horaEnsaio < 0 || horaEnsaio > 23) {
-      showToast('Informe um horário entre 0h e 23h', 'error');
-      return;
-    }
     setSavingDias(true);
     try {
       await API.setDiasEnsaio(diasEnsaio, horaEnsaio);
+      setDiasEnsaioCtx({ dias: diasEnsaio, hora: horaEnsaio });
       showToast('Dias de ensaio atualizados!');
     } catch {
       showToast('Erro ao salvar', 'error');
@@ -336,7 +309,6 @@ const AdminConfig = () => {
           </div>
           <button
             onClick={handleToggleRecesso}
-            disabled={loadingRecesso}
             style={{
               width: '52px',
               height: '28px',
@@ -344,9 +316,8 @@ const AdminConfig = () => {
               border: 'none',
               background: modoRecesso ? '#D4AF37' : 'var(--border)',
               position: 'relative',
-              cursor: loadingRecesso ? 'wait' : 'pointer',
+              cursor: 'pointer',
               transition: 'background 0.2s',
-              opacity: loadingRecesso ? 0.5 : 1
             }}
           >
             <div style={{
@@ -371,7 +342,7 @@ const AdminConfig = () => {
         padding: '20px',
         marginBottom: '20px',
         border: '1px solid var(--border)',
-        opacity: loadingDias ? 0.5 : 1
+        opacity: 1
       }}>
         <h3 style={{
           fontSize: '16px',
@@ -442,14 +413,7 @@ const AdminConfig = () => {
         </div>
         <button
           onClick={handleSaveDiasEnsaio}
-          disabled={
-            savingDias ||
-            loadingDias ||
-            diasEnsaio.length === 0 ||
-            !Number.isInteger(horaEnsaio) ||
-            horaEnsaio < 0 ||
-            horaEnsaio > 23
-          }
+          disabled={savingDias}
           style={{
             padding: '10px 20px',
             borderRadius: '10px',
@@ -458,8 +422,8 @@ const AdminConfig = () => {
             color: '#fff',
             fontSize: '14px',
             fontWeight: '500',
-            cursor: (savingDias || loadingDias || diasEnsaio.length === 0) ? 'not-allowed' : 'pointer',
-            opacity: (savingDias || loadingDias || diasEnsaio.length === 0 || !Number.isInteger(horaEnsaio) || horaEnsaio < 0 || horaEnsaio > 23) ? 0.5 : 1
+            cursor: savingDias ? 'wait' : 'pointer',
+            opacity: savingDias ? 0.7 : 1
           }}
         >
           {savingDias ? 'Salvando...' : 'Salvar'}

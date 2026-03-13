@@ -45,6 +45,10 @@ export const DataProvider = ({ children }) => {
     return stored || FALLBACK_INSTRUMENTS;
   });
 
+  // Configurações de ensaio
+  const [diasEnsaio, setDiasEnsaio] = useState({ dias: [1, 3], hora: 19 });
+  const [modoRecesso, setModoRecesso] = useState(false);
+
   // Favoritos - Otimizado: usa Set para lookups O(1)
   const [favoritesSet, setFavoritesSet] = useState(() => {
     const stored = Storage.get('favorites', []);
@@ -70,11 +74,13 @@ export const DataProvider = ({ children }) => {
         setApiOnline(isOnline);
 
         if (isOnline) {
-          // Carrega partituras, categorias e instrumentos em paralelo
-          const [partituras, categoriasApi, instrumentosApi] = await Promise.all([
+          // Carrega partituras, categorias, instrumentos e configurações em paralelo
+          const [partituras, categoriasApi, instrumentosApi, diasEnsaioApi, modoRecessoApi] = await Promise.all([
             API.getPartituras(),
             API.getCategorias(),
-            API.getInstrumentos()
+            API.getInstrumentos(),
+            API.getDiasEnsaio().catch(() => null),
+            API.getModoRecesso().catch(() => null)
           ]);
 
           if (partituras && partituras.length > 0) {
@@ -110,6 +116,14 @@ export const DataProvider = ({ children }) => {
             }));
             setInstruments(mappedInstruments);
           }
+
+          // Atualiza configurações de ensaio
+          if (diasEnsaioApi) {
+            setDiasEnsaio({ dias: diasEnsaioApi.dias || [1, 3], hora: diasEnsaioApi.hora || 19 });
+          }
+          if (modoRecessoApi) {
+            setModoRecesso(modoRecessoApi.ativo ?? false);
+          }
         }
       } catch (error) {
         console.error('Erro ao carregar da API:', error);
@@ -144,8 +158,7 @@ export const DataProvider = ({ children }) => {
     return new Map(categories.map(cat => [cat.id, cat]));
   }, [categories]);
 
-  // Helper: lista de nomes de instrumentos (sem useMemo para arrays pequenos)
-  const instrumentNames = instruments.map(i => i.nome);
+  const instrumentNames = useMemo(() => instruments.map(i => i.nome), [instruments]);
 
   // Helper: converte Set para array para compatibilidade (memoizado)
   const favorites = useMemo(() => Array.from(favoritesSet), [favoritesSet]);
@@ -237,7 +250,11 @@ export const DataProvider = ({ children }) => {
       searchQuery,
       setSearchQuery,
       isLoading,
-      apiOnline
+      apiOnline,
+      diasEnsaio,
+      setDiasEnsaio,
+      modoRecesso,
+      setModoRecesso
     }}>
       {children}
     </DataContext.Provider>
