@@ -1,7 +1,7 @@
 // ===== ADMIN CONFIG =====
 // Configurações do admin
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@contexts/AuthContext';
 import { useUI } from '@contexts/UIContext';
 import { useData } from '@contexts/DataContext';
@@ -21,6 +21,11 @@ const AdminConfig = () => {
   const [diasEnsaio, setDiasEnsaio] = useState(diasEnsaioCtx.dias);
   const [horaEnsaio, setHoraEnsaio] = useState(diasEnsaioCtx.hora);
   const [savingDias, setSavingDias] = useState(false);
+
+  useEffect(() => {
+    setDiasEnsaio(diasEnsaioCtx.dias);
+    setHoraEnsaio(diasEnsaioCtx.hora);
+  }, [diasEnsaioCtx.dias, diasEnsaioCtx.hora]);
 
   const handleToggleRecesso = async () => {
     const novoValor = !modoRecesso;

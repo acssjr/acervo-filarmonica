@@ -75,13 +75,19 @@ export const DataProvider = ({ children }) => {
 
         if (isOnline) {
           // Carrega partituras, categorias, instrumentos e configurações em paralelo
-          const [partituras, categoriasApi, instrumentosApi, diasEnsaioApi, modoRecessoApi] = await Promise.all([
+          const [partiturasRes, categoriasRes, instrumentosRes, diasEnsaioRes, modoRecessoRes] = await Promise.allSettled([
             API.getPartituras(),
             API.getCategorias(),
             API.getInstrumentos(),
-            API.getDiasEnsaio().catch(() => null),
-            API.getModoRecesso().catch(() => null)
+            API.getDiasEnsaio(),
+            API.getModoRecesso()
           ]);
+
+          const partituras = partiturasRes.status === 'fulfilled' ? partiturasRes.value : null;
+          const categoriasApi = categoriasRes.status === 'fulfilled' ? categoriasRes.value : null;
+          const instrumentosApi = instrumentosRes.status === 'fulfilled' ? instrumentosRes.value : null;
+          const diasEnsaioApi = diasEnsaioRes.status === 'fulfilled' ? diasEnsaioRes.value : null;
+          const modoRecessoApi = modoRecessoRes.status === 'fulfilled' ? modoRecessoRes.value : null;
 
           if (partituras && partituras.length > 0) {
             const mappedSheets = partituras.map(p => ({

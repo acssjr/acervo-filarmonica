@@ -490,6 +490,7 @@ const AdminPresenca = () => {
   const [partiturasEnsaio, setPartiturasEnsaio] = useState([]);
   const [buscaPartitura, setBuscaPartitura] = useState('');
   const [youtubeUrl, setYoutubeUrl] = useState('');
+  const partiturasRequestRef = useRef(0);
 
   // Estado para edição/exclusão
   const [ensaioEditando, setEnsaioEditando] = useState(null);
@@ -529,11 +530,16 @@ const AdminPresenca = () => {
 
   // Carregar partituras do ensaio selecionado
   const loadPartiturasEnsaio = async (data) => {
+    const requestId = ++partiturasRequestRef.current;
+    setPartiturasEnsaio([]);
+    setYoutubeUrl('');
     try {
       const result = await API.getPartiturasEnsaio(data);
+      if (requestId !== partiturasRequestRef.current) return;
       setPartiturasEnsaio(result.partituras || []);
       setYoutubeUrl(result.youtube_url || '');
     } catch (error) {
+      if (requestId !== partiturasRequestRef.current) return;
       console.error('Erro ao carregar partituras do ensaio:', error);
       setPartiturasEnsaio([]);
       setYoutubeUrl('');
