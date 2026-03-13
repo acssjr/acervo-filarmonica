@@ -74,18 +74,19 @@ export const DataProvider = ({ children }) => {
         setApiOnline(isOnline);
 
         if (isOnline) {
-          // Carrega partituras, categorias, instrumentos e configurações em paralelo
-          const [partiturasRes, categoriasRes, instrumentosRes, diasEnsaioRes, modoRecessoRes] = await Promise.allSettled([
+          // Carrega dados principais em paralelo (se falhar, aborta)
+          const [partituras, categoriasApi, instrumentosApi] = await Promise.all([
             API.getPartituras(),
             API.getCategorias(),
-            API.getInstrumentos(),
+            API.getInstrumentos()
+          ]);
+
+          // Carrega configurações de ensaio de forma independente (não bloqueante)
+          const [diasEnsaioRes, modoRecessoRes] = await Promise.allSettled([
             API.getDiasEnsaio(),
             API.getModoRecesso()
           ]);
 
-          const partituras = partiturasRes.status === 'fulfilled' ? partiturasRes.value : null;
-          const categoriasApi = categoriasRes.status === 'fulfilled' ? categoriasRes.value : null;
-          const instrumentosApi = instrumentosRes.status === 'fulfilled' ? instrumentosRes.value : null;
           const diasEnsaioApi = diasEnsaioRes.status === 'fulfilled' ? diasEnsaioRes.value : null;
           const modoRecessoApi = modoRecessoRes.status === 'fulfilled' ? modoRecessoRes.value : null;
 
