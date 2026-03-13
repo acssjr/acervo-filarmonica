@@ -65,7 +65,7 @@ export function setupConfigRoutes(router) {
       const { dias, hora } = await request.json();
 
       // Validate: dias must be array of 0-6, hora 0-23
-      if (!Array.isArray(dias) || dias.some(d => d < 0 || d > 6)) {
+      if (!Array.isArray(dias) || dias.some(d => !Number.isInteger(d) || d < 0 || d > 6)) {
         return errorResponse('Dias inválidos', 400, request);
       }
 

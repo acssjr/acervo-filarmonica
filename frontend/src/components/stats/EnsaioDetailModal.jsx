@@ -27,25 +27,34 @@ const EnsaioDetailModal = ({ ensaio, isOpen, onClose }) => {
     }
   }, [isOpen]);
 
+  const dataEnsaio = ensaio?.data_ensaio ?? null;
   useEffect(() => {
-    if (!isOpen || !ensaio) return;
+    if (!isOpen || !dataEnsaio) return;
+    let active = true;
     setPartituras([]);
     setYoutubeUrl(null);
     setExpanded(false);
     const load = async () => {
       setLoading(true);
       try {
-        const result = await API.getPartiturasEnsaio(ensaio.data_ensaio);
+        const result = await API.getPartiturasEnsaio(dataEnsaio);
+        if (!active) return;
         setPartituras(result.partituras || []);
         setYoutubeUrl(result.youtube_url || null);
       } catch {
-        setPartituras([]);
+        if (active) {
+          setPartituras([]);
+          setYoutubeUrl(null);
+        }
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     };
     load();
-  }, [isOpen, ensaio]);
+    return () => {
+      active = false;
+    };
+  }, [isOpen, dataEnsaio]);
 
   if (!ensaio) return null;
 
