@@ -1245,30 +1245,74 @@ const AdminPresenca = () => {
             </span>
           </div>
 
-          {/* Campo YouTube inline */}
+          {/* Campo YouTube - Link da Gravação */}
           <div style={{
-            display: 'flex', alignItems: 'center', gap: '8px',
-            padding: '8px 16px', borderBottom: '1px solid var(--border)',
-            background: 'rgba(235, 90, 79, 0.04)'
+            padding: '12px 16px',
+            borderBottom: '1px solid var(--border)',
+            background: 'rgba(235, 90, 79, 0.02)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '8px'
           }}>
-            <Youtube size={14} color="#E85A4F" />
-            <span style={{ fontSize: '12px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-              YouTube
-            </span>
-            <input
-              type="url"
-              value={youtubeUrl}
-              onChange={e => setYoutubeUrl(e.target.value)}
-              onBlur={handleSaveYoutubeUrl}
-              placeholder="Link do vídeo (opcional)"
-              style={{
-                flex: 1, padding: '5px 10px',
-                background: 'transparent', border: 'none',
-                borderBottom: '1px solid var(--border)',
-                color: 'var(--text-primary)', fontSize: '13px',
-                outline: 'none'
-              }}
-            />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Youtube size={14} color="#E85A4F" />
+              <span style={{
+                fontSize: '11px',
+                fontWeight: '700',
+                color: 'var(--text-muted)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px'
+              }}>
+                Link da gravação do ensaio
+              </span>
+            </div>
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+              <input
+                type="url"
+                value={youtubeUrl}
+                onChange={e => setYoutubeUrl(e.target.value)}
+                onBlur={handleSaveYoutubeUrl}
+                placeholder="https://youtube.com/watch?v=..."
+                style={{
+                  width: '100%',
+                  padding: '10px 14px',
+                  paddingRight: '40px',
+                  background: 'var(--bg)',
+                  border: '1px solid var(--border)',
+                  borderRadius: '10px',
+                  color: 'var(--text-primary)',
+                  fontSize: '13px',
+                  outline: 'none',
+                  transition: 'all 0.2s ease',
+                  boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.05)'
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = '#E85A4F';
+                  e.target.style.background = 'var(--bg-card)';
+                }}
+                onMouseLeave={(e) => {
+                  if (document.activeElement !== e.target) {
+                    e.target.style.borderColor = 'var(--border)';
+                    e.target.style.background = 'var(--bg)';
+                  }
+                }}
+              />
+              {youtubeUrl && (
+                <div style={{
+                  position: 'absolute',
+                  right: '12px',
+                  color: '#22C55E',
+                  display: 'flex',
+                  alignItems: 'center',
+                  animation: 'fadeIn 0.3s ease'
+                }}>
+                  <CheckCircle2 size={14} />
+                </div>
+              )}
+            </div>
+            <p style={{ fontSize: '10px', color: 'var(--text-muted)', margin: '0 2px' }}>
+              O vídeo será exibido no modal de detalhes do ensaio para todos os músicos.
+            </p>
           </div>
 
           {/* Campo de Busca */}
