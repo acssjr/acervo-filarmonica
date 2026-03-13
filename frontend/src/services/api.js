@@ -37,10 +37,11 @@ export const API = {
   },
 
   // Helper para fazer requisicoes
-  async request(endpoint, options = {}) {
+  async request(endpoint, options = {}, internal = {}) {
+    const { skipAuthCheck = false } = internal;
     try {
-      // Verifica expiração do token antes de requisições autenticadas
-      if (this.isTokenExpired()) {
+      // Verifica expiração do token apenas para requisições autenticadas
+      if (!skipAuthCheck && this.isTokenExpired()) {
         this.clearAuth();
         if (onTokenExpired) {
           onTokenExpired();
@@ -564,9 +565,7 @@ export const API = {
 
   async getModoRecesso() {
     try {
-      const result = await fetch(`${API_BASE_URL}/api/config/recesso`);
-      if (!result.ok) return { ativo: false };
-      return await result.json();
+      return await this.request('/api/config/recesso', {}, { skipAuthCheck: true });
     } catch {
       return { ativo: false };
     }
@@ -580,7 +579,7 @@ export const API = {
   },
 
   async getDiasEnsaio() {
-    return this.request('/api/config/dias-ensaio');
+    return this.request('/api/config/dias-ensaio', {}, { skipAuthCheck: true });
   },
 
   async setDiasEnsaio(dias, hora) {
@@ -634,7 +633,7 @@ export const API = {
 
   async updateEnsaioConfig(dataEnsaio, youtubeUrl) {
     return this.request(`/api/ensaios/${dataEnsaio}/config`, {
-      method: 'PUT',
+      method: 'PATCH',
       body: JSON.stringify({ youtube_url: youtubeUrl })
     });
   },
