@@ -502,8 +502,8 @@ const AdminPresenca = () => {
   const [carregandoDetalhe, setCarregandoDetalhe] = useState(false);
 
   // Carregar dados
-  const loadData = async () => {
-    setLoading(true);
+  const loadData = async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const [users, presencas, todasPartituras] = await Promise.all([
         API.getUsuarios(),
@@ -525,7 +525,7 @@ const AdminPresenca = () => {
       console.error('Erro ao carregar dados:', error);
       showToast('Erro ao carregar dados', 'error');
     }
-    setLoading(false);
+    if (!silent) setLoading(false);
   };
 
   // Carregar partituras do ensaio selecionado
@@ -617,9 +617,9 @@ const AdminPresenca = () => {
         'success'
       );
 
-      // Limpar seleção e recarregar dados
+      // Limpar seleção e recarregar dados silenciosamente para manter o scroll
       setSelecionados([]);
-      await loadData();
+      await loadData(true);
     } catch (error) {
       console.error('Erro ao marcar presença:', error);
       showToast(error.message || 'Erro ao marcar presença', 'error');
@@ -693,7 +693,7 @@ const AdminPresenca = () => {
         // Se o modo de marcação estiver ativo, talvez resetar outros estados se necessário
       }
 
-      loadData();
+      loadData(true);
     } catch (error) {
       showToast('Erro ao excluir ensaio', 'error');
     }
@@ -1955,7 +1955,7 @@ const AdminPresenca = () => {
           ensaio={ensaioEditando}
           usuarios={usuarios}
           onClose={() => setModalEdicaoAberto(false)}
-          onUpdate={() => loadData()}
+          onUpdate={(silent) => loadData(silent)}
           addNotification={showToast}
         />
       )}

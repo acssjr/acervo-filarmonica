@@ -1,112 +1,118 @@
-/* ===== BOTTOM NAV MODULE ===== */
+/* ===== BOTTOM NAV MODULE — LIQUID NOTCH REDESIGN ===== */
 
 .nav {
   position: fixed;
-  bottom: 16px;
-  left: 50%;
-  backdrop-filter: blur(40px) saturate(180%);
-  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: calc(70px + env(safe-area-inset-bottom));
+  z-index: 999;
   display: flex;
   justify-content: space-around;
-  align-items: center;
-  padding: 12px 8px;
-  z-index: 999;
-  width: calc(100% - 32px);
-  max-width: 420px;
-  border-radius: 28px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25), inset 0 0.5px 0 rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  transition: transform 0.3s ease, opacity 0.3s ease;
+  align-items: flex-start;
+  padding: 0;
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+  overflow: visible;
 }
 
-.nav.dark {
-  background: rgba(72, 20, 21, 0.85);
+/* Background flutuante com o notch SVG */
+.navBg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  filter: drop-shadow(0 -4px 12px rgba(0, 0, 0, 0.25));
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
 }
 
-.nav.light {
-  background: rgba(92, 26, 27, 0.88);
+.nav.dark .navBg {
+  fill: rgba(45, 12, 13, 0.96);
 }
 
-.nav.visible {
-  transform: translateX(-50%) translateY(0);
-  opacity: 1;
-  pointer-events: auto;
+.nav.light .navBg {
+  fill: rgba(72, 20, 21, 0.96);
 }
 
 .nav.hidden {
-  transform: translateX(-50%) translateY(100px);
+  transform: translateY(100%);
   opacity: 0;
   pointer-events: none;
 }
 
-/* Botao central (busca) */
-.centerButton {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(145deg, #D4AF37 0%, #AA8C2C 100%);
-  border: none;
-  color: #3D1518;
-  cursor: pointer;
-  width: 62px;
-  height: 62px;
-  border-radius: 50%;
-  transition: all 0.2s ease;
-  box-shadow: 0 4px 20px rgba(212, 175, 55, 0.35);
-  flex-shrink: 0;
-}
-
-.centerIcon {
-  width: 28px;
-  height: 28px;
-}
-
-/* Botao tab normal */
-.tabButton {
+/* ===== TAB SLOT ===== */
+.tabSlot {
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  position: relative;
   background: none;
   border: none;
   cursor: pointer;
-  padding: 8px 12px;
-  border-radius: 12px;
-  min-width: 56px;
-  position: relative;
-  box-sizing: border-box;
+  height: 70px;
+  padding: 0;
+  z-index: 2;
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
 }
 
-/* Indicador animado que desliza entre tabs */
-.indicator {
+.tabContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+/* ===== FLOATING BUBBLE (active item) ===== */
+.bubble {
   position: absolute;
-  inset: 0;
-  background: rgba(244, 228, 188, 0.15);
-  border-radius: 12px;
-  z-index: 0;
+  top: -24px;
+  /* Flutua exatamente no centro do notch */
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #D4AF37 0%, #AA8C2C 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 16px rgba(170, 140, 44, 0.4);
+  z-index: 3;
 }
 
-.tabButton.active {
-  color: #F4E4BC;
+.bubbleIcon {
+  width: 28px;
+  height: 28px;
+  color: #2A0A0C;
 }
 
-.tabButton.inactive {
-  color: rgba(255, 255, 255, 0.7);
+/* ===== LABELS & ICONS ===== */
+.activeLabel {
+  color: #D4AF37;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-top: 32px;
+  /* Espaço para o notch */
 }
 
-.tabIcon {
-  width: 22px;
-  height: 22px;
-  position: relative;
-  z-index: 1;
+.inactiveIcon {
+  width: 24px;
+  height: 24px;
+  color: rgba(244, 228, 188, 0.35);
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.tabLabel {
-  font-size: 11px;
-  font-weight: 700;
-  /* font-family inherited from base.css */
-  letter-spacing: 0.2px;
-  position: relative;
-  z-index: 1;
+.tabSlot:active .inactiveIcon {
+  transform: scale(0.9);
+  color: rgba(244, 228, 188, 0.6);
 }

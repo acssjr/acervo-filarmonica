@@ -72,18 +72,57 @@ const EnsaioDetailModal = ({ ensaio, isOpen, onClose }) => {
     };
   }, [isOpen]);
 
-  // Body scroll lock
+  // Body scroll lock — robust iOS Safari solution
+  // Uses touchmove interception + CSS overflow hidden + overscroll-behavior
   useEffect(() => {
-    if (isOpen) {
-      const scrollY = window.scrollY;
-      document.documentElement.classList.add('modal-open');
-      document.body.style.top = `-${scrollY}px`;
-      return () => {
-        document.documentElement.classList.remove('modal-open');
-        document.body.style.top = '';
-        window.scrollTo(0, scrollY);
-      };
-    }
+    if (!isOpen) return;
+
+    const scrollY = window.scrollY;
+
+    // 1. CSS: overflow hidden + height 100% on both html and body
+    const html = document.documentElement;
+    const body = document.body;
+    const origStyles = {
+      htmlOverflow: html.style.overflow,
+      htmlHeight: html.style.height,
+      bodyOverflow: body.style.overflow,
+      bodyHeight: body.style.height,
+      bodyTouchAction: body.style.touchAction,
+      bodyWebkitOverflowScrolling: body.style.webkitOverflowScrolling,
+      bodyOverscrollBehavior: body.style.overscrollBehavior,
+    };
+
+    html.style.overflow = 'hidden';
+    html.style.height = '100%';
+    body.style.overflow = 'hidden';
+    body.style.height = '100%';
+    body.style.touchAction = 'none';
+    body.style.webkitOverflowScrolling = 'auto';
+    body.style.overscrollBehavior = 'none';
+
+    // 2. Touchmove interception — block outside modal, allow inside scrollable areas
+    const handleTouchMove = (e) => {
+      // Allow scrolling inside the modal
+      if (modalRef.current && modalRef.current.contains(e.target)) {
+        return; // let it scroll normally inside modal
+      }
+      // Block everything else
+      e.preventDefault();
+    };
+
+    document.addEventListener('touchmove', handleTouchMove, { passive: false });
+
+    return () => {
+      document.removeEventListener('touchmove', handleTouchMove);
+      html.style.overflow = origStyles.htmlOverflow;
+      html.style.height = origStyles.htmlHeight;
+      body.style.overflow = origStyles.bodyOverflow;
+      body.style.height = origStyles.bodyHeight;
+      body.style.touchAction = origStyles.bodyTouchAction;
+      body.style.webkitOverflowScrolling = origStyles.bodyWebkitOverflowScrolling;
+      body.style.overscrollBehavior = origStyles.bodyOverscrollBehavior;
+      window.scrollTo(0, scrollY);
+    };
   }, [isOpen]);
 
   const dataEnsaio = ensaio?.data_ensaio ?? null;
@@ -141,9 +180,9 @@ const EnsaioDetailModal = ({ ensaio, isOpen, onClose }) => {
             onClick={onClose}
             style={{
               position: 'fixed', inset: 0,
-              background: 'rgba(0,0,0,0.65)',
-              backdropFilter: 'blur(4px)',
-              WebkitBackdropFilter: 'blur(4px)',
+              background: isDesktop ? 'rgba(0,0,0,0.65)' : 'rgba(0,0,0,0.35)',
+              backdropFilter: isDesktop ? 'blur(4px)' : 'blur(12px)',
+              WebkitBackdropFilter: isDesktop ? 'blur(4px)' : 'blur(12px)',
               zIndex: 10000
             }}
           />
@@ -165,6 +204,7 @@ const EnsaioDetailModal = ({ ensaio, isOpen, onClose }) => {
               display: 'flex',
               flexDirection: 'column',
               overflow: 'hidden',
+              overscrollBehavior: 'contain',
               ...(isDesktop ? {
                 height: expanded ? '85vh' : '560px', maxHeight: '85vh'
               } : {
@@ -181,17 +221,6 @@ const EnsaioDetailModal = ({ ensaio, isOpen, onClose }) => {
               })
             }}
           >
-            {/* Handle — mobile only */}
-            {!isDesktop && (
-              <div style={{
-                width: '40px', height: '4px',
-                background: 'rgba(255,255,255,0.15)',
-                borderRadius: '2px',
-                margin: '12px auto 0',
-                flexShrink: 0
-              }} />
-            )}
-
             {/* ===== HEADER ===== */}
             <div style={{
               background: 'linear-gradient(145deg, rgba(114,47,55,0.85) 0%, rgba(60,15,18,0.95) 100%)',
@@ -385,21 +414,72 @@ const EnsaioDetailModal = ({ ensaio, isOpen, onClose }) => {
             {/* ===== PARTITURAS ===== */}
             <div style={{
               flex: 1, overflowY: 'auto', padding: '16px 20px 24px',
-              // Scrollbar personalizada — fina, discreta
               scrollbarWidth: 'thin',
               scrollbarColor: 'rgba(212,175,55,0.25) transparent'
             }}>
               {/* Título da seção */}
-              <p style={{
-                fontSize: '10px', fontWeight: '700', textTransform: 'uppercase',
-                letterSpacing: '1.2px', color: 'var(--text-muted)',
-                marginBottom: '10px', marginTop: '2px'
-              }}>
-                {loading
-                  ? 'Carregando...'
-                  : `${partituras.length} partitura${partituras.length !== 1 ? 's' : ''} tocada${partituras.length !== 1 ? 's' : ''}`
-                }
-              </p>
+              {!loading && (
+                <p style={{
+                  fontSize: '10px', fontWeight: '700', textTransform: 'uppercase',
+                  letterSpacing: '1.2px', color: 'var(--text-muted)',
+                  marginBottom: '10px', marginTop: '2px'
+                }}>
+                  {`${partituras.length} partitura${partituras.length !== 1 ? 's' : ''} tocada${partituras.length !== 1 ? 's' : ''}`}
+                </p>
+              )}
+
+              {/* Skeleton loading */}
+              {loading && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '4px' }}>
+                  <div style={{
+                    width: '120px', height: '10px', borderRadius: '4px',
+                    background: 'linear-gradient(90deg, var(--skeleton-base, rgba(255,255,255,0.05)) 0%, var(--skeleton-shine, rgba(255,255,255,0.1)) 50%, var(--skeleton-base, rgba(255,255,255,0.05)) 100%)',
+                    backgroundSize: '200% 100%', animation: 'shimmer 1.5s ease-in-out infinite',
+                    marginBottom: '6px'
+                  }} />
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <div
+                      key={i}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: '12px',
+                        padding: '12px 14px', borderRadius: '12px',
+                        background: 'var(--bg-primary)',
+                        border: '1px solid var(--border)',
+                        animation: 'fadeIn 0.3s ease-out forwards',
+                        animationDelay: `${i * 0.08}s`,
+                        opacity: 0
+                      }}
+                    >
+                      <div style={{
+                        width: '30px', height: '30px', borderRadius: '50%', flexShrink: 0,
+                        background: 'linear-gradient(90deg, var(--skeleton-base, rgba(255,255,255,0.05)) 0%, var(--skeleton-shine, rgba(255,255,255,0.1)) 50%, var(--skeleton-base, rgba(255,255,255,0.05)) 100%)',
+                        backgroundSize: '200% 100%', animation: 'shimmer 1.5s ease-in-out infinite',
+                        animationDelay: `${i * 0.15}s`
+                      }} />
+                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        <div style={{
+                          width: `${60 + Math.random() * 30}%`, height: '14px', borderRadius: '4px',
+                          background: 'linear-gradient(90deg, var(--skeleton-base, rgba(255,255,255,0.05)) 0%, var(--skeleton-shine, rgba(255,255,255,0.1)) 50%, var(--skeleton-base, rgba(255,255,255,0.05)) 100%)',
+                          backgroundSize: '200% 100%', animation: 'shimmer 1.5s ease-in-out infinite',
+                          animationDelay: `${i * 0.15}s`
+                        }} />
+                        <div style={{
+                          width: `${30 + Math.random() * 20}%`, height: '10px', borderRadius: '4px',
+                          background: 'linear-gradient(90deg, var(--skeleton-base, rgba(255,255,255,0.05)) 0%, var(--skeleton-shine, rgba(255,255,255,0.1)) 50%, var(--skeleton-base, rgba(255,255,255,0.05)) 100%)',
+                          backgroundSize: '200% 100%', animation: 'shimmer 1.5s ease-in-out infinite',
+                          animationDelay: `${i * 0.15 + 0.05}s`
+                        }} />
+                      </div>
+                      <div style={{
+                        width: '60px', height: '22px', borderRadius: '8px', flexShrink: 0,
+                        background: 'linear-gradient(90deg, var(--skeleton-base, rgba(255,255,255,0.05)) 0%, var(--skeleton-shine, rgba(255,255,255,0.1)) 50%, var(--skeleton-base, rgba(255,255,255,0.05)) 100%)',
+                        backgroundSize: '200% 100%', animation: 'shimmer 1.5s ease-in-out infinite',
+                        animationDelay: `${i * 0.15 + 0.1}s`
+                      }} />
+                    </div>
+                  ))}
+                </div>
+              )}
 
               {/* Estado vazio */}
               {!loading && partituras.length === 0 && (
@@ -424,7 +504,6 @@ const EnsaioDetailModal = ({ ensaio, isOpen, onClose }) => {
                         border: '1px solid var(--border)'
                       }}
                     >
-                      {/* Número */}
                       <div style={{
                         width: '30px', height: '30px', borderRadius: '50%', flexShrink: 0,
                         background: 'linear-gradient(145deg, rgba(212,175,55,0.15) 0%, rgba(212,175,55,0.06) 100%)',
@@ -434,8 +513,6 @@ const EnsaioDetailModal = ({ ensaio, isOpen, onClose }) => {
                       }}>
                         {index + 1}
                       </div>
-
-                      {/* Título + Compositor */}
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <p style={{
                           fontSize: '14px', fontWeight: '600',
@@ -451,8 +528,6 @@ const EnsaioDetailModal = ({ ensaio, isOpen, onClose }) => {
                           {partitura.compositor}
                         </p>
                       </div>
-
-                      {/* Chip de categoria */}
                       <span style={{
                         display: 'inline-block', flexShrink: 0,
                         fontSize: '11px', fontWeight: '600',

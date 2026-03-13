@@ -1,10 +1,10 @@
-// ===== BOTTOM NAVIGATION =====
-// Navegacao movel inferior com efeito glassmorphism e indicador animado
-// Otimizado: prefetch de telas on hover/touch para navegação instantânea
+// ===== BOTTOM NAVIGATION — LIQUID NOTCH =====
+// Redesenho fiel à referência: barra full-width com notch curvo e bolha flutuante
+// Otimizado para centralização perfeita e animações fluidas
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, LayoutGroup } from 'framer-motion';
 import { useUI } from '@contexts/UIContext';
 import { Icons } from '@constants/icons';
 import { useRoutePrefetch } from '@hooks/useRoutePrefetch';
@@ -16,19 +16,26 @@ const BottomNav = ({ activeTab }) => {
   const [keyboardOpen, setKeyboardOpen] = useState(false);
   const handlePrefetch = useRoutePrefetch();
 
+  const tabs = [
+    { id: 'home', path: '/', icon: Icons.Home, label: 'Início' },
+    { id: 'repertorio', path: '/repertorio', icon: Icons.ListMusic, label: 'Repertório' },
+    { id: 'search', path: '/buscar', icon: Icons.Search, label: 'Buscar' },
+    { id: 'favorites', path: '/favoritos', icon: Icons.Heart, label: 'Favoritos' },
+    { id: 'profile', path: '/perfil', icon: Icons.User, label: 'Perfil' }
+  ];
+
+  const activeIndex = useMemo(() => tabs.findIndex(t => t.id === activeTab), [activeTab, tabs]);
+
   const isMobile = typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
   const isHiding = showNotifications && isMobile;
 
   useEffect(() => {
     if (!isMobile) return;
-
     const initialHeight = window.innerHeight;
-
     const handleResize = () => {
       const heightDiff = initialHeight - window.visualViewport?.height;
       setKeyboardOpen(heightDiff > 150);
     };
-
     if (window.visualViewport) {
       window.visualViewport.addEventListener('resize', handleResize);
       return () => window.visualViewport.removeEventListener('resize', handleResize);
@@ -38,102 +45,87 @@ const BottomNav = ({ activeTab }) => {
     }
   }, [isMobile]);
 
-  const tabs = [
-    { id: 'home', path: '/', icon: Icons.Home, label: 'Início' },
-    { id: 'repertorio', path: '/repertorio', icon: Icons.ListMusic, label: 'Repertório' },
-    { id: 'search', path: '/buscar', icon: Icons.Search, label: 'Buscar', isCenter: true },
-    { id: 'favorites', path: '/favoritos', icon: Icons.Heart, label: 'Favoritos' },
-    { id: 'profile', path: '/perfil', icon: Icons.User, label: 'Perfil' }
-  ];
-
-  const isDark = theme === 'dark';
   const shouldHide = isHiding || keyboardOpen;
 
-  const navClasses = [
-    'mobile-only',
-    styles.nav,
-    isDark ? styles.dark : styles.light,
-    shouldHide ? styles.hidden : styles.visible
-  ].join(' ');
-
-  // Handler para navegação
   const handleNavigate = (path) => {
     navigate(path);
   };
 
-  return (
-    <nav className={navClasses}>
-      {tabs.map(tab => {
-        const isActive = activeTab === tab.id;
+  // Cálculo da posição do notch (em porcentagem)
+  const notchX = useMemo(() => {
+    if (activeIndex === -1) return 50;
+    return (activeIndex * 20) + 10; // Centro do tab (10, 30, 50, 70, 90)
+  }, [activeIndex]);
 
-        if (tab.isCenter) {
+  // SVG Path dinâmico para o "Liquid Notch"
+  // Desenha uma linha reta com uma curva suave (Bezier) no centro
+  const curvePath = useMemo(() => {
+    const x = notchX; // Centro em %
+    const w = 10; // Largura da curva em %
+    return `M0,0 L${x - w},0 C${x - w / 2},0 ${x - w / 2},22 ${x},22 C${x + w / 2},22 ${x + w / 2},0 ${x + w},0 L100,0 V100 H0 Z`;
+  }, [notchX]);
+
+  return (
+    <LayoutGroup>
+      <nav className={`${styles.nav} mobile-only ${shouldHide ? styles.hidden : ''}`}>
+        {/* Background SVG com o Notch Animado */}
+        <svg className={styles.navBg} viewBox="0 0 100 70" preserveAspectRatio="none">
+          <motion.path
+            d={curvePath}
+            transition={{ type: 'spring', stiffness: 350, damping: 30 }}
+            animate={{ d: curvePath }}
+          />
+        </svg>
+
+        {tabs.map((tab) => {
+          const isActive = activeTab === tab.id;
+          const TabIcon = tab.icon;
+
           return (
             <motion.button
               key={tab.id}
-              data-walkthrough="search"
-              aria-label={tab.label}
-              className={styles.centerButton}
+              data-nav={tab.id}
+              data-walkthrough={tab.id === 'search' ? 'search' : undefined}
+              className={styles.tabSlot}
               onClick={() => handleNavigate(tab.path)}
-              onMouseEnter={() => handlePrefetch(tab.path)} // Prefetch on hover
-              onTouchStart={() => handlePrefetch(tab.path)} // Prefetch on touch
-              whileTap={{ scale: 0.9 }}
-              transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+              onMouseEnter={() => handlePrefetch(tab.path)}
+              onTouchStart={() => handlePrefetch(tab.path)}
             >
-              <motion.div
-                className={styles.centerIcon}
-                animate={{ rotate: isActive ? 0 : 0 }}
-              >
-                <tab.icon filled />
-              </motion.div>
+              {/* Bolha dourada flutuante */}
+              {isActive && (
+                <motion.div
+                  className={styles.bubble}
+                  layoutId="activeBubble"
+                  transition={{ type: 'spring', stiffness: 380, damping: 28 }}
+                >
+                  <div className={styles.bubbleIcon}>
+                    <TabIcon filled />
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Conteúdo interno da tab */}
+              <div className={styles.tabContent}>
+                {isActive ? (
+                  <motion.span
+                    className={styles.activeLabel}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 }}
+                  >
+                    {tab.label}
+                  </motion.span>
+                ) : (
+                  <div className={styles.inactiveIcon}>
+                    <TabIcon />
+                  </div>
+                )}
+              </div>
             </motion.button>
           );
-        }
-
-        return (
-          <motion.button
-            key={tab.id}
-            data-nav={tab.id}
-            aria-label={tab.label}
-            aria-current={isActive ? 'page' : undefined}
-            className={`${styles.tabButton} ${isActive ? styles.active : styles.inactive}`}
-            onClick={() => handleNavigate(tab.path)}
-            onMouseEnter={() => handlePrefetch(tab.path)} // Prefetch on hover
-            onTouchStart={() => handlePrefetch(tab.path)} // Prefetch on touch
-            whileTap={{ scale: 0.9 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 20 }}
-          >
-            {/* Indicador animado - só aparece no tab ativo */}
-            {isActive ? (
-              <motion.div
-                layoutId="bottomNavIndicator"
-                className={styles.indicator}
-                transition={{ type: 'spring', stiffness: 500, damping: 35 }}
-              />
-            ) : null}
-            <motion.div
-              className={styles.tabIcon}
-              animate={{
-                scale: isActive ? 1.1 : 1,
-                y: isActive ? -2 : 0
-              }}
-              transition={{ type: 'spring', stiffness: 400, damping: 20 }}
-            >
-              <tab.icon filled={isActive} />
-            </motion.div>
-            <motion.span
-              className={styles.tabLabel}
-              animate={{
-                opacity: isActive ? 1 : 0.7,
-                scale: isActive ? 1.05 : 1
-              }}
-              transition={{ duration: 0.2 }}
-            >
-              {tab.label}
-            </motion.span>
-          </motion.button>
-        );
-      })}
-    </nav>
+        })}
+      </nav>
+    </LayoutGroup>
   );
 };
 
