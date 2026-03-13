@@ -22,8 +22,10 @@ const PlusIcon = ({ size = 16, color = 'currentColor' }) => (
 
 const COLORS = {
   gold: { primary: '#D4AF37', light: '#F4E4BC', dark: '#B8960C' },
-  red: '#E85A4F',
-  green: '#4CAF50',
+  red: '#E74C3C',
+  green: '#34C759',
+  bgCard: 'var(--bg-card)',
+  border: 'var(--border)'
 };
 
 const formatDatePt = (dateStr) => {
@@ -67,7 +69,7 @@ const EditarEnsaioModal = ({ ensaio, usuarios, onClose, onUpdate, addNotificatio
         const url = res.youtube_url || '';
         setYoutubeUrl(url);
         setOriginalYoutubeUrl(url);
-      }).catch(() => {});
+      }).catch(() => { });
 
     } catch (error) {
       addNotification?.('Erro ao carregar detalhes do ensaio', 'error');
@@ -78,6 +80,19 @@ const EditarEnsaioModal = ({ ensaio, usuarios, onClose, onUpdate, addNotificatio
 
   // When details load, save original state for diffing
 
+
+  // Scroll Lock: preventing background scroll when modal is open (Standard Pattern)
+  useEffect(() => {
+    const scrollY = window.scrollY;
+    document.documentElement.classList.add('modal-open');
+    document.body.style.top = `-${scrollY}px`;
+
+    return () => {
+      document.documentElement.classList.remove('modal-open');
+      document.body.style.top = '';
+      window.scrollTo(0, scrollY);
+    };
+  }, []);
 
   useEffect(() => { carregarDetalhe(); }, [carregarDetalhe]);
 
@@ -231,78 +246,103 @@ const EditarEnsaioModal = ({ ensaio, usuarios, onClose, onUpdate, addNotificatio
       padding: '20px'
     }}>
       <div onClick={e => e.stopPropagation()} style={{
-        background: 'var(--bg-card)', border: '1px solid var(--border)',
+        background: 'var(--bg-card)', border: '1px solid rgba(212,175,55,0.2)', // Subtle gold border
         borderRadius: '16px', maxWidth: '640px', width: '100%',
-        maxHeight: '85vh', display: 'flex', flexDirection: 'column'
+        maxHeight: '85vh', display: 'flex', flexDirection: 'column',
+        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
       }}>
         {/* Header */}
         <div style={{
-          padding: '24px 24px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start'
+          padding: '24px 24px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          background: 'linear-gradient(135deg, #4A1A1C 0%, #1A0507 100%)', // Solid Premium Dark Wine
+          borderBottom: '1px solid #D4AF37', // Gold signature border
+          borderRadius: '16px 16px 0 0'
         }}>
-          <div>
-            <h3 style={{
-              fontSize: '20px', fontWeight: '700',
-              color: 'var(--text-primary)', margin: 0
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <div style={{
+              width: '44px', height: '44px', borderRadius: '12px', background: 'rgba(212,175,55,0.1)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(212,175,55,0.2)'
             }}>
-              Editar Ensaio {ensaio.numero_ensaio ? `#${ensaio.numero_ensaio}` : ''}
-            </h3>
-            <p style={{
-              fontSize: '14px', color: 'var(--text-muted)',
-              margin: '4px 0 0'
-            }}>
-              {formatDatePt(ensaio.data_ensaio)}
-            </p>
-            {/* YouTube URL */}
-            <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="#E85A4F">
-                <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={COLORS.gold.primary} strokeWidth="1.8">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
               </svg>
+            </div>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <h3 style={{ fontSize: '20px', fontWeight: '800', color: '#F4E4BC', margin: 0 }}>
+                  Ensaio {ensaio.numero_ensaio ? `#${ensaio.numero_ensaio}` : ''}
+                </h3>
+                <span style={{
+                  fontSize: '10px', fontWeight: '700', color: COLORS.gold.primary,
+                  padding: '2px 8px', borderRadius: '6px', background: 'rgba(212,175,55,0.15)',
+                  border: '1px solid rgba(212,175,55,0.2)', textTransform: 'uppercase', letterSpacing: '0.5px'
+                }}>
+                  Modo Edição
+                </span>
+              </div>
+              <p style={{ fontSize: '13px', color: 'rgba(244, 228, 188, 0.8)', margin: '2px 0 0', fontWeight: '500' }}>
+                {formatDatePt(ensaio.data_ensaio)}
+              </p>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            {/* YouTube URL - Link da Gravação (Compacta/Inline) */}
+            <div style={{
+              padding: '6px 12px',
+              background: 'rgba(0, 0, 0, 0.2)',
+              borderRadius: '8px',
+              border: '1px solid rgba(212, 175, 55, 0.3)', // Gold border for input
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="#E74C3C">
+                  <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+                </svg>
+                <span style={{ fontSize: '9px', fontWeight: '700', color: 'rgba(231, 76, 60, 0.9)', textTransform: 'uppercase' }}>Gravação</span>
+              </div>
               <input
                 type="url"
                 value={youtubeUrl}
                 onChange={e => setYoutubeUrl(e.target.value)}
-                placeholder="Link do YouTube (gravação do ensaio)"
+                placeholder="YouTube URL..."
                 style={{
-                  flex: 1, padding: '6px 10px', fontSize: '13px',
-                  border: '1px solid var(--border)', borderRadius: '6px',
-                  background: 'var(--bg)', color: 'var(--text-primary)', outline: 'none'
+                  width: '140px', padding: '4px 8px', fontSize: '11px', border: '1px solid rgba(212, 175, 55, 0.2)', borderRadius: '4px',
+                  background: 'rgba(0,0,0,0.3)', color: '#F4E4BC', outline: 'none'
                 }}
               />
-              {youtubeUrl && (
-                <button
-                  onClick={() => setYoutubeUrl('')}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '2px' }}
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
-                  </svg>
-                </button>
-              )}
             </div>
+
+            <button onClick={onClose} style={{
+              background: 'rgba(244, 228, 188, 0.1)', border: '1px solid rgba(244, 228, 188, 0.2)', cursor: 'pointer', color: '#F4E4BC',
+              padding: '6px', borderRadius: '50%', display: 'flex'
+            }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
           </div>
-          <button onClick={onClose} style={{
-            background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)',
-            padding: '4px'
-          }}>
-            <XIcon size={20} />
-          </button>
         </div>
 
         {/* Tabs */}
         <div style={{
-          display: 'flex', gap: '0', padding: '16px 24px 0',
-          borderBottom: '1px solid var(--border)'
+          display: 'flex', gap: '0', padding: '0 24px',
+          borderBottom: '1px solid var(--border)',
+          background: 'linear-gradient(to bottom, rgba(212,175,55,0.05), transparent)' // Subtle gold tint
         }}>
           {[
-            { id: 'presencas', label: `Presenças (${presentesCount})` },
-            { id: 'partituras', label: `Partituras (${detalhe?.total_partituras || 0})` }
+            { id: 'presencas', label: `Músicos (${presentesCount})` },
+            { id: 'partituras', label: `Partituras Tocadas (${detalhe?.total_partituras || 0})` }
           ].map(tab => (
             <button key={tab.id} onClick={() => setAbaAtiva(tab.id)} style={{
-              padding: '10px 20px', fontSize: '14px',
-              fontWeight: abaAtiva === tab.id ? '600' : '400', border: 'none', background: 'none',
+              padding: '14px 20px', fontSize: '13px',
+              fontWeight: abaAtiva === tab.id ? '700' : '500', border: 'none', background: 'none',
               color: abaAtiva === tab.id ? COLORS.gold.primary : 'var(--text-muted)',
               borderBottom: abaAtiva === tab.id ? `2px solid ${COLORS.gold.primary}` : '2px solid transparent',
-              cursor: 'pointer', transition: 'all 0.15s', marginBottom: '-1px'
+              cursor: 'pointer', transition: 'all 0.15s', marginBottom: '-1px',
+              textTransform: 'uppercase', letterSpacing: '0.5px'
             }}>
               {tab.label}
             </button>
@@ -321,14 +361,31 @@ const EditarEnsaioModal = ({ ensaio, usuarios, onClose, onUpdate, addNotificatio
             </div>
           ) : abaAtiva === 'presencas' ? (
             <div>
-              {/* Summary bar */}
+              {/* Section Header for Músicos */}
               <div style={{
-                fontSize: '13px', color: 'var(--text-muted)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px'
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                marginBottom: '16px', paddingBottom: '8px', borderBottom: '1px solid var(--border)'
               }}>
-                <span style={{ fontWeight: '600', color: 'var(--text-primary)' }}>
-                  {presentesCount}
+                <h2 style={{
+                  fontSize: '15px',
+                  fontWeight: '800',
+                  color: 'var(--text-primary)',
+                  margin: 0,
+                  letterSpacing: '-0.2px'
+                }}>
+                  Músicos
+                </h2>
+                <span style={{
+                  fontSize: '11px',
+                  color: 'var(--text-muted)',
+                  fontWeight: '600',
+                  background: 'rgba(212,175,55,0.08)',
+                  padding: '2px 8px',
+                  borderRadius: '6px',
+                  border: '1px solid rgba(212,175,55,0.1)'
+                }}>
+                  {presentesCount} presentes de {totalAtivos} ativos ({percentual}%)
                 </span>
-                presentes de {totalAtivos} ativos ({percentual}%)
               </div>
 
               {/* Search to add */}
@@ -350,74 +407,20 @@ const EditarEnsaioModal = ({ ensaio, usuarios, onClose, onUpdate, addNotificatio
               {/* Two lists layout */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
-                {/* 1. SECTION: AUSENTES (ADICIONAR) */}
-                {ausentes.length > 0 ? (
-                  <div style={{ border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden', display: 'flex', flexDirection: 'column', maxHeight: '300px' }}>
-                    <div style={{
-                      fontSize: '11px', fontWeight: '700', color: COLORS.green,
-                      padding: '10px 14px',
-                      background: 'rgba(76, 175, 80, 0.08)', textTransform: 'uppercase', letterSpacing: '0.5px',
-                      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                      borderBottom: '1px solid var(--border)'
-                    }}>
-                      <span>Ausentes · Toque para adicionar</span>
-                      <span style={{ background: COLORS.green, color: '#fff', borderRadius: '4px', padding: '2px 6px', fontSize: '10px' }}>{ausentes.length}</span>
-                    </div>
-                    <div style={{ overflowY: 'auto' }} className="custom-scrollbar">
-                      {ausentes.map(u => (
-                        <div key={u.id}
-                          onClick={() => handleAdicionarPresenca(u.id)}
-                          style={{
-                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                            padding: '10px 14px', borderBottom: '1px solid var(--border)',
-                            fontSize: '14px', cursor: 'pointer', transition: 'background 0.1s'
-                          }}
-                          onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-card-hover)'}
-                          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            <div style={{
-                              width: '8px', height: '8px', borderRadius: '50%',
-                              border: `1px solid ${COLORS.green}`
-                            }} />
-                            <div>
-                              <span style={{ color: 'var(--text-primary)', fontWeight: '500' }}>{u.nome}</span>
-                              {u.instrumento_nome && (
-                                <span style={{ color: 'var(--text-muted)', fontSize: '12px', marginLeft: '6px' }}>
-                                  {u.instrumento_nome}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          <div style={{
-                            width: '24px', height: '24px', borderRadius: '6px', background: 'rgba(76, 175, 80, 0.1)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center', color: COLORS.green
-                          }}>
-                            <PlusIcon size={14} />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  buscaMusico && (
-                    <div style={{ padding: '10px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px', border: '1px dashed var(--border)', borderRadius: '8px' }}>
-                      Nenhum músico encontrado com &quot;{buscaMusico}&quot;
-                    </div>
-                  )
-                )}
-
                 {/* 2. SECTION: PRESENTES (REMOVER) */}
                 <div style={{ border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden', display: 'flex', flexDirection: 'column', maxHeight: '400px' }}>
                   <div style={{
-                    fontSize: '11px', fontWeight: '700', color: COLORS.gold.primary,
+                    fontSize: '11px', fontWeight: '700', color: COLORS.green,
                     padding: '10px 14px',
-                    background: 'rgba(212, 175, 55, 0.08)', textTransform: 'uppercase', letterSpacing: '0.5px',
+                    background: 'var(--bg-green-light)', textTransform: 'uppercase', letterSpacing: '0.5px',
                     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                     borderBottom: '1px solid var(--border)'
                   }}>
                     <span>Presentes · Toque para remover</span>
-                    <span style={{ background: COLORS.gold.primary, color: '#1A0507', borderRadius: '4px', padding: '2px 6px', fontSize: '10px' }}>{presentesCount}</span>
+                    <span style={{
+                      background: COLORS.green, color: '#FFFFFF', // Guaranteed white text
+                      borderRadius: '4px', padding: '2px 6px', fontSize: '10px', fontWeight: '800'
+                    }}>{presentesCount}</span>
                   </div>
                   <div style={{ overflowY: 'auto' }} className="custom-scrollbar">
                     {(detalhe.presentes || []).map(p => (
@@ -428,13 +431,13 @@ const EditarEnsaioModal = ({ ensaio, usuarios, onClose, onUpdate, addNotificatio
                           padding: '10px 14px', borderBottom: '1px solid var(--border)',
                           fontSize: '14px', cursor: 'pointer', transition: 'background 0.1s'
                         }}
-                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(232, 90, 79, 0.05)'}
+                        onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-green-hover)'}
                         onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                       >
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                           <div style={{
                             width: '8px', height: '8px', borderRadius: '50%',
-                            background: COLORS.gold.primary, boxShadow: '0 0 6px rgba(212, 175, 55, 0.4)'
+                            background: COLORS.green, boxShadow: `0 0 6px ${COLORS.green}66`
                           }} />
                           <div>
                             <span style={{ color: 'var(--text-primary)', fontWeight: '600' }}>{p.nome}</span>
@@ -456,17 +459,105 @@ const EditarEnsaioModal = ({ ensaio, usuarios, onClose, onUpdate, addNotificatio
                     {(detalhe.presentes || []).length === 0 && (
                       <div style={{
                         padding: '30px', textAlign: 'center', color: 'var(--text-muted)',
-                        fontSize: '14px', }}>
+                        fontSize: '14px',
+                      }}>
                         Nenhum músico presente
                       </div>
                     )}
                   </div>
                 </div>
+
+                {/* 1. SECTION: AUSENTES (ADICIONAR) - NOW RED */}
+                {ausentes.length > 0 ? (
+                  <div style={{ border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden', display: 'flex', flexDirection: 'column', maxHeight: '300px' }}>
+                    <div style={{
+                      fontSize: '11px', fontWeight: '700', color: COLORS.red,
+                      padding: '10px 14px',
+                      background: 'var(--bg-red-light)', textTransform: 'uppercase', letterSpacing: '0.5px',
+                      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                      borderBottom: '1px solid var(--border)'
+                    }}>
+                      <span>Ausentes · Toque para adicionar</span>
+                      <span style={{
+                        background: COLORS.red, color: '#FFFFFF', // Guaranteed white text
+                        borderRadius: '4px', padding: '2px 6px', fontSize: '10px', fontWeight: '800'
+                      }}>{ausentes.length}</span>
+                    </div>
+                    <div style={{ overflowY: 'auto' }} className="custom-scrollbar">
+                      {ausentes.map(u => (
+                        <div key={u.id}
+                          onClick={() => handleAdicionarPresenca(u.id)}
+                          style={{
+                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                            padding: '10px 14px', borderBottom: '1px solid var(--border)',
+                            fontSize: '14px', cursor: 'pointer', transition: 'background 0.1s'
+                          }}
+                          onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-red-hover)'}
+                          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <div style={{
+                              width: '8px', height: '8px', borderRadius: '50%',
+                              border: `1px solid ${COLORS.red}`
+                            }} />
+                            <div>
+                              <span style={{ color: 'var(--text-primary)', fontWeight: '500' }}>{u.nome}</span>
+                              {u.instrumento_nome && (
+                                <span style={{ color: 'var(--text-muted)', fontSize: '12px', marginLeft: '6px' }}>
+                                  {u.instrumento_nome}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div style={{
+                            width: '24px', height: '24px', borderRadius: '6px', background: 'var(--bg-red-light)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', color: COLORS.red
+                          }}>
+                            <PlusIcon size={14} />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  buscaMusico && (
+                    <div style={{ padding: '10px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px', border: '1px dashed var(--border)', borderRadius: '8px' }}>
+                      Nenhum músico encontrado com &quot;{buscaMusico}&quot;
+                    </div>
+                  )
+                )}
               </div>
             </div>
           ) : (
             /* Partituras tab */
             <div>
+              {/* Section Header for Partituras */}
+              <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                marginBottom: '16px', paddingBottom: '8px', borderBottom: '1px solid var(--border)'
+              }}>
+                <h2 style={{
+                  fontSize: '15px',
+                  fontWeight: '800',
+                  color: 'var(--text-primary)',
+                  margin: 0,
+                  letterSpacing: '-0.2px'
+                }}>
+                  Partituras Tocadas
+                </h2>
+                <span style={{
+                  fontSize: '11px',
+                  color: 'var(--text-muted)',
+                  fontWeight: '600',
+                  background: 'rgba(212,175,55,0.08)',
+                  padding: '2px 8px',
+                  borderRadius: '6px',
+                  border: '1px solid rgba(212,175,55,0.1)'
+                }}>
+                  {detalhe?.total_partituras || 0} partituras
+                </span>
+              </div>
+
               {/* Search to add partituras */}
               <div style={{ position: 'relative', marginBottom: '16px' }}>
                 <div style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', display: 'flex' }}>
@@ -499,7 +590,8 @@ const EditarEnsaioModal = ({ ensaio, usuarios, onClose, onUpdate, addNotificatio
                     <div key={p.id} style={{
                       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                       padding: '8px 12px', borderTop: '1px solid var(--border)',
-                      fontSize: '14px', }}>
+                      fontSize: '14px',
+                    }}>
                       <div>
                         <span style={{ color: 'var(--text-primary)' }}>{p.titulo}</span>
                         {p.compositor && (
@@ -521,7 +613,7 @@ const EditarEnsaioModal = ({ ensaio, usuarios, onClose, onUpdate, addNotificatio
                         background: 'none', border: '1px solid var(--border)', borderRadius: '6px',
                         padding: '4px 8px', cursor: 'pointer', color: COLORS.green,
                         display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px',
-                        }}>
+                      }}>
                         <PlusIcon size={14} color={COLORS.green} /> Adicionar
                       </button>
                     </div>
@@ -542,29 +634,43 @@ const EditarEnsaioModal = ({ ensaio, usuarios, onClose, onUpdate, addNotificatio
                   padding: '8px 12px',
                   background: 'var(--bg)', textTransform: 'uppercase', letterSpacing: '0.5px'
                 }}>
-                  Partituras do ensaio
+                  Partituras tocadas no ensaio
                 </div>
-                {(detalhe?.partituras || []).map(p => (
+                {(detalhe?.partituras || []).map((p, index) => (
                   <div key={p.id} style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    padding: '8px 12px', borderTop: '1px solid var(--border)',
-                    fontSize: '14px', }}>
-                    <div>
-                      <span style={{ color: 'var(--text-primary)' }}>{p.titulo}</span>
-                      {p.compositor && (
-                        <span style={{ color: 'var(--text-muted)', fontSize: '12px', marginLeft: '8px' }}>
-                          {p.compositor}
-                        </span>
-                      )}
-                      {p.categoria_nome && (
-                        <span style={{
-                          fontSize: '10px', padding: '2px 6px', borderRadius: '4px',
-                          background: 'rgba(212,175,55,0.15)', color: COLORS.gold.primary,
-                          marginLeft: '8px', fontWeight: '600'
+                    padding: '10px 12px', borderTop: '1px solid var(--border)',
+                    fontSize: '14px',
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0, flex: 1 }}>
+                      <div style={{
+                        width: '24px', height: '24px', borderRadius: '50%',
+                        background: 'linear-gradient(135deg, #D4AF37 0%, #B8960C 100%)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontWeight: '800', fontSize: '11px', color: '#1a1a1a', flexShrink: 0
+                      }}>
+                        {index + 1}
+                      </div>
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <div style={{
+                          color: 'var(--text-primary)', fontWeight: '600',
+                          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
                         }}>
-                          {p.categoria_nome}
-                        </span>
-                      )}
+                          {p.titulo}
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span style={{ color: 'var(--text-muted)', fontSize: '11px' }}>{p.compositor}</span>
+                          {p.categoria_nome && (
+                            <span style={{
+                              fontSize: '9px', padding: '1px 5px', borderRadius: '4px',
+                              background: 'rgba(212,175,55,0.12)', color: COLORS.gold.primary,
+                              fontWeight: '600'
+                            }}>
+                              {p.categoria_nome}
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     </div>
                     <button onClick={() => handleRemoverPartitura(p.id, p.partitura_id)} style={{
                       background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)',
@@ -580,7 +686,8 @@ const EditarEnsaioModal = ({ ensaio, usuarios, onClose, onUpdate, addNotificatio
                 {(detalhe?.partituras || []).length === 0 && (
                   <div style={{
                     padding: '24px', textAlign: 'center', color: 'var(--text-muted)',
-                    fontSize: '14px', }}>
+                    fontSize: '14px',
+                  }}>
                     Nenhuma partitura registrada
                   </div>
                 )}
@@ -594,10 +701,18 @@ const EditarEnsaioModal = ({ ensaio, usuarios, onClose, onUpdate, addNotificatio
           padding: '16px 24px', borderTop: '1px solid var(--border)',
           display: 'flex', justifyContent: 'space-between', alignItems: 'center'
         }}>
-          <span style={{
-            fontSize: '13px', color: 'var(--text-muted)', }}>
-            {detalhe?.total_presentes || 0} presentes ({percentual}%) · {detalhe?.total_partituras || 0} partituras
-          </span>
+          <div style={{ fontSize: '13px', color: 'var(--text-muted)', display: 'flex', gap: '12px' }}>
+            <span>
+              <strong style={{ color: 'var(--text-primary)', fontWeight: '800', fontSize: '15px' }}>{detalhe?.total_presentes || 0}</strong>
+              <span style={{ marginLeft: '4px', textTransform: 'uppercase', fontSize: '11px', fontWeight: '500', letterSpacing: '0.5px' }}>Presentes</span>
+              <span style={{ marginLeft: '4px', opacity: 0.7 }}>({percentual}%)</span>
+            </span>
+            <span style={{ opacity: 0.3 }}>·</span>
+            <span>
+              <strong style={{ color: 'var(--text-primary)', fontWeight: '800', fontSize: '15px' }}>{detalhe?.total_partituras || 0}</strong>
+              <span style={{ marginLeft: '4px', textTransform: 'uppercase', fontSize: '11px', fontWeight: '500', letterSpacing: '0.5px' }}>Partituras Tocadas</span>
+            </span>
+          </div>
           <div style={{ display: 'flex', gap: '12px' }}>
             <button onClick={onClose} disabled={saving} style={{
               padding: '10px 24px', background: 'transparent', color: 'var(--text-muted)',

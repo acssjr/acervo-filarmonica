@@ -19,6 +19,7 @@ const ALLOWED_ORIGINS = [
   'https://acervo-filarmonica.pages.dev',
   'http://localhost:5173',
   'http://localhost:5174',
+  'http://localhost:5175',
   'http://127.0.0.1:5173',
 ];
 
@@ -53,7 +54,7 @@ function isOriginAllowed(origin) {
 function getCorsHeaders(request) {
   const origin = request.headers.get('Origin');
   const headers = {
-    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
   };
 

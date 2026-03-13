@@ -1001,8 +1001,7 @@ const AdminPresenca = () => {
           display: 'flex',
           flexDirection: 'column'
         }}>
-          {/* Header da Seção */}
-          <div className="ap-section-header">
+          <div className="ap-section-header" style={{ background: 'rgba(212,175,55,0.06)' }}>
             <div className="ap-section-title">
               <div style={{
                 width: '32px', height: '32px', borderRadius: '10px',
@@ -1013,17 +1012,22 @@ const AdminPresenca = () => {
                 <Users size={16} color={GOLD} />
               </div>
               <h2 style={{
-                fontSize: '14px',
-                fontWeight: '700',
+                fontSize: '15px',
+                fontWeight: '800',
                 color: 'var(--text-primary)',
-                margin: 0
+                margin: 0,
+                letterSpacing: '-0.2px'
               }}>
                 Músicos
               </h2>
               <span style={{
-                fontSize: '12px',
+                fontSize: '11px',
                 color: 'var(--text-muted)',
-                fontWeight: '500'
+                fontWeight: '600',
+                background: 'rgba(212,175,55,0.08)',
+                padding: '2px 8px',
+                borderRadius: '6px',
+                border: '1px solid rgba(212,175,55,0.1)'
               }}>
                 {contadorTexto}
               </span>
@@ -1099,11 +1103,11 @@ const AdminPresenca = () => {
                     }}>
                       <Crown size={13} color={GOLD} />
                       <span style={{
-                        fontSize: '12px',
-                        fontWeight: '700',
+                        fontSize: '11px',
+                        fontWeight: '800',
                         color: GOLD,
                         textTransform: 'uppercase',
-                        letterSpacing: '0.5px',
+                        letterSpacing: '0.8px',
                         flex: 1
                       }}>
                         Regência
@@ -1136,11 +1140,11 @@ const AdminPresenca = () => {
                           flexShrink: 0
                         }} />
                         <span style={{
-                          fontSize: '12px',
-                          fontWeight: '700',
+                          fontSize: '11px',
+                          fontWeight: '800',
                           color: 'var(--text-muted)',
                           textTransform: 'uppercase',
-                          letterSpacing: '0.5px',
+                          letterSpacing: '0.8px',
                           flex: 1
                         }}>
                           {familia}
@@ -1222,7 +1226,8 @@ const AdminPresenca = () => {
             borderBottom: '1px solid var(--border)',
             display: 'flex',
             alignItems: 'center',
-            gap: '10px'
+            gap: '12px',
+            background: 'rgba(212,175,55,0.06)'
           }}>
             <div style={{
               width: '32px', height: '32px', borderRadius: '10px',
@@ -1232,43 +1237,87 @@ const AdminPresenca = () => {
               <Music size={16} color={GOLD} />
             </div>
             <div style={{ flex: 1 }}>
-              <span style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)' }}>
+              <span style={{ fontSize: '15px', fontWeight: '800', color: 'var(--text-primary)', letterSpacing: '-0.2px' }}>
                 Partituras Tocadas
               </span>
             </div>
-            <span style={{
-              fontSize: '12px', fontWeight: '600', color: 'var(--text-muted)',
-              background: 'var(--bg)', border: '1px solid var(--border)',
-              borderRadius: '8px', padding: '2px 8px'
+            <div style={{
+              fontSize: '11px', fontWeight: '700', color: GOLD,
+              background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.2)',
+              borderRadius: '6px', padding: '2px 8px'
             }}>
               {partiturasEnsaio.length}
-            </span>
+            </div>
           </div>
 
-          {/* Campo YouTube inline */}
+          {/* Campo YouTube - Link da Gravação */}
           <div style={{
-            display: 'flex', alignItems: 'center', gap: '8px',
-            padding: '8px 16px', borderBottom: '1px solid var(--border)',
-            background: 'rgba(235, 90, 79, 0.04)'
+            padding: '12px 16px',
+            borderBottom: '1px solid var(--border)',
+            background: 'rgba(231, 76, 60, 0.03)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '8px'
           }}>
-            <Youtube size={14} color="#E85A4F" />
-            <span style={{ fontSize: '12px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-              YouTube
-            </span>
-            <input
-              type="url"
-              value={youtubeUrl}
-              onChange={e => setYoutubeUrl(e.target.value)}
-              onBlur={handleSaveYoutubeUrl}
-              placeholder="Link do vídeo (opcional)"
-              style={{
-                flex: 1, padding: '5px 10px',
-                background: 'transparent', border: 'none',
-                borderBottom: '1px solid var(--border)',
-                color: 'var(--text-primary)', fontSize: '13px',
-                outline: 'none'
-              }}
-            />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Youtube size={14} color={RED} />
+              <span style={{
+                fontSize: '11px',
+                fontWeight: '700',
+                color: RED,
+                textTransform: 'uppercase',
+                letterSpacing: '0.8px',
+                opacity: 0.8
+              }}>
+                Link da gravação do ensaio
+              </span>
+            </div>
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+              <input
+                type="url"
+                value={youtubeUrl}
+                onChange={e => setYoutubeUrl(e.target.value)}
+                onBlur={handleSaveYoutubeUrl}
+                placeholder="https://youtube.com/watch?v=..."
+                style={{
+                  width: '100%',
+                  padding: '10px 14px',
+                  paddingRight: '40px',
+                  background: 'var(--bg)',
+                  border: '1px solid var(--border)',
+                  borderRadius: '10px',
+                  color: 'var(--text-primary)',
+                  fontSize: '13px',
+                  outline: 'none',
+                  transition: 'all 0.2s ease',
+                  boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.05)'
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = RED;
+                  e.target.style.background = 'var(--bg-card)';
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = 'var(--border)';
+                  e.target.style.background = 'var(--bg)';
+                  handleSaveYoutubeUrl();
+                }}
+              />
+              {youtubeUrl && (
+                <div style={{
+                  position: 'absolute',
+                  right: '12px',
+                  color: GREEN,
+                  display: 'flex',
+                  alignItems: 'center',
+                  animation: 'fadeIn 0.3s ease'
+                }}>
+                  <CheckCircle2 size={14} />
+                </div>
+              )}
+            </div>
+            <p style={{ fontSize: '10px', color: 'var(--text-muted)', margin: '0 2px', fontWeight: '500' }}>
+              O vídeo será exibido no modal de detalhes do ensaio para todos os músicos.
+            </p>
           </div>
 
           {/* Campo de Busca */}
@@ -1429,15 +1478,16 @@ const AdminPresenca = () => {
                   <div style={{
                     width: '28px',
                     height: '28px',
-                    borderRadius: '8px',
-                    background: 'linear-gradient(145deg, #D4AF37, #F4E4BC)',
+                    borderRadius: '50%',
+                    background: 'linear-gradient(135deg, #D4AF37 0%, #B8960C 100%)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontWeight: '700',
+                    fontWeight: '800',
                     fontSize: '12px',
-                    color: '#3D1011',
-                    flexShrink: 0
+                    color: '#1a1a1a',
+                    flexShrink: 0,
+                    boxShadow: '0 2px 4px rgba(212, 175, 55, 0.3)'
                   }}>
                     {index + 1}
                   </div>
