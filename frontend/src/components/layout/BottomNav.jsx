@@ -1,8 +1,9 @@
-// ===== BOTTOM NAVIGATION — LIQUID NOTCH =====
-// Redesenho fiel à referência: barra full-width com notch curvo e bolha flutuante
-// Otimizado para centralização perfeita e animações fluidas
+// ===== BOTTOM NAVIGATION — LIQUID GLASS =====
+// Efeito de "vidro líquido" flutuante com suporte perfeito a modo claro e escuro.
+// Botão de busca centralizado ("Floating Action Button"), labels fixas reduzidas
+// e animação de background sofisticada entre ícones (layoutId).
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, LayoutGroup } from 'framer-motion';
 import { useUI } from '@contexts/UIContext';
@@ -24,8 +25,6 @@ const BottomNav = ({ activeTab }) => {
     { id: 'profile', path: '/perfil', icon: Icons.User, label: 'Perfil' }
   ];
 
-  const activeIndex = useMemo(() => tabs.findIndex(t => t.id === activeTab), [activeTab, tabs]);
-
   const isMobile = typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
   const isHiding = showNotifications && isMobile;
 
@@ -45,81 +44,90 @@ const BottomNav = ({ activeTab }) => {
     }
   }, [isMobile]);
 
+  const isDark = theme === 'dark';
   const shouldHide = isHiding || keyboardOpen;
 
   const handleNavigate = (path) => {
     navigate(path);
   };
 
-  // Cálculo da posição do notch (em porcentagem)
-  const notchX = useMemo(() => {
-    if (activeIndex === -1) return 50;
-    return (activeIndex * 20) + 10; // Centro do tab (10, 30, 50, 70, 90)
-  }, [activeIndex]);
-
-  // SVG Path dinâmico para o "Liquid Notch"
-  // Desenha uma linha reta com uma curva suave (Bezier) no centro
-  const curvePath = useMemo(() => {
-    const x = notchX; // Centro em %
-    const w = 10; // Largura da curva em %
-    return `M0,0 L${x - w},0 C${x - w / 2},0 ${x - w / 2},22 ${x},22 C${x + w / 2},22 ${x + w / 2},0 ${x + w},0 L100,0 V100 H0 Z`;
-  }, [notchX]);
-
   return (
     <LayoutGroup>
-      <nav className={`${styles.nav} mobile-only ${shouldHide ? styles.hidden : ''}`}>
-        {/* Background SVG com o Notch Animado */}
-        <svg className={styles.navBg} viewBox="0 0 100 70" preserveAspectRatio="none">
-          <motion.path
-            d={curvePath}
-            transition={{ type: 'spring', stiffness: 350, damping: 30 }}
-            animate={{ d: curvePath }}
-          />
-        </svg>
-
+      <nav className={`${styles.nav} mobile-only ${isDark ? styles.dark : styles.light} ${shouldHide ? styles.hidden : styles.visible}`}>
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id;
+          const isCenter = tab.id === 'search';
           const TabIcon = tab.icon;
+
+          if (isCenter) {
+            return (
+              <motion.button
+                key={tab.id}
+                data-nav={tab.id}
+                data-walkthrough="search"
+                className={`${styles.centerButton} ${isActive ? styles.centerActive : ''}`}
+                onClick={() => handleNavigate(tab.path)}
+                onMouseEnter={() => handlePrefetch(tab.path)}
+                onTouchStart={() => handlePrefetch(tab.path)}
+                whileTap={{ scale: 0.88, rotate: -5 }}
+                transition={{ type: "spring", stiffness: 450, damping: 18 }}
+                aria-label={tab.label}
+              >
+                <div className={styles.centerIconWrap}>
+                  <TabIcon filled />
+                </div>
+              </motion.button>
+            );
+          }
 
           return (
             <motion.button
               key={tab.id}
               data-nav={tab.id}
-              data-walkthrough={tab.id === 'search' ? 'search' : undefined}
-              className={styles.tabSlot}
+              className={`${styles.tabSlot} ${isActive ? styles.active : ''}`}
               onClick={() => handleNavigate(tab.path)}
               onMouseEnter={() => handlePrefetch(tab.path)}
               onTouchStart={() => handlePrefetch(tab.path)}
+              whileTap={{ scale: 0.88, y: 3 }} // Animação tátil que pressiona para baixo ("press down")
+              transition={{ type: "spring", stiffness: 400, damping: 18 }}
+              aria-current={isActive ? 'page' : undefined}
             >
-              {/* Bolha dourada flutuante */}
+              {/* Efeito highlight com LayoutId trocando fluido entre abas */}
               {isActive && (
                 <motion.div
-                  className={styles.bubble}
-                  layoutId="activeBubble"
-                  transition={{ type: 'spring', stiffness: 380, damping: 28 }}
-                >
-                  <div className={styles.bubbleIcon}>
-                    <TabIcon filled />
-                  </div>
-                </motion.div>
+                  layoutId="activeTabIndicator"
+                  className={styles.activeBackground}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ type: "spring", stiffness: 350, damping: 25 }}
+                />
               )}
 
-              {/* Conteúdo interno da tab */}
               <div className={styles.tabContent}>
-                {isActive ? (
-                  <motion.span
-                    className={styles.activeLabel}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 }}
-                  >
-                    {tab.label}
-                  </motion.span>
-                ) : (
-                  <div className={styles.inactiveIcon}>
-                    <TabIcon />
-                  </div>
-                )}
+                <motion.div
+                  className={styles.tabIcon}
+                  animate={{
+                    y: isActive ? -4 : 0,
+                    scale: isActive ? 1.15 : 1,
+                    color: isActive ? '#D4AF37' : 'rgba(255, 255, 255, 0.65)'
+                  }}
+                  transition={{ type: "spring", stiffness: 400, damping: 18 }}
+                >
+                  <TabIcon filled={isActive} />
+                </motion.div>
+
+                <motion.span
+                  className={styles.tabLabel}
+                  animate={{
+                    opacity: isActive ? 1 : 0.85,
+                    color: isActive ? '#D4AF37' : 'rgba(255, 255, 255, 0.65)',
+                    fontWeight: isActive ? 800 : 700,
+                    y: isActive ? -1 : 0
+                  }}
+                  transition={{ duration: 0.2 }}
+                >
+                  {tab.label}
+                </motion.span>
               </div>
             </motion.button>
           );

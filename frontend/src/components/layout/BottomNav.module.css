@@ -1,48 +1,136 @@
-/* ===== BOTTOM NAV MODULE — LIQUID NOTCH REDESIGN ===== */
+/* ===== BOTTOM NAV MODULE — LIQUID GLASS REDESIGN ===== */
 
 .nav {
   position: fixed;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  height: calc(70px + env(safe-area-inset-bottom));
+  bottom: 24px;
+  left: 50%;
+  width: calc(100% - 32px);
+  max-width: 420px;
+  height: 80px;
+  /* Aumentado para sempre exibir labels e ícones grandes */
   z-index: 999;
   display: flex;
   justify-content: space-around;
-  align-items: flex-start;
-  padding: 0;
-  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
-  overflow: visible;
+  align-items: center;
+  border-radius: 40px;
+  /* Pill perfeito pra altura 80px */
+  padding: 0 10px;
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
+
+  /* GLASSMORPHISM CORE */
+  backdrop-filter: blur(32px) saturate(160%);
+  -webkit-backdrop-filter: blur(32px) saturate(160%);
 }
 
-/* Background flutuante com o notch SVG */
-.navBg {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 0;
-  filter: drop-shadow(0 -4px 12px rgba(0, 0, 0, 0.25));
-  backdrop-filter: blur(40px) saturate(180%);
-  -webkit-backdrop-filter: blur(40px) saturate(180%);
-}
-
-.nav.dark .navBg {
-  fill: rgba(45, 12, 13, 0.96);
-}
-
-.nav.light .navBg {
-  fill: rgba(72, 20, 21, 0.96);
+.nav.visible {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .nav.hidden {
-  transform: translateY(100%);
+  transform: translateX(-50%) translateY(100px);
   opacity: 0;
   pointer-events: none;
 }
 
-/* ===== TAB SLOT ===== */
+/* ===== TEMA ESCURO (Dark Gold) ===== */
+.nav.dark {
+  background: linear-gradient(135deg, rgba(65, 18, 20, 0.4) 0%, rgba(20, 5, 5, 0.6) 100%);
+
+  /* Reflexos Liquid Glass Premium */
+  border-top: 1px solid rgba(255, 255, 255, 0.18);
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  border-right: 1px solid rgba(0, 0, 0, 0.4);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.5);
+
+  box-shadow:
+    0 20px 48px rgba(0, 0, 0, 0.7),
+    inset 0 1.5px 1px rgba(255, 255, 255, 0.15),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.6);
+}
+
+/* ===== TEMA CLARO (Soft Wine Light Mode) ===== */
+.nav.light {
+  /* Fundo avermelhado escuro, garantindo o "pure glass" sem ficar leitoso branco */
+  background: linear-gradient(135deg, rgba(75, 12, 14, 0.7) 0%, rgba(45, 5, 5, 0.9) 100%);
+
+  /* Borda sutil creme avermelhado no topo para imitar o reflexo do vidro claro */
+  border-top: 1px solid rgba(255, 235, 235, 0.25);
+  border-left: 1px solid rgba(255, 235, 235, 0.15);
+  border-right: 1px solid rgba(20, 0, 0, 0.2);
+  border-bottom: 1px solid rgba(20, 0, 0, 0.3);
+
+  box-shadow:
+    0 16px 36px rgba(45, 5, 5, 0.3),
+    inset 0 1.5px 1px rgba(255, 235, 235, 0.3),
+    inset 0 -1.5px 2px rgba(0, 0, 0, 0.4);
+}
+
+/* ===== CENTER BUTTON (Search) - Liquid Glass ===== */
+.centerButton {
+  position: relative;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+
+  /* Fundo vidro translúcido ao invés de dourado chapado */
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.02) 100%);
+
+  /* Bordas para o reflexo tipo "lente" */
+  border-top: 1px solid rgba(255, 255, 255, 0.35);
+  border-left: 1px solid rgba(255, 255, 255, 0.2);
+  border-right: 1px solid rgba(0, 0, 0, 0.1);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+
+  box-shadow:
+    0 8px 16px rgba(0, 0, 0, 0.25),
+    inset 0 2px 4px rgba(255, 255, 255, 0.2),
+    inset 0 -2px 6px rgba(0, 0, 0, 0.1);
+
+  transform: translateY(0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+  z-index: 10;
+}
+
+.centerActive {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.05) 100%);
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.35),
+    inset 0 2px 6px rgba(255, 255, 255, 0.35),
+    inset 0 -2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.nav.light .centerButton {
+  /* Em modo clear (fundo vinho escuro), um reflexo um pouco mais quente no botão de vidro */
+  background: linear-gradient(145deg, rgba(255, 235, 235, 0.1) 0%, rgba(255, 235, 235, 0) 100%);
+  border-top: 1px solid rgba(255, 235, 235, 0.3);
+  border-bottom: 1px solid rgba(20, 0, 0, 0.4);
+  box-shadow:
+    0 8px 16px rgba(20, 0, 0, 0.4),
+    inset 0 2px 4px rgba(255, 255, 255, 0.15);
+}
+
+.centerIconWrap {
+  width: 26px;
+  height: 26px;
+  color: #D4AF37;
+  /* Como o botão não é mais ouro sólido, o ícone precisa ser dourado */
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
+  transition: all 0.3s ease;
+}
+
+.centerButton:active .centerIconWrap {
+  transform: scale(0.9);
+}
+
+/* ===== REGULAR TAB SLOTS ===== */
 .tabSlot {
   flex: 1;
   display: flex;
@@ -53,66 +141,61 @@
   background: none;
   border: none;
   cursor: pointer;
-  height: 70px;
+  height: 100%;
   padding: 0;
-  z-index: 2;
   -webkit-tap-highlight-color: transparent;
   outline: none;
 }
 
+.activeBackground {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 62px;
+  height: 62px;
+  border-radius: 20px;
+  /* Squircle pra ficar suave por tras */
+  z-index: 0;
+}
+
+.nav.dark .activeBackground {
+  background: radial-gradient(circle, rgba(212, 175, 55, 0.15) 0%, rgba(212, 175, 55, 0) 70%);
+}
+
+.nav.light .activeBackground {
+  /* No modo claro, brilho suave em ouro (quente) em vez do branco leitoso forte */
+  background: radial-gradient(circle, rgba(212, 175, 55, 0.25) 0%, rgba(212, 175, 55, 0) 70%);
+}
+
 .tabContent {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: 100%;
-  height: 100%;
+  gap: 6px;
+  /* Mais espaço pra respeitar height 80px */
 }
 
-/* ===== FLOATING BUBBLE (active item) ===== */
-.bubble {
-  position: absolute;
-  top: -24px;
-  /* Flutua exatamente no centro do notch */
-  width: 58px;
-  height: 58px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #D4AF37 0%, #AA8C2C 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 8px 16px rgba(170, 140, 44, 0.4);
-  z-index: 3;
+/* Ícones & Textos */
+.tabIcon {
+  width: 26px;
+  height: 26px;
+  transition: filter 0.3s ease;
 }
 
-.bubbleIcon {
-  width: 28px;
-  height: 28px;
-  color: #2A0A0C;
+.nav.dark .active .tabIcon {
+  filter: drop-shadow(0 4px 6px rgba(212, 175, 55, 0.3));
 }
 
-/* ===== LABELS & ICONS ===== */
-.activeLabel {
-  color: #D4AF37;
+.nav.light .active .tabIcon {
+  filter: drop-shadow(0 4px 4px rgba(170, 140, 44, 0.2));
+}
+
+.tabLabel {
   font-size: 10px;
-  font-weight: 800;
+  font-weight: 700;
+  letter-spacing: 0.3px;
   text-transform: uppercase;
-  letter-spacing: 0.8px;
-  margin-top: 32px;
-  /* Espaço para o notch */
-}
-
-.inactiveIcon {
-  width: 24px;
-  height: 24px;
-  color: rgba(244, 228, 188, 0.35);
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.tabSlot:active .inactiveIcon {
-  transform: scale(0.9);
-  color: rgba(244, 228, 188, 0.6);
 }
