@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { useUI } from '@contexts/UIContext';
+import { useMediaQuery } from '@hooks/useMediaQuery';
 import { API } from '@services/api';
 import { COLORS, COLORS_RGBA } from '@constants/colors';
 import { LABELS } from '@constants/organization';
@@ -13,6 +14,7 @@ import ResetPinModal from './modals/ResetPinModal';
 
 const AdminMusicos = () => {
   const { showToast } = useUI();
+  const isMobile = useMediaQuery('(max-width: 767px)');
   const [usuarios, setUsuarios] = useState([]);
   const [instrumentos, setInstrumentos] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -107,7 +109,7 @@ const AdminMusicos = () => {
   };
 
   return (
-    <div className="page-transition" style={{ padding: '32px', maxWidth: '1000px', margin: '0 auto', }}>
+    <div className="page-transition" style={{ padding: isMobile ? '16px' : '32px', maxWidth: '1000px', margin: '0 auto' }}>
       {/* Header */}
       <div style={{ marginBottom: '32px', textAlign: 'center' }}>
         <h1 style={{
@@ -205,10 +207,7 @@ const AdminMusicos = () => {
               key={user.id}
               className="list-item-animate card-hover"
               style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '16px 20px',
+                padding: isMobile ? '12px 14px' : '16px 20px',
                 background: 'var(--bg-secondary)',
                 borderRadius: '16px',
                 border: '1px solid var(--border)',
@@ -216,180 +215,129 @@ const AdminMusicos = () => {
                 animationDelay: `${index * 0.03}s`
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                {/* Avatar com circulo dourado */}
+              {/* Linha superior: avatar + info */}
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                {/* Avatar com anel dourado */}
                 <div style={{
-                  width: '52px',
-                  height: '52px',
-                  minWidth: '52px',
-                  minHeight: '52px',
-                  flexShrink: 0,
-                  aspectRatio: '1 / 1',
+                  width: '46px', height: '46px', minWidth: '46px',
                   borderRadius: '50%',
                   background: `linear-gradient(145deg, ${COLORS.gold.primary} 0%, ${COLORS.gold.darkest} 100%)`,
-                  padding: '3px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
+                  padding: '2px', flexShrink: 0,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
                   boxShadow: `0 2px 8px ${COLORS_RGBA.gold.bg30}`
                 }}>
                   {user.foto_url && !failedImages.has(user.id) ? (
                     <img
                       src={user.foto_url}
                       alt={user.nome}
-                      onError={() => {
-                        setFailedImages(prev => {
-                          const newSet = new Set(prev);
-                          newSet.add(user.id);
-                          return newSet;
-                        });
-                      }}
-                      style={{
-                        width: '100%',
-                        height: '100%',
-                        borderRadius: '50%',
-                        objectFit: 'cover'
-                      }}
+                      onError={() => setFailedImages(prev => { const s = new Set(prev); s.add(user.id); return s; })}
+                      style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
                     />
                   ) : (
                     <div style={{
-                      width: '100%',
-                      height: '100%',
-                      borderRadius: '50%',
+                      width: '100%', height: '100%', borderRadius: '50%',
                       background: `linear-gradient(145deg, ${COLORS.wine.primary} 0%, ${COLORS.wine.dark} 100%)`,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '20px',
-                      color: COLORS.text.cream,
-                      fontWeight: '600',
-                      }}>
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: '18px', color: COLORS.text.cream, fontWeight: '600'
+                    }}>
                       {user.nome?.charAt(0)?.toUpperCase() || '?'}
                     </div>
                   )}
                 </div>
-                <div>
-                  <div style={{ fontWeight: '600', color: 'var(--text-primary)', marginBottom: '2px', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                    {user.nome}
+
+                {/* Info */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  {/* Nome + badges */}
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', alignItems: 'center', marginBottom: '3px' }}>
+                    <span style={{ fontWeight: '600', fontSize: '15px', color: 'var(--text-primary)' }}>
+                      {user.nome}
+                    </span>
                     {!!user.admin && (
                       <span style={{
-                        fontSize: '10px',
-                        fontWeight: '700',
-                        color: COLORS.gold.primary,
-                        background: COLORS_RGBA.gold.bg15,
-                        padding: '2px 8px',
-                        borderRadius: '4px',
-                        border: `1px solid ${COLORS_RGBA.gold.border30}`,
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.5px'
-                      }}>
-                        {LABELS.adminBadge}
-                      </span>
+                        fontSize: '10px', fontWeight: '700', color: COLORS.gold.primary,
+                        background: COLORS_RGBA.gold.bg15, padding: '2px 7px', borderRadius: '4px',
+                        border: `1px solid ${COLORS_RGBA.gold.border30}`, textTransform: 'uppercase', letterSpacing: '0.5px'
+                      }}>{LABELS.adminBadge}</span>
                     )}
-                    {!!user.convidado && (
-                      <span style={{
-                        fontSize: '10px',
-                        fontWeight: '700',
-                        color: '#3498db',
-                        background: 'rgba(52, 152, 219, 0.15)',
-                        padding: '2px 8px',
-                        borderRadius: '4px',
-                        border: '1px solid rgba(52, 152, 219, 0.3)',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.5px'
-                      }}>
-                        CONVIDADO
-                      </span>
+                    {!user.ativo && (
+                      <span style={{ fontSize: '11px', color: COLORS.error.primary }}>{LABELS.inactive}</span>
                     )}
-                    {!user.ativo && <span style={{ fontSize: '12px', color: COLORS.error.primary }}>{LABELS.inactive}</span>}
                   </div>
-                  <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
-                    @{user.username} • {user.instrumento_nome || 'Sem instrumento'}
+                  <div style={{ fontSize: '13px', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    @{user.username} · {user.instrumento_nome || 'Sem instrumento'}
                   </div>
                   {user.ultimo_acesso && (
-                    <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
                       Último acesso: {new Date(user.ultimo_acesso).toLocaleDateString('pt-BR')}
                     </div>
                   )}
                 </div>
               </div>
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                {user.username !== 'admin' && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginRight: '12px' }}>
-                    <span style={{ fontSize: '11px', color: user.convidado ? '#3498db' : 'var(--text-muted)', fontWeight: '500' }}>
+
+              {/* Linha inferior: toggle convidado + botões de ação */}
+              <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                marginTop: '10px', paddingTop: '10px', borderTop: '1px solid var(--border)'
+              }}>
+                {/* Toggle convidado */}
+                {user.username !== 'admin' ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ fontSize: '12px', color: user.convidado ? '#3498db' : 'var(--text-muted)', fontWeight: '500' }}>
                       Convidado
                     </span>
-                    <ToggleSwitch
-                      checked={!!user.convidado}
-                      onChange={() => handleToggleConvidado(user)}
-                      color="#3498db"
-                      size="sm"
-                    />
+                    <ToggleSwitch checked={!!user.convidado} onChange={() => handleToggleConvidado(user)} color="#3498db" size="sm" />
                   </div>
-                )}
-                <button onClick={() => { setEditingUser(user); setShowModal(true); }} title="Editar" className="btn-icon-hover" style={{
-                  width: '40px',
-                  height: '40px',
-                  borderRadius: '10px',
-                  background: 'var(--bg-primary)',
-                  border: '1px solid var(--border)',
-                  color: 'var(--text-secondary)',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                  </svg>
-                </button>
-                {/* Botão de resetar PIN - oculto para super admin (@admin) */}
-                {user.username !== 'admin' && (
-                  <button onClick={() => setShowResetPin(user)} title="Redefinir PIN" className="btn-icon-hover" style={{
-                    width: '40px',
-                    height: '40px',
-                    borderRadius: '10px',
-                    background: 'var(--bg-primary)',
-                    border: '1px solid var(--border)',
-                    color: 'var(--text-secondary)',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
+                ) : <div />}
+
+                {/* Botões de ação */}
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  <button onClick={() => { setEditingUser(user); setShowModal(true); }} title="Editar" className="btn-icon-hover" style={{
+                    width: '38px', height: '38px', borderRadius: '10px',
+                    background: 'var(--bg-primary)', border: '1px solid var(--border)',
+                    color: 'var(--text-secondary)', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center'
                   }}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                     </svg>
                   </button>
-                )}
-                {/* Botão de ativar/desativar - oculto para super admin (@admin) */}
-                {user.username !== 'admin' && (
-                  <button onClick={() => handleToggleAtivo(user)} title={user.ativo ? 'Desativar' : 'Ativar'} className={user.ativo ? 'btn-danger-hover' : 'btn-success-hover'} style={{
-                    width: '40px',
-                    height: '40px',
-                    borderRadius: '10px',
-                    background: user.ativo ? COLORS_RGBA.error.bg10 : COLORS_RGBA.success.bg10,
-                    border: `1px solid ${user.ativo ? COLORS_RGBA.error.border30 : COLORS_RGBA.success.border30}`,
-                    color: user.ativo ? COLORS.error.primary : COLORS.success.primary,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}>
-                    {user.ativo ? (
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <circle cx="12" cy="12" r="10" />
-                        <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+
+                  {user.username !== 'admin' && (
+                    <button onClick={() => setShowResetPin(user)} title="Redefinir PIN" className="btn-icon-hover" style={{
+                      width: '38px', height: '38px', borderRadius: '10px',
+                      background: 'var(--bg-primary)', border: '1px solid var(--border)',
+                      color: 'var(--text-secondary)', cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center'
+                    }}>
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                       </svg>
-                    ) : (
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
-                    )}
-                  </button>
-                )}
+                    </button>
+                  )}
+
+                  {user.username !== 'admin' && (
+                    <button onClick={() => handleToggleAtivo(user)} title={user.ativo ? 'Desativar' : 'Ativar'}
+                      className={user.ativo ? 'btn-danger-hover' : 'btn-success-hover'} style={{
+                        width: '38px', height: '38px', borderRadius: '10px',
+                        background: user.ativo ? COLORS_RGBA.error.bg10 : COLORS_RGBA.success.bg10,
+                        border: `1px solid ${user.ativo ? COLORS_RGBA.error.border30 : COLORS_RGBA.success.border30}`,
+                        color: user.ativo ? COLORS.error.primary : COLORS.success.primary,
+                        cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'
+                      }}>
+                      {user.ativo ? (
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="12" cy="12" r="10" /><line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+                        </svg>
+                      ) : (
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                      )}
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           ))}

@@ -11,6 +11,8 @@ import ThemeSelector from '@components/common/ThemeSelector';
 import AdminToggle from '@components/common/AdminToggle';
 import { useMediaQuery } from '@hooks/useMediaQuery';
 import AdminContext from './AdminContext';
+import AdminBottomNav from './components/AdminBottomNav';
+import AdminMoreModal from './components/AdminMoreModal';
 
 const AdminDashboard = lazy(() => import('./AdminDashboard'));
 const AdminMusicos = lazy(() => import('./AdminMusicos'));
@@ -50,6 +52,7 @@ const AdminApp = () => {
   const [loading, setLoading] = useState(true);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [moreModalOpen, setMoreModalOpen] = useState(false);
   const isMobile = useMediaQuery('(max-width: 767px)');
   const { logout } = useAuth();
   const { themeMode, setThemeMode } = useUI();
@@ -60,9 +63,12 @@ const AdminApp = () => {
     navigate('/login', { replace: true });
   };
 
-  // Fecha menu mobile quando sai do modo mobile
+  // Fecha menus quando sai do modo mobile
   useEffect(() => {
-    if (!isMobile) setMobileMenuOpen(false);
+    if (!isMobile) {
+      setMobileMenuOpen(false);
+      setMoreModalOpen(false);
+    }
   }, [isMobile]);
 
   const loadStats = async () => {
@@ -626,12 +632,30 @@ const AdminApp = () => {
           )}
 
           {/* Conteudo */}
-          <div style={{ flex: 1, overflow: 'auto' }}>
+          <div style={{ flex: 1, overflow: 'auto', paddingBottom: isMobile ? '112px' : 0 }}>
             <Suspense fallback={<SectionLoader />}>
               {renderContent()}
             </Suspense>
           </div>
         </main>
+
+        {/* Bottom Nav Mobile */}
+        {isMobile && (
+          <AdminBottomNav
+            activeSection={activeSection}
+            onNavigate={navigateToSection}
+            onOpenMenu={() => setMoreModalOpen(true)}
+          />
+        )}
+
+        {/* Modal "Mais" — mobile */}
+        {isMobile && moreModalOpen && (
+          <AdminMoreModal
+            activeSection={activeSection}
+            onNavigate={navigateToSection}
+            onClose={() => setMoreModalOpen(false)}
+          />
+        )}
       </div>
     </AdminContext.Provider>
   );
