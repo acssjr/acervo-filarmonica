@@ -109,7 +109,7 @@ const BottomNav = ({ activeTab }) => {
                   animate={{
                     y: isActive ? -4 : 0,
                     scale: isActive ? 1.15 : 1,
-                    color: isActive ? '#D4AF37' : 'rgba(255, 255, 255, 0.65)'
+                    color: isActive ? 'var(--color-gold)' : 'var(--color-inactive)'
                   }}
                   transition={{ type: "spring", stiffness: 400, damping: 18 }}
                 >
@@ -120,7 +120,7 @@ const BottomNav = ({ activeTab }) => {
                   className={styles.tabLabel}
                   animate={{
                     opacity: isActive ? 1 : 0.85,
-                    color: isActive ? '#D4AF37' : 'rgba(255, 255, 255, 0.65)',
+                    color: isActive ? 'var(--color-gold)' : 'var(--color-inactive)',
                     fontWeight: isActive ? 800 : 700,
                     y: isActive ? -1 : 0
                   }}

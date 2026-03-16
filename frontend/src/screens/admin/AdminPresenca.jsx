@@ -1277,7 +1277,6 @@ const AdminPresenca = () => {
                 type="url"
                 value={youtubeUrl}
                 onChange={e => setYoutubeUrl(e.target.value)}
-                onBlur={handleSaveYoutubeUrl}
                 placeholder="https://youtube.com/watch?v=..."
                 style={{
                   width: '100%',

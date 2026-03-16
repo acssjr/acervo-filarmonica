@@ -1,9 +1,10 @@
 // ===== ENSAIO DETAIL MODAL =====
 // Modal informativo de ensaio — design seguindo SheetDetailModal
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMediaQuery } from '@hooks/useMediaQuery';
+import { useScrollLock } from '@hooks/useScrollLock';
 import { API } from '@services/api';
 
 const EnsaioDetailModal = ({ ensaio, isOpen, onClose }) => {
@@ -11,6 +12,12 @@ const EnsaioDetailModal = ({ ensaio, isOpen, onClose }) => {
   const [youtubeUrl, setYoutubeUrl] = useState(null);
   const [loading, setLoading] = useState(false);
   const [expanded, setExpanded] = useState(false);
+
+  // Stable random widths for skeleton loading to prevent jitter
+  const skeletonWidths = useMemo(() => Array.from({ length: 5 }).map(() => ({
+    title: `${60 + Math.random() * 30}%`,
+    composer: `${30 + Math.random() * 20}%`
+  })), []);
   const isDesktop = useMediaQuery('(min-width: 1024px)');
   const closeButtonRef = useRef(null);
   const modalRef = useRef(null);
@@ -72,58 +79,8 @@ const EnsaioDetailModal = ({ ensaio, isOpen, onClose }) => {
     };
   }, [isOpen]);
 
-  // Body scroll lock — robust iOS Safari solution
-  // Uses touchmove interception + CSS overflow hidden + overscroll-behavior
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const scrollY = window.scrollY;
-
-    // 1. CSS: overflow hidden + height 100% on both html and body
-    const html = document.documentElement;
-    const body = document.body;
-    const origStyles = {
-      htmlOverflow: html.style.overflow,
-      htmlHeight: html.style.height,
-      bodyOverflow: body.style.overflow,
-      bodyHeight: body.style.height,
-      bodyTouchAction: body.style.touchAction,
-      bodyWebkitOverflowScrolling: body.style.webkitOverflowScrolling,
-      bodyOverscrollBehavior: body.style.overscrollBehavior,
-    };
-
-    html.style.overflow = 'hidden';
-    html.style.height = '100%';
-    body.style.overflow = 'hidden';
-    body.style.height = '100%';
-    body.style.touchAction = 'none';
-    body.style.webkitOverflowScrolling = 'auto';
-    body.style.overscrollBehavior = 'none';
-
-    // 2. Touchmove interception — block outside modal, allow inside scrollable areas
-    const handleTouchMove = (e) => {
-      // Allow scrolling inside the modal
-      if (modalRef.current && modalRef.current.contains(e.target)) {
-        return; // let it scroll normally inside modal
-      }
-      // Block everything else
-      e.preventDefault();
-    };
-
-    document.addEventListener('touchmove', handleTouchMove, { passive: false });
-
-    return () => {
-      document.removeEventListener('touchmove', handleTouchMove);
-      html.style.overflow = origStyles.htmlOverflow;
-      html.style.height = origStyles.htmlHeight;
-      body.style.overflow = origStyles.bodyOverflow;
-      body.style.height = origStyles.bodyHeight;
-      body.style.touchAction = origStyles.bodyTouchAction;
-      body.style.webkitOverflowScrolling = origStyles.bodyWebkitOverflowScrolling;
-      body.style.overscrollBehavior = origStyles.bodyOverscrollBehavior;
-      window.scrollTo(0, scrollY);
-    };
-  }, [isOpen]);
+  // Centralized Scroll Lock
+  useScrollLock(isOpen);
 
   const dataEnsaio = ensaio?.data_ensaio ?? null;
   useEffect(() => {
@@ -458,13 +415,13 @@ const EnsaioDetailModal = ({ ensaio, isOpen, onClose }) => {
                       }} />
                       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
                         <div style={{
-                          width: `${60 + Math.random() * 30}%`, height: '14px', borderRadius: '4px',
+                          width: skeletonWidths[i]?.title || '70%', height: '14px', borderRadius: '4px',
                           background: 'linear-gradient(90deg, var(--skeleton-base, rgba(255,255,255,0.05)) 0%, var(--skeleton-shine, rgba(255,255,255,0.1)) 50%, var(--skeleton-base, rgba(255,255,255,0.05)) 100%)',
                           backgroundSize: '200% 100%', animation: 'shimmer 1.5s ease-in-out infinite',
                           animationDelay: `${i * 0.15}s`
                         }} />
                         <div style={{
-                          width: `${30 + Math.random() * 20}%`, height: '10px', borderRadius: '4px',
+                          width: skeletonWidths[i]?.composer || '40%', height: '10px', borderRadius: '4px',
                           background: 'linear-gradient(90deg, var(--skeleton-base, rgba(255,255,255,0.05)) 0%, var(--skeleton-shine, rgba(255,255,255,0.1)) 50%, var(--skeleton-base, rgba(255,255,255,0.05)) 100%)',
                           backgroundSize: '200% 100%', animation: 'shimmer 1.5s ease-in-out infinite',
                           animationDelay: `${i * 0.15 + 0.05}s`

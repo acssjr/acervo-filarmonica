@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import API from '../../../services/api';
 import Skeleton from '../../../components/common/Skeleton';
+import { useScrollLock } from '../../../hooks/useScrollLock';
 
 // Icons - use simple SVG inline icons to avoid import issues
 const SearchIcon = ({ size = 16, color = 'currentColor' }) => (
@@ -71,30 +72,20 @@ const EditarEnsaioModal = ({ ensaio, usuarios, onClose, onUpdate, addNotificatio
         const url = res.youtube_url || '';
         setYoutubeUrl(url);
         setOriginalYoutubeUrl(url);
-      }).catch(() => { });
+      }).catch((err) => {
+        console.error('Failed to fetch YouTube URL for ensaio:', ensaio.data_ensaio, err);
+      });
 
     } catch (error) {
       addNotification?.('Erro ao carregar detalhes do ensaio', 'error');
-    } finally {
-      // Don't set loading false here, we did it after API.getDetalheEnsaio
     }
   }, [ensaio.data_ensaio, addNotification]);
 
   // When details load, save original state for diffing
 
 
-  // Scroll Lock: preventing background scroll when modal is open (Standard Pattern)
-  useEffect(() => {
-    const scrollY = window.scrollY;
-    document.documentElement.classList.add('modal-open');
-    document.body.style.top = `-${scrollY}px`;
-
-    return () => {
-      document.documentElement.classList.remove('modal-open');
-      document.body.style.top = '';
-      window.scrollTo(0, scrollY);
-    };
-  }, []);
+  // Centralized Scroll Lock
+  useScrollLock();
 
   useEffect(() => { carregarDetalhe(); }, [carregarDetalhe]);
 
