@@ -3,9 +3,28 @@
 
 import { useState, useEffect } from 'react';
 import { useUI } from '@contexts/UIContext';
+import { useMediaQuery } from '@hooks/useMediaQuery';
 import { API } from '@services/api';
 import CategoryIcon from '@components/common/CategoryIcon';
 import { CategoryListSkeleton } from '@components/common/Skeleton';
+
+// Paleta de gradientes por categoria (igual ao CategoryCard do acervo)
+const CARD_THEMES = {
+  'dobrados':           { gradient: 'linear-gradient(145deg, #8B2E3A 0%, #4E1620 100%)', iconColor: '#F4C0C8' },
+  'marchas':            { gradient: 'linear-gradient(145deg, #1A3460 0%, #0D1A35 100%)', iconColor: '#9EC4F0' },
+  'marchas-funebres':   { gradient: 'linear-gradient(145deg, #282830 0%, #141418 100%)', iconColor: '#B8B8C8' },
+  'marchas-religiosas': { gradient: 'linear-gradient(145deg, #5A2C1A 0%, #2E1408 100%)', iconColor: '#ECC09A' },
+  'fantasias':          { gradient: 'linear-gradient(145deg, #4A1E7A 0%, #280F48 100%)', iconColor: '#C8A8F0' },
+  'polacas':            { gradient: 'linear-gradient(145deg, #1A4830 0%, #0C2818 100%)', iconColor: '#9ECEB8' },
+  'boleros':            { gradient: 'linear-gradient(145deg, #7A2C18 0%, #401208 100%)', iconColor: '#F0A888' },
+  'valsas':             { gradient: 'linear-gradient(145deg, #5A1A40 0%, #300D20 100%)', iconColor: '#F0A8C8' },
+  'arranjos':           { gradient: 'linear-gradient(145deg, #183848 0%, #0A1E28 100%)', iconColor: '#88B8D8' },
+  'hinos':              { gradient: 'linear-gradient(145deg, #1A3C20 0%, #0C2010 100%)', iconColor: '#90C898' },
+  'hinos-civicos':      { gradient: 'linear-gradient(145deg, #1A2E60 0%, #0A1838 100%)', iconColor: '#88A8E8' },
+  'hinos-religiosos':   { gradient: 'linear-gradient(145deg, #4A2A10 0%, #281408 100%)', iconColor: '#E8B880' },
+  'preludios':          { gradient: 'linear-gradient(145deg, #1E2840 0%, #0E1422 100%)', iconColor: '#88A0C0' },
+};
+const DEFAULT_THEME = { gradient: 'linear-gradient(145deg, #2A2A3A 0%, #151520 100%)', iconColor: '#B0B0C8' };
 
 // Função para gerar ID a partir do nome (slug)
 const generateId = (nome) => {
@@ -25,6 +44,7 @@ const CORES_PADRAO = [
 
 const AdminCategorias = () => {
   const { showToast } = useUI();
+  const isMobile = useMediaQuery('(max-width: 767px)');
   const [categorias, setCategorias] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -112,7 +132,7 @@ const AdminCategorias = () => {
   };
 
   return (
-    <div className="page-transition" style={{ padding: '32px', maxWidth: '800px', margin: '0 auto', }}>
+    <div className="page-transition" style={{ padding: isMobile ? '16px' : '32px', maxWidth: '800px', margin: '0 auto' }}>
       {/* Header */}
       <div style={{ marginBottom: '32px', textAlign: 'center' }}>
         <h1 style={{
@@ -162,83 +182,113 @@ const AdminCategorias = () => {
         </button>
       </div>
 
-      {/* Lista */}
+      {/* Grid de categorias */}
       {loading ? (
-        <CategoryListSkeleton count={5} />
+        <CategoryListSkeleton count={6} />
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {categorias.map((cat, index) => (
-            <div
-              key={cat.id}
-              className="list-item-animate card-hover"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '16px 20px',
-                background: 'var(--bg-secondary)',
-                borderRadius: '16px',
-                border: '1px solid var(--border)',
-                animationDelay: `${index * 0.03}s`
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(2, 1fr)',
+          gap: '12px'
+        }}>
+          {categorias.map((cat, index) => {
+            const { gradient, iconColor } = CARD_THEMES[cat.id] || DEFAULT_THEME;
+            return (
+              <div
+                key={cat.id}
+                className="list-item-animate"
+                style={{
+                  background: gradient,
+                  borderRadius: '20px',
+                  padding: '14px',
+                  position: 'relative',
+                  overflow: 'hidden',
+                  minHeight: '108px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.32)',
+                  border: '1px solid rgba(255,255,255,0.07)',
+                  animationDelay: `${index * 0.03}s`,
+                }}
+              >
+                {/* Highlight topo */}
                 <div style={{
-                  width: '48px',
-                  height: '48px',
-                  borderRadius: '12px',
-                  background: 'linear-gradient(145deg, #3a3a4a 0%, #2a2a38 100%)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  border: '1px solid rgba(212, 175, 55, 0.2)'
-                }}>
-                  <CategoryIcon categoryId={cat.id} size={24} color="#D4AF37" />
+                  position: 'absolute', top: 0, left: 0, right: 0, height: '1px',
+                  background: 'linear-gradient(90deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.06) 60%, transparent 100%)',
+                  pointerEvents: 'none',
+                }} />
+
+                {/* Nome */}
+                <div style={{ paddingRight: '52px', flex: 1 }}>
+                  <h3 style={{
+                    fontSize: '15px', fontWeight: '700', color: '#FFFFFF',
+                    lineHeight: 1.2, marginBottom: '0', letterSpacing: '-0.1px',
+                  }}>
+                    {cat.nome}
+                  </h3>
                 </div>
-                <div style={{ fontWeight: '600', color: 'var(--text-primary)', fontSize: '16px' }}>
-                  {cat.nome}
+
+                {/* Botões de ação — inferior esquerdo */}
+                <div style={{ display: 'flex', gap: '6px', marginTop: '8px' }}>
+                  <button
+                    onClick={() => openEdit(cat)}
+                    title="Editar"
+                    aria-label={`Editar ${cat.nome}`}
+                    style={{
+                      width: '30px', height: '30px', borderRadius: '8px',
+                      background: 'rgba(255,255,255,0.14)',
+                      backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
+                      border: '1px solid rgba(255,255,255,0.20)',
+                      color: 'rgba(255,255,255,0.9)', cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                  </button>
+                  <button
+                    onClick={() => handleDelete(cat.id)}
+                    title="Excluir"
+                    aria-label={`Excluir ${cat.nome}`}
+                    style={{
+                      width: '30px', height: '30px', borderRadius: '8px',
+                      background: 'rgba(231,76,60,0.22)',
+                      backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
+                      border: '1px solid rgba(231,76,60,0.38)',
+                      color: '#ff8a7a', cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="3 6 5 6 21 6"/>
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                    </svg>
+                  </button>
+                </div>
+
+                {/* Brilho radial atrás do ícone */}
+                <div style={{
+                  position: 'absolute', right: '-15px', bottom: '-15px',
+                  width: '120px', height: '120px', borderRadius: '50%',
+                  background: 'radial-gradient(circle, rgba(255,255,255,0.09) 0%, transparent 65%)',
+                  pointerEvents: 'none',
+                }} />
+
+                {/* Ícone decorativo */}
+                <div style={{
+                  position: 'absolute', right: '8px', bottom: '6px',
+                  width: '56px', height: '56px',
+                  opacity: 0.38, transform: 'rotate(-8deg)', pointerEvents: 'none',
+                }}>
+                  <CategoryIcon categoryId={cat.id} size={56} color={iconColor} />
                 </div>
               </div>
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                <button onClick={() => openEdit(cat)} title="Editar" className="btn-icon-hover" style={{
-                  width: '40px',
-                  height: '40px',
-                  borderRadius: '10px',
-                  background: 'var(--bg-primary)',
-                  border: '1px solid var(--border)',
-                  color: 'var(--text-secondary)',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                  </svg>
-                </button>
-                <button onClick={() => handleDelete(cat.id)} title="Excluir" className="btn-danger-hover" style={{
-                  width: '40px',
-                  height: '40px',
-                  borderRadius: '10px',
-                  background: 'rgba(231, 76, 60, 0.1)',
-                  border: '1px solid rgba(231, 76, 60, 0.3)',
-                  color: '#e74c3c',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="3 6 5 6 21 6"/>
-                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                  </svg>
-                </button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
           {categorias.length === 0 && (
-            <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>
+            <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>
               Nenhuma categoria cadastrada
             </div>
           )}

@@ -48,10 +48,13 @@ const ThemeSelector = ({ inDarkHeader = false, compact = false, inline = false }
       <div style={{
         display: 'flex',
         gap: '4px',
-        background: 'var(--bg-secondary)',
-        borderRadius: '10px',
+        background: 'var(--glass-bg)',
+        backdropFilter: 'blur(10px) saturate(180%)',
+        WebkitBackdropFilter: 'blur(10px) saturate(180%)',
+        borderRadius: '12px',
         padding: '4px',
-        border: '1px solid var(--border)'
+        border: '1px solid var(--glass-border)',
+        boxShadow: 'var(--glass-box-shadow)'
       }}>
         {options.map((option) => {
           const Icon = option.icon;
@@ -90,17 +93,23 @@ const ThemeSelector = ({ inDarkHeader = false, compact = false, inline = false }
   const currentOption = options.find(o => o.id === themeMode);
   const CurrentIcon = currentOption?.icon || Icons.Sun;
 
-  // Estilos para o header vinho (institucional)
+  // Liquid glass sobre o header vinho (mobile institucional)
   const darkHeaderStyles = {
-    background: 'rgba(255,255,255,0.15)',
-    border: '1px solid rgba(255,255,255,0.2)',
+    background: 'linear-gradient(160deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.08) 100%)',
+    backdropFilter: 'blur(12px) saturate(180%)',
+    WebkitBackdropFilter: 'blur(12px) saturate(180%)',
+    border: '1px solid rgba(255, 255, 255, 0.22)',
+    boxShadow: '0 2px 10px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.28)',
     color: '#F4E4BC'
   };
 
-  // Estilos normais
+  // Liquid glass adaptativo (usa CSS vars light/dark)
   const normalStyles = {
-    background: 'var(--bg-card)',
-    border: '1px solid var(--border)',
+    background: 'var(--glass-bg)',
+    backdropFilter: 'blur(10px) saturate(180%)',
+    WebkitBackdropFilter: 'blur(10px) saturate(180%)',
+    border: '1px solid var(--glass-border)',
+    boxShadow: 'var(--glass-box-shadow)',
     color: 'var(--text-primary)'
   };
 

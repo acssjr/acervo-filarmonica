@@ -16,17 +16,23 @@ const HeaderActions = ({ inDarkHeader = false }) => {
   // No desktop, não mostra nada (já está na sidebar)
   if (isDesktop) return null;
 
-  // Estilos para o header vinho (institucional)
+  // Liquid glass sobre o header vinho (mobile institucional)
   const darkHeaderStyles = {
-    background: 'rgba(255,255,255,0.15)',
-    border: '1px solid rgba(255,255,255,0.2)',
+    background: 'linear-gradient(160deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.08) 100%)',
+    backdropFilter: 'blur(12px) saturate(180%)',
+    WebkitBackdropFilter: 'blur(12px) saturate(180%)',
+    border: '1px solid rgba(255, 255, 255, 0.22)',
+    boxShadow: '0 2px 10px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.28)',
     color: '#F4E4BC'
   };
 
-  // Estilos normais
+  // Liquid glass adaptativo (usa CSS vars light/dark)
   const normalStyles = {
-    background: 'var(--bg-card)',
-    border: '1px solid var(--border)',
+    background: 'var(--glass-bg)',
+    backdropFilter: 'blur(10px) saturate(180%)',
+    WebkitBackdropFilter: 'blur(10px) saturate(180%)',
+    border: '1px solid var(--glass-border)',
+    boxShadow: 'var(--glass-box-shadow)',
     color: 'var(--text-primary)'
   };
 
@@ -83,7 +89,7 @@ const HeaderActions = ({ inDarkHeader = false }) => {
       </button>
 
       {/* Toggle Admin (só para admins) - à direita das notificações */}
-      <AdminToggle />
+      <AdminToggle inDarkHeader={inDarkHeader} />
     </div>
   );
 };

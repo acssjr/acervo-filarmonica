@@ -6,6 +6,7 @@ import { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspense } fro
 // Flag para debug - remover em produção
 const DEBUG_TUTORIAL = false;
 import { useUI } from '@contexts/UIContext';
+import { useMediaQuery } from '@hooks/useMediaQuery';
 import { API } from '@services/api';
 import CategoryIcon from '@components/common/CategoryIcon';
 import { PartesGridSkeleton } from '@components/common/Skeleton';
@@ -91,6 +92,7 @@ const detectInstrumento = (filename) => {
 
 const AdminPartituras = () => {
   const { showToast } = useUI();
+  const isMobile = useMediaQuery('(max-width: 767px)');
   const [partituras, setPartituras] = useState([]);
   const [categorias, setCategorias] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -1121,15 +1123,16 @@ const AdminPartituras = () => {
                       <div
                         style={{
                           display: 'flex',
-                          alignItems: 'center',
+                          flexDirection: isMobile ? 'column' : 'row',
+                          alignItems: isMobile ? 'stretch' : 'center',
                           justifyContent: 'space-between',
-                          padding: '14px 16px',
-                          cursor: 'pointer'
+                          padding: isMobile ? '12px 14px 0' : '14px 16px',
+                          cursor: isMobile ? 'default' : 'pointer',
                         }}
                       >
                         <div
                           onClick={() => toggleExpand(p)}
-                          style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: 1 }}
+                          style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, cursor: 'pointer', paddingBottom: isMobile ? '10px' : 0 }}
                         >
                           {/* Seta de expansao */}
                           <svg
@@ -1150,9 +1153,9 @@ const AdminPartituras = () => {
                           </svg>
 
                           <div style={{
-                            width: '44px',
-                            height: '44px',
-                            borderRadius: '12px',
+                            width: isMobile ? '38px' : '44px',
+                            height: isMobile ? '38px' : '44px',
+                            borderRadius: '10px',
                             background: 'linear-gradient(145deg, #3a3a4a 0%, #2a2a38 100%)',
                             display: 'flex',
                             alignItems: 'center',
@@ -1160,17 +1163,20 @@ const AdminPartituras = () => {
                             border: '1px solid rgba(212, 175, 55, 0.2)',
                             flexShrink: 0
                           }}>
-                            <CategoryIcon categoryId={cat.id || p.categoria_id} size={22} color="#D4AF37" />
+                            <CategoryIcon categoryId={cat.id || p.categoria_id} size={isMobile ? 18 : 22} color="#D4AF37" />
                           </div>
-                          <div style={{ minWidth: 0 }}>
+                          <div style={{ minWidth: 0, flex: 1 }}>
                             <div style={{
                               fontWeight: '600',
                               color: 'var(--text-primary)',
                               marginBottom: '2px',
                               display: 'flex',
                               alignItems: 'center',
-                              gap: '8px',
-                              fontSize: '15px'
+                              gap: '6px',
+                              fontSize: isMobile ? '14px' : '15px',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
                             }}>
                               {p.titulo}
                               {p.destaque === 1 && (
@@ -1179,8 +1185,14 @@ const AdminPartituras = () => {
                                 </svg>
                               )}
                             </div>
-                            <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
-                              {p.compositor || 'Sem compositor'}{p.arranjador && ` · Arr: ${p.arranjador}`} • {cat.nome || 'Sem categoria'} {p.ano && `• ${p.ano}`}
+                            <div style={{
+                              fontSize: isMobile ? '12px' : '13px',
+                              color: 'var(--text-secondary)',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                            }}>
+                              {p.compositor || 'Sem compositor'}{!isMobile && p.arranjador && ` · Arr: ${p.arranjador}`} • {cat.nome || 'Sem categoria'} {p.ano && `• ${p.ano}`}
                             </div>
                             <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                               <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -1203,7 +1215,16 @@ const AdminPartituras = () => {
                         </div>
 
                         {/* Botoes de acao */}
-                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <div style={{
+                          display: 'flex',
+                          gap: isMobile ? '6px' : '8px',
+                          alignItems: 'center',
+                          justifyContent: isMobile ? 'flex-end' : undefined,
+                          borderTop: isMobile ? '1px solid var(--border)' : 'none',
+                          padding: isMobile ? '8px 14px' : 0,
+                          margin: isMobile ? '8px -14px 0' : 0,
+                          flexShrink: 0,
+                        }}>
                           <button onClick={() => toggleDestaque(p)} title={p.destaque === 1 ? 'Remover destaque' : 'Destacar'} className="btn-icon-hover" style={{
                             width: '36px',
                             height: '36px',

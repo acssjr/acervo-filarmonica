@@ -7,7 +7,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@contexts/AuthContext';
 import { Icons } from '@constants/icons';
 
-const AdminToggle = () => {
+const AdminToggle = ({ inDarkHeader = false }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
@@ -43,6 +43,46 @@ const AdminToggle = () => {
   // So mostra para admins
   if (!user?.isAdmin) return null;
 
+  // Liquid glass — gold-tinted quando em modo admin, neutro quando em modo usuário
+  const glassStyles = (() => {
+    if (inDarkHeader) {
+      return isInAdmin
+        ? {
+            background: 'linear-gradient(160deg, rgba(212,175,55,0.28) 0%, rgba(212,175,55,0.14) 100%)',
+            backdropFilter: 'blur(12px) saturate(180%)',
+            WebkitBackdropFilter: 'blur(12px) saturate(180%)',
+            border: '1px solid rgba(212, 175, 55, 0.50)',
+            boxShadow: '0 2px 10px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.25)',
+            color: '#D4AF37'
+          }
+        : {
+            background: 'linear-gradient(160deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.08) 100%)',
+            backdropFilter: 'blur(12px) saturate(180%)',
+            WebkitBackdropFilter: 'blur(12px) saturate(180%)',
+            border: '1px solid rgba(255, 255, 255, 0.22)',
+            boxShadow: '0 2px 10px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.28)',
+            color: '#D4AF37'
+          };
+    }
+    return isInAdmin
+      ? {
+          background: 'linear-gradient(160deg, rgba(212,175,55,0.18) 0%, rgba(212,175,55,0.08) 100%)',
+          backdropFilter: 'blur(10px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(10px) saturate(180%)',
+          border: '1px solid rgba(212, 175, 55, 0.35)',
+          boxShadow: '0 2px 10px rgba(0,0,0,0.10), inset 0 1px 0 rgba(255,255,255,0.15)',
+          color: 'var(--accent-dark)'
+        }
+      : {
+          background: 'var(--glass-bg)',
+          backdropFilter: 'blur(10px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(10px) saturate(180%)',
+          border: '1px solid var(--glass-border)',
+          boxShadow: 'var(--glass-box-shadow)',
+          color: 'var(--text-secondary)'
+        };
+  })();
+
   return (
     <button
       onClick={handleToggle}
@@ -50,23 +90,16 @@ const AdminToggle = () => {
       title={isInAdmin ? 'Voltar ao Acervo' : 'Ir para Admin'}
       aria-label={isInAdmin ? 'Voltar ao Acervo' : 'Ir para Admin'}
       style={{
-        width: '40px',
-        height: '40px',
-        borderRadius: '12px',
-        background: isInAdmin
-          ? 'linear-gradient(145deg, #D4AF37, #B8860B)'
-          : 'linear-gradient(145deg, #722F37, #5C1A1B)',
-        border: isInAdmin
-          ? '1px solid rgba(212, 175, 55, 0.5)'
-          : '1px solid rgba(212, 175, 55, 0.3)',
-        color: isInAdmin ? '#3D1518' : '#D4AF37',
+        width: inDarkHeader ? '36px' : '40px',
+        height: inDarkHeader ? '36px' : '40px',
+        borderRadius: inDarkHeader ? '10px' : '12px',
+        ...glassStyles,
         cursor: isTransitioning ? 'wait' : 'pointer',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         position: 'relative',
         transition: 'all 0.3s ease',
-        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)',
         opacity: isTransitioning ? 0.7 : 1
       }}
     >
