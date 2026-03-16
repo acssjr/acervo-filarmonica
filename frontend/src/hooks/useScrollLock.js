@@ -10,7 +10,6 @@ export const useScrollLock = (lock = true) => {
 
         const originalStyle = window.getComputedStyle(document.body).overflow;
         const scrollBarWidth = window.innerWidth - document.documentElement.clientWidth;
-        const scrollY = window.scrollY;
 
         // Lock scroll
         document.body.style.overflow = 'hidden';
