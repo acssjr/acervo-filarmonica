@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import API from '../../../services/api';
+import Skeleton from '../../../components/common/Skeleton';
+import { useScrollLock } from '../../../hooks/useScrollLock';
 
 // Icons - use simple SVG inline icons to avoid import issues
 const SearchIcon = ({ size = 16, color = 'currentColor' }) => (
@@ -58,6 +60,7 @@ const EditarEnsaioModal = ({ ensaio, usuarios, onClose, onUpdate, addNotificatio
       setLoading(true);
       const data = await API.getDetalheEnsaio(ensaio.data_ensaio);
       setDetalhe(data);
+      setLoading(false); // Move to here to keep header visible while sub-requests happen if needed
 
       // Initialize tracking state only once
       setOriginalPresenteIds(new Set((data.presentes || []).map(p => p.usuario_id)));
@@ -69,30 +72,20 @@ const EditarEnsaioModal = ({ ensaio, usuarios, onClose, onUpdate, addNotificatio
         const url = res.youtube_url || '';
         setYoutubeUrl(url);
         setOriginalYoutubeUrl(url);
-      }).catch(() => { });
+      }).catch((err) => {
+        console.error('Failed to fetch YouTube URL for ensaio:', ensaio.data_ensaio, err);
+      });
 
     } catch (error) {
       addNotification?.('Erro ao carregar detalhes do ensaio', 'error');
-    } finally {
-      setLoading(false);
     }
   }, [ensaio.data_ensaio, addNotification]);
 
   // When details load, save original state for diffing
 
 
-  // Scroll Lock: preventing background scroll when modal is open (Standard Pattern)
-  useEffect(() => {
-    const scrollY = window.scrollY;
-    document.documentElement.classList.add('modal-open');
-    document.body.style.top = `-${scrollY}px`;
-
-    return () => {
-      document.documentElement.classList.remove('modal-open');
-      document.body.style.top = '';
-      window.scrollTo(0, scrollY);
-    };
-  }, []);
+  // Centralized Scroll Lock
+  useScrollLock();
 
   useEffect(() => { carregarDetalhe(); }, [carregarDetalhe]);
 
@@ -208,7 +201,7 @@ const EditarEnsaioModal = ({ ensaio, usuarios, onClose, onUpdate, addNotificatio
         setOriginalYoutubeUrl(youtubeUrl);
       }
 
-      onUpdate?.(); // Refreshes parent data
+      onUpdate?.(true); // Refreshes parent data silently to keep scroll
       onClose();    // Closes modal
       addNotification?.('Ensaio atualizado com sucesso', 'success');
 
@@ -248,8 +241,10 @@ const EditarEnsaioModal = ({ ensaio, usuarios, onClose, onUpdate, addNotificatio
       <div onClick={e => e.stopPropagation()} style={{
         background: 'var(--bg-card)', border: '1px solid rgba(212,175,55,0.2)', // Subtle gold border
         borderRadius: '16px', maxWidth: '640px', width: '100%',
-        maxHeight: '85vh', display: 'flex', flexDirection: 'column',
-        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
+        height: '680px', // More stable fixed height to prevent jumps
+        maxHeight: '90vh', display: 'flex', flexDirection: 'column',
+        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+        animation: 'modalFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
       }}>
         {/* Header */}
         <div style={{
@@ -351,11 +346,23 @@ const EditarEnsaioModal = ({ ensaio, usuarios, onClose, onUpdate, addNotificatio
 
         {/* Content */}
         <div style={{ flex: 1, overflow: 'auto', padding: '16px 24px' }}>
-          {loading ? (
-            <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)', }}>
-              Carregando...
+          {loading && !detalhe ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div style={{ display: 'flex', gap: '16px', marginBottom: '8px' }}>
+                <Skeleton width="120px" height="36px" borderRadius="10px" />
+                <Skeleton width="120px" height="36px" borderRadius="10px" />
+              </div>
+              <Skeleton width="100%" height="45px" borderRadius="10px" />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {Array.from({ length: 7 }).map((_, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <Skeleton variant="circular" width="32px" height="32px" />
+                    <Skeleton width="100%" height="48px" borderRadius="12px" />
+                  </div>
+                ))}
+              </div>
             </div>
-          ) : !detalhe ? (
+          ) : !detalhe && !loading ? (
             <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)', }}>
               Erro ao carregar dados
             </div>

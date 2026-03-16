@@ -1,30 +1,30 @@
-/* ===== BOTTOM NAV MODULE ===== */
+:root {
+  --color-gold: #D4AF37;
+  --color-inactive: rgba(255, 255, 255, 0.65);
+}
+
+/* ===== BOTTOM NAV MODULE — LIQUID GLASS REDESIGN ===== */
 
 .nav {
   position: fixed;
-  bottom: 16px;
+  bottom: 24px;
   left: 50%;
-  backdrop-filter: blur(40px) saturate(180%);
-  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  width: calc(100% - 32px);
+  max-width: 420px;
+  height: 80px;
+  /* Aumentado para sempre exibir labels e ícones grandes */
+  z-index: 999;
   display: flex;
   justify-content: space-around;
   align-items: center;
-  padding: 12px 8px;
-  z-index: 999;
-  width: calc(100% - 32px);
-  max-width: 420px;
-  border-radius: 28px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25), inset 0 0.5px 0 rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  transition: transform 0.3s ease, opacity 0.3s ease;
-}
+  border-radius: 40px;
+  /* Pill perfeito pra altura 80px */
+  padding: 0 10px;
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
 
-.nav.dark {
-  background: rgba(72, 20, 21, 0.85);
-}
-
-.nav.light {
-  background: rgba(92, 26, 27, 0.88);
+  /* GLASSMORPHISM CORE */
+  backdrop-filter: blur(32px) saturate(160%);
+  -webkit-backdrop-filter: blur(32px) saturate(160%);
 }
 
 .nav.visible {
@@ -39,74 +39,170 @@
   pointer-events: none;
 }
 
-/* Botao central (busca) */
+/* ===== TEMA ESCURO (Dark Gold) ===== */
+.nav.dark {
+  background: linear-gradient(135deg, rgba(65, 18, 20, 0.4) 0%, rgba(20, 5, 5, 0.6) 100%);
+
+  /* Reflexos Liquid Glass Premium */
+  border-top: 1px solid rgba(255, 255, 255, 0.18);
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  border-right: 1px solid rgba(0, 0, 0, 0.4);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.5);
+
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.7), inset 0 1.5px 1px rgba(255, 255, 255, 0.15), inset 0 -1px 2px rgba(0, 0, 0, 0.6);
+}
+
+/* ===== TEMA CLARO (Soft Wine Light Mode) ===== */
+.nav.light {
+  /* Fundo avermelhado escuro, garantindo o "pure glass" sem ficar leitoso branco */
+  background: linear-gradient(135deg, rgba(75, 12, 14, 0.7) 0%, rgba(45, 5, 5, 0.9) 100%);
+
+  /* Borda sutil creme avermelhado no topo para imitar o reflexo do vidro claro */
+  border-top: 1px solid rgba(255, 235, 235, 0.25);
+  border-left: 1px solid rgba(255, 235, 235, 0.15);
+  border-right: 1px solid rgba(20, 0, 0, 0.2);
+  border-bottom: 1px solid rgba(20, 0, 0, 0.3);
+
+  box-shadow: 0 16px 36px rgba(45, 5, 5, 0.3), inset 0 1.5px 1px rgba(255, 235, 235, 0.3), inset 0 -1.5px 2px rgba(0, 0, 0, 0.4);
+}
+
+/* ===== CENTER BUTTON (Search) - Liquid Glass ===== */
 .centerButton {
+  position: relative;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+
+  /* Fundo vidro translúcido ao invés de dourado chapado */
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.02) 100%);
+
+  /* Bordas para o reflexo tipo "lente" */
+  border-top: 1px solid rgba(255, 255, 255, 0.35);
+  border-left: 1px solid rgba(255, 255, 255, 0.2);
+  border-right: 1px solid rgba(0, 0, 0, 0.1);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+
+  box-shadow:
+    0 8px 16px rgba(0, 0, 0, 0.25),
+    inset 0 2px 4px rgba(255, 255, 255, 0.2),
+    inset 0 -2px 6px rgba(0, 0, 0, 0.1);
+
+  transform: translateY(0);
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(145deg, #D4AF37 0%, #AA8C2C 100%);
-  border: none;
-  color: #3D1518;
   cursor: pointer;
-  width: 62px;
-  height: 62px;
-  border-radius: 50%;
-  transition: all 0.2s ease;
-  box-shadow: 0 4px 20px rgba(212, 175, 55, 0.35);
   flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
+  z-index: 10;
 }
 
-.centerIcon {
-  width: 28px;
-  height: 28px;
+.centerButton:focus-visible {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 4px;
 }
 
-/* Botao tab normal */
-.tabButton {
+.centerActive {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.05) 100%);
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.35),
+    inset 0 2px 6px rgba(255, 255, 255, 0.35),
+    inset 0 -2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.nav.light .centerButton {
+  /* Em modo clear (fundo vinho escuro), um reflexo um pouco mais quente no botão de vidro */
+  background: linear-gradient(145deg, rgba(255, 235, 235, 0.1) 0%, rgba(255, 235, 235, 0) 100%);
+  border-top: 1px solid rgba(255, 235, 235, 0.3);
+  border-bottom: 1px solid rgba(20, 0, 0, 0.4);
+  box-shadow:
+    0 8px 16px rgba(20, 0, 0, 0.4),
+    inset 0 2px 4px rgba(255, 255, 255, 0.15);
+}
+
+.centerIconWrap {
+  width: 26px;
+  height: 26px;
+  color: #D4AF37;
+  /* Como o botão não é mais ouro sólido, o ícone precisa ser dourado */
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
+  transition: all 0.3s ease;
+}
+
+.centerButton:active .centerIconWrap {
+  transform: scale(0.9);
+}
+
+/* ===== REGULAR TAB SLOTS ===== */
+.tabSlot {
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  position: relative;
   background: none;
   border: none;
   cursor: pointer;
-  padding: 8px 12px;
-  border-radius: 12px;
-  min-width: 56px;
-  position: relative;
-  box-sizing: border-box;
+  height: 100%;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
 }
 
-/* Indicador animado que desliza entre tabs */
-.indicator {
+.tabSlot:focus-visible {
+  outline: 2px solid var(--color-gold);
+  outline-offset: -10px;
+}
+
+.activeBackground {
   position: absolute;
   inset: 0;
-  background: rgba(244, 228, 188, 0.15);
-  border-radius: 12px;
+  margin: auto;
+  width: 62px;
+  height: 62px;
+  border-radius: 20px;
+  /* Squircle pra ficar suave por tras */
   z-index: 0;
 }
 
-.tabButton.active {
-  color: #F4E4BC;
+.nav.dark .activeBackground {
+  background: radial-gradient(circle, rgba(212, 175, 55, 0.15) 0%, rgba(212, 175, 55, 0) 70%);
 }
 
-.tabButton.inactive {
-  color: rgba(255, 255, 255, 0.7);
+.nav.light .activeBackground {
+  /* No modo claro, brilho suave em ouro (quente) em vez do branco leitoso forte */
+  background: radial-gradient(circle, rgba(212, 175, 55, 0.25) 0%, rgba(212, 175, 55, 0) 70%);
 }
 
-.tabIcon {
-  width: 22px;
-  height: 22px;
+.tabContent {
   position: relative;
   z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  /* Mais espaço pra respeitar height 80px */
+}
+
+/* Ícones & Textos */
+.tabIcon {
+  width: 26px;
+  height: 26px;
+  transition: filter 0.3s ease;
+}
+
+.nav.dark .active .tabIcon {
+  filter: drop-shadow(0 4px 6px rgba(212, 175, 55, 0.3));
+}
+
+.nav.light .active .tabIcon {
+  filter: drop-shadow(0 4px 4px rgba(170, 140, 44, 0.2));
 }
 
 .tabLabel {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
-  /* font-family inherited from base.css */
-  letter-spacing: 0.2px;
-  position: relative;
-  z-index: 1;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
 }

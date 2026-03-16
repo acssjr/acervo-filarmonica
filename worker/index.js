@@ -13,18 +13,7 @@
 
 // ============ CONFIGURAÇÃO ============
 
-// Domínios permitidos para CORS
-const ALLOWED_ORIGINS = [
-  'https://acervo.filarmonica25demarco.com',
-  'https://acervo-filarmonica.pages.dev',
-  'http://localhost:5173',
-  'http://localhost:5174',
-  'http://localhost:5175',
-  'http://127.0.0.1:5173',
-];
-
-// Padrão para subdomínios do Cloudflare Pages (ex: abc123.acervo-filarmonica.pages.dev)
-const PAGES_SUBDOMAIN_PATTERN = /^https:\/\/[a-z0-9]+\.acervo-filarmonica\.pages\.dev$/;
+import { getCorsHeaders } from './src/infrastructure/security/cors.js';
 
 // Configuração JWT
 const JWT_EXPIRY_HOURS = 24;
@@ -40,34 +29,6 @@ const RATE_LIMIT_WINDOW_SECONDS = 300; // 5 minutos
 
 // ============ HELPERS DE SEGURANÇA ============
 
-// Verifica se origem é permitida
-function isOriginAllowed(origin) {
-  if (!origin) return false;
-  // Verifica lista estática
-  if (ALLOWED_ORIGINS.includes(origin)) return true;
-  // Verifica padrão de subdomínios do Pages
-  if (PAGES_SUBDOMAIN_PATTERN.test(origin)) return true;
-  return false;
-}
-
-// Gera CORS headers baseado na origem
-function getCorsHeaders(request) {
-  const origin = request.headers.get('Origin');
-  const headers = {
-    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
-  };
-
-  if (origin && isOriginAllowed(origin)) {
-    headers['Access-Control-Allow-Origin'] = origin;
-    headers['Access-Control-Allow-Credentials'] = 'true';
-  } else if (!origin) {
-    // Requisições sem origin (ex: curl, postman) - permite em dev
-    headers['Access-Control-Allow-Origin'] = '*';
-  }
-
-  return headers;
-}
 
 // Base64 URL encode/decode
 function base64UrlEncode(data) {
