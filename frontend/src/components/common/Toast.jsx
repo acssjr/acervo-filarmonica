@@ -132,9 +132,20 @@ const Toast = ({ message, type = 'success', instrument, onClose }) => {
     );
   };
 
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+      e.preventDefault();
+      handleClose();
+    }
+  };
+
   return (
     <div
+      role="button"
+      tabIndex={0}
+      aria-label="Dispensar notificação"
       onClick={handleClose}
+      onKeyDown={handleKeyDown}
       style={{
         position: 'fixed',
         bottom: '108px',
@@ -165,8 +176,8 @@ const Toast = ({ message, type = 'success', instrument, onClose }) => {
         cursor: 'pointer',
         userSelect: 'none',
         animation: closing
-          ? 'toastOut 0.28s cubic-bezier(0.4,0,1,1) forwards'
-          : 'toastIn 0.45s cubic-bezier(0.16,1,0.3,1) forwards',
+          ? 'toast-out 0.28s cubic-bezier(0.4,0,1,1) forwards'
+          : 'toast-in 0.45s cubic-bezier(0.16,1,0.3,1) forwards',
       }}
     >
       {/* Ícone em círculo glass */}

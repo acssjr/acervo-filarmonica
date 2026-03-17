@@ -218,19 +218,19 @@
 }
 
 /* Toast: entrada e saída com spring */
-@keyframes toastIn {
+@keyframes toast-in {
   0%   { opacity: 0; transform: translateY(24px) scale(0.90); }
   60%  { opacity: 1; transform: translateY(-4px) scale(1.02); }
   100% { opacity: 1; transform: translateY(0)    scale(1);    }
 }
 
-@keyframes toastOut {
+@keyframes toast-out {
   0%   { opacity: 1; transform: translateY(0)    scale(1);    }
   100% { opacity: 0; transform: translateY(20px) scale(0.93); }
 }
 
 /* Animação de brulho suave para o contorno do logo — só o anel dourado pulsa */
-@keyframes logoGlow {
+@keyframes logo-glow {
   0%, 100% {
     box-shadow:
       0 0 0 2px rgba(212,175,55,0.32),
@@ -246,7 +246,13 @@
 }
 
 .logo-glow-ring {
-  animation: logoGlow 2.8s ease-in-out infinite;
+  animation: logo-glow 2.8s ease-in-out infinite;
+}
+
+/* Fade and slide up — used by LoginScreen loading pill */
+@keyframes fadeInSlide {
+  0%   { opacity: 0; transform: translateY(12px); }
+  100% { opacity: 1; transform: translateY(0); }
 }
 
 /* Screen transition */

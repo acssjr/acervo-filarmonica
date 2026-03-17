@@ -76,7 +76,7 @@ const LoginScreen = ({ onClose, required = false }) => {
           {/* Botão fechar */}
           {!required && (
             <button
-              onClick={onClose}
+              onClick={() => onClose?.()}
               style={{
                 position: 'absolute',
                 top: '14px',
@@ -391,6 +391,11 @@ const LoginScreen = ({ onClose, required = false }) => {
 LoginScreen.propTypes = {
   onClose: PropTypes.func,
   required: PropTypes.bool
+};
+
+LoginScreen.defaultProps = {
+  onClose: undefined,
+  required: false
 };
 
 export default LoginScreen;

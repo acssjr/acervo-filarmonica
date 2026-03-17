@@ -105,6 +105,7 @@ const PinInput = ({
                 inputMode="numeric"
                 maxLength={1}
                 value={digit}
+                aria-label={`Dígito ${index + 1} do PIN`}
                 onChange={e => onPinChange(index, e.target.value)}
                 onKeyDown={e => onKeyDown(index, e)}
                 onFocus={e => handleFocus(e, index)}
