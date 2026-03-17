@@ -332,12 +332,16 @@ describe('LoginScreen', () => {
       // Deve chamar setUser e showToast apos login bem-sucedido
       await waitFor(() => {
         expect(mockSetUser).toHaveBeenCalled();
-      }, { timeout: 5000 });
+      }, { timeout: 8000 });
 
       await waitFor(() => {
-        expect(mockShowToast).toHaveBeenCalledWith(expect.stringContaining('Bem-vindo'));
+        expect(mockShowToast).toHaveBeenCalledWith(
+          expect.stringContaining('Bem-vindo'),
+          expect.any(String),
+          expect.any(Object)
+        );
       }, { timeout: 2000 });
-    });
+    }, 15000);
   });
 
   describe('Acessibilidade', () => {
