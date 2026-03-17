@@ -337,8 +337,8 @@ describe('LoginScreen', () => {
       await waitFor(() => {
         expect(mockShowToast).toHaveBeenCalledWith(
           expect.stringContaining('Bem-vindo'),
-          expect.any(String),
-          expect.any(Object)
+          'success',
+          expect.objectContaining({ instrument: expect.any(String) })
         );
       }, { timeout: 2000 });
     }, 15000);

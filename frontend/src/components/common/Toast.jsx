@@ -132,20 +132,11 @@ const Toast = ({ message, type = 'success', instrument, onClose }) => {
     );
   };
 
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
-      e.preventDefault();
-      handleClose();
-    }
-  };
-
   return (
     <div
-      role="button"
-      tabIndex={0}
-      aria-label="Dispensar notificação"
+      aria-live="polite"
+      aria-atomic="true"
       onClick={handleClose}
-      onKeyDown={handleKeyDown}
       style={{
         position: 'fixed',
         bottom: '108px',
@@ -231,20 +222,27 @@ const Toast = ({ message, type = 'success', instrument, onClose }) => {
       </div>
 
       {/* Botão fechar */}
-      <div style={{
-        width: '24px',
-        height: '24px',
-        borderRadius: '50%',
-        background: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        flexShrink: 0,
-        color: palette.sub,
-        fontSize: '12px',
-      }}>
+      <button
+        aria-label="Dispensar notificação"
+        onClick={(e) => { e.stopPropagation(); handleClose(); }}
+        style={{
+          width: '24px',
+          height: '24px',
+          borderRadius: '50%',
+          background: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)',
+          border: 'none',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
+          color: palette.sub,
+          fontSize: '12px',
+          cursor: 'pointer',
+          padding: 0,
+        }}
+      >
         ✕
-      </div>
+      </button>
     </div>
   );
 };
