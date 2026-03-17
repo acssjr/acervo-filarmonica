@@ -106,30 +106,21 @@ const LoginBackground = () => {
               inset: 0,
               backgroundImage: `url('${images[currentIndex]}')`,
               backgroundSize: 'cover',
-              backgroundPosition: 'center',
-              filter: 'brightness(0.7)'
+              backgroundPosition: 'top center',
+              filter: 'brightness(0.60) saturate(1.3) hue-rotate(-5deg)'
             }}
           />
         </AnimatePresence>
 
-        {/* Overlay de gradiente - transparência reduzida para foto mais visível */}
+        {/* Overlay leve — foto deve aparecer através do glass do card */}
         <div style={{
           position: 'absolute',
           inset: 0,
-          background: 'linear-gradient(135deg, rgba(61, 21, 24, 0.85) 0%, rgba(30, 10, 12, 0.75) 50%, rgba(61, 21, 24, 0.85) 100%)',
+          background: 'linear-gradient(180deg, rgba(55,6,6,0.52) 0%, rgba(80,10,10,0.68) 100%)',
           zIndex: 1
         }} />
       </div>
 
-      {/* Padrao decorativo sutil */}
-      <div style={{
-        position: 'fixed',
-        inset: 0,
-        opacity: 0.03,
-        backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-        pointerEvents: 'none',
-        zIndex: -1
-      }} />
     </>
   );
 };

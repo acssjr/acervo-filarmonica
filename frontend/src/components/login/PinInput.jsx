@@ -1,6 +1,7 @@
 // ===== PIN INPUT COMPONENT =====
 // Componente reutilizavel para entrada de PIN de 4 digitos
 
+import { useState } from 'react';
 import PropTypes from 'prop-types';
 
 const PinInput = ({
@@ -11,76 +12,125 @@ const PinInput = ({
   onKeyDown,
   onFocus
 }) => {
-  const handleFocus = (e, _index) => {
-    e.target.style.borderColor = 'rgba(212, 175, 55, 0.5)';
-    e.target.style.background = 'rgba(255, 255, 255, 0.1)';
+  const [focusedIndex, setFocusedIndex] = useState(null);
+
+  const handleFocus = (e, index) => {
+    setFocusedIndex(index);
     onFocus?.();
   };
 
-  const handleBlur = (e, digit) => {
-    if (!digit) {
-      e.target.style.borderColor = 'rgba(255, 255, 255, 0.12)';
-      e.target.style.background = 'rgba(255, 255, 255, 0.06)';
+  const handleBlur = (_e, _index) => {
+    setFocusedIndex(null);
+  };
+
+  const getCircleStyle = (digit, index) => {
+    const isFocused = focusedIndex === index;
+    const isFilled = !!digit;
+
+    if (isFilled) {
+      return {
+        background: 'rgba(212,175,55,0.18)',
+        border: '1.5px solid rgba(212,175,55,0.5)',
+        boxShadow: isFocused ? '0 0 0 3px rgba(212,175,55,0.15)' : 'none'
+      };
     }
+
+    if (isFocused) {
+      return {
+        background: 'rgba(0,0,0,0.22)',
+        border: '1.5px solid rgba(212,175,55,0.7)',
+        boxShadow: '0 0 0 3px rgba(212,175,55,0.15)'
+      };
+    }
+
+    return {
+      background: 'rgba(0,0,0,0.22)',
+      border: '1.5px solid rgba(255,255,255,0.13)',
+      boxShadow: 'none'
+    };
   };
 
   return (
-    <div style={{ marginBottom: '20px' }}>
-      <label style={{
+    <div style={{ marginBottom: '16px' }}>
+      <div style={{
         display: 'flex',
         alignItems: 'center',
-        gap: '8px',
-        fontSize: '13px',
-        fontWeight: '600',
-        color: 'rgba(244, 228, 188, 0.8)',
-        marginBottom: '12px'
+        gap: '6px',
+        marginBottom: '12px',
+        paddingLeft: '4px'
       }}>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(244,228,188,0.65)" strokeWidth="2">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+          <path d="M7 11V7a5 5 0 0 1 10 0v4" />
         </svg>
-        PIN
-      </label>
+        <span style={{ fontSize: '12px', fontWeight: '600', color: 'rgba(244,228,188,0.65)', letterSpacing: '0.5px', textTransform: 'uppercase' }}>
+          PIN
+        </span>
+      </div>
       <div style={{
         display: 'flex',
         justifyContent: 'center',
-        gap: '12px'
+        gap: '16px'
       }}>
-        {pin.map((digit, index) => (
-          <input
-            key={index}
-            ref={pinRefs[index]}
-            type="password"
-            inputMode="numeric"
-            maxLength={1}
-            value={digit}
-            onChange={e => onPinChange(index, e.target.value)}
-            onKeyDown={e => onKeyDown(index, e)}
-            disabled={isLoading}
-            style={{
-              width: '56px',
-              minWidth: '56px',
-              maxWidth: '56px',
-              height: '56px',
-              borderRadius: '12px',
-              background: digit ? 'rgba(212, 175, 55, 0.15)' : 'rgba(255, 255, 255, 0.06)',
-              border: digit
-                ? '2px solid rgba(212, 175, 55, 0.4)'
-                : '1px solid rgba(255, 255, 255, 0.12)',
-              color: '#F4E4BC',
-              fontSize: '22px',
-              fontWeight: '700',
-              textAlign: 'center',
-              outline: 'none',
-              transition: 'all 0.2s ease',
-              boxSizing: 'border-box',
-              flexShrink: 0,
-              flexGrow: 0
-            }}
-            onFocus={e => handleFocus(e, index)}
-            onBlur={e => handleBlur(e, digit)}
-          />
-        ))}
+        {pin.map((digit, index) => {
+          const circleStyle = getCircleStyle(digit, index);
+          return (
+            <div
+              key={index}
+              style={{
+                position: 'relative',
+                width: '56px',
+                height: '56px',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                ...circleStyle,
+                transition: 'all 0.15s ease',
+                flexShrink: 0
+              }}
+            >
+              {/* Ponto central dourado quando preenchido */}
+              {digit && (
+                <div style={{
+                  width: '10px',
+                  height: '10px',
+                  borderRadius: '50%',
+                  background: 'rgba(212,175,55,0.9)'
+                }} />
+              )}
+              <input
+                ref={pinRefs[index]}
+                type="password"
+                inputMode="numeric"
+                maxLength={1}
+                value={digit}
+                aria-label={`Dígito ${index + 1} do PIN`}
+                onChange={e => onPinChange(index, e.target.value)}
+                onKeyDown={e => onKeyDown(index, e)}
+                onFocus={e => handleFocus(e, index)}
+                onBlur={e => handleBlur(e, index)}
+                disabled={isLoading}
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  width: '100%',
+                  height: '100%',
+                  borderRadius: '50%',
+                  background: 'transparent',
+                  border: 'none',
+                  outline: 'none',
+                  color: 'transparent',
+                  caretColor: 'transparent',
+                  fontSize: '1px',
+                  textAlign: 'center',
+                  cursor: 'pointer',
+                  WebkitTapHighlightColor: 'transparent'
+                }}
+              />
+            </div>
+          );
+        })}
       </div>
     </div>
   );

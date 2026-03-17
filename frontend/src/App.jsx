@@ -383,7 +383,7 @@ const AppContent = () => {
       {/* Notificação de atualização */}
       <UpdateNotification />
 
-      {toast ? <Toast message={toast.message} type={toast.type} onClose={clearToast} /> : null}
+      {toast ? <Toast message={toast.message} type={toast.type} instrument={toast.instrument} onClose={clearToast} /> : null}
 
       {/* User Walkthrough - DEVE ser o ultimo para ficar acima de tudo */}
       <GlobalUserWalkthrough />

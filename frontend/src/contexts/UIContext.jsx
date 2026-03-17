@@ -31,7 +31,7 @@ export const UIProvider = ({ children }) => {
 
   // Toast
   const [toast, setToast] = useState(null);
-  const showToast = useCallback((message, type = 'success') => setToast({ message, type }), []);
+  const showToast = useCallback((message, type = 'success', meta = {}) => setToast({ message, type, ...meta }), []);
   const clearToast = useCallback(() => setToast(null), []);
 
   // Estados de UI
