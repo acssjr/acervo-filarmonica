@@ -182,7 +182,7 @@ const useLoginForm = ({ onClose }) => {
               // Silencioso - favoritos serão carregados depois
             }
 
-            showToast(`Bem-vindo, ${result.user.nome.split(' ')[0]}!`);
+            showToast(`Bem-vindo, ${result.user.nome.split(' ')[0]}!`, 'success', { instrument: result.user.instrumento_nome });
 
             // Redireciona apos login bem-sucedido
             if (onClose) {
