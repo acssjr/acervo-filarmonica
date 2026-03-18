@@ -6,34 +6,26 @@ import { useUI } from '@contexts/UIContext';
 import { Icons } from '@constants/icons';
 import styles from './FeaturedCard.module.css';
 
-const FeaturedCard = memo(({ sheet, category, bgImage, isFav, onToggleFavorite, isDesktop, stopAnimation }) => {
+const FeaturedCard = memo(({ sheet, category, bgImage, isFav, onToggleFavorite, isDesktop }) => {
   const { setSelectedSheet } = useUI();
-  const cardMouseStart = useRef({ x: 0, y: 0 });
+  const pointerStart = useRef({ x: 0, y: 0 });
 
-  const handleMouseDown = (e) => {
-    if (isDesktop) {
-      cardMouseStart.current = { x: e.clientX, y: e.clientY };
-    }
-    stopAnimation();
+  const handlePointerDown = (e) => {
+    pointerStart.current = { x: e.clientX, y: e.clientY };
   };
 
   const handleClick = (e) => {
-    if (!isDesktop) {
-      setSelectedSheet(sheet);
-      return;
-    }
-    const dx = Math.abs(e.clientX - cardMouseStart.current.x);
-    const dy = Math.abs(e.clientY - cardMouseStart.current.y);
-    if (dx < 5 && dy < 5) {
-      setSelectedSheet(sheet);
-    }
+    // Não abre modal se foi um drag (movimento > 5px)
+    const dx = Math.abs(e.clientX - pointerStart.current.x);
+    const dy = Math.abs(e.clientY - pointerStart.current.y);
+    if (dx > 5 || dy > 5) return;
+    setSelectedSheet(sheet);
   };
 
   return (
     <div
       className={`featured-card ${styles.card} ${isDesktop ? styles.desktop : styles.mobile}`}
-      onMouseDown={handleMouseDown}
-      onTouchStart={stopAnimation}
+      onPointerDown={handlePointerDown}
       onClick={handleClick}
     >
       <div className={styles.goldenBorder} />

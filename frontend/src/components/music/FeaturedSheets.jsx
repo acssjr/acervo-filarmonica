@@ -1,13 +1,13 @@
 // ===== FEATURED SHEETS =====
-// Seção de partituras em destaque com scroll animado
+// Carrossel infinito via useInfiniteCarousel (RAF + CSS transform)
 
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { useUI } from '@contexts/UIContext';
+import { useMemo } from 'react';
+import PropTypes from 'prop-types';
 import { useData } from '@contexts/DataContext';
 import { useMediaQuery } from '@hooks/useMediaQuery';
+import { useInfiniteCarousel } from '@hooks/useInfiniteCarousel';
 import FeaturedCard from './FeaturedCard';
 
-// Movido para fora do componente (não recria a cada render)
 const CATEGORY_IMAGES = {
   dobrado: 'https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=400&q=80',
   marcha: 'https://images.unsplash.com/photo-1519892300165-cb5542fb47c7?w=400&q=80',
@@ -16,133 +16,62 @@ const CATEGORY_IMAGES = {
   polaca: 'https://images.unsplash.com/photo-1520523839897-bd0b52f945a0?w=400&q=80',
   bolero: 'https://images.unsplash.com/photo-1511192336575-5a79af67a629?w=400&q=80',
   popular: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&q=80',
-  hinos: 'https://images.unsplash.com/photo-1438232992991-995b7058bbb3?w=400&q=80'
+  hinos: 'https://images.unsplash.com/photo-1438232992991-995b7058bbb3?w=400&q=80',
 };
 
 const FeaturedSheets = ({ sheets, onToggleFavorite, favoritesSet }) => {
-  const { theme } = useUI();
   const { categoriesMap } = useData();
   const isDesktop = useMediaQuery('(min-width: 1024px)');
-  const scrollRef = useRef(null);
-  const innerRef = useRef(null);
-  const [hasInteracted, setHasInteracted] = useState(false);
-  const inactivityTimerRef = useRef(null);
 
-  const featuredSheets = useMemo(() => {
-    // Mostra apenas partituras marcadas como destaque
-    const featured = sheets.filter(s => s.featured);
-    return featured.slice(0, 8);
-  }, [sheets]);
+  const featuredSheets = useMemo(
+    () => sheets.filter(s => s.featured).slice(0, 8),
+    [sheets]
+  );
 
-  // Para a animação quando o usuário interage e agenda retomada
-  const stopAnimation = useCallback(() => {
-    // Captura a posição atual da animação e converte para scroll
-    if (innerRef.current && scrollRef.current) {
-      const computedStyle = window.getComputedStyle(innerRef.current);
-      const transform = computedStyle.transform;
-
-      if (transform && transform !== 'none') {
-        const matrix = new DOMMatrix(transform);
-        const currentX = matrix.m41;
-        // Remove a animação primeiro
-        innerRef.current.style.animation = 'none';
-        innerRef.current.style.transform = 'none';
-        // Aplica o scroll na posição equivalente
-        scrollRef.current.scrollLeft = Math.abs(currentX);
-      }
-    }
-    setHasInteracted(true);
-
-    // Limpa timer anterior
-    if (inactivityTimerRef.current) {
-      clearTimeout(inactivityTimerRef.current);
-    }
-
-    // Retoma animação após 5 segundos de inatividade
-    inactivityTimerRef.current = setTimeout(() => {
-      setHasInteracted(false);
-    }, 5000);
-  }, []);
-
-  // Limpa timer ao desmontar
-  useEffect(() => {
-    return () => {
-      if (inactivityTimerRef.current) {
-        clearTimeout(inactivityTimerRef.current);
-      }
-    };
-  }, []);
-
-  // Handlers memoizados para evitar re-renders
-  const handleMouseDown = useCallback((e) => {
-    if (isDesktop && scrollRef.current) {
-      scrollRef.current.dataset.startX = e.pageX;
-      scrollRef.current.dataset.scrollLeft = scrollRef.current.scrollLeft;
-      scrollRef.current.dataset.isDragging = 'true';
-    }
-  }, [isDesktop]);
-
-  const handleMouseMove = useCallback((e) => {
-    if (!isDesktop || !scrollRef.current || scrollRef.current.dataset.isDragging !== 'true') return;
-    const startX = parseFloat(scrollRef.current.dataset.startX);
-    const scrollLeft = parseFloat(scrollRef.current.dataset.scrollLeft);
-    const diff = e.pageX - startX;
-    scrollRef.current.scrollLeft = scrollLeft - diff;
-  }, [isDesktop]);
-
-  const handleMouseUp = useCallback(() => {
-    if (scrollRef.current) scrollRef.current.dataset.isDragging = 'false';
-  }, []);
-
-  // Não mostra a seção se não houver destaques (DEPOIS de todos os hooks)
-  if (featuredSheets.length === 0) {
-    return null;
-  }
-
-  // Só duplica os cards se tiver mais de 2 (para animação fluida)
-  const duplicatedSheets = featuredSheets.length > 2
+  const canScroll = featuredSheets.length > 2;
+  const displaySheets = canScroll
     ? [...featuredSheets, ...featuredSheets]
     : featuredSheets;
 
+  const { innerRef, outerProps } = useInfiniteCarousel({
+    speed: 0.25,
+    resumeDelay: 4000,
+    enabled: canScroll,
+  });
+
+  if (featuredSheets.length === 0) return null;
+
   return (
-    <div data-walkthrough="featured" style={{ marginBottom: '32px', width: '100%', overflow: 'visible' }}>
+    <div data-walkthrough="featured" style={{ marginBottom: '32px', width: '100%' }}>
       {/* Header */}
-      <div style={{
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        padding: isDesktop ? '0' : '0 20px', marginBottom: '16px'
-      }}>
-        <div>
-          <h2 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '2px' }}>
-            Em Destaque
-          </h2>
-          <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Partituras em estudo</p>
-        </div>
+      <div style={{ padding: isDesktop ? '0' : '0 20px', marginBottom: '16px' }}>
+        <span style={{
+          display: 'block', fontSize: '10px', fontWeight: '700', letterSpacing: '2px',
+          color: 'var(--accent)', textTransform: 'uppercase', marginBottom: '5px',
+        }}>
+          Partituras em estudo
+        </span>
+        <h2 style={{
+          fontSize: '20px', fontWeight: '800', letterSpacing: '-0.3px',
+          color: 'var(--text-primary)', textTransform: 'uppercase', margin: 0,
+        }}>
+          Em Destaque
+        </h2>
       </div>
 
-      {/* Cards - Scroll fluido com fade nas bordas */}
+      {/* Carousel — overflow:hidden + transform (GPU) */}
       <div
-        ref={scrollRef}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
+        {...outerProps}
         style={{
-          overflowX: hasInteracted ? 'auto' : 'hidden',
-          overflowY: 'visible',
+          overflow: 'hidden',
           paddingTop: '8px',
           paddingBottom: '16px',
-          paddingLeft: isDesktop ? '0' : '20px',
-          paddingRight: isDesktop ? '0' : '20px',
           marginBottom: '-8px',
-          WebkitOverflowScrolling: 'touch',
-          scrollbarWidth: 'none',
-          msOverflowStyle: 'none',
-          cursor: isDesktop ? 'grab' : 'default',
-          // Evita elastic overscroll (arrastar para fora)
-          overscrollBehaviorX: 'contain',
-          // Fade suave nas bordas usando mask-image (apenas durante animação e no modo escuro)
-          maskImage: (!hasInteracted && theme === 'dark') ? 'linear-gradient(to right, transparent 0%, black 5%, black 95%, transparent 100%)' : 'none',
-          WebkitMaskImage: (!hasInteracted && theme === 'dark') ? 'linear-gradient(to right, transparent 0%, black 5%, black 95%, transparent 100%)' : 'none'
+          cursor: canScroll ? 'grab' : 'default',
+          touchAction: 'pan-y',
+          userSelect: 'none',
+          maskImage: 'linear-gradient(to right, transparent 0px, black 36px, black calc(100% - 36px), transparent 100%)',
+          WebkitMaskImage: 'linear-gradient(to right, transparent 0px, black 36px, black calc(100% - 36px), transparent 100%)',
         }}
       >
         <div
@@ -151,28 +80,35 @@ const FeaturedSheets = ({ sheets, onToggleFavorite, favoritesSet }) => {
             display: 'inline-flex',
             alignItems: 'flex-start',
             gap: isDesktop ? '20px' : '14px',
-            animation: (!hasInteracted && featuredSheets.length > 2)
-              ? `marqueeScroll ${isDesktop ? '80s' : '60s'} linear infinite`
-              : 'none'
+            paddingLeft: isDesktop ? '0' : '20px',
+            paddingRight: isDesktop ? '0' : '20px',
+            willChange: 'transform',
           }}
         >
-          {/* Sempre usa cards duplicados para scroll infinito */}
-          {(featuredSheets.length > 2 ? duplicatedSheets : featuredSheets).map((sheet, index) => (
+          {displaySheets.map((sheet, index) => (
             <FeaturedCard
               key={`${sheet.id}-${index}`}
               sheet={sheet}
               category={categoriesMap.get(sheet.category)}
               bgImage={CATEGORY_IMAGES[sheet.category]}
-              isFav={favoritesSet.has(sheet.id)} // O(1) lookup
+              isFav={favoritesSet.has(sheet.id)}
               onToggleFavorite={onToggleFavorite}
               isDesktop={isDesktop}
-              stopAnimation={stopAnimation}
             />
           ))}
         </div>
       </div>
     </div>
   );
+};
+
+FeaturedSheets.propTypes = {
+  sheets: PropTypes.array.isRequired,
+  onToggleFavorite: PropTypes.func.isRequired,
+  favoritesSet: PropTypes.instanceOf(Set),
+};
+FeaturedSheets.defaultProps = {
+  favoritesSet: new Set(),
 };
 
 export default FeaturedSheets;

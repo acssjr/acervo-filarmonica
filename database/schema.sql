@@ -210,6 +210,8 @@ CREATE TABLE IF NOT EXISTS avisos (
     titulo TEXT NOT NULL,
     mensagem TEXT NOT NULL,
     ativo INTEGER DEFAULT 1,
+    inicia_em DATETIME DEFAULT NULL,
+    expira_em DATETIME DEFAULT NULL,
     criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
     criado_por INTEGER,
     FOREIGN KEY (criado_por) REFERENCES usuarios(id)
@@ -227,6 +229,7 @@ CREATE TABLE IF NOT EXISTS avisos_lidos (
 );
 
 CREATE INDEX IF NOT EXISTS idx_avisos_ativo ON avisos(ativo, criado_em DESC);
+CREATE INDEX IF NOT EXISTS idx_avisos_agendamento ON avisos(ativo, inicia_em, expira_em);
 CREATE INDEX IF NOT EXISTS idx_avisos_lidos_usuario ON avisos_lidos(usuario_id, aviso_id);
 
 -- Tabela de Logs de Buscas

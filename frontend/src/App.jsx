@@ -40,6 +40,8 @@ const GenresScreen = lazy(() => import('@screens/GenresScreen'));
 const ComposersScreen = lazy(() => import('@screens/ComposersScreen'));
 const ProfileScreen = lazy(() => import('@screens/ProfileScreen'));
 const AdminApp = lazy(() => import('@screens/admin').then(m => ({ default: m.AdminApp })));
+const EnsaiosScreen = lazy(() => import('@screens/EnsaiosScreen'));
+const GreetingPreviewScreen = lazy(() => import('@screens/GreetingPreviewScreen'));
 
 // Prefetch de telas secundárias em background
 const prefetchScreens = () => {
@@ -63,6 +65,7 @@ const prefetchScreens = () => {
     import('@screens/RepertorioScreen');
     import('@screens/ProfileScreen');
     import('@screens/GenresScreen');
+    import('@screens/EnsaiosScreen');
   });
 };
 
@@ -358,6 +361,13 @@ const AppContent = () => {
           </ProtectedRoute>
         } />
 
+        {/* Ensaios - histórico de presença */}
+        <Route path="/ensaios" element={
+          <ProtectedRoute>
+            <UserLayout><EnsaiosScreen /></UserLayout>
+          </ProtectedRoute>
+        } />
+
         {/* Redirects de rotas antigas para novas */}
         <Route path="/library" element={<Navigate to="/acervo" replace />} />
         <Route path="/library/:category" element={<Navigate to="/acervo" replace />} />
@@ -367,6 +377,15 @@ const AppContent = () => {
         <Route path="/composers" element={<Navigate to="/compositores" replace />} />
         <Route path="/profile" element={<Navigate to="/perfil" replace />} />
         <Route path="/home" element={<Navigate to="/" replace />} />
+
+        {/* Preview interno — saudações */}
+        {import.meta.env.DEV && (
+          <Route path="/dev/saudacoes" element={
+            <Suspense fallback={<PageLoader />}>
+              <GreetingPreviewScreen />
+            </Suspense>
+          } />
+        )}
 
         {/* Fallback - redireciona para home */}
         <Route path="*" element={<Navigate to="/" replace />} />

@@ -6,7 +6,6 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@contexts/AuthContext';
 import { useData } from '@contexts/DataContext';
-import { useIsMobile } from '@hooks/useResponsive';
 import { API } from '@services/api';
 import HomeHeader from '@components/common/HomeHeader';
 import HeaderActions from '@components/common/HeaderActions';
@@ -14,7 +13,7 @@ import FeaturedSheets from '@components/music/FeaturedSheets';
 import CategoryCard from '@components/music/CategoryCard';
 import FileCard from '@components/music/FileCard';
 import ComposerCarousel from '@components/music/ComposerCarousel';
-import PresenceStats from '@components/stats/PresenceStats';
+import RecentRehearsals from '@components/stats/RecentRehearsals';
 import AvisoModal from '@components/modals/AvisoModal';
 import { PROFILE_ABOUT_CONFIG } from '@components/modals/AboutModal/changelog/profileChangelog';
 
@@ -24,7 +23,6 @@ const HomeScreen = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { sheets, favoritesSet, toggleFavorite, categories, categoriesMap } = useData();
-  const isMobile = useIsMobile();
   const [_atividades, setAtividades] = useState([]);
 
   // Otimizado: uma única iteração calcula tudo
@@ -43,10 +41,10 @@ const HomeScreen = () => {
       }
     });
 
-    // Partituras ordenadas por downloads (top 6)
+    // Partituras ordenadas por downloads (top 3)
     const recentSheets = [...sheets]
       .sort((a, b) => (b.downloads || 0) - (a.downloads || 0))
-      .slice(0, 6);
+      .slice(0, 3);
 
     // Compositores mais populares (top 6)
     const topComposers = Object.entries(composerCounts)
@@ -118,17 +116,17 @@ const HomeScreen = () => {
         />
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 20px', marginBottom: '16px' }}>
-        <h2 style={{ fontSize: '18px', fontWeight: '700' }}>Gêneros Musicais</h2>
-        <button
-          style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: '14px', fontWeight: '500', cursor: 'pointer', }}
-          onClick={() => navigate('/generos')}
-        >
+      <div style={{ display: 'flex', gap: '14px', alignItems: 'center', padding: '0 20px', marginBottom: '16px' }}>
+        <h2 style={{ fontSize: '18px', fontWeight: '800', letterSpacing: '-0.2px', textTransform: 'uppercase' }}>Gêneros Musicais</h2>
+        <button className="glass-pill-btn" onClick={() => navigate('/generos')}>
           Ver Todos
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M9 18l6-6-6-6" />
+          </svg>
         </button>
       </div>
 
-      <div data-walkthrough="categories" style={{ padding: '0 20px', marginBottom: '24px' }}>
+      <div data-walkthrough="categories" style={{ padding: '0 20px', marginBottom: '0' }}>
         <div className="categories-grid" style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
@@ -147,17 +145,13 @@ const HomeScreen = () => {
         </div>
       </div>
 
-      {/* Secao de Compositores - Carrossel apenas no mobile */}
-      {isMobile ? <ComposerCarousel composers={topComposers} /> : null}
+      {/* Secao de Compositores */}
+      <div style={{ margin: '24px 0' }}>
+        <ComposerCarousel composers={topComposers} />
+      </div>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 20px', marginBottom: '12px' }}>
-        <h2 style={{ fontSize: '18px', fontWeight: '700' }}>Partituras Populares</h2>
-        <button
-          style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: '14px', fontWeight: '500', cursor: 'pointer', }}
-          onClick={() => navigate('/acervo')}
-        >
-          Ver Todas
-        </button>
+      <div style={{ padding: '0 20px', marginTop: '24px', marginBottom: '12px' }}>
+        <h2 style={{ fontSize: '18px', fontWeight: '800', letterSpacing: '-0.2px', textTransform: 'uppercase' }}>Partituras Populares</h2>
       </div>
 
       <div className="sheets-grid" style={{ padding: '0 20px' }}>
@@ -166,16 +160,17 @@ const HomeScreen = () => {
             key={sheet.id}
             sheet={sheet}
             category={categoriesMap.get(sheet.category)}
-            isFavorite={favoritesSet.has(sheet.id)} // O(1) lookup
+            isFavorite={favoritesSet.has(sheet.id)}
             onToggleFavorite={() => handleToggleFavorite(sheet.id)}
             index={index}
+            showStats
           />
         ))}
       </div>
 
-      {/* Seção de Presença */}
-      <div style={{ padding: '32px 20px' }}>
-        <PresenceStats />
+      {/* Seção de Ensaios Recentes */}
+      <div style={{ padding: '24px 20px 32px' }}>
+        <RecentRehearsals />
       </div>
 
       {/* Footer informativo */}

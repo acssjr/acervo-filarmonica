@@ -7,7 +7,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '@contexts/AuthContext';
 import { useUI } from '@contexts/UIContext';
 import { API } from '@services/api';
-import ThemeSelector from '@components/common/ThemeSelector';
+import ThemePill from '@components/common/ThemePill';
 import AdminToggle from '@components/common/AdminToggle';
 import { useMediaQuery } from '@hooks/useMediaQuery';
 import AdminContext from './AdminContext';
@@ -625,7 +625,7 @@ const AdminApp = () => {
 
               {/* Acoes do header */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <ThemeSelector inline />
+                <ThemePill />
                 <AdminToggle />
               </div>
             </header>

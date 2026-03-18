@@ -62,13 +62,17 @@ const SheetDetailModal = () => {
 
   // Handler para fechar modal
   const handleClose = useCallback(() => {
+    const fallbackPath = selectedSheet?.category ? `/acervo/${selectedSheet.category}` : '/acervo';
     setSelectedSheet(null);
-    // Se estamos numa URL de partitura, volta para o acervo da categoria
+    // Se estamos numa URL de partitura, volta para a tela de origem
     if (location.pathname.includes('/acervo/') && location.pathname.split('/').length > 3) {
-      const categoria = selectedSheet?.category || 'dobrado';
-      navigate(`/acervo/${categoria}`, { replace: true });
+      if (window.history.length > 1) {
+        navigate(-1);
+      } else {
+        navigate(fallbackPath, { replace: true });
+      }
     }
-  }, [location.pathname, navigate, selectedSheet, setSelectedSheet]);
+  }, [location.pathname, navigate, setSelectedSheet, selectedSheet]);
 
   // Travar scroll do body quando modal estiver aberto + focus trap + Escape key
   useEffect(() => {
