@@ -329,7 +329,7 @@ const DesktopHeader = () => {
 
   const showSuggestions = searchFocused && !searchQuery.trim();
   const mutedColor = isDark ? 'var(--text-muted)' : 'rgba(0,0,0,0.45)';
-  const goldLabel = isDark ? '#D4AF37' : '#8B6914';
+  const _goldLabel = isDark ? '#D4AF37' : '#8B6914';
 
   return (
     <header style={{

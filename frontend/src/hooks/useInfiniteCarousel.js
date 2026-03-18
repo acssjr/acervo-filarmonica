@@ -145,10 +145,11 @@ export const useInfiniteCarousel = ({
       if (st.current.half > 0) startScroll();
     });
 
+    const stRef = st.current;
     return () => {
       cancelAnimationFrame(initRaf);
       stopScroll();
-      if (st.current.timerId != null) clearTimeout(st.current.timerId);
+      if (stRef.timerId != null) clearTimeout(stRef.timerId);
     };
   }, [enabled, startScroll, stopScroll, measureHalf]);
 

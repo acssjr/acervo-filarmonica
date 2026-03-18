@@ -15,7 +15,7 @@ const getGreetingParts = (firstName, diasEnsaio) => {
   const h = now.getHours();
   const day = now.getDay(); // 0=Dom … 6=Sab
   const isRehearsalDay = diasEnsaio?.dias?.includes(day);
-  const name = firstName || '';
+  const _name = firstName || '';
   const d = now.getDate(); // índice rotativo para sub-mensagens
 
   // Ícone 3D por período

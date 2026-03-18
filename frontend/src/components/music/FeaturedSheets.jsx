@@ -2,6 +2,7 @@
 // Carrossel infinito via useInfiniteCarousel (RAF + CSS transform)
 
 import { useMemo } from 'react';
+import PropTypes from 'prop-types';
 import { useData } from '@contexts/DataContext';
 import { useMediaQuery } from '@hooks/useMediaQuery';
 import { useInfiniteCarousel } from '@hooks/useInfiniteCarousel';
@@ -99,6 +100,15 @@ const FeaturedSheets = ({ sheets, onToggleFavorite, favoritesSet }) => {
       </div>
     </div>
   );
+};
+
+FeaturedSheets.propTypes = {
+  sheets: PropTypes.array.isRequired,
+  onToggleFavorite: PropTypes.func.isRequired,
+  favoritesSet: PropTypes.instanceOf(Set),
+};
+FeaturedSheets.defaultProps = {
+  favoritesSet: new Set(),
 };
 
 export default FeaturedSheets;

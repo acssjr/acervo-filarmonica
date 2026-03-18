@@ -379,11 +379,13 @@ const AppContent = () => {
         <Route path="/home" element={<Navigate to="/" replace />} />
 
         {/* Preview interno — saudações */}
-        <Route path="/dev/saudacoes" element={
-          <Suspense fallback={<PageLoader />}>
-            <GreetingPreviewScreen />
-          </Suspense>
-        } />
+        {import.meta.env.DEV && (
+          <Route path="/dev/saudacoes" element={
+            <Suspense fallback={<PageLoader />}>
+              <GreetingPreviewScreen />
+            </Suspense>
+          } />
+        )}
 
         {/* Fallback - redireciona para home */}
         <Route path="*" element={<Navigate to="/" replace />} />

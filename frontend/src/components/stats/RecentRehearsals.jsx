@@ -88,7 +88,7 @@ const SkeletonCard = () => (
 
 const RehearsalCard = ({ ensaio, index, onClick }) => {
   const presente = ensaio.usuario_presente === 1;
-  const [ano, mesIdx, dia] = ensaio.data_ensaio.split('-').map(Number);
+  const [_ano, mesIdx, dia] = ensaio.data_ensaio.split('-').map(Number);
   const mes = MONTH_ABBR[mesIdx - 1];
 
   return (
@@ -98,6 +98,9 @@ const RehearsalCard = ({ ensaio, index, onClick }) => {
       transition={{ delay: index * 0.07, duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
       whileTap={{ scale: 0.96 }}
       onClick={() => onClick(ensaio)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(ensaio); } }}
       style={{
         borderRadius: '20px',
         background: presente

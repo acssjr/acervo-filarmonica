@@ -1,7 +1,7 @@
 /* ===== COMPONENT STYLES ===== */
 
 /* ── Liquid metal — nome do utilizador no header ── */
-@keyframes liquidMetalShimmer {
+@keyframes liquid-metal-shimmer {
   0%   { background-position: 150% center; }
   50%  { background-position: -50% center; }
   100% { background-position: 150% center; }
@@ -26,7 +26,7 @@
   background-clip: text;
   -webkit-text-fill-color: transparent;
   color: transparent;
-  animation: liquidMetalShimmer 10s ease-in-out infinite;
+  animation: liquid-metal-shimmer 10s ease-in-out infinite;
   filter: drop-shadow(0 1px 2px rgba(180, 130, 10, 0.3));
 }
 

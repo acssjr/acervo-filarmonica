@@ -20,8 +20,7 @@ const CARD_PALETTE = [
 ];
 
 // ── Cache em memória — persiste entre navegações, reseta no refresh ──────────
-let _presencaCache = null;
-let _presencaCacheTime = 0;
+const _presencaCacheByUser = new Map();
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutos
 
 // ── Variantes de animação: parallax assimétrico (estilo iOS) ─────────────────
@@ -88,6 +87,9 @@ const EnsaioCard = ({ ensaio, index, onClick }) => {
       transition={{ delay: index * 0.055, type: 'spring', stiffness: 380, damping: 38 }}
       whileTap={{ scale: 0.982 }}
       onClick={() => onClick(ensaio)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(ensaio); } }}
       style={{
         borderRadius: '20px', background: p.bg,
         boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
@@ -180,11 +182,12 @@ const SkeletonCard = ({ index }) => (
 const EnsaiosScreen = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const userCacheKey = user?.id ?? user?.usuario_id ?? user?.email ?? null;
   const now = new Date();
   const [selectedMonth, setSelectedMonth] = useState(now.getMonth());
   const [selectedYear, setSelectedYear] = useState(now.getFullYear());
-  const [presencaData, setPresencaData] = useState(() => _presencaCache); // inicia com cache se disponível
-  const [loading, setLoading] = useState(!_presencaCache);
+  const [presencaData, setPresencaData] = useState(() => _presencaCacheByUser.get(userCacheKey)?.data ?? null); // inicia com cache se disponível
+  const [loading, setLoading] = useState(!_presencaCacheByUser.get(userCacheKey));
   const [selectedEnsaio, setSelectedEnsaio] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [direction, setDirection] = useState(1);
@@ -194,10 +197,11 @@ const EnsaiosScreen = () => {
   useEffect(() => {
     if (!user) { setLoading(false); return; }
 
-    const now = Date.now();
+    const nowMs = Date.now();
     // Cache válido → não faz fetch
-    if (_presencaCache && now - _presencaCacheTime < CACHE_TTL) {
-      setPresencaData(_presencaCache);
+    const cached = _presencaCacheByUser.get(userCacheKey);
+    if (cached && nowMs - cached.time < CACHE_TTL) {
+      setPresencaData(cached.data);
       setLoading(false);
       return;
     }
@@ -206,15 +210,14 @@ const EnsaiosScreen = () => {
       try {
         setLoading(true);
         const data = await API.getMinhaPresenca();
-        _presencaCache = data;
-        _presencaCacheTime = Date.now();
+        _presencaCacheByUser.set(userCacheKey, { data, time: Date.now() });
         setPresencaData(data);
       } catch { /* silencioso */ } finally {
         setLoading(false);
       }
     };
     fetchPresenca();
-  }, [user]);
+  }, [user, userCacheKey]);
 
   const isAtCurrentMonth = selectedMonth === now.getMonth() && selectedYear === now.getFullYear();
   const getPrevMonth = () => (selectedMonth === 0 ? 11 : selectedMonth - 1);
