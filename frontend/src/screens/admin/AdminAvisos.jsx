@@ -11,6 +11,7 @@ import {
     Eye,
     CheckCircle2,
     AlertCircle,
+    Clock,
     History,
     Megaphone,
     Power,
@@ -20,6 +21,7 @@ import { API } from '@services/api';
 import { useUI } from '@contexts/UIContext';
 import { useMediaQuery } from '@hooks/useMediaQuery';
 import { formatTimeAgo } from '@utils/formatters';
+import DateTimePicker from '@components/common/DateTimePicker';
 
 // Componente para renderizar a mensagem formatada
 const FormattedMessage = ({ text, isPreview = false }) => {
@@ -53,6 +55,8 @@ const AdminAvisos = () => {
     const [titulo, setTitulo] = useState('');
     const [mensagem, setMensagem] = useState('');
     const [saving, setSaving] = useState(false);
+    const [iniciaEm, setIniciaEm] = useState('');
+    const [expiraEm, setExpiraEm] = useState('');
     const { showToast } = useUI();
     const isMobile = useMediaQuery('(max-width: 767px)');
 
@@ -81,15 +85,17 @@ const AdminAvisos = () => {
         setSaving(true);
         try {
             if (editingId) {
-                await API.atualizarAviso(editingId, { titulo, mensagem });
+                await API.atualizarAviso(editingId, { titulo, mensagem, inicia_em: iniciaEm || null, expira_em: expiraEm || null });
                 showToast('Aviso atualizado!', 'success');
             } else {
-                await API.criarAviso({ titulo, mensagem });
+                await API.criarAviso({ titulo, mensagem, inicia_em: iniciaEm || null, expira_em: expiraEm || null });
                 showToast('Aviso publicado!', 'success');
             }
             setTitulo('');
             setMensagem('');
             setEditingId(null);
+            setIniciaEm('');
+            setExpiraEm('');
             loadAvisos();
         } catch (e) {
             showToast('Erro ao salvar aviso', 'error');
@@ -101,6 +107,8 @@ const AdminAvisos = () => {
         setEditingId(aviso.id);
         setTitulo(aviso.titulo);
         setMensagem(aviso.mensagem);
+        setIniciaEm(aviso.inicia_em ? aviso.inicia_em.slice(0, 16) : '');
+        setExpiraEm(aviso.expira_em ? aviso.expira_em.slice(0, 16) : '');
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
@@ -196,7 +204,7 @@ const AdminAvisos = () => {
                         />
                     </div>
 
-                    <div style={{ marginBottom: '32px' }}>
+                    <div style={{ marginBottom: '24px' }}>
                         <label style={{ display: 'block', fontSize: '11px', fontWeight: '900', color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '1.5px' }}>Corpo da Mensagem</label>
                         <textarea
                             value={mensagem}
@@ -214,10 +222,28 @@ const AdminAvisos = () => {
                         />
                     </div>
 
+                    {/* Agendamento */}
+                    <div style={{ marginBottom: '24px', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px' }}>
+                        <DateTimePicker
+                            label="Ativar em (opcional)"
+                            value={iniciaEm}
+                            onChange={setIniciaEm}
+                            placeholder="Publicar imediatamente"
+                            hint="Deixe vazio para publicar imediatamente"
+                        />
+                        <DateTimePicker
+                            label="Expirar em (opcional)"
+                            value={expiraEm}
+                            onChange={setExpiraEm}
+                            placeholder="Sem expiração"
+                            hint="O aviso se desativa sozinho nesta data"
+                        />
+                    </div>
+
                     <div style={{ display: 'flex', gap: '14px', justifyContent: 'flex-end' }}>
                         {(editingId || (titulo || mensagem)) && (
                             <button
-                                onClick={() => { setEditingId(null); setTitulo(''); setMensagem(''); }}
+                                onClick={() => { setEditingId(null); setTitulo(''); setMensagem(''); setIniciaEm(''); setExpiraEm(''); }}
                                 style={{
                                     padding: '14px 28px', borderRadius: '14px', background: 'transparent',
                                     border: '1px solid var(--border)', color: 'var(--text-secondary)',
@@ -399,19 +425,49 @@ const AdminAvisos = () => {
                                 }}
                             >
                                 <div style={{ flex: 1 }}>
-                                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '12px' }}>
-                                        <span style={{
-                                            padding: '4px 12px', borderRadius: '24px', fontSize: '11px', fontWeight: '800',
-                                            background: aviso.ativo ? 'rgba(39, 174, 96, 0.12)' : 'rgba(231, 76, 60, 0.12)',
-                                            color: aviso.ativo ? '#27ae60' : '#e74c3c',
-                                            display: 'flex', alignItems: 'center', gap: '6px'
-                                        }}>
-                                            {aviso.ativo ? <CheckCircle2 size={12} /> : <AlertCircle size={12} />}
-                                            {aviso.ativo ? 'ATIVO' : 'ARQUIVADO'}
-                                        </span>
+                                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap' }}>
+                                        {(() => {
+                                            const now = new Date();
+                                            const iniciaEm = aviso.inicia_em ? new Date(aviso.inicia_em) : null;
+                                            const expiraEm = aviso.expira_em ? new Date(aviso.expira_em) : null;
+                                            const isScheduled = iniciaEm && iniciaEm > now;
+                                            const isExpired = expiraEm && expiraEm < now;
+
+                                            let label, color, bg, Icon;
+                                            if (!aviso.ativo) {
+                                                label = 'INATIVO'; color = '#e74c3c'; bg = 'rgba(231,76,60,0.12)'; Icon = AlertCircle;
+                                            } else if (isExpired) {
+                                                label = 'EXPIRADO'; color = '#e74c3c'; bg = 'rgba(231,76,60,0.12)'; Icon = AlertCircle;
+                                            } else if (isScheduled) {
+                                                label = 'AGENDADO'; color = '#f39c12'; bg = 'rgba(243,156,18,0.12)'; Icon = Clock;
+                                            } else {
+                                                label = 'ATIVO'; color = '#27ae60'; bg = 'rgba(39,174,96,0.12)'; Icon = CheckCircle2;
+                                            }
+
+                                            return (
+                                                <span style={{
+                                                    padding: '4px 12px', borderRadius: '24px', fontSize: '11px', fontWeight: '800',
+                                                    background: bg, color,
+                                                    display: 'inline-flex', alignItems: 'center', gap: '6px'
+                                                }}>
+                                                    <Icon size={12} />
+                                                    {label}
+                                                </span>
+                                            );
+                                        })()}
                                         <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: '600' }}>
                                             {formatTimeAgo(aviso.criado_em, true)}
                                         </span>
+                                        {aviso.expira_em && (
+                                            <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: '500' }}>
+                                                · Expira {new Date(aviso.expira_em).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                            </span>
+                                        )}
+                                        {aviso.inicia_em && new Date(aviso.inicia_em) > new Date() && (
+                                            <span style={{ fontSize: '12px', color: '#f39c12', fontWeight: '500' }}>
+                                                · Inicia {new Date(aviso.inicia_em).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                            </span>
+                                        )}
                                     </div>
                                     <h3 style={{ fontSize: '18px', fontWeight: '800', marginBottom: '8px', color: 'var(--text-primary)' }}>{aviso.titulo}</h3>
                                     <p style={{ fontSize: '15px', color: 'var(--text-secondary)', lineHeight: '1.6', margin: 0 }}>

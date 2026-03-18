@@ -20,7 +20,7 @@ export async function getAvisos(request, env) {
  */
 export async function criarAviso(request, env, params, context) {
     const body = await request.json();
-    const { titulo, mensagem } = body;
+    const { titulo, mensagem, inicia_em, expira_em } = body;
 
     if (!titulo || !mensagem) {
         return jsonResponse({ error: 'Título e mensagem são obrigatórios' }, 400, request);
@@ -29,8 +29,8 @@ export async function criarAviso(request, env, params, context) {
     const user = context?.user;
 
     const result = await env.DB.prepare(
-        'INSERT INTO avisos (titulo, mensagem, criado_por) VALUES (?, ?, ?)'
-    ).bind(titulo, mensagem, user?.id || null).run();
+        'INSERT INTO avisos (titulo, mensagem, inicia_em, expira_em, criado_por) VALUES (?, ?, ?, ?, ?)'
+    ).bind(titulo, mensagem, inicia_em || null, expira_em || null, user?.id || null).run();
 
     return jsonResponse({
         id: result.meta?.last_row_id,
@@ -54,11 +54,13 @@ export async function atualizarAviso(request, env, params) {
     }
 
     await env.DB.prepare(
-        'UPDATE avisos SET titulo = ?, mensagem = ?, ativo = ? WHERE id = ?'
+        'UPDATE avisos SET titulo = ?, mensagem = ?, ativo = ?, inicia_em = ?, expira_em = ? WHERE id = ?'
     ).bind(
         titulo !== undefined ? titulo : aviso.titulo,
         mensagem !== undefined ? mensagem : aviso.mensagem,
         ativo !== undefined ? (ativo ? 1 : 0) : aviso.ativo,
+        'inicia_em' in body ? (body.inicia_em || null) : aviso.inicia_em,
+        'expira_em' in body ? (body.expira_em || null) : aviso.expira_em,
         id
     ).run();
 
@@ -87,6 +89,8 @@ export async function getAvisosNaoLidos(request, env, params, context) {
     SELECT a.id, a.titulo, a.mensagem, a.criado_em
     FROM avisos a
     WHERE a.ativo = 1
+      AND (a.inicia_em IS NULL OR a.inicia_em <= CURRENT_TIMESTAMP)
+      AND (a.expira_em IS NULL OR a.expira_em >= CURRENT_TIMESTAMP)
       AND a.id NOT IN (
         SELECT aviso_id FROM avisos_lidos WHERE usuario_id = ?
       )
