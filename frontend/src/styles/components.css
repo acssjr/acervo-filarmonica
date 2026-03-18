@@ -1,5 +1,89 @@
 /* ===== COMPONENT STYLES ===== */
 
+/* ── Liquid metal — nome do utilizador no header ── */
+@keyframes liquidMetalShimmer {
+  0%   { background-position: 150% center; }
+  50%  { background-position: -50% center; }
+  100% { background-position: 150% center; }
+}
+
+.liquid-metal-name {
+  display: inline-block;
+  background: linear-gradient(
+    100deg,
+    #9a7318 0%,
+    #d4a937 15%,
+    #f5d96a 28%,
+    #fffacd 38%,
+    #e8c14a 47%,
+    #b8860b 57%,
+    #f0c84a 68%,
+    #d4a937 80%,
+    #9a7318 100%
+  );
+  background-size: 250% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  animation: liquidMetalShimmer 10s ease-in-out infinite;
+  filter: drop-shadow(0 1px 2px rgba(180, 130, 10, 0.3));
+}
+
+[data-theme="dark"] .liquid-metal-name {
+  background: linear-gradient(
+    100deg,
+    #a07820 0%,
+    #d4af37 15%,
+    #f7e070 28%,
+    #fffde8 38%,
+    #ecc84e 47%,
+    #c49a14 57%,
+    #f5d050 68%,
+    #d4af37 80%,
+    #a07820 100%
+  );
+  background-size: 250% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 1px 3px rgba(212, 175, 55, 0.35));
+}
+
+/* ── Glass pill button — funciona em tema claro e escuro ── */
+.glass-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 20px;
+  padding: 5px 10px 5px 12px;
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: var(--text-secondary);
+  /* Modo claro: tint escuro visível sobre branco */
+  background: rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.glass-pill-btn:hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="dark"] .glass-pill-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.13);
+}
+
+[data-theme="dark"] .glass-pill-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
 /* ===== SEARCH BAR ===== */
 .search-bar {
   display: flex;
@@ -97,6 +181,15 @@
 
 [data-theme="light"] .search-bar:focus-within .search-icon {
   color: #B8960C;
+}
+
+/* ── Utilitário: ocultar scrollbar (cross-browser) ── */
+.hide-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
 }
 
 /* Login placeholder */

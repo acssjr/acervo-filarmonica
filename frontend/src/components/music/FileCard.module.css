@@ -9,11 +9,30 @@
   border-radius: var(--radius);
   cursor: pointer;
   border: 1px solid var(--border);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  position: relative;
+  overflow: visible;
 }
 
-.card.pressed {
-  transform: scale(0.98);
+/* Specular highlight on top edge */
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  border-radius: var(--radius) var(--radius) 0 0;
+  background: linear-gradient(90deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.05) 55%, transparent 100%);
+  pointer-events: none;
+}
+
+/* Dark mode glass card */
+:global([data-theme="dark"]) .card {
+  background: linear-gradient(145deg, rgba(255,255,255,0.048) 0%, rgba(255,255,255,0.018) 100%);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border: 1px solid rgba(255,255,255,0.07);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.06);
 }
 
 /* Thumbnail */
@@ -21,13 +40,46 @@
   width: 52px;
   height: 52px;
   border-radius: var(--radius-sm);
-  background: linear-gradient(145deg, #3a3a4a 0%, #2a2a38 100%);
-  border: 1px solid rgba(212, 175, 55, 0.2);
+  background: linear-gradient(145deg, #3D1517 0%, #1A0608 100%);
+  border: 1px solid rgba(212, 175, 55, 0.28);
+  box-shadow: inset 0 2px 5px rgba(0,0,0,0.4), 0 0 10px rgba(212,175,55,0.06);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
   position: relative;
+}
+
+/* Inner specular on thumbnail */
+.thumbnail::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  background: linear-gradient(90deg, rgba(212,175,55,0.3) 0%, rgba(212,175,55,0.08) 50%, transparent 100%);
+  pointer-events: none;
+}
+
+/* Ranking badge on thumbnail */
+.rankBadge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 4px;
+  border-radius: 10px;
+  background: linear-gradient(145deg, #D4AF37 0%, #B8860B 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 800;
+  color: #1A0608;
+  box-shadow: 0 2px 6px rgba(212,175,55,0.5);
+  z-index: 1;
+  letter-spacing: 0.2px;
 }
 
 /* Info */
@@ -49,39 +101,96 @@
 .composer {
   font-size: 13px;
   color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-/* Botoes */
+/* Stats compacto — trend arrow + número */
+.statsCompact {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  min-width: 44px;
+  gap: 1px;
+}
+
+.trendArrow {
+  color: #22C55E;
+  display: flex;
+  align-items: center;
+  margin-bottom: 2px;
+}
+
+.statsNumber {
+  font-size: 16px;
+  font-weight: 800;
+  color: #D4AF37;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+:global([data-theme="light"]) .statsNumber {
+  color: #8B6914;
+}
+
+.statsLabel {
+  font-size: 8px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  margin-top: 1px;
+}
+
+/* Action buttons */
 .iconButton {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  border: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid transparent;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: color 0.15s ease, background 0.15s ease;
+  flex-shrink: 0;
+  transition: background 0.15s ease, border-color 0.15s ease;
 }
 
 .favButton {
   composes: iconButton;
 }
 
+.favButton.inactive {
+  background: rgba(255,255,255,0.06);
+  border-color: rgba(255,255,255,0.09);
+  color: var(--text-muted);
+}
+
 .favButton.active {
-  background: rgba(232, 90, 79, 0.1);
+  background: rgba(232, 90, 79, 0.14);
+  border-color: rgba(232, 90, 79, 0.3);
   color: var(--primary);
 }
 
-.favButton.inactive {
-  background: transparent;
-  color: var(--text-muted);
+:global([data-theme="light"]) .favButton.inactive {
+  background: rgba(0,0,0,0.04);
+  border-color: rgba(0,0,0,0.08);
 }
 
 .downloadButton {
   composes: iconButton;
-  background: transparent;
-  color: var(--primary);
+  background: rgba(212,175,55,0.1);
+  border-color: rgba(212,175,55,0.22);
+  color: #D4AF37;
+}
+
+:global([data-theme="light"]) .downloadButton {
+  background: rgba(184,150,12,0.08);
+  border-color: rgba(184,150,12,0.2);
+  color: #B8960C;
 }
 
 .icon {

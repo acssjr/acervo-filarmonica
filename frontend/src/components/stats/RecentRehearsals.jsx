@@ -10,17 +10,45 @@ import EnsaioDetailModal from './EnsaioDetailModal';
 
 const MONTH_ABBR = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
 
-const CheckIcon = () => (
-  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="20 6 9 17 4 12" />
-  </svg>
+// Ícone 3D de presença — quadrado verde arredondado com checkmark
+const Check3D = () => (
+  <div style={{
+    width: '44px',
+    height: '44px',
+    borderRadius: '12px',
+    background: 'linear-gradient(145deg, #5BE065 0%, #2DB830 55%, #1A8C22 100%)',
+    boxShadow: '0 4px 12px rgba(45,184,48,0.28), inset 0 1.5px 0 rgba(255,255,255,0.35), inset 0 -2px 0 rgba(0,0,0,0.18)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  }}>
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"
+      style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.25))' }}>
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
+  </div>
 );
 
-const CrossIcon = () => (
-  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-    <line x1="18" y1="6" x2="6" y2="18" />
-    <line x1="6" y1="6" x2="18" y2="18" />
-  </svg>
+// Ícone 3D de ausência — círculo vermelho com X
+const Cross3D = () => (
+  <div style={{
+    width: '44px',
+    height: '44px',
+    borderRadius: '50%',
+    background: 'linear-gradient(145deg, #FF6B6B 0%, #E53935 55%, #B71C1C 100%)',
+    boxShadow: '0 6px 16px rgba(229,57,53,0.55), inset 0 1.5px 0 rgba(255,255,255,0.35), inset 0 -2px 0 rgba(0,0,0,0.2)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  }}>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,220,220,0.95)" strokeWidth="3.5" strokeLinecap="round"
+      style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.3))' }}>
+      <line x1="18" y1="6" x2="6" y2="18" />
+      <line x1="6" y1="6" x2="18" y2="18" />
+    </svg>
+  </div>
 );
 
 const SkeletonCard = () => (
@@ -78,16 +106,16 @@ const RehearsalCard = ({ ensaio, index, onClick }) => {
         border: presente
           ? '1px solid rgba(74,180,74,0.18)'
           : '1px solid rgba(239,68,68,0.15)',
-        boxShadow: presente
-          ? '0 4px 20px rgba(0,0,0,0.32), 0 0 0 0px rgba(74,180,74,0.1)'
-          : '0 4px 20px rgba(0,0,0,0.32)',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.32)',
         minHeight: '108px',
         display: 'flex',
-        flexDirection: 'column',
-        padding: '14px',
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: '14px 16px 14px 14px',
         cursor: 'pointer',
         position: 'relative',
         overflow: 'hidden',
+        gap: '12px',
       }}
     >
       {/* Highlight especular no topo */}
@@ -101,65 +129,41 @@ const RehearsalCard = ({ ensaio, index, onClick }) => {
         pointerEvents: 'none',
       }} />
 
-      {/* Mês */}
-      <span style={{
-        fontSize: '10px',
-        fontWeight: '600',
-        letterSpacing: '1px',
-        textTransform: 'uppercase',
-        color: presente ? 'rgba(74,180,74,0.55)' : 'rgba(239,68,68,0.45)',
-        marginBottom: '2px',
-      }}>
-        {mes}
-      </span>
-
-      {/* Dia */}
-      <span style={{
-        fontSize: '32px',
-        fontWeight: '800',
-        lineHeight: 1,
-        color: presente ? 'rgba(180,255,180,0.92)' : 'rgba(255,180,180,0.85)',
-        marginBottom: '2px',
-      }}>
-        {String(dia).padStart(2, '0')}
-      </span>
-
-      {/* Dia da semana */}
-      <span style={{
-        fontSize: '11px',
-        fontWeight: '500',
-        color: 'var(--text-muted)',
-        marginBottom: '0',
-      }}>
-        {ensaio.dia_semana}
-      </span>
-
-      {/* Espaço flexível */}
-      <div style={{ flex: 1 }} />
-
-      {/* Status pill */}
-      <div style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: '5px',
-        alignSelf: 'flex-start',
-        padding: '4px 10px',
-        borderRadius: '20px',
-        fontSize: '11px',
-        fontWeight: '700',
-        background: presente
-          ? 'rgba(74,180,74,0.12)'
-          : 'rgba(239,68,68,0.1)',
-        border: presente
-          ? '1px solid rgba(74,180,74,0.3)'
-          : '1px solid rgba(239,68,68,0.25)',
-        color: presente ? '#5DD85D' : '#FF7070',
-        backdropFilter: 'blur(8px)',
-        WebkitBackdropFilter: 'blur(8px)',
-      }}>
-        {presente ? <CheckIcon /> : <CrossIcon />}
-        {presente ? 'Presente' : 'Ausente'}
+      {/* Informação da data */}
+      <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+        <span style={{
+          fontSize: '10px',
+          fontWeight: '600',
+          letterSpacing: '1px',
+          textTransform: 'uppercase',
+          color: presente ? 'rgba(74,180,74,0.55)' : 'rgba(239,68,68,0.45)',
+          marginBottom: '0px',
+        }}>
+          {mes}
+        </span>
+        <span style={{
+          fontSize: '38px',
+          fontWeight: '800',
+          lineHeight: 1.05,
+          color: presente ? 'rgba(180,255,180,0.92)' : 'rgba(255,180,180,0.85)',
+          marginBottom: '0px',
+        }}>
+          {String(dia).padStart(2, '0')}
+        </span>
+        <span style={{
+          fontSize: '10px',
+          fontWeight: '600',
+          letterSpacing: '0.8px',
+          textTransform: 'uppercase',
+          color: 'var(--text-muted)',
+          marginTop: '4px',
+        }}>
+          {ensaio.dia_semana}
+        </span>
       </div>
+
+      {/* Ícone 3D de status */}
+      {presente ? <Check3D /> : <Cross3D />}
     </motion.div>
   );
 };
@@ -220,18 +224,13 @@ const RecentRehearsals = () => {
       }}>
         <h2 style={{ fontSize: '18px', fontWeight: '700', margin: 0 }}>Últimos Ensaios</h2>
         <button
-          style={{
-            background: 'none',
-            border: 'none',
-            color: 'var(--primary)',
-            fontSize: '14px',
-            fontWeight: '500',
-            cursor: 'pointer',
-            padding: 0,
-          }}
+          className="glass-pill-btn"
           onClick={() => navigate('/ensaios')}
         >
           Ver Histórico
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M9 18l6-6-6-6" />
+          </svg>
         </button>
       </div>
 
