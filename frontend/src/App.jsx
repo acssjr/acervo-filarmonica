@@ -40,6 +40,7 @@ const GenresScreen = lazy(() => import('@screens/GenresScreen'));
 const ComposersScreen = lazy(() => import('@screens/ComposersScreen'));
 const ProfileScreen = lazy(() => import('@screens/ProfileScreen'));
 const AdminApp = lazy(() => import('@screens/admin').then(m => ({ default: m.AdminApp })));
+const EnsaiosScreen = lazy(() => import('@screens/EnsaiosScreen'));
 
 // Prefetch de telas secundárias em background
 const prefetchScreens = () => {
@@ -63,6 +64,7 @@ const prefetchScreens = () => {
     import('@screens/RepertorioScreen');
     import('@screens/ProfileScreen');
     import('@screens/GenresScreen');
+    import('@screens/EnsaiosScreen');
   });
 };
 
@@ -355,6 +357,13 @@ const AppContent = () => {
         <Route path="/perfil" element={
           <ProtectedRoute>
             <UserLayout><ProfileScreen /></UserLayout>
+          </ProtectedRoute>
+        } />
+
+        {/* Ensaios - histórico de presença */}
+        <Route path="/ensaios" element={
+          <ProtectedRoute>
+            <UserLayout><EnsaiosScreen /></UserLayout>
           </ProtectedRoute>
         } />
 

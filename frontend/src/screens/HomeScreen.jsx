@@ -14,7 +14,7 @@ import FeaturedSheets from '@components/music/FeaturedSheets';
 import CategoryCard from '@components/music/CategoryCard';
 import FileCard from '@components/music/FileCard';
 import ComposerCarousel from '@components/music/ComposerCarousel';
-import PresenceStats from '@components/stats/PresenceStats';
+import RecentRehearsals from '@components/stats/RecentRehearsals';
 import AvisoModal from '@components/modals/AvisoModal';
 import { PROFILE_ABOUT_CONFIG } from '@components/modals/AboutModal/changelog/profileChangelog';
 
@@ -173,9 +173,9 @@ const HomeScreen = () => {
         ))}
       </div>
 
-      {/* Seção de Presença */}
-      <div style={{ padding: '32px 20px' }}>
-        <PresenceStats />
+      {/* Seção de Ensaios Recentes */}
+      <div style={{ padding: '0 20px 32px' }}>
+        <RecentRehearsals />
       </div>
 
       {/* Footer informativo */}
