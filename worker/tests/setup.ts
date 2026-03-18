@@ -141,6 +141,8 @@ const STATEMENTS = [
     titulo TEXT NOT NULL,
     mensagem TEXT NOT NULL,
     ativo INTEGER DEFAULT 1,
+    inicia_em DATETIME,
+    expira_em DATETIME,
     criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
     criado_por INTEGER
   )`,
