@@ -315,6 +315,8 @@ const ProfileScreen = () => {
       return;
     }
 
+    const previousPhoto = profilePhoto;
+
     // Preview instantâneo via base64 (não espera o upload)
     const reader = new FileReader();
     reader.onload = (ev) => {
@@ -330,6 +332,13 @@ const ProfileScreen = () => {
       setProfilePhoto(foto_url);
       showToast('Foto atualizada!');
     }).catch((err) => {
+      // Reverte para foto anterior em caso de falha
+      setProfilePhoto(previousPhoto);
+      if (previousPhoto) {
+        Storage.set(`profilePhoto_${user.id}`, previousPhoto);
+      } else {
+        Storage.remove(`profilePhoto_${user.id}`);
+      }
       showToast(err.message || 'Erro ao salvar foto', 'error');
     });
   };

@@ -1788,6 +1788,9 @@ export default {
       if (path.startsWith('/api/perfil/foto/') && method === 'GET') {
         const filename = path.slice('/api/perfil/foto/'.length);
         if (!filename) return errorResponse('Arquivo não especificado', 400, request);
+        if (!/^perfil_\d+_\d+\.(jpg|png|gif|webp)$/.test(filename)) {
+          return errorResponse('Arquivo inválido', 400, request);
+        }
         const obj = await env.BUCKET.get(filename);
         if (!obj) return errorResponse('Foto não encontrada', 404, request);
         const contentType = obj.httpMetadata?.contentType || 'image/jpeg';
