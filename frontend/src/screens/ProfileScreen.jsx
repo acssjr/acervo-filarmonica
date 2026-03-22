@@ -291,7 +291,7 @@ const ProfileScreen = () => {
     if (!stats || !firstBadgesRef.current || badgesAnimatedRef.current) return;
     badgesAnimatedRef.current = true;
     const cards = firstBadgesRef.current.querySelectorAll(':scope > div');
-    gsap.from(cards, {
+    const anim = gsap.from(cards, {
       opacity: 0,
       scale: 0.88,
       y: 16,
@@ -299,6 +299,10 @@ const ProfileScreen = () => {
       ease: 'back.out(1.5)',
       stagger: { each: 0.08, from: 'start' },
     });
+    return () => {
+      anim.kill();
+      badgesAnimatedRef.current = false;
+    };
   }, [stats]);
 
   // ── Handlers ──────────────────────────────────────────────────────────

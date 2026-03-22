@@ -334,11 +334,17 @@ export const API = {
 
   async getPresencaStats() {
     // Fail silently — endpoint pode não existir em produção ainda
+    // Exceto 401: token expirado deve disparar logout normal
     try {
       const token = Storage.get('authToken', null);
       const res = await fetch(`${API_BASE_URL}/api/presenca/minhas/stats`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
+      if (res.status === 401) {
+        this.clearAuth();
+        if (onTokenExpired) onTokenExpired();
+        return null;
+      }
       if (!res.ok) return null;
       return res.json();
     } catch {
