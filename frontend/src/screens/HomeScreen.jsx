@@ -17,8 +17,6 @@ import RecentRehearsals from '@components/stats/RecentRehearsals';
 import AvisoModal from '@components/modals/AvisoModal';
 import { PROFILE_ABOUT_CONFIG } from '@components/modals/AboutModal/changelog/profileChangelog';
 
-
-
 const HomeScreen = () => {
   const navigate = useNavigate();
   const { user } = useAuth();

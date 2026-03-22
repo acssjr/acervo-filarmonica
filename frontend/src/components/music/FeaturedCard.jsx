@@ -2,6 +2,7 @@
 // Card de destaque com borda dourada animada
 
 import { memo, useRef } from 'react';
+import { gsap } from 'gsap';
 import { useUI } from '@contexts/UIContext';
 import { Icons } from '@constants/icons';
 import styles from './FeaturedCard.module.css';
@@ -9,6 +10,7 @@ import styles from './FeaturedCard.module.css';
 const FeaturedCard = memo(({ sheet, category, bgImage, isFav, onToggleFavorite, isDesktop }) => {
   const { setSelectedSheet } = useUI();
   const pointerStart = useRef({ x: 0, y: 0 });
+  const favIconRef = useRef(null);
 
   const handlePointerDown = (e) => {
     pointerStart.current = { x: e.clientX, y: e.clientY };
@@ -20,6 +22,16 @@ const FeaturedCard = memo(({ sheet, category, bgImage, isFav, onToggleFavorite, 
     const dy = Math.abs(e.clientY - pointerStart.current.y);
     if (dx > 5 || dy > 5) return;
     setSelectedSheet(sheet);
+  };
+
+  const handleFavClick = (e) => {
+    e.stopPropagation();
+    onToggleFavorite(sheet.id);
+    if (favIconRef.current) {
+      gsap.timeline()
+        .to(favIconRef.current, { scale: 1.35, duration: 0.1, ease: 'power2.out', overwrite: true })
+        .to(favIconRef.current, { scale: 1, duration: 0.35, ease: 'back.out(2)' });
+    }
   };
 
   return (
@@ -51,11 +63,11 @@ const FeaturedCard = memo(({ sheet, category, bgImage, isFav, onToggleFavorite, 
           </div>
 
           <button
-            onClick={(e) => { e.stopPropagation(); onToggleFavorite(sheet.id); }}
+            onClick={handleFavClick}
             className={`${styles.favButton} ${isFav ? styles.active : styles.inactive}`}
             aria-label={isFav ? `Remover ${sheet.title} dos favoritos` : `Adicionar ${sheet.title} aos favoritos`}
           >
-            <div className={styles.favIcon}><Icons.Heart filled={isFav} /></div>
+            <div ref={favIconRef} className={styles.favIcon}><Icons.Heart filled={isFav} /></div>
           </button>
         </div>
       </div>

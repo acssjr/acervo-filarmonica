@@ -19,10 +19,12 @@ export async function getPerfil(request, env, user) {
     id: user.id,
     username: user.username,
     nome: user.nome,
+    nome_exibicao: user.nome_exibicao || null,
     admin: user.admin === 1,
     instrumento_id: user.instrumento_id,
     instrumento_nome: instrumentoNome,
     foto_url: user.foto_url,
+    criado_em: user.criado_em,
   }, 200, request);
 }
 
@@ -32,7 +34,7 @@ export async function getPerfil(request, env, user) {
  * Extraido de: worker/index.js linhas 1621-1653
  */
 export async function updatePerfil(request, env, user) {
-  const { nome, instrumento_id } = await request.json();
+  const { nome, nome_exibicao, instrumento_id } = await request.json();
 
   const updates = [];
   const params = [];
@@ -40,6 +42,12 @@ export async function updatePerfil(request, env, user) {
   if (nome !== undefined && nome.trim()) {
     updates.push('nome = ?');
     params.push(nome.trim());
+  }
+
+  if (nome_exibicao !== undefined) {
+    // Permite limpar (null) ou definir o nome de exibição
+    updates.push('nome_exibicao = ?');
+    params.push(nome_exibicao?.trim() || null);
   }
 
   if (instrumento_id !== undefined) {

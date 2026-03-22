@@ -4,6 +4,7 @@
 import { memo } from 'react';
 import { motion } from 'framer-motion';
 import CategoryIcon from '@components/common/CategoryIcon';
+import { usePressAnimation } from '@hooks/usePressAnimation';
 
 // Paleta de gradientes e cores de ícone por categoria
 const CARD_THEMES = {
@@ -29,15 +30,17 @@ const DEFAULT_THEME = {
 
 const CategoryCard = memo(({ category, count, onClick, index }) => {
   const { gradient, iconColor } = CARD_THEMES[category.id] || DEFAULT_THEME;
+  const { ref: pressRef, handlers } = usePressAnimation({ scale: 0.96 });
 
   return (
     <motion.div
+      ref={pressRef}
       className="card-hover"
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05, duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
-      whileTap={{ scale: 0.97 }}
       onClick={onClick}
+      {...handlers}
       style={{
         background: gradient,
         borderRadius: '20px',

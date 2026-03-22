@@ -1,14 +1,16 @@
 // ===== STREAK BAR =====
-// Barra vertical compacta mostrando streak de presença
-// Ícone Flame (lucide-react) com CSS animations
+// Barra vertical compacta mostrando streak de presenca
+// Icone Flame (lucide-react) com GSAP animations
 
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { useRef, useEffect } from 'react';
+import { gsap } from 'gsap';
 import { Flame } from 'lucide-react';
 import styles from './PresenceStats.module.css';
 
 const StreakBar = ({ streak = 0, percentual = 0 }) => {
-  const [count, setCount] = useState(0);
+  const streakNumRef = useRef(null);
+  const progressBarRef = useRef(null);
+  const containerRef = useRef(null);
   const active = streak > 0;
 
   // Tamanho do fogo escala com o streak (min 28, max 44)
@@ -21,43 +23,43 @@ const StreakBar = ({ streak = 0, percentual = 0 }) => {
     : streak >= 5 ? '#FF8C00'
     : '#D4AF37';
 
-  // Animação de contagem (0 → streak)
   useEffect(() => {
-    if (streak === 0) {
-      setCount(0);
-      return;
-    }
+    if (!containerRef.current) return;
+    gsap.from(containerRef.current, { opacity: 0, scale: 0.95, duration: 0.5, ease: 'power2.out' });
+  }, []);
 
-    const duration = 1000;
-    const steps = 30;
-    const increment = streak / steps;
-    const interval = duration / steps;
-
-    let current = 0;
-    const timer = setInterval(() => {
-      current += increment;
-      if (current >= streak) {
-        setCount(streak);
-        clearInterval(timer);
-      } else {
-        setCount(Math.floor(current));
-      }
-    }, interval);
-
-    return () => clearInterval(timer);
+  useEffect(() => {
+    if (!streakNumRef.current) return;
+    const proxy = { val: 0 };
+    const tween = gsap.to(proxy, {
+      val: streak,
+      duration: 1.0,
+      ease: 'power2.out',
+      snap: { val: 1 },
+      onUpdate: () => {
+        if (streakNumRef.current) streakNumRef.current.textContent = String(Math.round(proxy.val));
+      },
+    });
+    return () => tween.kill();
   }, [streak]);
 
-  return (
-    <motion.div
-      className={styles.streakBar}
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.5 }}
-    >
-      {/* Número do streak */}
-      <div className={styles.streakNumber}>{count}</div>
+  useEffect(() => {
+    if (!progressBarRef.current) return;
+    const tween = gsap.to(progressBarRef.current, {
+      height: `${Math.min(Math.max(percentual, 0), 100)}%`,
+      duration: 1.2,
+      ease: 'back.out(1.4)',
+      overwrite: 'auto',
+    });
+    return () => tween.kill();
+  }, [percentual]);
 
-      {/* Ícone de fogo */}
+  return (
+    <div ref={containerRef} className={styles.streakBar}>
+      {/* Numero do streak */}
+      <div ref={streakNumRef} className={styles.streakNumber}>0</div>
+
+      {/* Icone de fogo */}
       <div className={`${styles.fireContainer} ${active ? styles.fireActive : styles.fireInactive}`}>
         <Flame
           size={fireSize}
@@ -69,14 +71,9 @@ const StreakBar = ({ streak = 0, percentual = 0 }) => {
 
       {/* Barra de progresso vertical */}
       <div className={styles.streakProgressContainer}>
-        <motion.div
-          className={styles.streakProgressFill}
-          initial={{ height: 0 }}
-          animate={{ height: `${Math.min(percentual, 100)}%` }}
-          transition={{ duration: 1.2, ease: 'easeOut' }}
-        />
+        <div ref={progressBarRef} className={styles.streakProgressFill} style={{ height: '0%' }} />
       </div>
-    </motion.div>
+    </div>
   );
 };
 

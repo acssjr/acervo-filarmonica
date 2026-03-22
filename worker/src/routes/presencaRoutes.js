@@ -10,6 +10,20 @@ import { jsonResponse, errorResponse } from '../infrastructure/response/helpers.
  * @param {Router} router - Router instance
  */
 export function setupPresencaRoutes(router) {
+  // GET /api/presenca/minhas/stats - Estatísticas resumidas para o perfil
+  router.get('/api/presenca/minhas/stats', async (request, env, params, context) => {
+    try {
+      const usuario = await env.DB.prepare(
+        'SELECT criado_em FROM usuarios WHERE id = ?'
+      ).bind(context.user.id).first();
+      const data = await PresencaService.getEstatisticasPerfil(env, context.user.id, usuario?.criado_em);
+      return jsonResponse(data, 200, request);
+    } catch (error) {
+      console.error('Erro ao buscar stats de perfil:', error);
+      return errorResponse('Erro ao buscar estatísticas', 500, request);
+    }
+  }, [authMiddleware]);
+
   // GET /api/presenca/minhas - Buscar presença do usuário logado (autenticado)
   router.get('/api/presenca/minhas', async (request, env, params, context) => {
     try {
