@@ -45,10 +45,13 @@ const StreakBar = ({ streak = 0, percentual = 0 }) => {
 
   useEffect(() => {
     if (!progressBarRef.current) return;
-    gsap.fromTo(progressBarRef.current,
-      { height: '0%' },
-      { height: `${Math.min(percentual, 100)}%`, duration: 1.2, ease: 'back.out(1.4)' }
-    );
+    const tween = gsap.to(progressBarRef.current, {
+      height: `${Math.min(Math.max(percentual, 0), 100)}%`,
+      duration: 1.2,
+      ease: 'back.out(1.4)',
+      overwrite: 'auto',
+    });
+    return () => tween.kill();
   }, [percentual]);
 
   return (

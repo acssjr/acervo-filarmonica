@@ -89,11 +89,13 @@ const UsuarioFormModal = ({ usuario, instrumentos, onSave, onClose }) => {
     setSaving(true);
     const data = {
       nome: nome.trim(),
-      nome_exibicao: nomeExibicao.trim() || null,
       instrumento_id: instrumentoId || null,
       admin: isAdmin,
       convidado: isConvidado
     };
+    if (usuario) {
+      data.nome_exibicao = nomeExibicao.trim() || null;
+    }
     if (!usuario) {
       data.username = username.trim().toLowerCase();
       data.pin = pin;

@@ -170,10 +170,15 @@ export async function getEstatisticasPerfil(env, usuarioId, criado_em) {
   const presentes_mes = mesMesResult?.presentes_mes || 0;
   const total_mes = mesMesResult?.total_mes || 0;
 
-  // Meses no sistema
-  const mesesNoSistema = criado_em
-    ? (Date.now() - new Date(criado_em).getTime()) / (1000 * 60 * 60 * 24 * 30)
-    : 0;
+  // Meses no sistema (calendário, não 30 dias fixos)
+  let mesesNoSistema = 0;
+  if (criado_em) {
+    const now = new Date();
+    const created = new Date(criado_em);
+    mesesNoSistema = (now.getFullYear() - created.getFullYear()) * 12 + (now.getMonth() - created.getMonth());
+    if (now.getDate() < created.getDate()) mesesNoSistema -= 1;
+    if (mesesNoSistema < 0) mesesNoSistema = 0;
+  }
 
   // Badges
   const badges = [];

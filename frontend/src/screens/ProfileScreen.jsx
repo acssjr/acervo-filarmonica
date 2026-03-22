@@ -264,6 +264,7 @@ const ProfileScreen = () => {
   const [isEditingNome, setIsEditingNome] = useState(false);
   const [editedNome, setEditedNome] = useState(user?.nome_exibicao || '');
   const [isSavingNome, setIsSavingNome] = useState(false);
+  const isSavingNomeRef = useRef(false);
   const nomeInputRef = useRef(null);
 
   useEffect(() => {
@@ -279,8 +280,7 @@ const ProfileScreen = () => {
         setStats(data);
         Storage.set(`presencaStats_${user?.id}`, data);
       }
-      setLoadingStats(false);
-    });
+    }).catch(() => {}).finally(() => setLoadingStats(false));
   }, [user?.id]);
 
   useEffect(() => {
@@ -321,12 +321,14 @@ const ProfileScreen = () => {
   };
 
   const handleSaveNome = async () => {
+    if (isSavingNomeRef.current) return;
     const valor = editedNome.trim();
     setIsEditingNome(false);
 
     // Sem mudança
     if (valor === (user.nome_exibicao || '')) return;
 
+    isSavingNomeRef.current = true;
     setIsSavingNome(true);
     try {
       await API.updatePerfil({ nome_exibicao: valor || null });
@@ -336,6 +338,7 @@ const ProfileScreen = () => {
       showToast('Erro ao salvar nome', 'error');
       setEditedNome(user.nome_exibicao || '');
     } finally {
+      isSavingNomeRef.current = false;
       setIsSavingNome(false);
     }
   };
@@ -362,6 +365,8 @@ const ProfileScreen = () => {
   const mes = stats ? `${stats.ensaios_mes}/${stats.total_ensaios_mes}` : '—';
 
   const earnedIds = new Set((stats?.badges || []).map(b => b.id));
+  const earnedDescMap = Object.fromEntries((stats?.badges || []).map(b => [b.id, b.descricao]));
+  const getBadgeDescricao = (b) => earnedIds.has(b.id) ? (earnedDescMap[b.id] || b.descricao) : b.descricao;
 
   // Ordena: ganhas primeiro, depois não ganhas
   const badgesSorted = [
@@ -516,9 +521,7 @@ const ProfileScreen = () => {
             id={b.id}
             emoji={b.emoji}
             label={b.label}
-            descricao={earnedIds.has(b.id)
-              ? (stats?.badges?.find(x => x.id === b.id)?.descricao || b.descricao)
-              : b.descricao}
+            descricao={getBadgeDescricao(b)}
             earned={earnedIds.has(b.id)}
           />
         ))}
@@ -552,9 +555,7 @@ const ProfileScreen = () => {
                     id={b.id}
                     emoji={b.emoji}
                     label={b.label}
-                    descricao={earnedIds.has(b.id)
-                      ? (stats?.badges?.find(x => x.id === b.id)?.descricao || b.descricao)
-                      : b.descricao}
+                    descricao={getBadgeDescricao(b)}
                     earned={earnedIds.has(b.id)}
                   />
                 </motion.div>

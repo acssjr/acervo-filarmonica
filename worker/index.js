@@ -1173,7 +1173,7 @@ async function login(request, env) {
 
   // Busca usuário
   const user = await env.DB.prepare(
-    'SELECT id, username, nome, admin, instrumento_id, foto_url, pin_hash, pin_salt FROM usuarios WHERE username = ? AND ativo = 1'
+    'SELECT id, username, nome, nome_exibicao, admin, instrumento_id, foto_url, pin_hash, pin_salt FROM usuarios WHERE username = ? AND ativo = 1'
   ).bind(username.toLowerCase()).first();
 
   if (!user) {

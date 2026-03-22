@@ -15,7 +15,8 @@ const composerPhotos = {
 
 const priorityOrder = ['Estevam Moura', 'Tertuliano Santos', 'Amando Nobre', 'Heráclio Guerreiro'];
 
-const ComposerCard = ({ composer, navigate, isFirst, hasPhoto, photoUrl }) => {
+const ComposerCard = ({ composer, isFirst, hasPhoto, photoUrl }) => {
+  const navigate = useNavigate();
   const { ref: pressRef, handlers } = usePressAnimation({ scale: 0.96 });
   return (
     <button
@@ -152,7 +153,6 @@ const ComposerCarousel = ({ composers = [] }) => {
               <ComposerCard
                 key={`${composer.name}-${index}`}
                 composer={composer}
-                navigate={navigate}
                 isFirst={isFirst}
                 hasPhoto={hasPhoto}
                 photoUrl={composerPhotos[composer.name]}
