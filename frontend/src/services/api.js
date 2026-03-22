@@ -352,32 +352,32 @@ export const API = {
     }
   },
 
+  async uploadFotoPerfil(file) {
+    const token = Storage.get('authToken', null);
+    const formData = new FormData();
+    formData.append('foto', file);
+    const res = await fetch(`${API_BASE_URL}/api/perfil/foto`, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: formData,
+    });
+    if (res.status === 401) {
+      this.clearAuth();
+      if (onTokenExpired) onTokenExpired();
+      throw new Error('Sessão expirada');
+    }
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Erro ao fazer upload da foto');
+    }
+    return res.json();
+  },
+
   async updatePerfil(data) {
     return this.request('/api/perfil', {
       method: 'PUT',
       body: JSON.stringify(data)
     });
-  },
-
-  async uploadFotoPerfil(file) {
-    const token = Storage.get('authToken', null);
-    const formData = new FormData();
-    formData.append('foto', file);
-
-    const response = await fetch(`${API_BASE_URL}/api/perfil/foto`, {
-      method: 'POST',
-      headers: {
-        ...(token && { 'Authorization': `Bearer ${token}` })
-      },
-      body: formData
-    });
-
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ error: 'Erro no upload' }));
-      throw new Error(error.error);
-    }
-
-    return response.json();
   },
 
   // ============ FAVORITOS ============

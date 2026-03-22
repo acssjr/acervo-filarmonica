@@ -247,9 +247,9 @@ const ProfileScreen = () => {
   const [showAboutModal, setShowAboutModal] = useState(false);
   const [showAllBadges, setShowAllBadges] = useState(false);
 
-  // Foto de perfil (localStorage)
+  // Foto de perfil — URL do servidor (principal) ou base64 local (cache offline)
   const [profilePhoto, setProfilePhoto] = useState(
-    () => Storage.get(`profilePhoto_${user?.id}`, null)
+    () => user?.foto_url || Storage.get(`profilePhoto_${user?.id}`, null)
   );
   const fileInputRef = useRef(null);
   const firstBadgesRef = useRef(null);
@@ -269,9 +269,9 @@ const ProfileScreen = () => {
 
   useEffect(() => {
     if (user?.id) {
-      setProfilePhoto(Storage.get(`profilePhoto_${user.id}`, null));
+      setProfilePhoto(user.foto_url || Storage.get(`profilePhoto_${user.id}`, null));
     }
-  }, [user?.id]);
+  }, [user?.id, user?.foto_url]);
 
   useEffect(() => {
     // Revalida em background — se tiver cache, não mostra loading
@@ -314,14 +314,24 @@ const ProfileScreen = () => {
       showToast('Imagem muito grande (max 2MB)', 'error');
       return;
     }
+
+    // Preview instantâneo via base64 (não espera o upload)
     const reader = new FileReader();
     reader.onload = (ev) => {
       const base64 = ev.target.result;
       setProfilePhoto(base64);
       Storage.set(`profilePhoto_${user.id}`, base64);
-      showToast('Foto atualizada!');
     };
     reader.readAsDataURL(file);
+
+    // Upload real para o servidor
+    API.uploadFotoPerfil(file).then(({ foto_url }) => {
+      setUser({ ...user, foto_url });
+      setProfilePhoto(foto_url);
+      showToast('Foto atualizada!');
+    }).catch((err) => {
+      showToast(err.message || 'Erro ao salvar foto', 'error');
+    });
   };
 
   const handleSaveNome = async () => {
