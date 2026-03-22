@@ -8,6 +8,7 @@ import { useUI } from '@contexts/UIContext';
 import { Icons } from '@constants/icons';
 import CategoryIcon from '@components/common/CategoryIcon';
 import styles from './FileCard.module.css';
+import { usePressAnimation } from '@hooks/usePressAnimation';
 
 const TrendUpIcon = () => (
   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -25,6 +26,7 @@ const formatDownloads = (n) => {
 const FileCard = memo(({ sheet, category, isFavorite, onToggleFavorite, index = 0, showStats = false }) => {
   const navigate = useNavigate();
   const { setSelectedSheet } = useUI();
+  const { ref: pressRef, handlers } = usePressAnimation({ scale: 0.97 });
 
   const handleCardClick = () => {
     setSelectedSheet(sheet);
@@ -37,13 +39,14 @@ const FileCard = memo(({ sheet, category, isFavorite, onToggleFavorite, index = 
 
   return (
     <motion.div
+      ref={pressRef}
       data-walkthrough="sheet-card"
       className={`file-card ${styles.card}`}
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.03, duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
-      whileTap={{ scale: 0.98 }}
       onClick={handleCardClick}
+      {...handlers}
     >
       <div className={styles.thumbnail}>
         <CategoryIcon categoryId={category?.id} size={24} color="#D4AF37" />

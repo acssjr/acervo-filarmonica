@@ -7,8 +7,10 @@
 // - Delta-time → velocidade independente de frame rate
 // - Todo estado mutável num único ref → zero stale closures
 // - touch-action: pan-y → scroll vertical nativo preservado
+// - Inércia via GSAP: ao soltar o drag, desacelera naturalmente (power3.out)
 
 import { useRef, useCallback, useEffect } from 'react';
+import { gsap } from 'gsap';
 
 /**
  * @param {number}  speed        px por frame a 60fps  (padrão 0.4)
@@ -24,13 +26,18 @@ export const useInfiniteCarousel = ({
 
   // Estado mutável centralizado — evita stale closures por completo
   const st = useRef({
-    pos: 0,         // posição atual em px
-    half: 0,        // metade do scrollWidth (ponto de reset seamless)
+    pos: 0,           // posição atual em px
+    half: 0,          // metade do scrollWidth (ponto de reset seamless)
     rafId: null,
     timerId: null,
+    inertiaTween: null,
     drag: false,
     dragStartX: 0,
     dragStartPos: 0,
+    // rastreamento de velocidade para inércia
+    lastX: 0,
+    lastTs: 0,
+    velocity: 0,      // px/ms — média exponencial móvel
     speed,
     resumeDelay,
   });
@@ -111,15 +118,32 @@ export const useInfiniteCarousel = ({
 
   const onPointerDown = useCallback((e) => {
     if (e.pointerType === 'mouse' && e.button !== 0) return;
+    // Cancela inércia em andamento ao iniciar novo drag
+    if (st.current.inertiaTween) {
+      st.current.inertiaTween.kill();
+      st.current.inertiaTween = null;
+    }
     stopScroll();
     if (st.current.timerId != null) clearTimeout(st.current.timerId);
     st.current.drag = true;
     st.current.dragStartX = e.clientX;
     st.current.dragStartPos = st.current.pos;
+    st.current.lastX = e.clientX;
+    st.current.lastTs = performance.now();
+    st.current.velocity = 0;
   }, [stopScroll]);
 
   const onPointerMove = useCallback((e) => {
     if (!st.current.drag) return;
+    const now = performance.now();
+    const dt = now - st.current.lastTs;
+    if (dt > 0) {
+      // Média exponencial móvel — suaviza jitter do pointermove
+      const raw = (st.current.lastX - e.clientX) / dt; // px/ms, positivo = direção →
+      st.current.velocity = st.current.velocity * 0.6 + raw * 0.4;
+    }
+    st.current.lastX = e.clientX;
+    st.current.lastTs = now;
     const delta = st.current.dragStartX - e.clientX;
     st.current.pos = wrap(st.current.dragStartPos + delta);
     commit();
@@ -128,8 +152,32 @@ export const useInfiniteCarousel = ({
   const onPointerEnd = useCallback(() => {
     if (!st.current.drag) return;
     st.current.drag = false;
-    scheduleResume();
-  }, [scheduleResume]);
+
+    const velocity = st.current.velocity; // px/ms
+    const MIN_VELOCITY = 0.08; // px/ms — limiar mínimo para disparar inércia
+
+    if (Math.abs(velocity) > MIN_VELOCITY) {
+      // Anima um proxy e usa onUpdate para wrapping contínuo
+      const proxy = { pos: st.current.pos };
+      const target = st.current.pos + velocity * 320; // escala: duração × amortecimento
+
+      st.current.inertiaTween = gsap.to(proxy, {
+        pos: target,
+        duration: 0.85,
+        ease: 'power3.out',
+        onUpdate: () => {
+          st.current.pos = wrap(proxy.pos);
+          commit();
+        },
+        onComplete: () => {
+          st.current.inertiaTween = null;
+          scheduleResume();
+        },
+      });
+    } else {
+      scheduleResume();
+    }
+  }, [wrap, commit, scheduleResume]);
 
   // ── Lifecycle ────────────────────────────────────────────────────────
 
@@ -150,6 +198,7 @@ export const useInfiniteCarousel = ({
       cancelAnimationFrame(initRaf);
       stopScroll();
       if (stRef.timerId != null) clearTimeout(stRef.timerId);
+      if (stRef.inertiaTween) stRef.inertiaTween.kill();
     };
   }, [enabled, startScroll, stopScroll, measureHalf]);
 

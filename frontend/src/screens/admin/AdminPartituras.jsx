@@ -51,7 +51,8 @@ const matchesSearch = (text, query) => {
 
 // Helper para detectar instrumento pelo nome do arquivo
 const detectInstrumento = (filename) => {
-  const name = filename.toLowerCase().replace(/\.pdf$/i, '');
+  // Normaliza: minúsculas, remove extensão, troca underscores por espaço
+  const name = filename.toLowerCase().replace(/\.pdf$/i, '').replace(/_/g, ' ');
 
   const patterns = [
     { pattern: /grade|regente|maestro|partitura.*geral/i, name: 'Grade' },
@@ -75,8 +76,20 @@ const detectInstrumento = (filename) => {
     { pattern: /caixa.*clara|snare/i, name: 'Caixa Clara' },
     { pattern: /bumbo|bass.*drum/i, name: 'Bumbo' },
     { pattern: /prato/i, name: 'Pratos' },
-    { pattern: /percuss/i, name: 'Percussão' },
-    { pattern: /horn|trompa/i, name: 'Trompa' },
+    { pattern: /percuss|\bperc\b/i, name: 'Percussão' },
+    { pattern: /horn|\btrompa/i, name: 'Trompa' },
+    // Abreviações Sibelius/Finale/MuseScore (verificar antes de "banda")
+    { pattern: /\bhns?\b/i, name: 'Trompa' },
+    { pattern: /\beuf\b/i, name: 'Bombardino' },
+    { pattern: /\bfgs?\b/i, name: 'Fagote' },
+    { pattern: /\btpt\b|\btrp\b/i, name: 'Trompete' },
+    { pattern: /\btbn\b|\btrb\b/i, name: 'Trombone' },
+    { pattern: /\bbar\b/i, name: 'Barítono Bb' },
+    { pattern: /\bcl\b/i, name: 'Clarinete' },
+    { pattern: /\bfl\b/i, name: 'Flauta' },
+    { pattern: /\bob\b/i, name: 'Oboé' },
+    // "banda" sem instrumento específico = Grade (partitura completa da banda)
+    { pattern: /\bbanda\b/i, name: 'Grade' },
   ];
 
   for (const { pattern, name: instrName } of patterns) {
@@ -87,7 +100,7 @@ const detectInstrumento = (filename) => {
   }
 
   // Se nao detectou, usa o nome do arquivo limpo
-  return name.replace(/[-_]/g, ' ').replace(/\s+/g, ' ').trim() || 'Parte';
+  return name.replace(/-/g, ' ').replace(/\s+/g, ' ').trim() || 'Parte';
 };
 
 const AdminPartituras = () => {
@@ -737,20 +750,31 @@ const AdminPartituras = () => {
   };
 
   // Renomear instrumento de uma parte (inline)
-  const handleRenameParte = async (parteId, partituraId) => {
+  const handleRenameParte = async (parteId, _partituraId) => {
     if (renamingParteSaving) return;
-    if (!renameParteValue.trim()) {
+    const novoNome = renameParteValue.trim();
+    if (!novoNome) {
       showToast('Nome do instrumento não pode ser vazio', 'error');
       return;
     }
+
+    // Guarda nome anterior para rollback
+    const nomeAnterior = partes.find(p => p.id === parteId)?.instrumento;
+
+    // Atualização otimista — fecha input e aplica nome imediatamente
+    setPartes(prev => prev.map(p => p.id === parteId ? { ...p, instrumento: novoNome } : p));
+    setRenamingParte(null);
+    setRenameParteValue('');
+
     setRenamingParteSaving(true);
     try {
-      await API.renomearPartePartitura(parteId, renameParteValue.trim());
-      showToast(`Instrumento renomeado para "${renameParteValue.trim()}"!`);
-      setRenamingParte(null);
-      setRenameParteValue('');
-      await loadPartes(partituraId);
+      await API.renomearPartePartitura(parteId, novoNome);
+      showToast(`Instrumento renomeado para "${novoNome}"!`);
     } catch (err) {
+      // Rollback: reverte nome e reabre o input com o valor tentado
+      setPartes(prev => prev.map(p => p.id === parteId ? { ...p, instrumento: nomeAnterior } : p));
+      setRenamingParte(parteId);
+      setRenameParteValue(novoNome);
       showToast(err.message || 'Erro ao renomear parte', 'error');
     } finally {
       setRenamingParteSaving(false);

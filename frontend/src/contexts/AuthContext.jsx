@@ -54,8 +54,11 @@ export const AuthProvider = ({ children, onTokenExpired }) => {
     Storage.set('user', user);
   }, [user]);
 
+  // Nome que o sistema usa para chamar o usuário (nome_exibicao se definido, senão nome)
+  const displayName = user?.nome_exibicao || user?.name || user?.nome || '';
+
   return (
-    <AuthContext.Provider value={{ user, setUser, logout }}>
+    <AuthContext.Provider value={{ user, setUser, logout, displayName }}>
       {children}
     </AuthContext.Provider>
   );

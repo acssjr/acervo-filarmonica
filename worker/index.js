@@ -1240,6 +1240,7 @@ async function login(request, env) {
       id: user.id,
       username: user.username,
       nome: nomeExibido,
+      nome_exibicao: user.nome_exibicao || null,
       admin: user.admin === 1,
       instrumento_id: user.instrumento_id,
       instrumento_nome: instrumentoNome,
@@ -1419,7 +1420,7 @@ async function updateUsuario(id, request, env) {
     }
   }
 
-  const { nome, pin, instrumento_id, admin: isAdmin, ativo } = await request.json();
+  const { nome, nome_exibicao, pin, instrumento_id, admin: isAdmin, ativo } = await request.json();
 
   const updates = [];
   const params = [];
@@ -1427,6 +1428,11 @@ async function updateUsuario(id, request, env) {
   if (nome !== undefined) {
     updates.push('nome = ?');
     params.push(nome);
+  }
+
+  if (nome_exibicao !== undefined) {
+    updates.push('nome_exibicao = ?');
+    params.push(nome_exibicao?.trim() || null);
   }
 
   if (pin !== undefined) {

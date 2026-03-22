@@ -56,6 +56,7 @@ const ToggleOption = ({ checked, onChange, color, title, description }) => (
 
 const UsuarioFormModal = ({ usuario, instrumentos, onSave, onClose }) => {
   const [nome, setNome] = useState(usuario?.nome || '');
+  const [nomeExibicao, setNomeExibicao] = useState(usuario?.nome_exibicao || '');
   const [username, setUsername] = useState(usuario?.username || '');
   const [pin, setPin] = useState('');
   const [instrumentoId, setInstrumentoId] = useState(usuario?.instrumento_id || '');
@@ -88,6 +89,7 @@ const UsuarioFormModal = ({ usuario, instrumentos, onSave, onClose }) => {
     setSaving(true);
     const data = {
       nome: nome.trim(),
+      nome_exibicao: nomeExibicao.trim() || null,
       instrumento_id: instrumentoId || null,
       admin: isAdmin,
       convidado: isConvidado
@@ -186,6 +188,35 @@ const UsuarioFormModal = ({ usuario, instrumentos, onSave, onClose }) => {
             transition: 'border-color 0.2s',
             }}
         />
+
+        {/* Nome de Exibição — só ao editar usuário existente */}
+        {usuario && (
+          <>
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '8px', color: 'var(--text-secondary)' }}>
+              Nome de Exibição
+              <span style={{ color: 'var(--text-muted)', fontWeight: '400', marginLeft: '6px' }}>
+                (como o sistema chama o músico)
+              </span>
+            </label>
+            <input
+              type="text"
+              placeholder={`Padrão: ${nome || 'nome oficial'}`}
+              value={nomeExibicao}
+              onChange={e => setNomeExibicao(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '14px 16px',
+                borderRadius: '10px',
+                border: '1.5px solid var(--border)',
+                background: 'var(--bg-primary)',
+                color: 'var(--text-primary)',
+                fontSize: '15px',
+                marginBottom: '20px',
+                transition: 'border-color 0.2s',
+              }}
+            />
+          </>
+        )}
 
         {!usuario && (
           <>

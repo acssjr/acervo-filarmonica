@@ -148,6 +148,88 @@ export async function getPresencaUsuario(env, usuarioId) {
 }
 
 /**
+ * Retorna estatísticas resumidas de presença para o perfil do usuário
+ * @param {Object} env - Cloudflare Worker environment
+ * @param {number} usuarioId - ID do usuário
+ * @param {string} criado_em - Data de criação do usuário (para badge Veterano)
+ * @returns {Promise<Object>} - streak, taxa, ensaios do mês, total
+ */
+export async function getEstatisticasPerfil(env, usuarioId, criado_em) {
+  const streakData = await calcularStreak(env, usuarioId);
+
+  // Ensaios e presenças do mês atual
+  const mesAtual = new Date().toISOString().slice(0, 7); // "2026-03"
+  const mesMesResult = await env.DB.prepare(`
+    SELECT
+      COUNT(DISTINCT data_ensaio) as total_mes,
+      COUNT(DISTINCT CASE WHEN usuario_id = ? THEN data_ensaio END) as presentes_mes
+    FROM presencas
+    WHERE data_ensaio LIKE ?
+  `).bind(usuarioId, `${mesAtual}%`).first();
+
+  const presentes_mes = mesMesResult?.presentes_mes || 0;
+  const total_mes = mesMesResult?.total_mes || 0;
+
+  // Meses no sistema
+  const mesesNoSistema = criado_em
+    ? (Date.now() - new Date(criado_em).getTime()) / (1000 * 60 * 60 * 24 * 30)
+    : 0;
+
+  // Badges
+  const badges = [];
+
+  // 🎵 Primeiro Acorde — participou de pelo menos 1 ensaio
+  if (streakData.total_presencas >= 1) {
+    badges.push({ id: 'primeiro_acorde', label: 'Primeiro Acorde', emoji: '🎵', descricao: 'Participou do primeiro ensaio' });
+  }
+
+  // 🔥 Em Chama — 5+ ensaios consecutivos
+  if (streakData.streak >= 5) {
+    badges.push({ id: 'em_chama', label: 'Em Chama', emoji: '🔥', descricao: `${streakData.streak} ensaios consecutivos` });
+  }
+
+  // 🎖️ Assíduo — 90%+ de frequência nos últimos ensaios
+  if (streakData.percentual_frequencia >= 90 && streakData.total_ensaios >= 5) {
+    badges.push({ id: 'assiduo', label: 'Assíduo', emoji: '🎖️', descricao: '90%+ de presença nos ensaios' });
+  }
+
+  // ⭐ Mês Perfeito — 100% de presença no mês atual (mínimo 3 ensaios)
+  if (total_mes >= 3 && presentes_mes === total_mes) {
+    badges.push({ id: 'mes_perfeito', label: 'Mês Perfeito', emoji: '⭐', descricao: '100% de presença este mês' });
+  }
+
+  // 🎼 Dedicado — 50+ presenças totais
+  if (streakData.total_presencas >= 50) {
+    badges.push({ id: 'dedicado', label: 'Dedicado', emoji: '🎼', descricao: '50+ ensaios frequentados' });
+  }
+
+  // 🏆 Maratonista — 100+ presenças totais
+  if (streakData.total_presencas >= 100) {
+    badges.push({ id: 'maratonista', label: 'Maratonista', emoji: '🏆', descricao: '100+ ensaios frequentados' });
+  }
+
+  // 💛 Leal — 6+ meses no Acervo Digital
+  if (mesesNoSistema >= 6) {
+    badges.push({ id: 'leal', label: 'Leal', emoji: '💛', descricao: '6+ meses no Acervo Digital' });
+  }
+
+  // 🌟 Fundador Digital — membro da primeira geração do app (cadastrado até jan/2026)
+  if (criado_em && new Date(criado_em) <= new Date('2026-01-15')) {
+    badges.push({ id: 'fundador_digital', label: 'Fundador Digital', emoji: '🌟', descricao: 'Membro da primeira geração' });
+  }
+
+  return {
+    streak: streakData.streak,
+    total_presencas: streakData.total_presencas,
+    total_ensaios: streakData.total_ensaios,
+    percentual_frequencia: streakData.percentual_frequencia,
+    ensaios_mes: presentes_mes,
+    total_ensaios_mes: total_mes,
+    badges,
+  };
+}
+
+/**
  * Registra presenças de múltiplos usuários em um ensaio (batch)
  * @param {Object} env - Cloudflare Worker environment
  * @param {string} dataEnsaio - Data do ensaio (YYYY-MM-DD)

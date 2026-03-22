@@ -26,6 +26,7 @@ const LoginScreen = ({ onClose, required = false }) => {
     scrollToCard
   } = useLoginForm({ onClose });
 
+
   const getInputBorderColor = () => {
     if (userFound) return 'rgba(212,175,55,0.55)';
     if (userNotFound) return 'rgba(239,68,68,0.45)';
@@ -184,6 +185,7 @@ const LoginScreen = ({ onClose, required = false }) => {
           </div>
 
           {/* ── FORM ── */}
+          <div>
 
           {/* Campo USUÁRIO */}
           <div style={{ marginBottom: '14px' }}>
@@ -319,6 +321,7 @@ const LoginScreen = ({ onClose, required = false }) => {
                 Lembrar meu acesso
               </span>
             </label>
+          </div>
           </div>
 
           {/* Zona de status — só renderiza quando há conteúdo, sem altura fixa */}
