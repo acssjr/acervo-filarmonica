@@ -11,6 +11,7 @@ import { useUI } from '@contexts/UIContext';
 import { useData } from '@contexts/DataContext';
 import Toast from '@components/common/Toast';
 import BottomNav from '@components/layout/BottomNav';
+import MobileSearchOverlay from '@components/common/MobileSearchOverlay';
 import DesktopLayout from '@components/layout/DesktopLayout';
 
 // Modals - carregados sempre (necessários globalmente)
@@ -217,6 +218,7 @@ const UserLayout = ({ children }) => {
           {children}
         </PageTransition>
       </Suspense>
+      <MobileSearchOverlay />
       <BottomNav activeTab={activeTab} />
     </DesktopLayout>
   );
