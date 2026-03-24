@@ -117,23 +117,27 @@ export async function uploadFotoPerfil(request, env, user) {
     httpMetadata: { contentType: foto.type },
   });
 
-  // Deletar foto antiga se existir
+  // Deletar foto antiga se existir (extrai filename da URL completa)
   if (user.foto_url) {
     try {
-      await env.BUCKET.delete(user.foto_url);
+      const antigaNome = user.foto_url.split('/api/perfil/foto/').pop();
+      if (antigaNome) await env.BUCKET.delete(antigaNome);
     } catch (e) {
       // Ignora erro se arquivo não existir
     }
   }
 
-  // Atualizar no banco
+  // Salva URL completa para funcionar diretamente como src em <img>
+  const origin = new URL(request.url).origin;
+  const fotoUrl = `${origin}/api/perfil/foto/${nomeArquivo}`;
+
   await env.DB.prepare(
     'UPDATE usuarios SET foto_url = ? WHERE id = ?'
-  ).bind(nomeArquivo, user.id).run();
+  ).bind(fotoUrl, user.id).run();
 
   return jsonResponse({
     success: true,
-    foto_url: nomeArquivo,
+    foto_url: fotoUrl,
     message: 'Foto atualizada!'
   }, 200, request);
 }
