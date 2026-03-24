@@ -111,28 +111,38 @@ const AdminMusicos = () => {
   return (
     <div className="page-transition" style={{ padding: isMobile ? '16px' : '32px', maxWidth: '1000px', margin: '0 auto' }}>
       {/* Header */}
-      <div style={{ marginBottom: '32px', textAlign: 'center' }}>
-        <h1 style={{
-          fontSize: '26px',
-          fontWeight: '700',
-          color: 'var(--text-primary)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: '12px',
-          marginBottom: '8px'
-        }}>
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-            <circle cx="9" cy="7" r="4" />
-            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-          </svg>
-          Músicos
-        </h1>
-        <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>
-          Gerencie os membros da filarmônica
-        </p>
+      <div style={{ marginBottom: isMobile ? '20px' : '32px' }}>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+          <div>
+            <h1 style={{
+              fontSize: isMobile ? '20px' : '24px',
+              fontWeight: '800',
+              letterSpacing: '-0.4px',
+              color: 'var(--text-primary)',
+              margin: '0 0 4px',
+              lineHeight: 1.2,
+            }}>
+              Gestão de{' '}
+              <span className="liquid-metal-name">Músicos.</span>
+            </h1>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <p style={{ fontSize: '14px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.4 }}>
+                Hora de organizar essa papelada.
+              </p>
+              <span style={{
+                background: 'linear-gradient(135deg, #D4AF37 0%, #B8860B 100%)',
+                color: '#fff', padding: '3px 9px', borderRadius: '20px',
+                fontSize: '10px', fontWeight: '700', textTransform: 'uppercase',
+                letterSpacing: '0.5px', flexShrink: 0,
+              }}>Admin</span>
+            </div>
+          </div>
+          <span style={{
+            fontSize: '48px', lineHeight: 1, flexShrink: 0,
+            filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.18))',
+            userSelect: 'none', marginLeft: '8px',
+          }}>👥</span>
+        </div>
       </div>
 
       {/* Botão Novo Músico */}

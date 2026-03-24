@@ -2,6 +2,10 @@
 // Gerenciamento de presenças em ensaios + partituras tocadas
 
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import gsap from 'gsap';
+import { useGSAP } from '@gsap/react';
+
+gsap.registerPlugin(useGSAP);
 import {
   Users, Music, Search, Plus, Trash2, Edit3,
   Calendar, CheckCircle2, XCircle, Youtube, ChevronDown,
@@ -10,7 +14,7 @@ import {
 import { useUI } from '@contexts/UIContext';
 import { API } from '@services/api';
 import { COLORS } from '@constants/colors';
-import { UserListSkeleton } from '@components/common/Skeleton';
+import Skeleton, { UserListSkeleton } from '@components/common/Skeleton';
 import CustomCheckbox from '@components/common/CustomCheckbox';
 import EditarEnsaioModal from './modals/EditarEnsaioModal';
 
@@ -444,6 +448,46 @@ const groupMusiciansByFamily = (usuarios) => {
   return { regentes, gruposPorFamilia, familiasOrdenadas };
 };
 
+// ===== STICKY ACTION BAR WITH GSAP ENTRANCE =====
+const StickyActionBar = ({ children }) => {
+  const barRef = useRef(null);
+
+  useGSAP(() => {
+    gsap.from(barRef.current, {
+      y: 12,
+      opacity: 0,
+      duration: 0.4,
+      ease: 'expo.out'
+    });
+  }, { scope: barRef });
+
+  return (
+    <div ref={barRef}>
+      {children}
+    </div>
+  );
+};
+
+// ===== ANIMATED EXPAND PANEL =====
+const AnimatedExpandPanel = ({ children }) => {
+  const panelRef = useRef(null);
+
+  useGSAP(() => {
+    const el = panelRef.current;
+    if (!el) return;
+    // Set starting state explicitly — gsap.from can't measure height when overflow:hidden
+    gsap.set(el, { height: 0, opacity: 0, y: -6 });
+    // Animate to natural height (GSAP resolves 'auto' internally)
+    gsap.to(el, { height: 'auto', opacity: 1, y: 0, duration: 0.38, ease: 'expo.out' });
+  }, { scope: panelRef });
+
+  return (
+    <div ref={panelRef} style={{ overflow: 'hidden' }}>
+      {children}
+    </div>
+  );
+};
+
 const AdminPresenca = () => {
   const { showToast } = useUI();
   const [usuarios, setUsuarios] = useState([]);
@@ -491,6 +535,11 @@ const AdminPresenca = () => {
   const [buscaPartitura, setBuscaPartitura] = useState('');
   const [youtubeUrl, setYoutubeUrl] = useState('');
   const partiturasRequestRef = useRef(0);
+  const partiturasListRef = useRef(null);
+
+  // Drag-to-reorder state
+  const [dragIndex, setDragIndex] = useState(null);
+  const [dragOverIndex, setDragOverIndex] = useState(null);
 
   // Estado para edição/exclusão
   const [ensaioEditando, setEnsaioEditando] = useState(null);
@@ -671,6 +720,31 @@ const AdminPresenca = () => {
     }
   };
 
+  // Drag-to-reorder de partituras
+  const handlePartituraDragStart = (index) => setDragIndex(index);
+  const handlePartituraDragOver = (e, index) => { e.preventDefault(); setDragOverIndex(index); };
+  const handlePartituraDrop = async (dropIndex) => {
+    if (dragIndex === null || dragIndex === dropIndex) {
+      setDragIndex(null);
+      setDragOverIndex(null);
+      return;
+    }
+    const newList = [...partiturasEnsaio];
+    const [moved] = newList.splice(dragIndex, 1);
+    newList.splice(dropIndex, 0, moved);
+    setPartiturasEnsaio(newList);
+    setDragIndex(null);
+    setDragOverIndex(null);
+    try {
+      const ordens = newList.map((p, idx) => ({ id: p.id, ordem: idx }));
+      await API.reorderPartiturasEnsaio(dataEnsaio, ordens);
+    } catch {
+      showToast('Erro ao reordenar partituras', 'error');
+      loadPartiturasEnsaio(dataEnsaio);
+    }
+  };
+  const handlePartituraDragEnd = () => { setDragIndex(null); setDragOverIndex(null); };
+
   // Editar ensaio
   const handleEditarEnsaio = (ensaio) => {
     setEnsaioEditando(ensaio);
@@ -798,6 +872,18 @@ const AdminPresenca = () => {
     }
   }, [modoMarcacao, selecionados, usuarios]);
 
+  // GSAP: partitura row entrance animation
+  useGSAP(() => {
+    if (!partiturasListRef.current) return;
+    const rows = partiturasListRef.current.querySelectorAll('[data-partitura-row]');
+    if (!rows.length) return;
+
+    if (partiturasEnsaio.length > 0) {
+      const last = rows[rows.length - 1];
+      gsap.from(last, { x: 20, opacity: 0, duration: 0.3, ease: 'back.out(1.5)' });
+    }
+  }, { scope: partiturasListRef, dependencies: [partiturasEnsaio.length], revertOnUpdate: false });
+
   if (loading) return <UserListSkeleton />;
 
   const accentColor = modoMarcacao === 'presentes' ? COLORS.success.primary : '#E85A4F';
@@ -882,25 +968,37 @@ const AdminPresenca = () => {
     <div className="screen-container admin-presenca-container">
       {/* Header */}
       <div style={{ marginBottom: '32px' }}>
-        <h1 style={{
-          fontSize: '28px',
-          fontWeight: '700',
-          margin: '0 0 6px 0',
-          background: GOLD_GRADIENT,
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          letterSpacing: '-0.5px'
-        }}>
-          Controle de Presença
-        </h1>
-        <p style={{
-          fontSize: '14px',
-          color: 'var(--text-muted)',
-          lineHeight: '1.5',
-          margin: 0
-        }}>
-          Registre a presença dos músicos e gerencie as partituras tocadas nos ensaios
-        </p>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+          <div>
+            <h1 style={{
+              fontSize: '24px',
+              fontWeight: '800',
+              letterSpacing: '-0.4px',
+              color: 'var(--text-primary)',
+              margin: '0 0 4px',
+              lineHeight: 1.2,
+            }}>
+              Gestão de{' '}
+              <span className="liquid-metal-name">Presenças.</span>
+            </h1>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <p style={{ fontSize: '14px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.4 }}>
+                Vamos colocar as coisas em ordem.
+              </p>
+              <span style={{
+                background: 'linear-gradient(135deg, #D4AF37 0%, #B8860B 100%)',
+                color: '#fff', padding: '3px 9px', borderRadius: '20px',
+                fontSize: '10px', fontWeight: '700', textTransform: 'uppercase',
+                letterSpacing: '0.5px', flexShrink: 0,
+              }}>Admin</span>
+            </div>
+          </div>
+          <span style={{
+            fontSize: '48px', lineHeight: 1, flexShrink: 0,
+            filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.18))',
+            userSelect: 'none', marginLeft: '8px',
+          }}>📋</span>
+        </div>
       </div>
 
       {/* Toolbar Compacta: Data + Mode Toggle + Stats pills */}
@@ -1167,14 +1265,14 @@ const AdminPresenca = () => {
 
           {/* Sticky action bar */}
           {selecionados.length > 0 && (
+            <StickyActionBar>
             <div style={{
               position: 'sticky',
               bottom: 0,
               padding: '12px 16px',
               background: 'var(--bg-card)',
               borderTop: '1px solid var(--border)',
-              backdropFilter: 'blur(12px)',
-              animation: 'stickyBarIn 0.2s ease-out'
+              backdropFilter: 'blur(12px)'
             }}>
               <button
                 onClick={handleMarcarPresenca}
@@ -1208,6 +1306,7 @@ const AdminPresenca = () => {
                 {submitting ? 'Registrando...' : `Marcar ${contadorTexto}`}
               </button>
             </div>
+            </StickyActionBar>
           )}
         </div>
 
@@ -1436,7 +1535,7 @@ const AdminPresenca = () => {
           </div>
 
           {/* Lista de Partituras do Ensaio */}
-          <div style={{
+          <div ref={partiturasListRef} style={{
             maxHeight: '400px',
             overflowY: 'auto',
             flex: 1
@@ -1454,26 +1553,38 @@ const AdminPresenca = () => {
               partiturasEnsaio.map((p, index) => (
                 <div
                   key={p.id || p.partitura_id}
+                  data-partitura-row
                   className="partitura-row"
+                  draggable
+                  onDragStart={() => handlePartituraDragStart(index)}
+                  onDragOver={(e) => handlePartituraDragOver(e, index)}
+                  onDrop={() => handlePartituraDrop(index)}
+                  onDragEnd={handlePartituraDragEnd}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: '14px',
                     padding: '12px 16px',
                     borderBottom: '1px solid var(--border)',
-                    transition: 'background 0.15s'
+                    transition: 'background 0.15s',
+                    cursor: 'grab',
+                    background: dragOverIndex === index && dragIndex !== index ? 'rgba(212,175,55,0.08)' : 'transparent',
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'rgba(212,175,55,0.04)';
+                    if (dragIndex === null) e.currentTarget.style.background = 'rgba(212,175,55,0.04)';
                     const btn = e.currentTarget.querySelector('.remove-btn');
                     if (btn) btn.style.opacity = '1';
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'transparent';
+                    if (dragOverIndex !== index) e.currentTarget.style.background = 'transparent';
                     const btn = e.currentTarget.querySelector('.remove-btn');
                     if (btn) btn.style.opacity = '0';
                   }}
                 >
+                  {/* Drag handle */}
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" style={{ flexShrink: 0, opacity: 0.4 }}>
+                    <line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" />
+                  </svg>
                   <div style={{
                     width: '28px',
                     height: '28px',
@@ -1773,14 +1884,36 @@ const AdminPresenca = () => {
                   </div>
                 </div>
                 {ensaioExpandido === ensaio.data_ensaio && (
+                  <AnimatedExpandPanel>
                   <div style={{
                     padding: '16px 20px',
                     borderBottom: index < historicoExibido.length - 1 ? '1px solid var(--border)' : 'none',
                     background: 'rgba(212,175,55,0.03)'
                   }}>
                     {carregandoDetalhe ? (
-                      <div style={{ textAlign: 'center', padding: '12px', color: 'var(--text-muted)', fontSize: '13px' }}>
-                        Carregando...
+                      <div className="admin-presenca-detalhe-grid">
+                        {/* Skeleton — Presentes */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          <Skeleton width="90px" height="11px" borderRadius="4px" />
+                          {[...Array(5)].map((_, i) => (
+                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingLeft: '16px' }}>
+                              <Skeleton width="6px" height="6px" variant="circular" />
+                              <Skeleton width={`${70 + (i % 3) * 20}px`} height="13px" borderRadius="4px" />
+                              <Skeleton width="60px" height="11px" borderRadius="4px" />
+                            </div>
+                          ))}
+                        </div>
+                        {/* Skeleton — Partituras */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          <Skeleton width="80px" height="11px" borderRadius="4px" />
+                          {[...Array(4)].map((_, i) => (
+                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <Skeleton width={`${100 + (i % 3) * 30}px`} height="13px" borderRadius="4px" />
+                              <Skeleton width="52px" height="18px" borderRadius="6px" />
+                              <Skeleton width="70px" height="11px" borderRadius="4px" />
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     ) : detalheEnsaio ? (
                       <div className="admin-presenca-detalhe-grid">
@@ -1903,6 +2036,7 @@ const AdminPresenca = () => {
                       </div>
                     ) : null}
                   </div>
+                  </AnimatedExpandPanel>
                 )}
               </React.Fragment>
             ))}
@@ -1959,13 +2093,6 @@ const AdminPresenca = () => {
         />
       )}
 
-      {/* Keyframes */}
-      <style>{`
-        @keyframes stickyBarIn {
-          from { transform: translateY(8px); opacity: 0; }
-          to { transform: translateY(0); opacity: 1; }
-        }
-      `}</style>
     </div>
   );
 };

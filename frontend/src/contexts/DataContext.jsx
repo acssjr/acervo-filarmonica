@@ -48,6 +48,7 @@ export const DataProvider = ({ children }) => {
   // Configurações de ensaio
   const [diasEnsaio, setDiasEnsaio] = useState({ dias: [1, 3], hora: 19 });
   const [modoRecesso, setModoRecesso] = useState(false);
+  const [repertorioAtivo, setRepertorioAtivo] = useState(null);
 
   // Favoritos - Otimizado: usa Set para lookups O(1)
   const [favoritesSet, setFavoritesSet] = useState(() => {
@@ -82,13 +83,15 @@ export const DataProvider = ({ children }) => {
           ]);
 
           // Carrega configurações de ensaio de forma independente (não bloqueante)
-          const [diasEnsaioRes, modoRecessoRes] = await Promise.allSettled([
+          const [diasEnsaioRes, modoRecessoRes, repertorioAtivoRes] = await Promise.allSettled([
             API.getDiasEnsaio(),
-            API.getModoRecesso()
+            API.getModoRecesso(),
+            API.getRepertorioAtivo()
           ]);
 
           const diasEnsaioApi = diasEnsaioRes.status === 'fulfilled' ? diasEnsaioRes.value : null;
           const modoRecessoApi = modoRecessoRes.status === 'fulfilled' ? modoRecessoRes.value : null;
+          const repertorioAtivoApi = repertorioAtivoRes.status === 'fulfilled' ? repertorioAtivoRes.value : null;
 
           if (partituras && partituras.length > 0) {
             const mappedSheets = partituras.map(p => ({
@@ -130,6 +133,9 @@ export const DataProvider = ({ children }) => {
           }
           if (modoRecessoApi) {
             setModoRecesso(modoRecessoApi.ativo ?? false);
+          }
+          if (repertorioAtivoApi) {
+            setRepertorioAtivo(repertorioAtivoApi);
           }
         }
       } catch (error) {
@@ -261,7 +267,9 @@ export const DataProvider = ({ children }) => {
       diasEnsaio,
       setDiasEnsaio,
       modoRecesso,
-      setModoRecesso
+      setModoRecesso,
+      repertorioAtivo,
+      setRepertorioAtivo
     }}>
       {children}
     </DataContext.Provider>

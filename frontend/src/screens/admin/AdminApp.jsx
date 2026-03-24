@@ -6,6 +6,7 @@ import { useState, useEffect, lazy, Suspense } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '@contexts/AuthContext';
 import { useUI } from '@contexts/UIContext';
+import { useData } from '@contexts/DataContext';
 import { API } from '@services/api';
 import ThemePill from '@components/common/ThemePill';
 import AdminToggle from '@components/common/AdminToggle';
@@ -44,6 +45,48 @@ const SectionLoader = () => (
   </div>
 );
 
+const getProximoEnsaio = (diasEnsaio) => {
+  const now = new Date();
+  const { dias, hora } = diasEnsaio;
+  if (!dias || dias.length === 0) return null;
+  const h = typeof hora === 'number' ? hora : parseInt(hora, 10);
+  for (let i = 0; i <= 7; i++) {
+    const candidate = new Date(now);
+    candidate.setDate(now.getDate() + i);
+    candidate.setHours(h, 0, 0, 0);
+    if (dias.includes(candidate.getDay()) && candidate > now) return candidate;
+  }
+  return null;
+};
+
+const getNextAdminEvent = (diasEnsaio, repertorioAtivo) => {
+  const hora = typeof diasEnsaio.hora === 'number' ? diasEnsaio.hora : parseInt(diasEnsaio.hora, 10);
+  const now = new Date();
+  if (repertorioAtivo?.data_apresentacao) {
+    const [y, m, d] = repertorioAtivo.data_apresentacao.split('-').map(Number);
+    const apresentacaoDate = new Date(y, m - 1, d, hora, 0, 0, 0);
+    if (apresentacaoDate > now) {
+      return { date: apresentacaoDate, isApresentacao: true, nome: repertorioAtivo.nome };
+    }
+  }
+  return { date: getProximoEnsaio(diasEnsaio), isApresentacao: false };
+};
+
+const formatCountdown = (targetDate, isApresentacao, nome) => {
+  if (!targetDate) return null;
+  const diff = targetDate - new Date();
+  const tipo = isApresentacao ? nome || 'Apresentação' : 'Próximo ensaio';
+  const tipoHoje = isApresentacao ? 'Apresentação em' : 'Ensaio em';
+  if (diff <= 0) return { label: isApresentacao ? (nome || 'Apresentação') : 'Ensaio hoje!', sub: null, big: isApresentacao };
+  const days = Math.floor(diff / 864e5);
+  const hours = Math.floor((diff % 864e5) / 36e5);
+  const mins = Math.floor((diff % 36e5) / 6e4);
+  if (days === 0 && hours === 0) return { label: `${tipoHoje} ${mins}min`, sub: 'hoje' };
+  if (days === 0) return { label: `${tipoHoje} ${hours}h${mins > 0 ? ` ${mins}min` : ''}`, sub: 'hoje' };
+  if (days === 1) return { label: tipo, sub: `amanhã às ${targetDate.getHours()}h` };
+  return { label: tipo, sub: `em ${days} dias` };
+};
+
 const AdminApp = () => {
   const navigate = useNavigate();
   const { secao } = useParams();
@@ -53,9 +96,11 @@ const AdminApp = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [moreModalOpen, setMoreModalOpen] = useState(false);
+  const [countdown, setCountdown] = useState(null);
   const isMobile = useMediaQuery('(max-width: 767px)');
   const { logout } = useAuth();
   const { themeMode, setThemeMode } = useUI();
+  const { diasEnsaio, repertorioAtivo } = useData();
 
   // Funcao de logout
   const handleLogout = () => {
@@ -70,6 +115,17 @@ const AdminApp = () => {
       setMoreModalOpen(false);
     }
   }, [isMobile]);
+
+  // Countdown para próximo ensaio ou apresentação
+  useEffect(() => {
+    const update = () => {
+      const event = getNextAdminEvent(diasEnsaio, repertorioAtivo);
+      setCountdown(event.date ? formatCountdown(event.date, event.isApresentacao, event.nome) : null);
+    };
+    update();
+    const id = setInterval(update, 60000);
+    return () => clearInterval(id);
+  }, [diasEnsaio, repertorioAtivo]);
 
   const loadStats = async () => {
     try {
@@ -614,14 +670,32 @@ const AdminApp = () => {
               width: '100%',
               boxSizing: 'border-box'
             }}>
-              {/* Data atual */}
-              <span style={{
-                fontSize: '14px',
-                color: 'var(--text-muted)',
-                textTransform: 'capitalize'
-              }}>
-                {new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}
-              </span>
+              {/* Countdown próximo ensaio */}
+              {countdown ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{
+                    width: '8px', height: '8px', borderRadius: '50%',
+                    background: '#27ae60',
+                    boxShadow: '0 0 6px rgba(39,174,96,0.6)',
+                    animation: 'pulse 2s ease-in-out infinite',
+                    flexShrink: 0,
+                  }} />
+                  <div>
+                    <span style={{ fontSize: countdown.big ? '17px' : '14px', fontWeight: countdown.big ? '700' : '600', color: countdown.big ? '#D4AF37' : 'var(--text-primary)' }}>
+                      {countdown.label}
+                    </span>
+                    {countdown.sub && (
+                      <span style={{ fontSize: '13px', color: 'var(--text-muted)', marginLeft: '6px' }}>
+                        {countdown.sub}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <span style={{ fontSize: '14px', color: 'var(--text-muted)', textTransform: 'capitalize' }}>
+                  {new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}
+                </span>
+              )}
 
               {/* Acoes do header */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>

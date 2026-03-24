@@ -96,20 +96,44 @@ const AdminAnalytics = () => {
 
     if (loading) {
         return (
-            <div style={{
-                display: 'flex', flexDirection: 'column', alignItems: 'center',
-                justifyContent: 'center', minHeight: '400px', gap: '16px'
-            }}>
-                <div style={{
-                    width: '36px', height: '36px',
-                    border: '3px solid var(--border)',
-                    borderTop: `3px solid ${GOLD}`,
-                    borderRadius: '50%',
-                    animation: 'spin 0.8s linear infinite'
-                }} />
-                <span style={{ color: 'var(--text-muted)', fontSize: '14px' }}>
-                    Carregando analytics...
-                </span>
+            <div style={{ padding: isMobile ? '16px' : '32px', maxWidth: '1200px', margin: '0 auto' }}>
+                {/* Header skeleton */}
+                <div style={{ marginBottom: '28px' }}>
+                    <div style={{ width: '180px', height: '24px', borderRadius: '8px', background: 'var(--border)', animation: 'shimmer 1.6s ease-in-out infinite', marginBottom: '8px' }} />
+                    <div style={{ width: '260px', height: '14px', borderRadius: '6px', background: 'var(--border)', animation: 'shimmer 1.6s ease-in-out infinite' }} />
+                </div>
+                {/* Tabs skeleton */}
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '24px' }}>
+                    {[120, 100, 120, 90].map((w, i) => (
+                        <div key={i} style={{ width: `${w}px`, height: '38px', borderRadius: '10px', background: 'var(--border)', animation: 'shimmer 1.6s ease-in-out infinite' }} />
+                    ))}
+                </div>
+                {/* Stat cards skeleton */}
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)', gap: '12px', marginBottom: '24px' }}>
+                    {[0,1,2,3].map(i => (
+                        <div key={i} style={{ borderRadius: '16px', padding: '20px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', minHeight: '100px' }}>
+                            <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'var(--border)', animation: 'shimmer 1.6s ease-in-out infinite', marginBottom: '14px' }} />
+                            <div style={{ width: '60px', height: '28px', borderRadius: '6px', background: 'var(--border)', animation: 'shimmer 1.6s ease-in-out infinite', marginBottom: '8px' }} />
+                            <div style={{ width: '90px', height: '11px', borderRadius: '4px', background: 'var(--border)', animation: 'shimmer 1.6s ease-in-out infinite' }} />
+                        </div>
+                    ))}
+                </div>
+                {/* Chart skeleton */}
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '2fr 1fr', gap: '12px' }}>
+                    <div style={{ borderRadius: '16px', padding: '24px', background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}>
+                        <div style={{ width: '140px', height: '18px', borderRadius: '6px', background: 'var(--border)', animation: 'shimmer 1.6s ease-in-out infinite', marginBottom: '24px' }} />
+                        <div style={{ width: '100%', height: '180px', borderRadius: '10px', background: 'var(--border)', animation: 'shimmer 1.6s ease-in-out infinite' }} />
+                    </div>
+                    <div style={{ borderRadius: '16px', padding: '24px', background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}>
+                        <div style={{ width: '120px', height: '18px', borderRadius: '6px', background: 'var(--border)', animation: 'shimmer 1.6s ease-in-out infinite', marginBottom: '24px' }} />
+                        {[100, 80, 90, 60, 70].map((w, i) => (
+                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
+                                <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'var(--border)', animation: 'shimmer 1.6s ease-in-out infinite', flexShrink: 0 }} />
+                                <div style={{ flex: 1, height: '12px', borderRadius: '4px', background: 'var(--border)', animation: 'shimmer 1.6s ease-in-out infinite', maxWidth: `${w}%` }} />
+                            </div>
+                        ))}
+                    </div>
+                </div>
             </div>
         );
     }
