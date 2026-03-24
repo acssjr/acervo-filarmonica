@@ -57,12 +57,11 @@ describe('NotificationContext', () => {
         expect(result.current.loading).toBe(false);
       });
 
-      // Verifica estrutura da notificacao convertida
+      // Verifica estrutura da notificacao convertida (campo 'composer' foi removido no redesign)
       const notification = result.current.notifications[0];
       expect(notification).toHaveProperty('id');
       expect(notification).toHaveProperty('type', 'nova_partitura');
       expect(notification).toHaveProperty('title');
-      expect(notification).toHaveProperty('composer');
       expect(notification).toHaveProperty('date');
       expect(notification).toHaveProperty('read');
     });

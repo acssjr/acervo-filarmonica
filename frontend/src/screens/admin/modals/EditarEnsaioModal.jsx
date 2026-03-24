@@ -923,7 +923,7 @@ const EditarEnsaioModal = ({ ensaio, usuarios, onClose, onUpdate, addNotificatio
             </span>
           </div>
           <div style={{ display: 'flex', gap: '12px' }}>
-            <button onClick={onClose} disabled={saving} style={{
+            <button onClick={handleClose} disabled={saving} style={{
               padding: '10px 24px', background: 'transparent', color: 'var(--text-muted)',
               border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', fontWeight: '600', cursor: 'pointer'
             }}>

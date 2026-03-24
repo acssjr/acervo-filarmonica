@@ -97,6 +97,7 @@ const AdminAnalytics = () => {
     if (loading) {
         return (
             <div style={{ padding: isMobile ? '16px' : '32px', maxWidth: '1200px', margin: '0 auto' }}>
+                <div role="status" aria-live="polite" aria-label="Carregando analytics" style={{ position: 'absolute', width: '1px', height: '1px', overflow: 'hidden', clip: 'rect(0,0,0,0)', whiteSpace: 'nowrap' }}>Carregando analytics...</div>
                 {/* Header skeleton */}
                 <div style={{ marginBottom: '28px' }}>
                     <div style={{ width: '180px', height: '24px', borderRadius: '8px', background: 'var(--border)', animation: 'shimmer 1.6s ease-in-out infinite', marginBottom: '8px' }} />

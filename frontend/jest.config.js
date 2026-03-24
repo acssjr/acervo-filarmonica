@@ -16,7 +16,10 @@ export default {
     '^@admin/(.*)$': '<rootDir>/src/screens/admin/$1',
     '^@styles/(.*)$': '<rootDir>/src/styles/$1',
     '\\.module\\.css$': 'identity-obj-proxy',
-    '\\.css$': 'identity-obj-proxy'
+    '\\.css$': 'identity-obj-proxy',
+    '^gsap$': '<rootDir>/__mocks__/gsap.js',
+    '^gsap/(.*)$': '<rootDir>/__mocks__/gsap.js',
+    '^@gsap/react$': '<rootDir>/__mocks__/@gsap/react.js'
   },
   transform: {
     '^.+\\.(js|jsx)$': 'babel-jest'

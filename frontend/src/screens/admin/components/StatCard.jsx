@@ -92,7 +92,7 @@ const StatCard = ({ icon, label, value, loading, index = 0, onClick }) => {
 
   // Animated counter when value arrives
   useGSAP(() => {
-    if (loading || !value) return;
+    if (loading || value == null) return;
     counter.current.val = 0;
     gsap.to(counter.current, {
       val: value,
@@ -109,7 +109,10 @@ const StatCard = ({ icon, label, value, loading, index = 0, onClick }) => {
   return (
     <div
       ref={cardRef}
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
       onClick={onClick}
+      onKeyDown={onClick ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } } : undefined}
       style={{
         background: theme.gradient,
         borderRadius: '20px',

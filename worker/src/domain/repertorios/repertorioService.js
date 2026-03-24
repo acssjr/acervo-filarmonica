@@ -34,8 +34,14 @@ export async function getRepertorioAtivo(request, env) {
     ORDER BY rp.ordem ASC
   `).bind(repertorio.id).all();
 
+  // Expor apenas campos necessários para o countdown público (omitir dados internos)
+  const privateFields = ['criado_por', 'criado_por_nome', 'total_partituras'];
+  const publicFields = Object.fromEntries(
+    Object.entries(repertorio).filter(([k]) => !privateFields.includes(k))
+  );
+
   return jsonResponse({
-    ...repertorio,
+    ...publicFields,
     partituras: partituras.results
   }, 200, request);
 }

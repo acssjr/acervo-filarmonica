@@ -98,7 +98,8 @@ describe('AdminDashboard', () => {
       renderDashboard();
 
       await waitFor(() => {
-        expect(screen.getByText('Administrador')).toBeInTheDocument();
+        // firstName é exibido com ponto final dentro de span (.liquid-metal-name)
+        expect(screen.getByText(/Administrador/)).toBeInTheDocument();
       });
     });
 
@@ -110,11 +111,13 @@ describe('AdminDashboard', () => {
       });
     });
 
-    test('exibe nome da filarmonica', async () => {
+    test('exibe mensagem de saudacao', async () => {
       renderDashboard();
 
       await waitFor(() => {
-        expect(screen.getByText(/Sociedade Filarm[oô]nica 25 de Mar[cç]o/)).toBeInTheDocument();
+        // Dashboard exibe mensagem contextual baseada no horário
+        const msg = screen.queryByText(/organizar|ordem|resolver/i);
+        expect(msg).toBeInTheDocument();
       });
     });
   });
@@ -143,7 +146,8 @@ describe('AdminDashboard', () => {
 
       await waitFor(() => {
         expect(screen.getByText('Downloads')).toBeInTheDocument();
-        expect(screen.getByText('1234')).toBeInTheDocument();
+        // Valor formatado em pt-BR: 1234 → "1.234"
+        expect(screen.getByText('1.234')).toBeInTheDocument();
       });
     });
 
@@ -161,8 +165,12 @@ describe('AdminDashboard', () => {
       renderDashboard();
 
       await waitFor(() => {
-        const loadingIndicators = screen.getAllByText('...');
-        expect(loadingIndicators.length).toBeGreaterThanOrEqual(4);
+        // Quando loading=true, StatCard exibe shimmer div sem texto (não mostra valores)
+        expect(screen.queryByText('45')).not.toBeInTheDocument();
+        expect(screen.queryByText('150')).not.toBeInTheDocument();
+        // Labels dos cards ainda são visíveis
+        expect(screen.getByText('Músicos Ativos')).toBeInTheDocument();
+        expect(screen.getByText('Partituras')).toBeInTheDocument();
       });
     });
   });

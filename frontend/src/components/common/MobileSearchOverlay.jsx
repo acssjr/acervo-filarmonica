@@ -93,7 +93,7 @@ const MobileSearchOverlay = () => {
         duration: 0.2, ease: 'power2.in',
       });
     }
-  }, [mobileSearchOpen]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [mobileSearchOpen]);
 
   // ── Transição suave de altura quando conteúdo muda ───────────────────
   // useLayoutEffect garante que o estado anterior é travado ANTES do browser pintar
@@ -403,7 +403,7 @@ const MobileSearchOverlay = () => {
           ) : (
             <div style={{ padding: '32px 16px', textAlign: 'center' }}>
               <p style={{ fontSize: '14px', color: mutedColor, margin: 0 }}>
-                Nenhuma partitura para "{query}"
+                Nenhuma partitura para &quot;{query}&quot;
               </p>
             </div>
           )}

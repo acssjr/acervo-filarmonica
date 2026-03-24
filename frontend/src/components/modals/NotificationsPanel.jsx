@@ -221,7 +221,10 @@ const NotificationsPanel = () => {
     return (
       <div
         key={notification.id}
+        role="button"
+        tabIndex={0}
         onClick={() => handleNotificationClick(notification)}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleNotificationClick(notification); } }}
         style={{
           display: 'flex',
           alignItems: 'center',

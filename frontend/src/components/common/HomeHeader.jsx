@@ -10,7 +10,7 @@ import HeaderActions from './HeaderActions';
 import LogoBadge from './LogoBadge';
 
 // ── Saudação contextual em duas linhas ────────────────────────────────
-const getGreetingParts = (firstName, diasEnsaio, repertorioAtivo) => {
+const getGreetingParts = (diasEnsaio, repertorioAtivo) => {
   const now = new Date();
   const h = now.getHours();
   const day = now.getDay(); // 0=Dom … 6=Sab
@@ -200,7 +200,7 @@ const HomeHeader = ({ userName, actions }) => {
   );
 
   const firstName = useMemo(() => (userName || '').split(' ')[0], [userName]);
-  const { icon, greetingPrefix, line2 } = useMemo(() => getGreetingParts(firstName, diasEnsaio, repertorioAtivo), [firstName, diasEnsaio, repertorioAtivo]);
+  const { icon, greetingPrefix, line2 } = useMemo(() => getGreetingParts(diasEnsaio, repertorioAtivo), [diasEnsaio, repertorioAtivo]);
 
   const mutedColor = isDark ? 'var(--text-muted)' : 'rgba(0,0,0,0.45)';
   const goldLabel = isDark ? '#D4AF37' : '#8B6914';
