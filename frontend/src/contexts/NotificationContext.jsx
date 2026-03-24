@@ -16,13 +16,26 @@ export const useNotifications = () => {
   return context;
 };
 
-// Converte atividade de nova partitura para notificacao
+// Mapa de tipos de atividade para labels e icones
+const NOTIFICATION_MAP = {
+  nova_partitura: { label: 'Nova partitura', iconName: 'Music' },
+  novo_repertorio: { label: 'Novo repertório', iconName: 'Repertorio' },
+  repertorio_atualizado: { label: 'Repertório atualizado', iconName: 'Repertorio' },
+  nova_parte: { label: 'Nova parte', iconName: 'Music' },
+};
+
+const EXCLUDED_TYPES = new Set(['login', 'download', 'busca', 'visualizacao']);
+
+// Converte atividade para notificacao
 const activityToNotification = (activity) => {
+  const mapping = NOTIFICATION_MAP[activity.tipo];
   return {
     id: `activity-${activity.id}`,
-    type: 'nova_partitura',
+    type: activity.tipo,
     title: activity.titulo,
-    composer: activity.detalhes, // compositor vem no campo detalhes
+    subtitle: activity.usuario_nome ? `por ${activity.usuario_nome}` : null,
+    label: mapping?.label || activity.tipo,
+    iconName: mapping?.iconName || 'Music',
     date: activity.criado_em,
     read: Storage.get(`notification-read-${activity.id}`, false)
   };
@@ -39,13 +52,12 @@ export const NotificationProvider = ({ children }) => {
       const activities = await API.getAtividades();
 
       if (activities && Array.isArray(activities)) {
-        // Filtra apenas novas partituras (tipo = 'nova_partitura')
-        const newSheets = activities
-          .filter(a => a.tipo === 'nova_partitura')
+        const relevant = activities
+          .filter(a => !EXCLUDED_TYPES.has(a.tipo) && NOTIFICATION_MAP[a.tipo])
           .slice(0, 30)
           .map(activityToNotification);
 
-        setNotifications(newSheets);
+        setNotifications(relevant);
       }
     } catch {
       // Silencioso - notificações serão carregadas depois

@@ -8,6 +8,7 @@ import { useData } from '@contexts/DataContext';
 import { useAuth } from '@contexts/AuthContext';
 import { useNotifications } from '@contexts/NotificationContext';
 import { Icons } from '@constants/icons';
+import { useBellAnimation } from '@hooks/useBellAnimation';
 import CategoryIcon from '@components/common/CategoryIcon';
 import ThemePill from '@components/common/ThemePill';
 import { getNextRehearsal } from '@utils/rehearsal';
@@ -87,7 +88,7 @@ const pillStyle = (isDark) => ({
 // ThemePill importado de @components/common/ThemePill
 
 // ── GlassActionBtn ───────────────────────────────────────────────────
-const GlassActionBtn = ({ onClick, label, children, badge, isDark }) => (
+const GlassActionBtn = ({ onClick, label, children, badge, isDark, childRef }) => (
   <button
     onClick={onClick}
     aria-label={label}
@@ -112,7 +113,7 @@ const GlassActionBtn = ({ onClick, label, children, badge, isDark }) => (
       transition: 'all 0.2s ease',
     }}
   >
-    <div style={{ width: '18px', height: '18px' }}>{children}</div>
+    <div ref={childRef} style={{ width: '18px', height: '18px' }}>{children}</div>
     {badge > 0 && (
       <div style={{
         position: 'absolute', top: '-5px', right: '-5px',
@@ -207,9 +208,11 @@ const AdminGlassBtn = ({ isDark }) => {
 const DesktopHeader = () => {
   const navigate = useNavigate();
   const { setShowNotifications, theme } = useUI();
-  const { sheets, favoritesSet, toggleFavorite, categoriesMap, diasEnsaio, modoRecesso } = useData();
+  const { sheets, favoritesSet, toggleFavorite, categoriesMap, diasEnsaio, modoRecesso, repertorioAtivo } = useData();
   const { unreadCount } = useNotifications();
   const isDark = theme === 'dark';
+  const bellRef = useRef(null);
+  useBellAnimation(bellRef, unreadCount > 0);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [searchFocused, setSearchFocused] = useState(false);
@@ -223,13 +226,19 @@ const DesktopHeader = () => {
     return () => clearInterval(id);
   }, []);
 
-  const nextRehearsalDate = useMemo(
-    () => computeNextRehearsalDate(diasEnsaio.dias, diasEnsaio.hora),
-    [diasEnsaio]
-  );
+  const nextEvent = useMemo(() => {
+    const hora = typeof diasEnsaio.hora === 'number' ? diasEnsaio.hora : parseInt(diasEnsaio.hora, 10);
+    const now = new Date();
+    if (repertorioAtivo?.data_apresentacao) {
+      const [y, m, d] = repertorioAtivo.data_apresentacao.split('-').map(Number);
+      const apDate = new Date(y, m - 1, d, hora, 0, 0, 0);
+      if (apDate > now) return { date: apDate, isApresentacao: true, nome: repertorioAtivo.nome };
+    }
+    return { date: computeNextRehearsalDate(diasEnsaio.dias, hora), isApresentacao: false };
+  }, [diasEnsaio, repertorioAtivo]);
 
   const countdown = useMemo(() => {
-    const diff = Math.max(0, nextRehearsalDate - Date.now());
+    const diff = Math.max(0, nextEvent.date - Date.now());
     const totalSec = Math.floor(diff / 1000);
     return {
       days: Math.floor(totalSec / 86400),
@@ -237,7 +246,7 @@ const DesktopHeader = () => {
       minutes: Math.floor((totalSec % 3600) / 60),
       seconds: totalSec % 60,
     };
-  }, [nextRehearsalDate, tick]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [nextEvent.date, tick]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const rehearsalInfo = useMemo(
     () => getNextRehearsal(diasEnsaio.dias, diasEnsaio.hora),
@@ -370,11 +379,25 @@ const DesktopHeader = () => {
             <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center' }}>
               {countdown.days > 0 ? (
                 <>
-                  <p style={{
-                    fontSize: '8px', fontWeight: '700', letterSpacing: '1.2px',
-                    textTransform: 'uppercase', color: mutedColor,
-                    margin: 0, lineHeight: 1.4,
-                  }}>Próximo ensaio • {rehearsalInfo.dayName}</p>
+                  {!nextEvent.isApresentacao && (
+                    <p style={{
+                      fontSize: '8px', fontWeight: '700', letterSpacing: '1.2px',
+                      textTransform: 'uppercase', color: mutedColor,
+                      margin: 0, lineHeight: 1.4,
+                    }}>
+                      {`Próximo ensaio • ${rehearsalInfo.dayName}`}
+                    </p>
+                  )}
+                  {nextEvent.isApresentacao && (
+                    <p style={{
+                      fontSize: '11px', fontWeight: '800', letterSpacing: '0.3px',
+                      textTransform: 'uppercase',
+                      color: isDark ? '#D4AF37' : '#8B6914',
+                      margin: 0, lineHeight: 1.3,
+                    }}>
+                      {nextEvent.nome}
+                    </p>
+                  )}
                   <p style={{
                     fontSize: '8px', fontWeight: '600', letterSpacing: '1px',
                     textTransform: 'uppercase', color: mutedColor,
@@ -391,10 +414,14 @@ const DesktopHeader = () => {
               ) : (
                 <>
                   <p style={{
-                    fontSize: '8px', fontWeight: '700', letterSpacing: '1.2px',
-                    textTransform: 'uppercase', color: mutedColor,
+                    fontSize: nextEvent.isApresentacao ? '11px' : '8px', fontWeight: '700',
+                    letterSpacing: nextEvent.isApresentacao ? '0.4px' : '1.2px',
+                    textTransform: 'uppercase',
+                    color: nextEvent.isApresentacao ? (isDark ? '#D4AF37' : '#8B6914') : mutedColor,
                     margin: '0 0 6px', lineHeight: 1.4,
-                  }}>Ensaio iniciando em</p>
+                  }}>
+                    {nextEvent.isApresentacao ? nextEvent.nome : 'Ensaio iniciando em'}
+                  </p>
                   <div style={pillStyle(isDark)}>
                     <CountdownBlock value={countdown.hours} label="Horas" isDark={isDark} />
                     <BlockDivider isDark={isDark} />
@@ -586,6 +613,7 @@ const DesktopHeader = () => {
             label={unreadCount > 0 ? `Notificações (${unreadCount} não lidas)` : 'Notificações'}
             badge={unreadCount}
             isDark={isDark}
+            childRef={bellRef}
           >
             <Icons.Bell />
           </GlassActionBtn>
