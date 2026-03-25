@@ -35,7 +35,7 @@ const THEMES = {
 };
 
 const Icon = ({ type, color, size }) => {
-  const props = { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: color, strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' };
+  const props = { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: color, strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': 'true', focusable: 'false' };
   if (type === 'users') return (
     <svg {...props}>
       <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
@@ -70,7 +70,7 @@ const StatCard = ({ icon, label, value, loading, index = 0, onClick }) => {
   const theme = THEMES[icon] || THEMES.music;
   const cardRef = useRef(null);
   const numRef = useRef(null);
-  const counter = useRef({ val: 0 });
+  const counter = useRef({ val: undefined });
 
   // Entrance: staggered fade-up — usa fromTo explícito + desabilita CSS transition durante animação
   useGSAP(() => {
@@ -92,8 +92,10 @@ const StatCard = ({ icon, label, value, loading, index = 0, onClick }) => {
 
   // Animated counter when value arrives
   useGSAP(() => {
-    if (loading || value == null) return;
-    counter.current.val = 0;
+    if (loading || !value) return;
+    if (counter.current.val === undefined || counter.current.val === null) {
+      counter.current.val = 0;
+    }
     gsap.to(counter.current, {
       val: value,
       duration: 1.5,

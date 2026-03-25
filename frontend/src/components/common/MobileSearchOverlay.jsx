@@ -268,7 +268,9 @@ const MobileSearchOverlay = () => {
   const SearchIcon = Icons.Search;
   const CloseIcon = Icons.Close;
 
-  const renderItem = (sheet, i, cat) => (
+  const renderItem = (sheet, i, cat) => {
+    const categoryId = cat?.id ?? sheet.category;
+    return (
     <button
       key={sheet.id}
       onClick={() => handleSelectSheet(sheet)}
@@ -281,7 +283,7 @@ const MobileSearchOverlay = () => {
       }}
     >
       <div style={iconBoxStyle}>
-        <CategoryIcon categoryId={sheet.category} size={20} />
+        <CategoryIcon categoryId={categoryId} size={20} />
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <p style={{
@@ -299,6 +301,7 @@ const MobileSearchOverlay = () => {
       </div>
     </button>
   );
+  };
 
   // ── Render ────────────────────────────────────────────────────────────
   return (

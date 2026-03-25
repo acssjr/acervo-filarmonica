@@ -23,5 +23,6 @@ export function useBellAnimation(iconRef, hasUnread) {
     }
 
     return () => { tlRef.current?.kill(); };
-  }, [hasUnread, iconRef]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- iconRef is a ref, stable by design
+  }, [hasUnread]);
 }

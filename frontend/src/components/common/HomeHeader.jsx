@@ -148,7 +148,9 @@ const pillStyle = (isDark) => ({
   overflow: 'hidden',
 });
 
-// Retorna {date, isApresentacao} com o próximo evento relevante
+// Retorna {date, isApresentacao, isApresentacaoDay, nome} com o próximo evento relevante
+// isApresentacao: true quando a apresentação está dentro das próximas 24h (aciona countdown especial)
+// isApresentacaoDay: true apenas quando o calendário atual é o mesmo dia da apresentação
 const getNextEvent = (diasEnsaio, repertorioAtivo) => {
   const hora = typeof diasEnsaio.hora === 'number' ? diasEnsaio.hora : parseInt(diasEnsaio.hora, 10);
   const now = new Date();
@@ -158,12 +160,14 @@ const getNextEvent = (diasEnsaio, repertorioAtivo) => {
     const [y, m, d] = repertorioAtivo.data_apresentacao.split('-').map(Number);
     const apresentacaoDate = new Date(y, m - 1, d, hora, 0, 0, 0);
     if (apresentacaoDate > now) {
-      return { date: apresentacaoDate, isApresentacao: true, nome: repertorioAtivo.nome };
+      const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+      const isApresentacaoDay = repertorioAtivo.data_apresentacao === todayStr;
+      return { date: apresentacaoDate, isApresentacao: true, isApresentacaoDay, nome: repertorioAtivo.nome };
     }
   }
 
   // Fallback: próximo ensaio regular
-  return { date: computeNextRehearsalDate(diasEnsaio.dias, hora), isApresentacao: false };
+  return { date: computeNextRehearsalDate(diasEnsaio.dias, hora), isApresentacao: false, isApresentacaoDay: false };
 };
 
 const HomeHeader = ({ userName, actions }) => {
@@ -288,8 +292,8 @@ const HomeHeader = ({ userName, actions }) => {
             /* Countdown — alinhado à esquerda */
             <div style={{ marginTop: '10px' }}>
 
-              {/* Dia do evento (days===0) */}
-              {countdown.days === 0 ? (
+              {/* Dia do evento — mesmo dia do calendário da apresentação ou ensaio a <24h */}
+              {(nextEvent.isApresentacaoDay || (!nextEvent.isApresentacao && countdown.days === 0)) ? (
                 <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center' }}>
                   {nextEvent.isApresentacao && (
                     <p style={{
