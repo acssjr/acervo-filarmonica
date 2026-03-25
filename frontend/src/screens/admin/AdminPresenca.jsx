@@ -732,9 +732,17 @@ const AdminPresenca = () => {
     const newList = [...partiturasEnsaio];
     const [moved] = newList.splice(dragIndex, 1);
     newList.splice(dropIndex, 0, moved);
-    setPartiturasEnsaio(newList);
     setDragIndex(null);
     setDragOverIndex(null);
+
+    // Abort if any item doesn't have a synced id yet
+    if (newList.some(p => !p.id)) {
+      showToast('Aguarde sincronização antes de reordenar', 'warning');
+      loadPartiturasEnsaio(dataEnsaio);
+      return;
+    }
+
+    setPartiturasEnsaio(newList);
     try {
       const ordens = newList.map((p, idx) => ({ id: p.id, ordem: idx }));
       await API.reorderPartiturasEnsaio(dataEnsaio, ordens);
