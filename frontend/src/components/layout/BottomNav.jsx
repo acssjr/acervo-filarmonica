@@ -13,7 +13,7 @@ import styles from './BottomNav.module.css';
 
 const BottomNav = ({ activeTab }) => {
   const navigate = useNavigate();
-  const { theme, showNotifications } = useUI();
+  const { theme, showNotifications, setMobileSearchOpen } = useUI();
   const [keyboardOpen, setKeyboardOpen] = useState(false);
   const handlePrefetch = useRoutePrefetch();
 
@@ -66,9 +66,7 @@ const BottomNav = ({ activeTab }) => {
                 data-nav={tab.id}
                 data-walkthrough="search"
                 className={`${styles.centerButton} ${isActive ? styles.centerActive : ''}`}
-                onClick={() => handleNavigate(tab.path)}
-                onMouseEnter={() => handlePrefetch(tab.path)}
-                onTouchStart={() => handlePrefetch(tab.path)}
+                onClick={() => setMobileSearchOpen(true)}
                 whileTap={{ scale: 0.88, rotate: -5 }}
                 transition={{ type: "spring", stiffness: 450, damping: 18 }}
                 aria-label={tab.label}

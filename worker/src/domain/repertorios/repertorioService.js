@@ -34,8 +34,19 @@ export async function getRepertorioAtivo(request, env) {
     ORDER BY rp.ordem ASC
   `).bind(repertorio.id).all();
 
+  // Allowlist explícita — apenas campos seguros para expor sem autenticação
+  // Campos omitidos intencionalmente: criado_por (FK interna), criado_por_nome, total_partituras
+  const publicFields = {
+    id: repertorio.id,
+    nome: repertorio.nome,
+    descricao: repertorio.descricao,
+    ativo: repertorio.ativo,
+    data_criacao: repertorio.data_criacao,
+    data_apresentacao: repertorio.data_apresentacao,
+  };
+
   return jsonResponse({
-    ...repertorio,
+    ...publicFields,
     partituras: partituras.results
   }, 200, request);
 }

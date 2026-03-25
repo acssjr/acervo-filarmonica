@@ -23,10 +23,10 @@ import { authMiddleware, adminMiddleware } from '../middleware/index.js';
 export function setupRepertorioRoutes(router) {
   // ============ ROTAS PUBLICAS (AUTENTICADAS) ============
 
-  // GET /api/repertorio/ativo - Obter repertorio ativo
+  // GET /api/repertorio/ativo - Obter repertorio ativo (público — usado no countdown)
   router.get('/api/repertorio/ativo', async (request, env, _params, _context) => {
     return await getRepertorioAtivo(request, env);
-  }, [authMiddleware]);
+  });
 
   // GET /api/repertorio/:id - Obter repertorio por ID
   router.get('/api/repertorio/:id', async (request, env, params, _context) => {

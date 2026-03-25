@@ -85,6 +85,14 @@ describe('Rotas Públicas', () => {
     });
   });
 
+  describe('GET /api/repertorio/ativo', () => {
+    it('retorna 200 ou 404 sem autenticação', async () => {
+      const response = await SELF.fetch('https://test.local/api/repertorio/ativo');
+      // 200 se há repertório ativo, 404 se não há
+      expect([200, 404]).toContain(response.status);
+    });
+  });
+
   describe('POST /api/login', () => {
     it('aceita POST', async () => {
       const response = await SELF.fetch('https://test.local/api/login', {
@@ -128,14 +136,6 @@ describe('Rotas Autenticadas', () => {
     it('retorna 401 sem token', async () => {
       const response = await SELF.fetch('https://test.local/api/perfil');
       expect(response.status).toBe(401);
-    });
-  });
-
-  describe('GET /api/repertorio/ativo', () => {
-    it('retorna 401 ou 404 sem token', async () => {
-      const response = await SELF.fetch('https://test.local/api/repertorio/ativo');
-      // 401 se middleware de auth rejeitou, 404 se não há repertório ativo
-      expect([401, 404]).toContain(response.status);
     });
   });
 });

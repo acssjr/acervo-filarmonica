@@ -137,6 +137,16 @@ EOF
 - Incluir: Summary, Test plan, checklist
 - Template disponível em `.github/pull_request_template.md`
 
+### Limpeza de Branches Após Merge
+
+- **Sempre deletar branches locais e remotas após merge confirmado na main**
+- Ao retomar trabalho, verificar se branch atual já foi mergeada e deletá-la:
+  ```bash
+  git branch -d <branch>
+  git push origin --delete <branch>
+  ```
+- Ao fazer `git fetch`, observar se aparecem branches antigas que já foram mergeadas e removê-las
+
 ### Git Amend
 
 - **Evitar git commit --amend**
@@ -203,6 +213,17 @@ Isso cria as tabelas e insere dados de teste:
 2. **NUNCA rodar comandos wrangler sem --local em desenvolvimento**
 3. Se precisar testar com produção, usar `npm run dev:prod` (temporário)
 4. Lembrar que dados locais ficam em `.wrangler/state/`
+
+### Mobile e Desktop — Cobertura Obrigatória
+
+- **SEMPRE que alterar UI, aplicar em TODOS os pontos equivalentes: mobile E desktop**
+- Este projeto tem componentes separados para cada breakpoint:
+  - `HomeHeader.jsx` → countdown/saudação no **mobile** do músico
+  - `DesktopHeader.jsx` → countdown/saudação no **desktop** do músico
+  - `AdminApp.jsx` → countdown no **desktop admin**
+  - `AdminDashboard.jsx`, `AdminMusicos.jsx`, `AdminPresenca.jsx` → headers de cada tela admin
+- Antes de marcar qualquer alteração de UI como concluída, verificar explicitamente cada ponto equivalente
+- **NUNCA implementar uma mudança visual em apenas um breakpoint sem checar os outros**
 
 ### Playwright
 

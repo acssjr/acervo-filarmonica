@@ -15,8 +15,12 @@ export default {
     '^@constants/(.*)$': '<rootDir>/src/constants/$1',
     '^@admin/(.*)$': '<rootDir>/src/screens/admin/$1',
     '^@styles/(.*)$': '<rootDir>/src/styles/$1',
+    '^@gsap/react$': '<rootDir>/__mocks__/@gsap/react.js',
     '\\.module\\.css$': 'identity-obj-proxy',
-    '\\.css$': 'identity-obj-proxy'
+    '\\.css$': 'identity-obj-proxy',
+    '^gsap$': '<rootDir>/__mocks__/gsap.js',
+    '^gsap/(.*)$': '<rootDir>/__mocks__/gsap.js',
+    '^@gsap/react$': '<rootDir>/__mocks__/@gsap/react.js'
   },
   transform: {
     '^.+\\.(js|jsx)$': 'babel-jest'

@@ -10,13 +10,16 @@ import HeaderActions from './HeaderActions';
 import LogoBadge from './LogoBadge';
 
 // ── Saudação contextual em duas linhas ────────────────────────────────
-const getGreetingParts = (firstName, diasEnsaio) => {
+const getGreetingParts = (diasEnsaio, repertorioAtivo) => {
   const now = new Date();
   const h = now.getHours();
   const day = now.getDay(); // 0=Dom … 6=Sab
-  const isRehearsalDay = diasEnsaio?.dias?.includes(day);
-  const _name = firstName || '';
   const d = now.getDate(); // índice rotativo para sub-mensagens
+
+  // Detecta se hoje é dia de apresentação
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+  const isApresentacaoDay = repertorioAtivo?.data_apresentacao === todayStr;
+  const isRehearsalDay = !isApresentacaoDay && diasEnsaio?.dias?.includes(day);
 
   // Ícone 3D por período
   let icon;
@@ -25,7 +28,7 @@ const getGreetingParts = (firstName, diasEnsaio) => {
   else if (h >= 18 && h < 23) icon = '🌙';
   else icon = '⭐';
 
-  // Linha 1 — prefixo da saudação (nome renderizado separadamente com efeito)
+  // Linha 1 — prefixo da saudação
   let greetingPrefix;
   if (h >= 5 && h < 12) {
     if (day === 1) greetingPrefix = 'Boa semana,';
@@ -42,8 +45,17 @@ const getGreetingParts = (firstName, diasEnsaio) => {
 
   // Linha 2 — sub-mensagem contextual
   let line2;
-  if (isRehearsalDay) {
-    // Dia de ensaio — foco em preparação e aquecimento
+  if (isApresentacaoDay) {
+    // Dia de apresentação — mensagens especiais
+    const msgs = [
+      'Hoje é o grande dia.',
+      'Dia de fazer bonito.',
+      'Que tal uma última revisada?',
+      'É hora de brilhar.',
+      'Hoje é o dia.',
+    ];
+    line2 = msgs[d % msgs.length];
+  } else if (isRehearsalDay) {
     const msgs = [
       'Pronto para mais um dia de preparação?',
       'Vai ser um bom ensaio hoje, não vai?',
@@ -52,7 +64,6 @@ const getGreetingParts = (firstName, diasEnsaio) => {
     ];
     line2 = msgs[d % msgs.length];
   } else if (h >= 5 && h < 12) {
-    // Manhã sem ensaio — foco em estudo e repertório
     const msgs = [
       'O que estudaremos hoje?',
       'Que partituras explorar hoje?',
@@ -137,11 +148,33 @@ const pillStyle = (isDark) => ({
   overflow: 'hidden',
 });
 
+// Retorna {date, isApresentacao, isApresentacaoDay, nome} com o próximo evento relevante
+// isApresentacao: true quando a apresentação está dentro das próximas 24h (aciona countdown especial)
+// isApresentacaoDay: true apenas quando o calendário atual é o mesmo dia da apresentação
+const getNextEvent = (diasEnsaio, repertorioAtivo) => {
+  const hora = typeof diasEnsaio.hora === 'number' ? diasEnsaio.hora : parseInt(diasEnsaio.hora, 10);
+  const now = new Date();
+
+  // Verifica se há apresentação futura no repertório ativo
+  if (repertorioAtivo?.data_apresentacao) {
+    const [y, m, d] = repertorioAtivo.data_apresentacao.split('-').map(Number);
+    const apresentacaoDate = new Date(y, m - 1, d, hora, 0, 0, 0);
+    if (apresentacaoDate > now) {
+      const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+      const isApresentacaoDay = repertorioAtivo.data_apresentacao === todayStr;
+      return { date: apresentacaoDate, isApresentacao: true, isApresentacaoDay, nome: repertorioAtivo.nome };
+    }
+  }
+
+  // Fallback: próximo ensaio regular
+  return { date: computeNextRehearsalDate(diasEnsaio.dias, hora), isApresentacao: false, isApresentacaoDay: false };
+};
+
 const HomeHeader = ({ userName, actions }) => {
   const { theme } = useUI();
   const isDark = theme === 'dark';
   const isDesktop = useMediaQuery('(min-width: 1024px)');
-  const { diasEnsaio, modoRecesso } = useData();
+  const { diasEnsaio, modoRecesso, repertorioAtivo } = useData();
 
   const [tick, setTick] = useState(0);
   useEffect(() => {
@@ -149,13 +182,13 @@ const HomeHeader = ({ userName, actions }) => {
     return () => clearInterval(id);
   }, []);
 
-  const nextRehearsalDate = useMemo(
-    () => computeNextRehearsalDate(diasEnsaio.dias, diasEnsaio.hora),
-    [diasEnsaio]
+  const nextEvent = useMemo(
+    () => getNextEvent(diasEnsaio, repertorioAtivo),
+    [diasEnsaio, repertorioAtivo]
   );
 
   const countdown = useMemo(() => {
-    const diff = Math.max(0, nextRehearsalDate - Date.now());
+    const diff = Math.max(0, nextEvent.date - Date.now());
     const totalSec = Math.floor(diff / 1000);
     return {
       days: Math.floor(totalSec / 86400),
@@ -163,7 +196,7 @@ const HomeHeader = ({ userName, actions }) => {
       minutes: Math.floor((totalSec % 3600) / 60),
       seconds: totalSec % 60,
     };
-  }, [nextRehearsalDate, tick]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [nextEvent.date, tick]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const rehearsalInfo = useMemo(
     () => getNextRehearsal(diasEnsaio.dias, diasEnsaio.hora),
@@ -171,7 +204,7 @@ const HomeHeader = ({ userName, actions }) => {
   );
 
   const firstName = useMemo(() => (userName || '').split(' ')[0], [userName]);
-  const { icon, greetingPrefix, line2 } = useMemo(() => getGreetingParts(firstName, diasEnsaio), [firstName, diasEnsaio]);
+  const { icon, greetingPrefix, line2 } = useMemo(() => getGreetingParts(diasEnsaio, repertorioAtivo), [diasEnsaio, repertorioAtivo]);
 
   const mutedColor = isDark ? 'var(--text-muted)' : 'rgba(0,0,0,0.45)';
   const goldLabel = isDark ? '#D4AF37' : '#8B6914';
@@ -259,17 +292,27 @@ const HomeHeader = ({ userName, actions }) => {
             /* Countdown — alinhado à esquerda */
             <div style={{ marginTop: '10px' }}>
 
-              {/* Dia do ensaio (days===0) */}
-              {countdown.days === 0 ? (
-                /* inline-flex column: label centralizado em relação ao pill, conjunto à esquerda */
+              {/* Dia do evento — mesmo dia do calendário da apresentação ou ensaio a <24h */}
+              {(nextEvent.isApresentacaoDay || (!nextEvent.isApresentacao && countdown.days === 0)) ? (
                 <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center' }}>
-                  <p style={{
-                    fontSize: '9px', fontWeight: '700', letterSpacing: '1.4px',
-                    textTransform: 'uppercase', color: mutedColor,
-                    margin: '0 0 8px', lineHeight: 1.4,
-                  }}>
-                    Ensaio iniciando em
-                  </p>
+                  {nextEvent.isApresentacao && (
+                    <p style={{
+                      fontSize: '14px', fontWeight: '800', letterSpacing: '0.3px',
+                      textTransform: 'uppercase', color: goldLabel,
+                      margin: '0 0 8px', lineHeight: 1.3,
+                    }}>
+                      {nextEvent.nome}
+                    </p>
+                  )}
+                  {!nextEvent.isApresentacao && (
+                    <p style={{
+                      fontSize: '9px', fontWeight: '700', letterSpacing: '1.4px',
+                      textTransform: 'uppercase', color: mutedColor,
+                      margin: '0 0 8px', lineHeight: 1.4,
+                    }}>
+                      Ensaio iniciando em
+                    </p>
+                  )}
                   <div style={pillStyle(isDark)}>
                     <CountdownBlock value={countdown.hours} label="Horas" isDark={isDark} />
                     <BlockDivider isDark={isDark} />
@@ -279,21 +322,23 @@ const HomeHeader = ({ userName, actions }) => {
                   </div>
                 </div>
               ) : (
-                /* Dias futuros: label stack centralizado em relação ao pill */
                 <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center' }}>
+                  {!nextEvent.isApresentacao && (
+                    <p style={{
+                      fontSize: '9px', fontWeight: '700', letterSpacing: '1.2px',
+                      textTransform: 'uppercase', color: mutedColor,
+                      margin: 0, lineHeight: 1.4,
+                    }}>
+                      Próximo ensaio
+                    </p>
+                  )}
                   <p style={{
-                    fontSize: '9px', fontWeight: '700', letterSpacing: '1.2px',
-                    textTransform: 'uppercase', color: mutedColor,
-                    margin: 0, lineHeight: 1.4,
-                  }}>
-                    Próximo ensaio
-                  </p>
-                  <p style={{
-                    fontSize: '12px', fontWeight: '800', letterSpacing: '0.3px',
+                    fontSize: nextEvent.isApresentacao ? '14px' : '12px', fontWeight: '800',
+                    letterSpacing: nextEvent.isApresentacao ? '0.3px' : '0.3px',
                     textTransform: 'uppercase', color: goldLabel,
-                    margin: '1px 0', lineHeight: 1.3,
+                    margin: nextEvent.isApresentacao ? '0 0 6px' : '1px 0', lineHeight: 1.3,
                   }}>
-                    {rehearsalInfo.dayName}
+                    {nextEvent.isApresentacao ? nextEvent.nome : rehearsalInfo.dayName}
                   </p>
                   <p style={{
                     fontSize: '9px', fontWeight: '700', letterSpacing: '1.2px',

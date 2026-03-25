@@ -11,11 +11,20 @@ import { useMediaQuery } from '@hooks/useMediaQuery';
 import StatCard from './components/StatCard';
 import QuickActionButton from './components/QuickActionButton';
 
+const getGreeting = () => {
+  const h = new Date().getHours();
+  if (h >= 5 && h < 12) return { emoji: '🌅', prefix: 'Bom dia,', msg: 'Hora de organizar essa papelada.' };
+  if (h >= 12 && h < 18) return { emoji: '🌤️', prefix: 'Boa tarde,', msg: 'Vamos colocar as coisas em ordem.' };
+  return { emoji: '🌙', prefix: 'Boa noite,', msg: 'Ainda tem coisa pra resolver?' };
+};
+
 const AdminDashboard = () => {
   const { stats, loading } = useAdmin();
   const { user } = useAuth();
   const [atividades, setAtividades] = useState([]);
   const isMobile = useMediaQuery(`(max-width: ${BREAKPOINTS.mobile - 1}px)`);
+  const greeting = getGreeting();
+  const firstName = (user?.name || 'Admin').split(' ')[0];
 
   // Carrega atividades
   useEffect(() => {
@@ -34,38 +43,39 @@ const AdminDashboard = () => {
     <div className="page-transition" style={{ padding: isMobile ? '16px' : '32px', maxWidth: '1200px', margin: '0 auto', }}>
       {/* Header com saudação */}
       <div style={{ marginBottom: isMobile ? '20px' : '32px' }}>
-        <div style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '4px', }}>
-          Olá,
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+          <div>
+            <h1 style={{
+              fontSize: isMobile ? '20px' : '24px',
+              fontWeight: '800',
+              letterSpacing: '-0.4px',
+              color: 'var(--text-primary)',
+              margin: '0 0 4px',
+              lineHeight: 1.2,
+            }}>
+              {greeting.prefix}{' '}
+              <span className="liquid-metal-name">{firstName}.</span>
+            </h1>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <p style={{ fontSize: '14px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.4 }}>
+                {greeting.msg}
+              </p>
+              <span style={{
+                background: 'linear-gradient(135deg, #D4AF37 0%, #B8860B 100%)',
+                color: '#fff',
+                padding: '3px 9px',
+                borderRadius: '20px',
+                fontSize: '10px',
+                fontWeight: '700',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px',
+                flexShrink: 0,
+              }}>
+                Admin
+              </span>
+            </div>
+          </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px', flexWrap: 'wrap' }}>
-          <h1 style={{
-            fontSize: isMobile ? '22px' : '28px',
-            fontWeight: '700',
-            background: 'linear-gradient(135deg, #8B6914 0%, #B8860B 50%, #8B6914 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
-            margin: 0,
-            display: 'inline',
-            filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.1))'
-          }}>
-            {user?.name || 'Administrador'}
-          </h1>
-          <span style={{
-            background: 'linear-gradient(135deg, #D4AF37 0%, #B8860B 100%)',
-            color: '#fff',
-            padding: '6px 14px',
-            borderRadius: '20px',
-            fontSize: '12px',
-            fontWeight: '600',
-            textTransform: 'uppercase'
-          }}>
-            Admin
-          </span>
-        </div>
-        <p style={{ color: 'var(--text-secondary)', margin: 0 }}>
-          Acervo Digital - Sociedade Filarmônica 25 de Março
-        </p>
       </div>
 
       {/* Stats Grid */}
@@ -75,10 +85,10 @@ const AdminDashboard = () => {
         gap: isMobile ? '12px' : '16px',
         marginBottom: isMobile ? '20px' : '32px'
       }}>
-        <StatCard icon="users" label="Músicos Ativos" value={stats.musicos_ativos || 0} color="#D4AF37" loading={loading} />
-        <StatCard icon="music" label="Partituras" value={stats.total_partituras || 0} color="#3498db" loading={loading} />
-        <StatCard icon="download" label="Downloads" value={stats.total_downloads || 0} color="#27ae60" loading={loading} />
-        <StatCard icon="folder" label="Categorias" value={stats.total_categorias || 0} color="#9b59b6" loading={loading} />
+        <StatCard icon="users" label="Músicos Ativos" value={stats.musicos_ativos || 0} loading={loading} index={0} onClick={() => window.adminNav?.('musicos')} />
+        <StatCard icon="music" label="Partituras" value={stats.total_partituras || 0} loading={loading} index={1} onClick={() => window.adminNav?.('partituras')} />
+        <StatCard icon="download" label="Downloads" value={stats.total_downloads || 0} loading={loading} index={2} onClick={() => window.adminNav?.('analytics')} />
+        <StatCard icon="folder" label="Categorias" value={stats.total_categorias || 0} loading={loading} index={3} onClick={() => window.adminNav?.('categorias')} />
       </div>
 
       {/* Acoes Rapidas */}

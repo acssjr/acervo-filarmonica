@@ -1,7 +1,11 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import gsap from 'gsap';
+import { useGSAP } from '@gsap/react';
 import API from '../../../services/api';
 import Skeleton from '../../../components/common/Skeleton';
 import { useScrollLock } from '../../../hooks/useScrollLock';
+
+gsap.registerPlugin(useGSAP);
 
 // Icons - use simple SVG inline icons to avoid import issues
 const SearchIcon = ({ size = 16, color = 'currentColor' }) => (
@@ -38,6 +42,11 @@ const formatDatePt = (dateStr) => {
 };
 
 const EditarEnsaioModal = ({ ensaio, usuarios, onClose, onUpdate, addNotification }) => {
+  const overlayRef = useRef(null);
+  const cardRef = useRef(null);
+  const tlRef = useRef(null);
+  const isAnimatingClose = useRef(false);
+
   const [abaAtiva, setAbaAtiva] = useState('presencas');
   const [loading, setLoading] = useState(true);
   const [detalhe, setDetalhe] = useState(null);
@@ -45,6 +54,7 @@ const EditarEnsaioModal = ({ ensaio, usuarios, onClose, onUpdate, addNotificatio
   const [buscaPartitura, setBuscaPartitura] = useState('');
   const [partiturasDisponiveis, setPartiturasDisponiveis] = useState([]);
   const [buscandoPartituras, setBuscandoPartituras] = useState(false);
+  const [repertorioAtivo, setRepertorioAtivo] = useState(null);
   const [saving, setSaving] = useState(false);
   const [youtubeUrl, setYoutubeUrl] = useState('');
   const [originalYoutubeUrl, setOriginalYoutubeUrl] = useState('');
@@ -53,6 +63,11 @@ const EditarEnsaioModal = ({ ensaio, usuarios, onClose, onUpdate, addNotificatio
   const [originalPresenteIds, setOriginalPresenteIds] = useState(new Set());
   const [partiturasRemovidasIds, setPartiturasRemovidasIds] = useState(new Set());
   const [hasChanges, setHasChanges] = useState(false);
+  const [hasOrderChanged, setHasOrderChanged] = useState(false);
+
+  // Drag-to-reorder state
+  const [dragIndex, setDragIndex] = useState(null);
+  const [dragOverIndex, setDragOverIndex] = useState(null);
 
   // Load detailed rehearsal data
   const carregarDetalhe = useCallback(async () => {
@@ -87,7 +102,38 @@ const EditarEnsaioModal = ({ ensaio, usuarios, onClose, onUpdate, addNotificatio
   // Centralized Scroll Lock
   useScrollLock();
 
-  useEffect(() => { carregarDetalhe(); }, [carregarDetalhe]);
+  // GSAP open animation
+  useGSAP(() => {
+    const tl = gsap.timeline();
+    tlRef.current = tl;
+
+    tl.fromTo(overlayRef.current,
+      { opacity: 0, backdropFilter: 'blur(0px)' },
+      { opacity: 1, backdropFilter: 'blur(4px)', duration: 0.35, ease: 'power2.out' }
+    ).fromTo(cardRef.current,
+      { y: 24, scale: 0.96, opacity: 0 },
+      { y: 0, scale: 1, opacity: 1, duration: 0.45, ease: 'expo.out' },
+      '<0.05'
+    );
+  }, { scope: overlayRef });
+
+  const handleClose = useCallback(() => {
+    if (isAnimatingClose.current) return;
+    isAnimatingClose.current = true;
+    // Dedicated exit — faster and lighter than reversing the entrance
+    const exitTl = gsap.timeline({
+      onComplete: onClose,
+      defaults: { ease: 'power2.in' }
+    });
+    exitTl
+      .to(cardRef.current, { y: 12, scale: 0.97, opacity: 0, duration: 0.18 })
+      .to(overlayRef.current, { opacity: 0, duration: 0.14 }, '<0.03');
+  }, [onClose]);
+
+  useEffect(() => {
+    carregarDetalhe();
+    API.getRepertorioAtivo().then(r => setRepertorioAtivo(r || null)).catch(() => {});
+  }, [carregarDetalhe]);
 
   // Presence management
   const handleRemoverPresenca = (usuarioId) => {
@@ -123,7 +169,7 @@ const EditarEnsaioModal = ({ ensaio, usuarios, onClose, onUpdate, addNotificatio
     try {
       const result = await API.getPartituras({ busca: termo });
       const jaAdicionadas = new Set((detalhe?.partituras || []).map(p => p.partitura_id));
-      setPartiturasDisponiveis((result.partituras || []).filter(p => !jaAdicionadas.has(p.id)));
+      setPartiturasDisponiveis((result || []).filter(p => !jaAdicionadas.has(p.id)));
     } catch {
       setPartiturasDisponiveis([]);
     } finally {
@@ -131,8 +177,9 @@ const EditarEnsaioModal = ({ ensaio, usuarios, onClose, onUpdate, addNotificatio
     }
   };
 
-  const handleAdicionarPartitura = (partituraId) => {
-    const partitura = partiturasDisponiveis.find(p => p.id === partituraId);
+  const handleAdicionarPartitura = (partituraId, sourceList = null) => {
+    const lista = sourceList || partiturasDisponiveis;
+    const partitura = lista.find(p => p.id === partituraId);
     if (!partitura) return;
     setDetalhe(prev => ({
       ...prev,
@@ -165,6 +212,26 @@ const EditarEnsaioModal = ({ ensaio, usuarios, onClose, onUpdate, addNotificatio
     setHasChanges(true);
   };
 
+  // Drag-to-reorder handlers
+  const handleDragStart = (index) => setDragIndex(index);
+  const handleDragOver = (e, index) => { e.preventDefault(); setDragOverIndex(index); };
+  const handleDrop = (dropIndex) => {
+    if (dragIndex === null || dragIndex === dropIndex) {
+      setDragIndex(null);
+      setDragOverIndex(null);
+      return;
+    }
+    const newList = [...(detalhe?.partituras || [])];
+    const [moved] = newList.splice(dragIndex, 1);
+    newList.splice(dropIndex, 0, moved);
+    setDetalhe(prev => ({ ...prev, partituras: newList }));
+    setHasOrderChanged(true);
+    setHasChanges(true);
+    setDragIndex(null);
+    setDragOverIndex(null);
+  };
+  const handleDragEnd = () => { setDragIndex(null); setDragOverIndex(null); };
+
   const handleSalvar = async () => {
     setSaving(true);
     try {
@@ -195,6 +262,22 @@ const EditarEnsaioModal = ({ ensaio, usuarios, onClose, onUpdate, addNotificatio
 
       await Promise.all(promises);
 
+      // 3. Reorder if order changed
+      if (hasOrderChanged) {
+        const fresh = await API.getPartiturasEnsaio(ensaio.data_ensaio);
+        const freshList = fresh.partituras || [];
+        const desiredOrder = detalhe.partituras.map(p => p.partitura_id);
+        const ordens = desiredOrder
+          .map((partituraId, idx) => {
+            const real = freshList.find(fp => fp.partitura_id === partituraId);
+            return real ? { id: real.id, ordem: idx } : null;
+          })
+          .filter(Boolean);
+        if (ordens.length > 0) {
+          await API.reorderPartiturasEnsaio(ensaio.data_ensaio, ordens);
+        }
+      }
+
       // Save youtube URL if changed
       if (youtubeUrl !== originalYoutubeUrl) {
         await API.updateEnsaioConfig(ensaio.data_ensaio, youtubeUrl);
@@ -202,7 +285,7 @@ const EditarEnsaioModal = ({ ensaio, usuarios, onClose, onUpdate, addNotificatio
       }
 
       onUpdate?.(true); // Refreshes parent data silently to keep scroll
-      onClose();    // Closes modal
+      handleClose();    // Closes modal with animation
       addNotification?.('Ensaio atualizado com sucesso', 'success');
 
     } catch (error) {
@@ -232,19 +315,18 @@ const EditarEnsaioModal = ({ ensaio, usuarios, onClose, onUpdate, addNotificatio
     : 0;
 
   return (
-    <div onClick={onClose} style={{
+    <div ref={overlayRef} onClick={handleClose} style={{
       position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-      background: 'rgba(0, 0, 0, 0.6)', backdropFilter: 'blur(4px)',
+      background: 'rgba(0, 0, 0, 0.6)',
       zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center',
       padding: '20px'
     }}>
-      <div onClick={e => e.stopPropagation()} style={{
+      <div ref={cardRef} onClick={e => e.stopPropagation()} style={{
         background: 'var(--bg-card)', border: '1px solid rgba(212,175,55,0.2)', // Subtle gold border
         borderRadius: '16px', maxWidth: '640px', width: '100%',
         height: '680px', // More stable fixed height to prevent jumps
         maxHeight: '90vh', display: 'flex', flexDirection: 'column',
-        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
-        animation: 'modalFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
+        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
       }}>
         {/* Header */}
         <div style={{
@@ -310,7 +392,7 @@ const EditarEnsaioModal = ({ ensaio, usuarios, onClose, onUpdate, addNotificatio
               />
             </div>
 
-            <button onClick={onClose} style={{
+            <button onClick={handleClose} style={{
               background: 'rgba(244, 228, 188, 0.1)', border: '1px solid rgba(244, 228, 188, 0.2)', cursor: 'pointer', color: '#F4E4BC',
               padding: '6px', borderRadius: '50%', display: 'flex'
             }}>
@@ -581,26 +663,133 @@ const EditarEnsaioModal = ({ ensaio, usuarios, onClose, onUpdate, addNotificatio
                 />
               </div>
 
+              {/* Sugestões do Repertório Ativo */}
+              {!buscaPartitura && (() => {
+                if (!repertorioAtivo?.partituras?.length) return null;
+                const jaAdicionadas = new Set((detalhe?.partituras || []).map(p => p.partitura_id));
+                const sugestoes = repertorioAtivo.partituras.filter(p => !jaAdicionadas.has(p.id));
+                if (!sugestoes.length) return null;
+                return (
+                  <div style={{
+                    marginBottom: '16px',
+                    border: '1px solid rgba(212,175,55,0.25)',
+                    borderRadius: '10px',
+                    overflow: 'hidden',
+                  }}>
+                    {/* Header */}
+                    <div style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      padding: '8px 12px',
+                      background: 'rgba(212,175,55,0.08)',
+                      borderBottom: '1px solid rgba(212,175,55,0.15)',
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill={COLORS.gold.primary} stroke="none">
+                          <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
+                        </svg>
+                        <span style={{ fontSize: '10px', fontWeight: '700', color: COLORS.gold.primary, textTransform: 'uppercase', letterSpacing: '0.8px' }}>
+                          Repertório ativo — {repertorioAtivo.nome}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => {
+                          const jaAdicionadasNow = new Set((detalhe?.partituras || []).map(p => p.partitura_id));
+                          const novas = sugestoes.filter(p => !jaAdicionadasNow.has(p.id)).map((p, i) => ({
+                            id: `optimistic-${Date.now()}-${i}`,
+                            partitura_id: p.id,
+                            titulo: p.titulo,
+                            compositor: p.compositor,
+                            categoria_nome: p.categoria_nome,
+                            _optimistic: true
+                          }));
+                          if (!novas.length) return;
+                          setDetalhe(prev => ({
+                            ...prev,
+                            partituras: [...prev.partituras, ...novas],
+                            total_partituras: prev.total_partituras + novas.length
+                          }));
+                          setHasChanges(true);
+                        }}
+                        style={{
+                          fontSize: '11px', fontWeight: '700', color: COLORS.gold.primary,
+                          background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.3)',
+                          borderRadius: '6px', padding: '3px 8px', cursor: 'pointer'
+                        }}
+                      >
+                        + Adicionar todas ({sugestoes.length})
+                      </button>
+                    </div>
+                    {/* Lista */}
+                    {sugestoes.map((p, idx) => (
+                      <div
+                        key={p.id}
+                        onClick={() => handleAdicionarPartitura(p.id, repertorioAtivo.partituras)}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: '10px',
+                          padding: '9px 14px', borderTop: idx === 0 ? 'none' : '1px solid rgba(255,255,255,0.04)',
+                          cursor: 'pointer', transition: 'background 0.12s',
+                          background: 'rgba(255,255,255,0.02)',
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(212,175,55,0.08)'}
+                        onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'}
+                      >
+                        <span style={{
+                          fontSize: '10px', fontWeight: '800', color: 'rgba(212,175,55,0.5)',
+                          minWidth: '18px', textAlign: 'center'
+                        }}>{idx + 1}</span>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)' }}>{p.titulo}</span>
+                          {p.compositor && (
+                            <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginLeft: '6px' }}>{p.compositor}</span>
+                          )}
+                          {p.categoria_nome && (
+                            <span style={{
+                              fontSize: '9px', padding: '1px 5px', borderRadius: '4px',
+                              background: 'rgba(212,175,55,0.15)', color: COLORS.gold.primary,
+                              marginLeft: '6px', fontWeight: '700'
+                            }}>{p.categoria_nome}</span>
+                          )}
+                        </div>
+                        <span style={{ fontSize: '11px', color: COLORS.green, fontWeight: '600', flexShrink: 0 }}>+ Adicionar</span>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+
               {/* Search results */}
               {buscaPartitura.length >= 2 && partiturasDisponiveis.length > 0 && (
                 <div style={{
-                  marginBottom: '16px', border: '1px solid var(--border)', borderRadius: '8px', overflow: 'hidden'
+                  marginBottom: '16px',
+                  border: '1px solid rgba(212,175,55,0.3)',
+                  borderRadius: '10px',
+                  overflow: 'hidden',
+                  boxShadow: '0 2px 12px rgba(0,0,0,0.3)'
                 }}>
                   <div style={{
-                    fontSize: '11px', fontWeight: '600', color: 'var(--text-muted)',
-                    padding: '8px 12px',
-                    background: 'var(--bg)', textTransform: 'uppercase', letterSpacing: '0.5px'
+                    fontSize: '10px', fontWeight: '700', color: COLORS.gold.primary,
+                    padding: '7px 12px',
+                    background: 'rgba(212,175,55,0.1)',
+                    textTransform: 'uppercase', letterSpacing: '1px',
+                    borderBottom: '1px solid rgba(212,175,55,0.2)'
                   }}>
                     Resultados
                   </div>
                   {partiturasDisponiveis.map(p => (
-                    <div key={p.id} style={{
-                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                      padding: '8px 12px', borderTop: '1px solid var(--border)',
-                      fontSize: '14px',
-                    }}>
-                      <div>
-                        <span style={{ color: 'var(--text-primary)' }}>{p.titulo}</span>
+                    <div
+                      key={p.id}
+                      onClick={() => handleAdicionarPartitura(p.id)}
+                      style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        padding: '10px 14px', borderTop: '1px solid rgba(255,255,255,0.06)',
+                        fontSize: '14px', cursor: 'pointer', transition: 'background 0.12s',
+                        background: 'rgba(255,255,255,0.03)',
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.background = 'rgba(212,175,55,0.1)'}
+                      onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
+                    >
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <span style={{ color: 'var(--text-primary)', fontWeight: '600' }}>{p.titulo}</span>
                         {p.compositor && (
                           <span style={{ color: 'var(--text-muted)', fontSize: '12px', marginLeft: '8px' }}>
                             {p.compositor}
@@ -609,20 +798,20 @@ const EditarEnsaioModal = ({ ensaio, usuarios, onClose, onUpdate, addNotificatio
                         {p.categoria_nome && (
                           <span style={{
                             fontSize: '10px', padding: '2px 6px', borderRadius: '4px',
-                            background: 'rgba(212,175,55,0.15)', color: COLORS.gold.primary,
-                            marginLeft: '8px', fontWeight: '600'
+                            background: 'rgba(212,175,55,0.2)', color: COLORS.gold.primary,
+                            marginLeft: '8px', fontWeight: '700'
                           }}>
                             {p.categoria_nome}
                           </span>
                         )}
                       </div>
-                      <button onClick={() => handleAdicionarPartitura(p.id)} style={{
-                        background: 'none', border: '1px solid var(--border)', borderRadius: '6px',
-                        padding: '4px 8px', cursor: 'pointer', color: COLORS.green,
-                        display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px',
+                      <span style={{
+                        display: 'flex', alignItems: 'center', gap: '4px',
+                        fontSize: '12px', fontWeight: '600', color: COLORS.green,
+                        flexShrink: 0, marginLeft: '12px'
                       }}>
-                        <PlusIcon size={14} color={COLORS.green} /> Adicionar
-                      </button>
+                        <PlusIcon size={13} color={COLORS.green} /> Adicionar
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -644,12 +833,25 @@ const EditarEnsaioModal = ({ ensaio, usuarios, onClose, onUpdate, addNotificatio
                   Partituras tocadas no ensaio
                 </div>
                 {(detalhe?.partituras || []).map((p, index) => (
-                  <div key={p.id} style={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    padding: '10px 12px', borderTop: '1px solid var(--border)',
-                    fontSize: '14px',
-                  }}>
+                  <div
+                    key={p.id}
+                    draggable
+                    onDragStart={() => handleDragStart(index)}
+                    onDragOver={(e) => handleDragOver(e, index)}
+                    onDrop={() => handleDrop(index)}
+                    onDragEnd={handleDragEnd}
+                    style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      padding: '10px 12px', borderTop: '1px solid var(--border)',
+                      fontSize: '14px',
+                      background: dragOverIndex === index && dragIndex !== index ? 'rgba(212,175,55,0.08)' : 'transparent',
+                      cursor: 'grab',
+                    }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0, flex: 1 }}>
+                      {/* Drag handle */}
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" style={{ flexShrink: 0, opacity: 0.5 }}>
+                        <line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" />
+                      </svg>
                       <div style={{
                         width: '24px', height: '24px', borderRadius: '50%',
                         background: 'linear-gradient(135deg, #D4AF37 0%, #B8960C 100%)',
@@ -721,7 +923,7 @@ const EditarEnsaioModal = ({ ensaio, usuarios, onClose, onUpdate, addNotificatio
             </span>
           </div>
           <div style={{ display: 'flex', gap: '12px' }}>
-            <button onClick={onClose} disabled={saving} style={{
+            <button onClick={handleClose} disabled={saving} style={{
               padding: '10px 24px', background: 'transparent', color: 'var(--text-muted)',
               border: '1px solid var(--border)', borderRadius: '8px', fontSize: '14px', fontWeight: '600', cursor: 'pointer'
             }}>

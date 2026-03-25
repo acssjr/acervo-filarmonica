@@ -1,10 +1,12 @@
 // ===== HEADER ACTIONS =====
 // Ações do header (tema + notificações) - apenas mobile
 
+import { useRef } from 'react';
 import { useUI } from '@contexts/UIContext';
 import { useNotifications } from '@contexts/NotificationContext';
 import { Icons } from '@constants/icons';
 import { useMediaQuery } from '@hooks/useMediaQuery';
+import { useBellAnimation } from '@hooks/useBellAnimation';
 import ThemeSelector from './ThemeSelector';
 import AdminToggle from './AdminToggle';
 
@@ -12,6 +14,8 @@ const HeaderActions = ({ inDarkHeader = false }) => {
   const { setShowNotifications } = useUI();
   const { unreadCount } = useNotifications();
   const isDesktop = useMediaQuery('(min-width: 1024px)');
+  const bellRef = useRef(null);
+  useBellAnimation(bellRef, unreadCount > 0);
 
   // No desktop, não mostra nada (já está na sidebar)
   if (isDesktop) return null;
@@ -60,7 +64,7 @@ const HeaderActions = ({ inDarkHeader = false }) => {
           position: 'relative'
         }}
       >
-        <div style={{ width: '18px', height: '18px' }}>
+        <div ref={bellRef} style={{ width: '18px', height: '18px' }}>
           <Icons.Bell />
         </div>
 

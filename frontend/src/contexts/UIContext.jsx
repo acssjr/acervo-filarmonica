@@ -38,6 +38,7 @@ export const UIProvider = ({ children }) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [selectedSheet, setSelectedSheet] = useState(null);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
 
   // Carrinho de compartilhamento
   const [shareCart, setShareCart] = useState([]);
@@ -100,6 +101,8 @@ export const UIProvider = ({ children }) => {
       setSelectedSheet,
       showNotifications,
       setShowNotifications,
+      mobileSearchOpen,
+      setMobileSearchOpen,
       shareCart,
       showShareCart,
       setShowShareCart,
