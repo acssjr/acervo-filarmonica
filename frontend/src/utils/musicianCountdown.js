@@ -5,11 +5,17 @@ export const COUNTDOWN_ROTATION_MS = 6000;
 const DEFAULT_REHEARSAL_DAYS = [1, 3];
 const DEFAULT_REHEARSAL_HOUR = 19;
 
-const normalizeRehearsalDays = (rehearsalDays) => (
-  Array.isArray(rehearsalDays) && rehearsalDays.length > 0
-    ? rehearsalDays
-    : DEFAULT_REHEARSAL_DAYS
-);
+const normalizeRehearsalDays = (rehearsalDays) => {
+  if (!Array.isArray(rehearsalDays)) {
+    return DEFAULT_REHEARSAL_DAYS;
+  }
+
+  const normalizedDays = rehearsalDays.filter(
+    (day) => Number.isInteger(day) && day >= 0 && day <= 6
+  );
+
+  return normalizedDays.length > 0 ? normalizedDays : DEFAULT_REHEARSAL_DAYS;
+};
 
 const normalizeRehearsalHour = (rehearsalHour) => {
   const parsedHour = typeof rehearsalHour === 'number'
