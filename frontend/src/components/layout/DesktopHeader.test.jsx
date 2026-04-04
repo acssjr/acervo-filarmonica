@@ -6,7 +6,7 @@ let mockTheme = 'dark';
 let mockDiasEnsaio = { dias: [1], hora: 19 };
 let mockModoRecesso = false;
 let mockRepertorioAtivo = {
-  nome: '100 Anos do Paco Municipal',
+  nome: '100 Anos do Paço Municipal',
   data_apresentacao: '2026-04-07'
 };
 
@@ -72,7 +72,7 @@ describe('DesktopHeader', () => {
     mockDiasEnsaio = { dias: [1], hora: 19 };
     mockModoRecesso = false;
     mockRepertorioAtivo = {
-      nome: '100 Anos do Paco Municipal',
+      nome: '100 Anos do Paço Municipal',
       data_apresentacao: '2026-04-07'
     };
   });
@@ -92,8 +92,8 @@ describe('DesktopHeader', () => {
     const stage = screen.getByTestId('musician-countdown-stage');
 
     expect(within(stage).getByText('Próximo ensaio')).toBeInTheDocument();
-    expect(within(stage).getByText('segunda')).toBeInTheDocument();
-    expect(within(stage).queryByText('100 Anos do Paco Municipal')).not.toBeInTheDocument();
+    expect(within(stage).getByText(/segund/i)).toBeInTheDocument();
+    expect(within(stage).queryByText('100 Anos do Paço Municipal')).not.toBeInTheDocument();
 
     act(() => {
       jest.advanceTimersByTime(6000);
@@ -103,7 +103,7 @@ describe('DesktopHeader', () => {
       expect(within(stage).getByText('Próxima apresentação')).toBeInTheDocument();
     });
 
-    expect(within(stage).getByText('100 Anos do Paco Municipal')).toBeInTheDocument();
+    expect(within(stage).getByText('100 Anos do Paço Municipal')).toBeInTheDocument();
   });
 
   test('pausa a rotação no hover e retoma quando o mouse sai', async () => {

@@ -1,8 +1,19 @@
 // Changelog para o painel administrativo (AdminConfig)
 export const ADMIN_CHANGELOG = [
   {
-    version: '2.9.1',
+    version: '3.1.0',
     isCurrent: true,
+    items: [
+      { bold: 'Músico:', text: 'Countdown rotativo entre próximo ensaio e apresentação' },
+      { bold: 'Notificações:', text: 'Atualização imediata após uploads e novas partes' },
+      { bold: 'Perfil:', text: 'Conquistas renderizando corretamente em StrictMode' },
+      { bold: 'Catálogo:', text: 'Cards de compositores agora abrem a página específica' },
+      { bold: 'Ensaio:', text: 'Modal com abertura estável e backdrop mais leve' }
+    ]
+  },
+  {
+    version: '2.9.1',
+    isCurrent: false,
     items: [
       { bold: 'Presença:', text: 'Numeração "Livro de Registros" (#N) na lista e modal' },
       { bold: 'Modal:', text: 'Novo modal "blindado" (Portal) com scroll lock' },

@@ -104,10 +104,8 @@ describe('ProfileScreen', () => {
       </React.StrictMode>
     );
 
-    const badgeTitle = await screen.findByText('Primeiro Acorde');
-    const badgeCard = badgeTitle.closest('div')?.parentElement;
-
-    expect(badgeCard).not.toBeNull();
+    await screen.findByText('Primeiro Acorde');
+    const badgeCard = screen.getByTestId('badge-card-primeiro_acorde');
 
     await waitFor(() => {
       expect(badgeCard.style.opacity).not.toBe('0');

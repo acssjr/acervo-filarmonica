@@ -14,6 +14,7 @@ export async function registrarAtividade(env, tipo, titulo, detalhes = null, usu
     `).bind(tipo, titulo, detalhes, usuarioId).run();
   } catch (e) {
     console.error('Erro ao registrar atividade:', e);
+    throw e;
   }
 }
 

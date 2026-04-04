@@ -19,6 +19,9 @@ const normalizeRehearsalHour = (rehearsalHour) => {
   return Number.isFinite(parsedHour) ? parsedHour : DEFAULT_REHEARSAL_HOUR;
 };
 
+/**
+ * Calcula a próxima data de ensaio a partir dos dias e horário configurados.
+ */
 export const computeNextRehearsalDate = (
   rehearsalDays = DEFAULT_REHEARSAL_DAYS,
   rehearsalHour = DEFAULT_REHEARSAL_HOUR,
@@ -45,6 +48,9 @@ export const computeNextRehearsalDate = (
   return target;
 };
 
+/**
+ * Converte a data da apresentação ativa em um objeto Date no horário do ensaio.
+ */
 export const getPresentationDate = (
   repertorioAtivo,
   rehearsalHour = DEFAULT_REHEARSAL_HOUR
@@ -74,6 +80,9 @@ export const getPresentationDate = (
   return Number.isNaN(presentationDate.getTime()) ? null : presentationDate;
 };
 
+/**
+ * Monta a fila de contagens do músico respeitando a prioridade do ensaio.
+ */
 export const buildMusicianCountdownItems = (
   diasEnsaio = { dias: DEFAULT_REHEARSAL_DAYS, hora: DEFAULT_REHEARSAL_HOUR },
   repertorioAtivo
@@ -105,6 +114,9 @@ export const buildMusicianCountdownItems = (
   return { items, rehearsalInfo };
 };
 
+/**
+ * Quebra a diferença entre agora e a data alvo em dias, horas, minutos e segundos.
+ */
 export const getCountdownParts = (targetDate, now = Date.now()) => {
   const diff = Math.max(0, targetDate - now);
   const totalSeconds = Math.floor(diff / 1000);

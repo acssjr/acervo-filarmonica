@@ -85,9 +85,15 @@ const getReducedMotionPreference = () => (
   && window.matchMedia('(prefers-reduced-motion: reduce)').matches
 );
 
-const getCountdownTitle = (item, countdown) => {
+const getCountdownTitle = (item) => {
   if (item.type === 'rehearsal') {
-    return countdown.days > 0 ? item.name : 'Hoje';
+    const targetDate = new Date(item.date);
+    const now = new Date();
+    const isSameDay = targetDate.getFullYear() === now.getFullYear()
+      && targetDate.getMonth() === now.getMonth()
+      && targetDate.getDate() === now.getDate();
+
+    return isSameDay ? 'Hoje' : item.name;
   }
 
   return item.name;
@@ -145,7 +151,7 @@ const CountdownSurface = ({
 }) => {
   const mutedColor = isDark ? 'var(--text-muted)' : 'rgba(0,0,0,0.45)';
   const goldLabel = isDark ? '#D4AF37' : '#8B6914';
-  const title = getCountdownTitle(item, countdown);
+  const title = getCountdownTitle(item);
   const contentAlignment = variant === 'mobile' ? 'flex-start' : 'center';
   const textAlignment = variant === 'mobile' ? 'left' : 'center';
 
@@ -229,7 +235,7 @@ const MusicianCountdown = ({
   isDark,
   variant = 'mobile'
 }) => {
-  const [, setTick] = useState(0);
+  const [currentTime, setCurrentTime] = useState(() => Date.now());
   const [activeIndex, setActiveIndex] = useState(0);
   const [exitingItem, setExitingItem] = useState(null);
   const [isPaused, setIsPaused] = useState(false);
@@ -249,18 +255,16 @@ const MusicianCountdown = ({
 
   useEffect(() => {
     const intervalId = setInterval(() => {
-      setTick((currentTick) => currentTick + 1);
+      setCurrentTime(Date.now());
     }, 1000);
 
     return () => clearInterval(intervalId);
   }, []);
 
-  const countdownsById = useMemo(() => (
-    items.reduce((accumulator, item) => {
-      accumulator[item.id] = getCountdownParts(item.date, Date.now());
-      return accumulator;
-    }, {})
-  ), [items]);
+  const countdownsById = items.reduce((accumulator, item) => {
+    accumulator[item.id] = getCountdownParts(item.date, currentTime);
+    return accumulator;
+  }, {});
 
   const layoutSignature = useMemo(() => (
     items

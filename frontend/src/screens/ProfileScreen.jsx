@@ -111,6 +111,7 @@ const BadgeCard = ({ id, emoji, label, descricao, earned }) => {
   const { gradient, glow } = BADGE_THEMES[id] || DEFAULT_BADGE_THEME;
   return (
     <div
+      data-testid={`badge-card-${id}`}
       style={{
         position: 'relative',
         overflow: 'hidden',

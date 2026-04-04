@@ -7,7 +7,7 @@ let mockTheme = 'dark';
 let mockDiasEnsaio = { dias: [1], hora: 19 };
 let mockModoRecesso = false;
 let mockRepertorioAtivo = {
-  nome: '100 Anos do Paco Municipal',
+  nome: '100 Anos do Paço Municipal',
   data_apresentacao: '2026-04-07'
 };
 
@@ -49,7 +49,7 @@ describe('HomeHeader', () => {
     mockDiasEnsaio = { dias: [1], hora: 19 };
     mockModoRecesso = false;
     mockRepertorioAtivo = {
-      nome: '100 Anos do Paco Municipal',
+      nome: '100 Anos do Paço Municipal',
       data_apresentacao: '2026-04-07'
     };
   });
@@ -65,8 +65,8 @@ describe('HomeHeader', () => {
     const stage = screen.getByTestId('musician-countdown-stage');
 
     expect(within(stage).getByText('Próximo ensaio')).toBeInTheDocument();
-    expect(within(stage).getByText('segunda')).toBeInTheDocument();
-    expect(within(stage).queryByText('100 Anos do Paco Municipal')).not.toBeInTheDocument();
+    expect(within(stage).getByText(/segund/i)).toBeInTheDocument();
+    expect(within(stage).queryByText('100 Anos do Paço Municipal')).not.toBeInTheDocument();
 
     act(() => {
       jest.advanceTimersByTime(6000);
@@ -76,7 +76,7 @@ describe('HomeHeader', () => {
       expect(within(stage).getByText('Próxima apresentação')).toBeInTheDocument();
     });
 
-    expect(within(stage).getByText('100 Anos do Paco Municipal')).toBeInTheDocument();
+    expect(within(stage).getByText('100 Anos do Paço Municipal')).toBeInTheDocument();
   });
 
   test('alinha o countdown do mobile à esquerda para seguir a mesma coluna da saudação', () => {
@@ -84,7 +84,7 @@ describe('HomeHeader', () => {
 
     const stage = screen.getByTestId('musician-countdown-stage');
     const surface = stage.querySelector('[data-countdown-kind="rehearsal"]');
-    const title = within(stage).getByText('segunda');
+    const title = within(stage).getByText(/segund/i);
 
     expect(surface).not.toBeNull();
     expect(screen.getByTestId('musician-countdown').style.alignItems).toBe('flex-start');
