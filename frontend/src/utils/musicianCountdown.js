@@ -112,11 +112,13 @@ export const buildMusicianCountdownItems = (
 
   const presentationDate = getPresentationDate(repertorioAtivo, rehearsalHour);
   if (presentationDate && presentationDate > now) {
+    const presentationName = repertorioAtivo?.nome?.trim() || 'Apresentação';
+
     items.push({
       id: 'presentation',
       type: 'presentation',
       label: 'Próxima apresentação',
-      name: repertorioAtivo.nome,
+      name: presentationName,
       date: presentationDate
     });
   }

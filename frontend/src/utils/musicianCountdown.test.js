@@ -1,5 +1,9 @@
-import { describe, expect, test } from '@jest/globals';
-import { computeNextRehearsalDate, getPresentationDate } from './musicianCountdown';
+import { jest, describe, expect, test } from '@jest/globals';
+import {
+  buildMusicianCountdownItems,
+  computeNextRehearsalDate,
+  getPresentationDate
+} from './musicianCountdown';
 
 describe('musicianCountdown utils', () => {
   test.each([-1, 24, '24'])(
@@ -20,5 +24,21 @@ describe('musicianCountdown utils', () => {
     }, 19);
 
     expect(presentationDate).toBeNull();
+  });
+
+  test('usa fallback quando a apresentação ativa não tem nome preenchido', () => {
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date('2026-04-03T12:00:00-03:00'));
+
+    const { items } = buildMusicianCountdownItems(
+      { dias: [1], hora: 19 },
+      { nome: '', data_apresentacao: '2026-04-07' }
+    );
+
+    const presentationItem = items.find((item) => item.id === 'presentation');
+
+    expect(presentationItem?.name).toBe('Apresentação');
+
+    jest.useRealTimers();
   });
 });
