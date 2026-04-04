@@ -16,7 +16,9 @@ const normalizeRehearsalHour = (rehearsalHour) => {
     ? rehearsalHour
     : parseInt(rehearsalHour ?? DEFAULT_REHEARSAL_HOUR, 10);
 
-  return Number.isFinite(parsedHour) ? parsedHour : DEFAULT_REHEARSAL_HOUR;
+  return Number.isInteger(parsedHour) && parsedHour >= 0 && parsedHour <= 23
+    ? parsedHour
+    : DEFAULT_REHEARSAL_HOUR;
 };
 
 /**
@@ -77,7 +79,15 @@ export const getPresentationDate = (
     0
   );
 
-  return Number.isNaN(presentationDate.getTime()) ? null : presentationDate;
+  if (Number.isNaN(presentationDate.getTime())) {
+    return null;
+  }
+
+  const isSameCalendarDate = presentationDate.getFullYear() === year
+    && presentationDate.getMonth() === month - 1
+    && presentationDate.getDate() === day;
+
+  return isSameCalendarDate ? presentationDate : null;
 };
 
 /**

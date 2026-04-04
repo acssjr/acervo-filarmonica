@@ -1,6 +1,9 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, jest, test } from '@jest/globals';
+import { afterAll, afterEach, beforeEach, describe, expect, jest, test } from '@jest/globals';
+import { gsap } from 'gsap';
+
+const gsapFromSpy = jest.spyOn(gsap, 'from').mockImplementation(() => ({ kill: jest.fn() }));
 
 const mockSetUser = jest.fn();
 const mockShowToast = jest.fn();
@@ -97,7 +100,11 @@ describe('ProfileScreen', () => {
     jest.clearAllMocks();
   });
 
-  test('mantém as badges visíveis em StrictMode depois da animação inicial', async () => {
+  afterAll(() => {
+    gsapFromSpy.mockRestore();
+  });
+
+  test('dispara a animação das badges em StrictMode depois da montagem inicial', async () => {
     render(
       <React.StrictMode>
         <ProfileScreen />
@@ -108,7 +115,21 @@ describe('ProfileScreen', () => {
     const badgeCard = screen.getByTestId('badge-card-primeiro_acorde');
 
     await waitFor(() => {
-      expect(badgeCard.style.opacity).not.toBe('0');
+      expect(gsapFromSpy).toHaveBeenCalled();
     });
+
+    const animationCall = gsapFromSpy.mock.calls.find(([targets, config]) => (
+      Array.isArray(targets)
+      && targets.includes(badgeCard)
+      && config.opacity === 0
+      && config.scale === 0.88
+      && config.y === 16
+      && config.duration === 0.4
+      && config.ease === 'back.out(1.5)'
+      && config.stagger?.each === 0.08
+      && config.stagger?.from === 'start'
+    ));
+
+    expect(animationCall).toBeDefined();
   });
 });

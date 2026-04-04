@@ -6,7 +6,7 @@ describe('registrarAtividade', () => {
     vi.restoreAllMocks();
   });
 
-  it('relança o erro quando o insert em atividades falha', async () => {
+  it('trata falhas no insert como não fatais e registra contexto no log', async () => {
     const dbError = new Error('DB offline');
     const run = vi.fn().mockRejectedValue(dbError);
     const bind = vi.fn(() => ({ run }));
@@ -20,8 +20,14 @@ describe('registrarAtividade', () => {
 
     await expect(
       registrarAtividade(env, 'nova_parte', 'Partitura Teste', 'Clarinete Bb 1', 1)
-    ).rejects.toThrow('DB offline');
+    ).resolves.toBeUndefined();
 
-    expect(consoleErrorSpy).toHaveBeenCalledWith('Erro ao registrar atividade:', dbError);
+    expect(consoleErrorSpy).toHaveBeenCalledWith('Erro ao registrar atividade:', {
+      tipo: 'nova_parte',
+      titulo: 'Partitura Teste',
+      detalhes: 'Clarinete Bb 1',
+      usuarioId: 1,
+      error: dbError
+    });
   });
 });
