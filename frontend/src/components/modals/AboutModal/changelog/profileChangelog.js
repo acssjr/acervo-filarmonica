@@ -1,8 +1,19 @@
 // Changelog completo para o app do usuário (ProfileScreen)
 export const PROFILE_CHANGELOG = [
   {
-    version: '3.0.0',
+    version: '3.1.0',
     isCurrent: true,
+    items: [
+      { bold: 'Agenda:', text: 'Contador do músico agora alterna entre próximo ensaio e próxima apresentação com transição suave' },
+      { bold: 'Ensaios:', text: 'Modal de detalhes abre com folha estável, fundo mais leve e carregamento sem “salto” visual' },
+      { bold: 'Notificações:', text: 'Painel redesenhado, acentuação corrigida e atualização imediata após uploads e importações' },
+      { bold: 'Perfil:', text: 'Foto persistida no servidor, nome de exibição salvo e conquistas renderizadas com mais estabilidade' },
+      { bold: 'Busca:', text: 'Overlay mobile expandido para acesso mais rápido ao acervo e às descobertas da home' },
+      { bold: 'Compositores:', text: 'Cards em destaque agora levam direto ao compositor selecionado' }
+    ]
+  },
+  {
+    version: '3.0.0',
     items: [
       { bold: 'Card de Repertório:', text: 'Gere e compartilhe um card visual do repertório direto no WhatsApp' },
       { bold: 'Analytics:', text: 'Rastreamento de atividades para melhorar o app continuamente' },
@@ -171,11 +182,11 @@ export const PROFILE_LEGACY_VERSIONS = {
 
 // Config padrão para ProfileScreen
 export const PROFILE_ABOUT_CONFIG = {
-  subtitle: 'Sociedade Filarmonica 25 de Marco',
+  subtitle: 'Sociedade Filarmônica 25 de Março',
   maxWidth: 420,
   infoCards: [
-    { label: 'Versao', value: '3.0.0' },
-    { label: 'Tecnologias', value: 'React • JS • CSS' },
+    { label: 'Versão', value: '3.1.0' },
+    { label: 'Tecnologias', value: 'React • GSAP • Workers' },
     { label: 'Por', value: 'Antonio Jr.', isHighlighted: true }
   ],
   footerText: 'Feira de Santana - BA • Fundada em 1868',

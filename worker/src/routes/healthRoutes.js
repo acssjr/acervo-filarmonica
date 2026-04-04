@@ -2,7 +2,7 @@
 import { jsonResponse } from '../infrastructure/response/helpers.js';
 
 // Versão atual da aplicação - atualizar a cada release
-const APP_VERSION = '2.8.0';
+const APP_VERSION = '3.1.0';
 
 /**
  * Configura rotas de health check

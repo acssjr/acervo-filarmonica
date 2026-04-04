@@ -336,7 +336,7 @@ const NotificationsPanel = () => {
             color: textColor,
             margin: 0,
           }}>
-            Notifica\u00e7\u00f5es
+            {'Notifica\u00e7\u00f5es'}
           </h3>
           {hasUnread && (
             <button
@@ -377,7 +377,7 @@ const NotificationsPanel = () => {
               </p>
             </div>
           ) : notifications.length === 0 ? (
-            <EmptyState icon={Icons.Music} title="Nenhuma notifica\u00e7\u00e3o" size="small" />
+            <EmptyState icon={Icons.Music} title={'Nenhuma notifica\u00e7\u00e3o'} size="small" />
           ) : (
             grouped.map(group => (
               <div key={group.label}>

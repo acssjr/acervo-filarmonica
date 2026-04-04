@@ -4,6 +4,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { gsap } from 'gsap';
+import { useGSAP } from '@gsap/react';
 import { useAuth } from '@contexts/AuthContext';
 import { useUI } from '@contexts/UIContext';
 import { useNotifications } from '@contexts/NotificationContext';
@@ -13,6 +14,8 @@ import { API } from '@services/api';
 import ChangePinModal from '@components/modals/ChangePinModal';
 import { AboutModal, PROFILE_CHANGELOG, PROFILE_LEGACY_VERSIONS, PROFILE_ABOUT_CONFIG } from '@components/modals/AboutModal';
 
+gsap.registerPlugin(useGSAP);
+
 // ── Helpers ────────────────────────────────────────────────────────────────
 
 // ── Sub-componentes ────────────────────────────────────────────────────────
@@ -20,10 +23,10 @@ import { AboutModal, PROFILE_CHANGELOG, PROFILE_LEGACY_VERSIONS, PROFILE_ABOUT_C
 const StatCard = ({ value, label, accent, animate, suffix = '' }) => {
   const numRef = useRef(null);
 
-  useEffect(() => {
+  useGSAP(() => {
     if (animate == null || numRef.current == null) return;
     const proxy = { val: 0 };
-    const tl = gsap.to(proxy, {
+    gsap.to(proxy, {
       val: animate,
       duration: 1.2,
       ease: 'power2.out',
@@ -32,8 +35,11 @@ const StatCard = ({ value, label, accent, animate, suffix = '' }) => {
         if (numRef.current) numRef.current.textContent = proxy.val + suffix;
       },
     });
-    return () => tl.kill();
-  }, [animate, suffix]);
+  }, {
+    scope: numRef,
+    dependencies: [animate, suffix],
+    revertOnUpdate: true
+  });
 
   return (
     <div style={{
@@ -105,6 +111,7 @@ const BadgeCard = ({ id, emoji, label, descricao, earned }) => {
   const { gradient, glow } = BADGE_THEMES[id] || DEFAULT_BADGE_THEME;
   return (
     <div
+      data-testid={`badge-card-${id}`}
       style={{
         position: 'relative',
         overflow: 'hidden',
@@ -253,7 +260,6 @@ const ProfileScreen = () => {
   );
   const fileInputRef = useRef(null);
   const firstBadgesRef = useRef(null);
-  const badgesAnimatedRef = useRef(false);
 
   // Stats de presença — carrega do cache local imediatamente, revalida em background
   const statsCache = Storage.get(`presencaStats_${user?.id}`, null);
@@ -287,23 +293,25 @@ const ProfileScreen = () => {
     if (isEditingNome) nomeInputRef.current?.focus();
   }, [isEditingNome]);
 
-  useEffect(() => {
-    if (!stats || !firstBadgesRef.current || badgesAnimatedRef.current) return;
-    badgesAnimatedRef.current = true;
-    const cards = firstBadgesRef.current.querySelectorAll(':scope > div');
-    const anim = gsap.from(cards, {
+  useGSAP(() => {
+    if (!stats || !firstBadgesRef.current) return;
+
+    const cards = Array.from(firstBadgesRef.current.children);
+    if (cards.length === 0) return;
+
+    gsap.from(cards, {
       opacity: 0,
       scale: 0.88,
       y: 16,
       duration: 0.4,
       ease: 'back.out(1.5)',
-      stagger: { each: 0.08, from: 'start' },
+      stagger: { each: 0.08, from: 'start' }
     });
-    return () => {
-      anim.kill();
-      badgesAnimatedRef.current = false;
-    };
-  }, [stats]);
+  }, {
+    scope: firstBadgesRef,
+    dependencies: [stats],
+    revertOnUpdate: true
+  });
 
   // ── Handlers ──────────────────────────────────────────────────────────
 

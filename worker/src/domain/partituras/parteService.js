@@ -1,5 +1,6 @@
 // worker/src/domain/partituras/parteService.js
 import { jsonResponse, errorResponse } from '../../infrastructure/index.js';
+import { registrarAtividade } from '../atividades/index.js';
 
 /**
  * Listar partes de uma partitura
@@ -47,7 +48,7 @@ export async function getPartesPartitura(partituraId, request, env) {
  *
  * Extraido de: worker/index.js linhas 739-794
  */
-export async function addParte(partituraId, request, env) {
+export async function addParte(partituraId, request, env, admin) {
   try {
     const formData = await request.formData();
     const instrumento = formData.get('instrumento');
@@ -86,6 +87,8 @@ export async function addParte(partituraId, request, env) {
       INSERT INTO partes (partitura_id, instrumento, arquivo_nome)
       VALUES (?, ?, ?)
     `).bind(partituraId, instrumento, nomeArquivoStorage).run();
+
+    await registrarAtividade(env, 'nova_parte', partitura.titulo, instrumento, admin?.id ?? null);
 
     return jsonResponse({
       success: true,

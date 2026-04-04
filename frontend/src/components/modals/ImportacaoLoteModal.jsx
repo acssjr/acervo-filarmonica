@@ -4,6 +4,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useUI } from '@contexts/UIContext';
+import { notifyNotificationsChanged } from '@contexts/notificationEvents';
 import { API } from '@services/api';
 import LottieAnimation from '@components/animations/LottieAnimation';
 import { processarLote, processarFileList, filtrarPorStatus, calcularResultado } from '@utils/batchParser';
@@ -340,6 +341,7 @@ const ImportacaoLoteModal = ({ isOpen, onClose, onSuccess, onOpenUploadPasta, in
       setModalState(STATES.COMPLETE);
 
       if (stats.sucesso > 0) {
+        notifyNotificationsChanged();
         onSuccess?.();
       }
 

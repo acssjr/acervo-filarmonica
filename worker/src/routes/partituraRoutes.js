@@ -68,9 +68,9 @@ export function setupPartituraRoutes(router) {
   }, [authMiddleware]);
 
   // Rotas admin - gerenciar partes
-  router.post('/api/partituras/:id/partes', (req, env, params) => {
+  router.post('/api/partituras/:id/partes', (req, env, params, context) => {
     const id = params.id;
-    return addParte(id, req, env);
+    return addParte(id, req, env, context.user);
   }, [adminMiddleware]);
   router.put('/api/partes/:id/substituir', (req, env, params) => {
     const id = params.id;

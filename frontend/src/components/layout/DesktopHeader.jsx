@@ -1,5 +1,5 @@
 // ===== DESKTOP HEADER =====
-// Header premium para desktop: busca glass, countdown pill, ações liquid glass
+// Header premium para desktop: busca glass, countdown pill, acoes liquid glass
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -10,11 +10,11 @@ import { useNotifications } from '@contexts/NotificationContext';
 import { Icons } from '@constants/icons';
 import { useBellAnimation } from '@hooks/useBellAnimation';
 import CategoryIcon from '@components/common/CategoryIcon';
+import MusicianCountdown from '@components/common/MusicianCountdown';
 import ThemePill from '@components/common/ThemePill';
-import { getNextRehearsal } from '@utils/rehearsal';
 import { levenshtein } from '@utils/search';
 
-// ── Normalização e transliteração ────────────────────────────────────
+// Normalizacao e transliteracao
 const normalize = (str) =>
   str.toLowerCase()
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
@@ -28,66 +28,10 @@ const transliterate = (str) =>
     .replace(/pp/g, 'p').replace(/ss(?!$)/g, 's').replace(/tt/g, 't')
     .replace(/cc/g, 'c').replace(/ff/g, 'f');
 
-// ── Countdown helpers ────────────────────────────────────────────────
-const computeNextRehearsalDate = (dias, hora) => {
-  const now = new Date();
-  const today = now.getDay();
-  let minDaysAhead = 8;
-  for (const dia of dias) {
-    let daysAhead = (dia - today + 7) % 7;
-    if (daysAhead === 0 && now.getHours() >= hora) daysAhead = 7;
-    if (daysAhead < minDaysAhead) minDaysAhead = daysAhead;
-  }
-  const target = new Date(now);
-  target.setDate(now.getDate() + minDaysAhead);
-  target.setHours(hora, 0, 0, 0);
-  return target;
-};
-
-const CountdownBlock = ({ value, label, isDark }) => (
-  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '6px 12px' }}>
-    <span style={{
-      fontSize: '20px', fontWeight: '800', lineHeight: 1,
-      color: isDark ? '#D4AF37' : '#8B6914', fontVariantNumeric: 'tabular-nums',
-    }}>
-      {String(value).padStart(2, '0')}
-    </span>
-    <span style={{
-      fontSize: '7px', fontWeight: '600', letterSpacing: '0.9px',
-      color: isDark ? 'rgba(212,175,55,0.55)' : 'rgba(139,105,20,0.7)',
-      marginTop: '3px', textTransform: 'uppercase',
-    }}>
-      {label}
-    </span>
-  </div>
-);
-
-const BlockDivider = ({ isDark }) => (
-  <div style={{
-    width: '1px', alignSelf: 'stretch',
-    background: isDark ? 'rgba(212,175,55,0.2)' : 'rgba(139,105,20,0.25)',
-    margin: '6px 0',
-  }} />
-);
-
-const pillStyle = (isDark) => ({
-  display: 'inline-flex', alignItems: 'center',
-  borderRadius: '14px',
-  background: isDark
-    ? 'linear-gradient(135deg, rgba(212,175,55,0.13) 0%, rgba(212,175,55,0.06) 100%)'
-    : 'linear-gradient(135deg, rgba(212,175,55,0.18) 0%, rgba(212,175,55,0.08) 100%)',
-  border: `1px solid ${isDark ? 'rgba(212,175,55,0.25)' : 'rgba(139,105,20,0.35)'}`,
-  backdropFilter: 'blur(16px) saturate(180%)',
-  WebkitBackdropFilter: 'blur(16px) saturate(180%)',
-  boxShadow: isDark
-    ? '0 4px 16px rgba(212,175,55,0.1), inset 0 1px 0 rgba(255,255,255,0.1)'
-    : '0 4px 16px rgba(212,175,55,0.15), inset 0 1px 0 rgba(255,255,255,0.6)',
-  overflow: 'hidden',
-});
-
+// Countdown helpers
 // ThemePill importado de @components/common/ThemePill
 
-// ── GlassActionBtn ───────────────────────────────────────────────────
+// GlassActionBtn
 const GlassActionBtn = ({ onClick, label, children, badge, isDark, childRef }) => (
   <button
     onClick={onClick}
@@ -131,7 +75,7 @@ const GlassActionBtn = ({ onClick, label, children, badge, isDark, childRef }) =
   </button>
 );
 
-// ── AdminGlassBtn ────────────────────────────────────────────────────
+// AdminGlassBtn
 const AdminGlassBtn = ({ isDark }) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -202,9 +146,9 @@ const AdminGlassBtn = ({ isDark }) => {
   );
 };
 
-// (sugestões dinâmicas calculadas dentro do componente via useMemo)
+// Sugestoes dinamicas calculadas dentro do componente via useMemo
 
-// ── Main Component ───────────────────────────────────────────────────
+// Main Component
 const DesktopHeader = () => {
   const navigate = useNavigate();
   const { setShowNotifications, theme } = useUI();
@@ -219,48 +163,14 @@ const DesktopHeader = () => {
   const [showResults, setShowResults] = useState(false);
   const searchRef = useRef(null);
 
-  // Tick para countdown em tempo real
-  const [tick, setTick] = useState(0);
-  useEffect(() => {
-    const id = setInterval(() => setTick(t => t + 1), 1000);
-    return () => clearInterval(id);
-  }, []);
-
-  const nextEvent = useMemo(() => {
-    const hora = typeof diasEnsaio.hora === 'number' ? diasEnsaio.hora : parseInt(diasEnsaio.hora, 10);
-    const now = new Date();
-    if (repertorioAtivo?.data_apresentacao) {
-      const [y, m, d] = repertorioAtivo.data_apresentacao.split('-').map(Number);
-      const apDate = new Date(y, m - 1, d, hora, 0, 0, 0);
-      if (apDate > now) return { date: apDate, isApresentacao: true, nome: repertorioAtivo.nome };
-    }
-    return { date: computeNextRehearsalDate(diasEnsaio.dias, hora), isApresentacao: false };
-  }, [diasEnsaio, repertorioAtivo]);
-
-  const countdown = useMemo(() => {
-    const diff = Math.max(0, nextEvent.date - Date.now());
-    const totalSec = Math.floor(diff / 1000);
-    return {
-      days: Math.floor(totalSec / 86400),
-      hours: Math.floor((totalSec % 86400) / 3600),
-      minutes: Math.floor((totalSec % 3600) / 60),
-      seconds: totalSec % 60,
-    };
-  }, [nextEvent.date, tick]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const rehearsalInfo = useMemo(
-    () => getNextRehearsal(diasEnsaio.dias, diasEnsaio.hora),
-    [diasEnsaio]
-  );
-
-  // Sugestões dinâmicas: peças em destaque (em estudo), máx 3
+  // Sugestoes dinamicas: pecas em destaque (em estudo), max 3
   const searchSuggestions = useMemo(() => {
     const featured = sheets.filter(s => s.featured);
     const pool = featured.length >= 3 ? featured : [...featured, ...sheets.filter(s => !s.featured)];
     return pool.slice(0, 3);
   }, [sheets]);
 
-  // Busca fuzzy — lógica idêntica à versão original
+  // Busca fuzzy - logica identica a versao original
   const searchResults = useMemo(() => {
     if (!searchQuery.trim()) return [];
     const query = normalize(searchQuery);
@@ -316,7 +226,7 @@ const DesktopHeader = () => {
       .slice(0, 8);
   }, [searchQuery, sheets, categoriesMap]);
 
-  // Controla exibição dos resultados
+  // Controla exibicao dos resultados
   useEffect(() => {
     if (searchQuery.trim()) setShowResults(true);
     else {
@@ -337,8 +247,6 @@ const DesktopHeader = () => {
   }, []);
 
   const showSuggestions = searchFocused && !searchQuery.trim();
-  const mutedColor = isDark ? 'var(--text-muted)' : 'rgba(0,0,0,0.45)';
-  const _goldLabel = isDark ? '#D4AF37' : '#8B6914';
 
   return (
     <header style={{
@@ -346,99 +254,23 @@ const DesktopHeader = () => {
       marginBottom: '24px', paddingBottom: '16px',
       borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}`,
     }}>
-      {/* ── Linha principal ── */}
+      {/* Linha principal */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
 
-        {/* ── Countdown pill (esquerda) ── */}
+        {/* Countdown pill (esquerda) */}
         <div style={{ flexShrink: 0 }}>
-          {modoRecesso ? (
-            <div style={{
-              display: 'inline-block',
-              background: 'linear-gradient(135deg, rgba(212,175,55,0.2) 0%, rgba(212,175,55,0.1) 100%)',
-              border: '1px solid rgba(212,175,55,0.35)',
-              backdropFilter: 'blur(12px)',
-              WebkitBackdropFilter: 'blur(12px)',
-              color: isDark ? '#D4AF37' : '#8B6914',
-              fontSize: '10px', fontWeight: '700',
-              padding: '6px 14px', borderRadius: '10px',
-              textTransform: 'uppercase', letterSpacing: '0.8px',
-            }}>
-              EM RECESSO
-            </div>
-          ) : rehearsalInfo.isNow ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <div style={{
-                width: '10px', height: '10px', borderRadius: '50%',
-                background: '#22C55E', animation: 'pulse 2s ease-in-out infinite',
-              }} />
-              <span style={{ fontSize: '14px', fontWeight: '700', color: '#22C55E', whiteSpace: 'nowrap' }}>
-                Ensaio agora!
-              </span>
-            </div>
-          ) : (
-            <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center' }}>
-              {countdown.days > 0 ? (
-                <>
-                  {!nextEvent.isApresentacao && (
-                    <p style={{
-                      fontSize: '8px', fontWeight: '700', letterSpacing: '1.2px',
-                      textTransform: 'uppercase', color: mutedColor,
-                      margin: 0, lineHeight: 1.4,
-                    }}>
-                      {`Próximo ensaio • ${rehearsalInfo.dayName}`}
-                    </p>
-                  )}
-                  {nextEvent.isApresentacao && (
-                    <p style={{
-                      fontSize: '11px', fontWeight: '800', letterSpacing: '0.3px',
-                      textTransform: 'uppercase',
-                      color: isDark ? '#D4AF37' : '#8B6914',
-                      margin: 0, lineHeight: 1.3,
-                    }}>
-                      {nextEvent.nome}
-                    </p>
-                  )}
-                  <p style={{
-                    fontSize: '8px', fontWeight: '600', letterSpacing: '1px',
-                    textTransform: 'uppercase', color: mutedColor,
-                    margin: '1px 0 6px', lineHeight: 1.4,
-                  }}>Iniciando em</p>
-                  <div style={pillStyle(isDark)}>
-                    <CountdownBlock value={countdown.days} label="Dias" isDark={isDark} />
-                    <BlockDivider isDark={isDark} />
-                    <CountdownBlock value={countdown.hours} label="Horas" isDark={isDark} />
-                    <BlockDivider isDark={isDark} />
-                    <CountdownBlock value={countdown.minutes} label="Min" isDark={isDark} />
-                  </div>
-                </>
-              ) : (
-                <>
-                  <p style={{
-                    fontSize: nextEvent.isApresentacao ? '11px' : '8px', fontWeight: '700',
-                    letterSpacing: nextEvent.isApresentacao ? '0.4px' : '1.2px',
-                    textTransform: 'uppercase',
-                    color: nextEvent.isApresentacao ? (isDark ? '#D4AF37' : '#8B6914') : mutedColor,
-                    margin: '0 0 6px', lineHeight: 1.4,
-                  }}>
-                    {nextEvent.isApresentacao ? nextEvent.nome : 'Ensaio iniciando em'}
-                  </p>
-                  <div style={pillStyle(isDark)}>
-                    <CountdownBlock value={countdown.hours} label="Horas" isDark={isDark} />
-                    <BlockDivider isDark={isDark} />
-                    <CountdownBlock value={countdown.minutes} label="Min" isDark={isDark} />
-                    <BlockDivider isDark={isDark} />
-                    <CountdownBlock value={countdown.seconds} label="Seg" isDark={isDark} />
-                  </div>
-                </>
-              )}
-            </div>
-          )}
+          <MusicianCountdown
+            diasEnsaio={diasEnsaio}
+            repertorioAtivo={repertorioAtivo}
+            modoRecesso={modoRecesso}
+            isDark={isDark}
+            variant="desktop"
+          />
         </div>
 
-        {/* ── Espaçador ── */}
         <div style={{ flex: 1 }} />
 
-        {/* ── Barra de busca premium ── */}
+        {/* Barra de busca premium */}
         <div ref={searchRef} style={{ width: '100%', maxWidth: '420px', position: 'relative' }}>
           <div
             data-walkthrough="search"
@@ -466,7 +298,7 @@ const DesktopHeader = () => {
               transition: 'all 0.2s ease',
             }}
           >
-            {/* Ícone de busca */}
+            {/* Icone de busca */}
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
               stroke={isDark ? 'rgba(212,175,55,0.6)' : 'rgba(114,47,55,0.45)'}
               strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"
@@ -511,7 +343,7 @@ const DesktopHeader = () => {
             )}
           </div>
 
-          {/* Sugestões — aparece quando focado e vazio */}
+          {/* Sugestoes - aparece quando focado e vazio */}
           {showSuggestions && (
             <div style={{
               position: 'absolute', top: 'calc(100% + 8px)', left: 0, right: 0, zIndex: 200,
@@ -601,10 +433,10 @@ const DesktopHeader = () => {
           )}
         </div>
 
-        {/* ── Espaçador ── */}
+        {/* Espacador */}
         <div style={{ flex: 1 }} />
 
-        {/* ── Ações premium ── */}
+        {/* Acoes premium */}
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
           <ThemePill />
 
@@ -622,7 +454,7 @@ const DesktopHeader = () => {
         </div>
       </div>
 
-      {/* ── Resultados da busca ── */}
+      {/* Resultados da busca */}
       <div style={{
         overflow: 'hidden', transition: 'all 0.3s ease',
         maxHeight: showResults && searchResults.length > 0 ? '420px' : '0',
@@ -739,3 +571,4 @@ const DesktopHeader = () => {
 };
 
 export default DesktopHeader;
+

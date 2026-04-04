@@ -5,6 +5,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import Storage from '@services/storage';
 import { API } from '@services/api';
+import { NOTIFICATIONS_UPDATED_EVENT } from './notificationEvents.js';
 
 const NotificationContext = createContext();
 
@@ -19,8 +20,8 @@ export const useNotifications = () => {
 // Mapa de tipos de atividade para labels e icones
 const NOTIFICATION_MAP = {
   nova_partitura: { label: 'Nova partitura', iconName: 'Music' },
-  novo_repertorio: { label: 'Novo repertório', iconName: 'Repertorio' },
-  repertorio_atualizado: { label: 'Repertório atualizado', iconName: 'Repertorio' },
+  novo_repertorio: { label: 'Novo repert\u00f3rio', iconName: 'Repertorio' },
+  repertorio_atualizado: { label: 'Repert\u00f3rio atualizado', iconName: 'Repertorio' },
   nova_parte: { label: 'Nova parte', iconName: 'Music' },
 };
 
@@ -60,7 +61,7 @@ export const NotificationProvider = ({ children }) => {
         setNotifications(relevant);
       }
     } catch {
-      // Silencioso - notificações serão carregadas depois
+      // Silencioso - notificacoes serao carregadas depois
       setNotifications([]);
     } finally {
       setLoading(false);
@@ -70,6 +71,17 @@ export const NotificationProvider = ({ children }) => {
   // Carrega notificacoes ao montar
   useEffect(() => {
     loadNotifications();
+  }, [loadNotifications]);
+
+  useEffect(() => {
+    const handleNotificationsUpdated = () => {
+      loadNotifications();
+    };
+
+    window.addEventListener(NOTIFICATIONS_UPDATED_EVENT, handleNotificationsUpdated);
+    return () => {
+      window.removeEventListener(NOTIFICATIONS_UPDATED_EVENT, handleNotificationsUpdated);
+    };
   }, [loadNotifications]);
 
   const markNotificationAsRead = useCallback((id) => {

@@ -7,6 +7,13 @@ import { useMediaQuery } from '@hooks/useMediaQuery';
 import { useScrollLock } from '@hooks/useScrollLock';
 import { API } from '@services/api';
 
+const MOBILE_SHEET_HEIGHT = 'clamp(480px, 68dvh, 640px)';
+const MOBILE_SHEET_MAX_HEIGHT = '90dvh';
+const MOBILE_BACKDROP_TINT = 'linear-gradient(180deg, rgba(7, 10, 16, 0.08) 0%, rgba(7, 10, 16, 0.14) 46%, rgba(7, 10, 16, 0.22) 100%)';
+const DESKTOP_BACKDROP_TINT = 'linear-gradient(180deg, rgba(7, 10, 16, 0.1) 0%, rgba(7, 10, 16, 0.18) 42%, rgba(7, 10, 16, 0.3) 100%)';
+const MOBILE_BACKDROP_FILTER = 'blur(18px) saturate(110%)';
+const DESKTOP_BACKDROP_FILTER = 'blur(10px) saturate(108%)';
+
 const EnsaioDetailModal = ({ ensaio, isOpen, onClose }) => {
   const [partituras, setPartituras] = useState([]);
   const [youtubeUrl, setYoutubeUrl] = useState(null);
@@ -129,6 +136,7 @@ const EnsaioDetailModal = ({ ensaio, isOpen, onClose }) => {
         <>
           {/* Backdrop */}
           <motion.div
+            data-testid="ensaio-detail-backdrop"
             aria-hidden="true"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -137,15 +145,16 @@ const EnsaioDetailModal = ({ ensaio, isOpen, onClose }) => {
             onClick={onClose}
             style={{
               position: 'fixed', inset: 0,
-              background: isDesktop ? 'rgba(0,0,0,0.65)' : 'rgba(0,0,0,0.35)',
-              backdropFilter: isDesktop ? 'blur(4px)' : 'blur(12px)',
-              WebkitBackdropFilter: isDesktop ? 'blur(4px)' : 'blur(12px)',
+              background: isDesktop ? DESKTOP_BACKDROP_TINT : MOBILE_BACKDROP_TINT,
+              backdropFilter: isDesktop ? DESKTOP_BACKDROP_FILTER : MOBILE_BACKDROP_FILTER,
+              WebkitBackdropFilter: isDesktop ? DESKTOP_BACKDROP_FILTER : MOBILE_BACKDROP_FILTER,
               zIndex: 10000
             }}
           />
 
           {/* Modal */}
           <motion.div
+            data-testid="ensaio-detail-panel"
             ref={modalRef}
             role="dialog"
             aria-modal="true"
@@ -165,7 +174,8 @@ const EnsaioDetailModal = ({ ensaio, isOpen, onClose }) => {
               ...(isDesktop ? {
                 height: expanded ? '85vh' : '560px', maxHeight: '85vh'
               } : {
-                maxHeight: '90vh'
+                height: MOBILE_SHEET_HEIGHT,
+                maxHeight: MOBILE_SHEET_MAX_HEIGHT
               }),
               ...(isDesktop ? {
                 top: '50%', left: '50%',
@@ -371,9 +381,12 @@ const EnsaioDetailModal = ({ ensaio, isOpen, onClose }) => {
             {/* ===== PARTITURAS ===== */}
             <div style={{
               flex: 1, overflowY: 'auto', padding: '16px 20px 24px',
+              minHeight: 0,
               scrollbarWidth: 'thin',
               scrollbarColor: 'rgba(212,175,55,0.25) transparent'
-            }}>
+            }}
+            data-testid="ensaio-detail-scroll-area"
+            >
               {/* Título da seção */}
               {!loading && (
                 <p style={{

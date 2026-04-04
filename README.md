@@ -8,7 +8,7 @@
 
 <br/>
 
-[![Versão](https://img.shields.io/badge/versão-2.9.2-722F37?style=for-the-badge&labelColor=D4AF37)](https://github.com/acssjr/acervo-filarmonica)
+[![Versão](https://img.shields.io/badge/versão-3.1.0-722F37?style=for-the-badge&labelColor=D4AF37)](https://github.com/acssjr/acervo-filarmonica)
 [![Status](https://img.shields.io/badge/status-em%20produção-success?style=for-the-badge)](https://acervo.filarmonica25demarco.com)
 [![CI](https://img.shields.io/github/actions/workflow/status/acssjr/acervo-filarmonica/ci.yml?style=for-the-badge&label=CI&logo=github)](https://github.com/acssjr/acervo-filarmonica/actions)
 
@@ -26,7 +26,7 @@
 
 O Acervo Digital da Filarmônica 25 de Março é um sistema web desenvolvido para digitalizar e facilitar o acesso ao extenso acervo de partituras da banda mais antiga da Bahia, fundada em 1868.
 
-O sistema permite que músicos acessem suas partituras de qualquer lugar, baixem arquivos no formato correto para seu instrumento e acompanhem novidades do repertório.
+O sistema permite que músicos acessem suas partituras de qualquer lugar, baixem arquivos no formato correto para seu instrumento, acompanhem novidades do repertório, revisem o histórico de ensaios e recebam atualizações relevantes do acervo em tempo real.
 
 ---
 
@@ -40,11 +40,14 @@ O sistema permite que músicos acessem suas partituras de qualquer lugar, baixem
 - Interface responsiva (mobile/desktop)
 - Download de partituras por instrumento
 - Busca inteligente com transliteração (grafias antigas)
+- Overlay de busca expandido no mobile
 - Sistema de favoritos
-- Perfil com foto e alteração de PIN
+- Perfil com foto persistida no servidor, conquistas e alteração de PIN
 - Temas claro/escuro/automático
-- Notificações de novidades
+- Notificações de novidades com atualização imediata após uploads
 - Carrossel de compositores em destaque
+- Histórico de ensaios com modal detalhado
+- Contador rotativo entre próximo ensaio e próxima apresentação
 - Skeleton loading para melhor UX
 - **Transições suaves entre páginas e modais**
 - **"Lembrar meu acesso" com token de 30 dias**
@@ -75,6 +78,7 @@ O sistema permite que músicos acessem suas partituras de qualquer lugar, baixem
 - **Frases engraçadas animadas durante upload**
 - Gestão de músicos com badges visuais
 - **Dashboard de Analytics Premium** (KPIs, tendências e engajamento)
+- Livro de registros com numeração sequencial dos ensaios
 - **Rastreamento de busca e downloads por usuário**
 - Reset de PIN de usuários
 - Toggle admin/usuário para testes
@@ -365,11 +369,35 @@ Isso cria as tabelas e insere usuários de teste para desenvolvimento local.
 | `npm test` | Roda testes unitários |
 | `npm run test:e2e` | Roda testes E2E |
 
+### Scripts do Frontend
+
+| Comando | Descrição |
+|---------|-----------|
+| `cd frontend && npm run dev` | Frontend apontando para a API local |
+| `cd frontend && npm run dev:prod` | Frontend local apontando para a API de produção |
+| `cd frontend && npm test` | Testes unitários do frontend |
+| `cd frontend && npm run lint` | ESLint do frontend |
+
 ---
 
 ## Changelog
 
 <details open>
+<summary><b>v3.1.0</b> - 03 de Abril de 2026</summary>
+
+**Experiência do Músico**
+- **Agenda rotativa:** o contador da home alterna entre próximo ensaio e próxima apresentação
+- **Ensaios:** modal de detalhes com abertura estável, fundo suavizado e carregamento sem reposicionamento visível
+- **Perfil:** foto persistida no servidor, nome de exibição estável e conquistas renderizadas corretamente
+- **Compositores:** cards em destaque agora levam diretamente para o compositor clicado
+
+**Comunicação e Descoberta**
+- **Notificações:** painel redesenhado, acentuação corrigida e atualização imediata após novos uploads
+- **Busca mobile:** overlay dedicado para acelerar a navegação no acervo e nas descobertas da home
+
+</details>
+
+<details>
 <summary><b>v2.9.2</b> - 15 de Fevereiro de 2026</summary>
 
 **Analytics & Insights**

@@ -3,6 +3,7 @@ import { jsonResponse } from '../../infrastructure/index.js';
 
 /**
  * Helper: Registrar atividade
+ * Falhas neste registro são não fatais e não devem quebrar a operação principal.
  *
  * Extraido de: worker/index.js linhas 308-319
  */
@@ -13,7 +14,13 @@ export async function registrarAtividade(env, tipo, titulo, detalhes = null, usu
       VALUES (?, ?, ?, ?)
     `).bind(tipo, titulo, detalhes, usuarioId).run();
   } catch (e) {
-    console.error('Erro ao registrar atividade:', e);
+    console.error('Erro ao registrar atividade:', {
+      tipo,
+      titulo,
+      detalhes,
+      usuarioId,
+      error: e
+    });
   }
 }
 
