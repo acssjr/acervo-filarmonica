@@ -27,7 +27,7 @@ describe('MusicianCountdown', () => {
 
   beforeEach(() => {
     jest.useFakeTimers();
-    jest.setSystemTime(new Date('2026-04-03T12:00:00-03:00'));
+    jest.setSystemTime(new Date(2026, 3, 3, 12, 0, 0, 0));
   });
 
   afterEach(() => {
@@ -69,7 +69,7 @@ describe('MusicianCountdown', () => {
   });
 
   test('mantém o dia do ensaio quando ele é amanhã em menos de 24 horas', () => {
-    jest.setSystemTime(new Date('2026-04-05T20:30:00-03:00'));
+    jest.setSystemTime(new Date(2026, 3, 5, 20, 30, 0, 0));
 
     render(
       <MusicianCountdown
@@ -88,7 +88,7 @@ describe('MusicianCountdown', () => {
   });
 
   test('atualiza o countdown a cada segundo sem congelar o tempo exibido', () => {
-    jest.setSystemTime(new Date('2026-04-03T12:00:00-03:00'));
+    jest.setSystemTime(new Date(2026, 3, 3, 12, 0, 0, 0));
 
     render(
       <MusicianCountdown
