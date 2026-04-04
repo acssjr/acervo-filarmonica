@@ -112,7 +112,7 @@ export const buildMusicianCountdownItems = (
     id: 'rehearsal',
     type: 'rehearsal',
     label: 'Próximo ensaio',
-    name: rehearsalInfo.dayName,
+    name: rehearsalInfo.dayName ?? (rehearsalInfo.isNow ? 'Agora' : ''),
     date: computeNextRehearsalDate(rehearsalDays, rehearsalHour, now)
   }];
 

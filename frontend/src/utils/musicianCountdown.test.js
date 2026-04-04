@@ -59,4 +59,21 @@ describe('musicianCountdown utils', () => {
 
     jest.useRealTimers();
   });
+
+  test('usa um nome seguro para o item de ensaio quando ele está acontecendo agora', () => {
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date(2026, 3, 6, 20, 0, 0, 0));
+
+    const { items, rehearsalInfo } = buildMusicianCountdownItems(
+      { dias: [1], hora: 19 },
+      null
+    );
+
+    const rehearsalItem = items.find((item) => item.id === 'rehearsal');
+
+    expect(rehearsalInfo.isNow).toBe(true);
+    expect(rehearsalItem?.name).toBe('Agora');
+
+    jest.useRealTimers();
+  });
 });
