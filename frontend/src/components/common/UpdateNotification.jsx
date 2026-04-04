@@ -6,7 +6,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { API } from '@services/api';
 
 // Versão atual do frontend (deve corresponder ao package.json)
-const CURRENT_VERSION = '2.8.0';
+const CURRENT_VERSION = '3.1.0';
 
 // Intervalo de verificação: 5 minutos
 const CHECK_INTERVAL = 5 * 60 * 1000;

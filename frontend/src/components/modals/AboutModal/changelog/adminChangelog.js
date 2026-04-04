@@ -70,7 +70,7 @@ export const ADMIN_ABOUT_CONFIG = {
   subtitle: 'Painel Administrativo',
   maxWidth: 480,
   infoCards: [
-    { label: 'Versao', value: '2.9.1' },
+    { label: 'Versão', value: '3.1.0' },
     { label: 'Backend', value: 'Cloudflare Workers' },
     { label: 'Dev', value: 'Antonio Jr.', isHighlighted: true }
   ],

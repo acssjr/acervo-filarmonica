@@ -297,6 +297,55 @@ describe('Rotas de Partes (BUG FIX)', () => {
   });
 });
 
+describe('Atividades de notificações', () => {
+  let adminToken: string;
+
+  beforeAll(async () => {
+    adminToken = await createTestToken(1, true);
+  });
+
+  it('registra atividade nova_parte ao adicionar uma nova parte', async () => {
+    const partituraId = await env.DB.prepare(`
+      INSERT INTO partituras (titulo, compositor, categoria_id, arquivo_nome, arquivo_tamanho, destaque, ativo)
+      VALUES ('Partitura Notificada', 'Compositor Teste', 'dobrados', 'teste.pdf', 100, 0, 1)
+      RETURNING id
+    `).first('id') as number;
+
+    const formData = new FormData();
+    formData.append('instrumento', 'Clarinete Bb 1');
+    formData.append(
+      'arquivo',
+      new File(
+        [new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2D, 0x31, 0x2E, 0x34])],
+        'parte.pdf',
+        { type: 'application/pdf' }
+      )
+    );
+
+    const response = await SELF.fetch(`https://test.local/api/partituras/${partituraId}/partes`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${adminToken}`,
+      },
+      body: formData,
+    });
+
+    expect(response.status).toBe(201);
+
+    const atividade = await env.DB.prepare(`
+      SELECT tipo, titulo, detalhes, usuario_id
+      FROM atividades
+      WHERE tipo = 'nova_parte' AND titulo = 'Partitura Notificada'
+      ORDER BY id DESC
+      LIMIT 1
+    `).first() as { tipo: string; titulo: string; detalhes: string; usuario_id: number } | null;
+
+    expect(atividade).not.toBeNull();
+    expect(atividade?.detalhes).toBe('Clarinete Bb 1');
+    expect(atividade?.usuario_id).toBe(1);
+  });
+});
+
 describe('Métodos HTTP incorretos', () => {
   it('DELETE em /api/partituras (sem ID) retorna 404', async () => {
     const response = await SELF.fetch('https://test.local/api/partituras', {

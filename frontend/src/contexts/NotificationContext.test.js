@@ -7,7 +7,11 @@ import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 // ALL imports must be dynamic (except @jest/globals) for ESM compatibility
 const { renderHook, act, waitFor } = await import('@testing-library/react');
 const { createElement } = await import('react');
+const { http, HttpResponse } = await import('msw');
 const { NotificationProvider, useNotifications } = await import('./NotificationContext.jsx');
+const { server } = await import('../__tests__/mocks/server.js');
+const { API_BASE_URL } = await import('@constants/api');
+const { notifyNotificationsChanged } = await import('./notificationEvents.js');
 
 // Wrapper com Provider (sem JSX)
 const wrapper = ({ children }) => createElement(NotificationProvider, null, children);
@@ -155,6 +159,61 @@ describe('NotificationContext', () => {
 
       act(() => {
         result.current.refreshNotifications();
+      });
+
+      await waitFor(() => {
+        expect(result.current.notifications.length).toBe(2);
+      });
+    });
+
+    it('recarrega quando recebe evento global de notificacoes atualizadas', async () => {
+      let callCount = 0;
+
+      server.use(
+        http.get(`${API_BASE_URL}/api/atividades`, () => {
+          callCount++;
+
+          if (callCount === 1) {
+            return HttpResponse.json([
+              {
+                id: 1,
+                tipo: 'nova_partitura',
+                titulo: 'Dobrado Novo',
+                detalhes: 'Compositor X',
+                criado_em: '2024-12-01T10:00:00Z'
+              }
+            ]);
+          }
+
+          return HttpResponse.json([
+            {
+              id: 1,
+              tipo: 'nova_partitura',
+              titulo: 'Dobrado Novo',
+              detalhes: 'Compositor X',
+              criado_em: '2024-12-01T10:00:00Z'
+            },
+            {
+              id: 2,
+              tipo: 'nova_parte',
+              titulo: 'Dobrado Novo',
+              detalhes: 'Clarinete Bb 1',
+              criado_em: '2024-12-02T10:00:00Z'
+            }
+          ]);
+        })
+      );
+
+      const { result } = renderHook(() => useNotifications(), { wrapper });
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      expect(result.current.notifications.length).toBe(1);
+
+      act(() => {
+        notifyNotificationsChanged();
       });
 
       await waitFor(() => {

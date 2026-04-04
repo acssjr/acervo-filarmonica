@@ -5,6 +5,7 @@ import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useInfiniteCarousel } from '@hooks/useInfiniteCarousel';
 import { usePressAnimation } from '@hooks/usePressAnimation';
+import { slugify } from '@utils/slugify';
 
 const composerPhotos = {
   'Estevam Moura': '/assets/images/compositores/estevam-moura.webp',
@@ -21,7 +22,7 @@ const ComposerCard = ({ composer, isFirst, hasPhoto, photoUrl }) => {
   return (
     <button
       ref={pressRef}
-      onClick={() => navigate('/compositores')}
+      onClick={() => navigate(`/compositores/${slugify(composer.name)}`)}
       {...handlers}
       style={{
         flex: '0 0 220px', width: '220px', height: '140px',

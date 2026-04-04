@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useUI } from '@contexts/UIContext';
+import { notifyNotificationsChanged } from '@contexts/notificationEvents';
 import { API } from '@services/api';
 import CategoryIcon from '@components/common/CategoryIcon';
 
@@ -118,6 +119,7 @@ const PartesDrawer = ({ isOpen, onClose, partitura, categorias, onUpdate }) => {
 
       await API.addPartePartitura(partitura.id, formData);
       showToast('Parte adicionada com sucesso!');
+      notifyNotificationsChanged();
       setShowAddForm(false);
       setNewPartInstrumento('');
       loadPartes();

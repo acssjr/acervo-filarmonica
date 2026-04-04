@@ -4,6 +4,7 @@
 
 import { useState, useEffect } from 'react';
 import { useUI } from '@contexts/UIContext';
+import { notifyNotificationsChanged } from '@contexts/notificationEvents';
 import { API } from '@services/api';
 import CategoryIcon from '@components/common/CategoryIcon';
 import LottieAnimation from '@components/animations/LottieAnimation';
@@ -279,6 +280,7 @@ const UploadPastaModal = ({ isOpen, onClose, onSuccess, initialFiles }) => {
       await new Promise(r => setTimeout(r, 1500));
 
       showToast(result.message || 'Partitura criada com sucesso!');
+      notifyNotificationsChanged();
       onSuccess?.();
       onClose();
     } catch (err) {

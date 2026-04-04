@@ -255,6 +255,17 @@
   100% { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes countdownFlipIn {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) rotateX(-18deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) rotateX(0deg);
+  }
+}
+
 /* Screen transition */
 .screen-container {
   animation: screenFadeIn 0.3s ease-out;

@@ -7,6 +7,7 @@ import { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspense } fro
 const DEBUG_TUTORIAL = false;
 import { useUI } from '@contexts/UIContext';
 import { useMediaQuery } from '@hooks/useMediaQuery';
+import { notifyNotificationsChanged } from '@contexts/notificationEvents';
 import { API } from '@services/api';
 import CategoryIcon from '@components/common/CategoryIcon';
 import { PartesGridSkeleton } from '@components/common/Skeleton';
@@ -738,6 +739,7 @@ const AdminPartituras = () => {
       formData.append('instrumento', instrumento);
       await API.addPartePartitura(partituraId, formData);
       showToast(`Parte "${instrumento}" adicionada!`);
+      notifyNotificationsChanged();
       await Promise.all([
         loadPartes(partituraId),
         loadData()
