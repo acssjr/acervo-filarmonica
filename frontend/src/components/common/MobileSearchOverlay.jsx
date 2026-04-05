@@ -218,8 +218,8 @@ const MobileSearchOverlay = () => {
   const handleSelectSheet = useCallback((sheet) => {
     handleClose();
     setGlobalSearch(sheet.title);
-    setActiveTab('home');
-    navigate('/buscar?q=' + encodeURIComponent(sheet.title));
+    setActiveTab('library');
+    navigate(`/acervo/${sheet.category}/${sheet.id}`);
   }, [handleClose, setGlobalSearch, setActiveTab, navigate]);
 
   const handleSubmit = useCallback((e) => {
