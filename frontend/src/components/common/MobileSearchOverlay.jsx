@@ -216,10 +216,14 @@ const MobileSearchOverlay = () => {
   }, [setMobileSearchOpen]);
 
   const handleSelectSheet = useCallback((sheet) => {
+    const categoryId = typeof sheet.category === 'string'
+      ? sheet.category
+      : sheet.category?.slug || sheet.category?.id || '';
+
     handleClose();
     setGlobalSearch(sheet.title);
-    setActiveTab('home');
-    navigate('/buscar?q=' + encodeURIComponent(sheet.title));
+    setActiveTab('library');
+    navigate(categoryId ? `/acervo/${encodeURIComponent(categoryId)}/${sheet.id}` : '/acervo');
   }, [handleClose, setGlobalSearch, setActiveTab, navigate]);
 
   const handleSubmit = useCallback((e) => {
