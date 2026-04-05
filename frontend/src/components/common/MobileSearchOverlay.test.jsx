@@ -118,4 +118,20 @@ describe('MobileSearchOverlay', () => {
     expect(mockNavigate).toHaveBeenCalledWith('/acervo/dobrados/123');
     expect(mockNavigate).not.toHaveBeenCalledWith('/buscar?q=Azul%20da%20Cor%20do%20Mar');
   });
+
+  test('ao tocar num resultado filtrado normaliza a categoria e abre a rota da partitura', () => {
+    render(<MobileSearchOverlay />);
+
+    fireEvent.change(
+      screen.getByPlaceholderText('Buscar partituras, compositores...'),
+      { target: { value: 'Azul' } }
+    );
+    fireEvent.click(screen.getByText('Azul da Cor do Mar'));
+
+    expect(mockSetMobileSearchOpen).toHaveBeenCalledWith(false);
+    expect(mockSetGlobalSearch).toHaveBeenCalledWith('Azul da Cor do Mar');
+    expect(mockSetActiveTab).toHaveBeenCalledWith('library');
+    expect(mockNavigate).toHaveBeenCalledWith('/acervo/dobrados/123');
+    expect(mockNavigate).not.toHaveBeenCalledWith('/acervo/[object Object]/123');
+  });
 });
