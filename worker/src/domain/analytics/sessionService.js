@@ -8,7 +8,14 @@ function createRandomSuffix() {
   return `${Date.now()}_${Math.random().toString(36).slice(2)}`;
 }
 
+function assertTrackingUserId(userId) {
+  if (userId === null || userId === undefined || userId === '') {
+    throw new Error('Usuário inválido para tracking');
+  }
+}
+
 export function createSessionId(userId) {
+  assertTrackingUserId(userId);
   return `sess_${userId}_${createRandomSuffix()}`;
 }
 
@@ -17,7 +24,9 @@ export function getSessionExpiryDate(baseDate = new Date()) {
 }
 
 export async function startTrackingSession(env, user) {
-  const sessionId = createSessionId(user?.id);
+  assertTrackingUserId(user?.id);
+
+  const sessionId = createSessionId(user.id);
 
   await env.DB.prepare(`
     INSERT INTO tracking_sessions (
@@ -26,7 +35,7 @@ export async function startTrackingSession(env, user) {
       inicio_em,
       ultimo_evento_em
     ) VALUES (?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-  `).bind(sessionId, user?.id ?? null).run();
+  `).bind(sessionId, user.id).run();
 
   return sessionId;
 }

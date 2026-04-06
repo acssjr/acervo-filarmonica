@@ -16,9 +16,20 @@ const ALLOWED_EVENT_TYPES = new Set([
   'sessao_encerrada'
 ]);
 
+class TrackingValidationError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'TrackingValidationError';
+  }
+}
+
+function isValidationError(error) {
+  return error instanceof TrackingValidationError || error?.name === 'TrackingValidationError';
+}
+
 export function buildTrackingEventPayload(input) {
   if (!ALLOWED_EVENT_TYPES.has(input?.tipo)) {
-    throw new Error('Tipo de evento invalido');
+    throw new TrackingValidationError('Tipo de evento invalido');
   }
 
   const termoOriginal = typeof input.termo_original === 'string'
@@ -30,9 +41,23 @@ export function buildTrackingEventPayload(input) {
     : null;
 
   const hasMetadata = input.metadata !== undefined && input.metadata !== null;
-  const metadataJson = hasMetadata
-    ? JSON.stringify(input.metadata)?.slice(0, 2000) ?? null
-    : null;
+  let metadataJson = null;
+
+  if (hasMetadata) {
+    try {
+      metadataJson = JSON.stringify(input.metadata);
+    } catch {
+      throw new TrackingValidationError('Metadata invalida');
+    }
+
+    if (typeof metadataJson !== 'string') {
+      throw new TrackingValidationError('Metadata invalida');
+    }
+
+    if (metadataJson.length > 2000) {
+      throw new TrackingValidationError('Metadata muito grande');
+    }
+  }
 
   return {
     tipo: input.tipo,
@@ -83,13 +108,24 @@ export async function registrarTrackingEvent(env, user, sessionId, input) {
 
 export async function handleTrackingEvent(request, env, user) {
   try {
-    const body = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      throw new TrackingValidationError('JSON invalido');
+    }
+
     const sessionId = request.headers.get('X-Tracking-Session') || body?.session_id || null;
 
     await registrarTrackingEvent(env, user, sessionId, body);
 
     return jsonResponse({ success: true }, 200, request);
   } catch (error) {
-    return errorResponse(error.message, 400, request);
+    if (isValidationError(error)) {
+      return errorResponse(error.message, 400, request);
+    }
+
+    console.error('Erro ao registrar evento de tracking:', error);
+    return errorResponse('Erro ao registrar evento de tracking', 500, request);
   }
 }

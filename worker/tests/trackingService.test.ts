@@ -1,9 +1,12 @@
-﻿import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   maskSensitiveSearchTerm,
   normalizeSearchTerm
 } from '../src/domain/analytics/eventSanitizer.js';
-import { buildTrackingEventPayload } from '../src/domain/analytics/eventService.js';
+import {
+  buildTrackingEventPayload,
+  handleTrackingEvent
+} from '../src/domain/analytics/eventService.js';
 import {
   SESSION_IDLE_MINUTES,
   createSessionId,
@@ -45,6 +48,21 @@ describe('tracking helpers', () => {
       resultados_count: 0,
       metadata_json: null
     });
+  });
+
+  it('rejects invalid event types', () => {
+    expect(() => buildTrackingEventPayload({ tipo: 'nao_existente' as any })).toThrow(
+      'Tipo de evento invalido'
+    );
+  });
+
+  it('rejects oversized metadata before serialization', () => {
+    expect(() =>
+      buildTrackingEventPayload({
+        tipo: 'download_parte',
+        metadata: { texto: 'x'.repeat(2001) }
+      })
+    ).toThrow('Metadata muito grande');
   });
 
   it('serializes metadata for download events', () => {
@@ -92,5 +110,47 @@ describe('tracking helpers', () => {
 
     await endTrackingSession(env, sessionId, 'logout');
     expect(prepare).toHaveBeenCalledWith(expect.stringContaining('fim_motivo'));
+  });
+
+  it('fails fast when createSessionId receives a missing user id', async () => {
+    expect(() => createSessionId(undefined)).toThrow('Usuário inválido para tracking');
+
+    const env = { DB: { prepare: vi.fn() } } as unknown as Parameters<typeof startTrackingSession>[0];
+
+    await expect(startTrackingSession(env, {} as any)).rejects.toThrow(
+      'Usuário inválido para tracking'
+    );
+  });
+
+  it('returns 400 for validation errors and 500 for runtime failures in handleTrackingEvent', async () => {
+    const validationRequest = new Request('https://example.com', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tipo: 'nao_existente' })
+    });
+
+    const validationResponse = await handleTrackingEvent(validationRequest, {} as any, { id: 1 } as any);
+    expect(validationResponse.status).toBe(400);
+    await expect(validationResponse.json()).resolves.toEqual({ error: 'Tipo de evento invalido' });
+
+    const runtimeEnv = {
+      DB: {
+        prepare: vi.fn(() => ({
+          bind: vi.fn(() => ({
+            run: vi.fn().mockRejectedValue(new Error('DB offline'))
+          }))
+        }))
+      }
+    } as any;
+
+    const runtimeRequest = new Request('https://example.com', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tipo: 'download_parte' })
+    });
+
+    const runtimeResponse = await handleTrackingEvent(runtimeRequest, runtimeEnv, { id: 1 } as any);
+    expect(runtimeResponse.status).toBe(500);
+    await expect(runtimeResponse.json()).resolves.toEqual({ error: 'Erro ao registrar evento de tracking' });
   });
 });
