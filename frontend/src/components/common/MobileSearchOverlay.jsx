@@ -43,6 +43,7 @@ const MobileSearchOverlay = () => {
   const cardRef = useRef(null);      // glass card
   const heightRef = useRef(null);    // última altura estável para transição
   const lastTrackedRef = useRef('');
+  const lastTypedTrackedRef = useRef('');
   const debouncedQuery = useDebounce(query, 300);
 
   // Scroll lock (iOS Safari safe)
@@ -200,11 +201,37 @@ const MobileSearchOverlay = () => {
 
   // ── Tracking ─────────────────────────────────────────────────────────
   useEffect(() => {
+    if (!query.trim()) return;
+
+    const timer = setTimeout(() => {
+      const termo = query.trim();
+      if (!termo || lastTypedTrackedRef.current === termo) return;
+      lastTypedTrackedRef.current = termo;
+
+      API.trackEvent({
+        tipo: 'busca_digitada',
+        origem: 'busca_mobile',
+        termo_original: termo,
+        resultados_count: searchResults.length
+      });
+    }, 350);
+
+    return () => clearTimeout(timer);
+  }, [query, searchResults.length]);
+
+  useEffect(() => {
     if (!debouncedQuery || debouncedQuery.trim().length < 3) return;
     if (lastTrackedRef.current === debouncedQuery.trim()) return;
     const timer = setTimeout(() => {
-      lastTrackedRef.current = debouncedQuery.trim();
-      API.trackSearch(debouncedQuery.trim(), searchResults.length).catch(() => {});
+      const termo = debouncedQuery.trim();
+      lastTrackedRef.current = termo;
+      API.trackSearch(termo, searchResults.length).catch(() => {});
+      API.trackEvent({
+        tipo: 'busca_realizada',
+        origem: 'busca_mobile',
+        termo_original: termo,
+        resultados_count: searchResults.length
+      });
     }, 2000);
     return () => clearTimeout(timer);
   }, [debouncedQuery, searchResults.length]);

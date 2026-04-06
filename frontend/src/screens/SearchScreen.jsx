@@ -190,6 +190,26 @@ const SearchScreen = () => {
 
   const handleClear = useCallback(() => setSearchQuery(''), []);
 
+  const lastTypedTrackedRef = useRef('');
+  useEffect(() => {
+    if (!searchQuery.trim()) return;
+
+    const timer = setTimeout(() => {
+      const termo = searchQuery.trim();
+      if (!termo || lastTypedTrackedRef.current === termo) return;
+      lastTypedTrackedRef.current = termo;
+
+      API.trackEvent({
+        tipo: 'busca_digitada',
+        origem: 'busca',
+        termo_original: termo,
+        resultados_count: searchResults.length
+      });
+    }, 350);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery, searchResults.length]);
+
   // === TRACKING: Envia log de busca após 2s de inatividade ===
   const lastTrackedRef = useRef('');
   useEffect(() => {
@@ -201,6 +221,12 @@ const SearchScreen = () => {
       const termo = debouncedQuery.trim();
       lastTrackedRef.current = termo;
       API.trackSearch(termo, searchResults.length);
+      API.trackEvent({
+        tipo: 'busca_realizada',
+        origem: 'busca',
+        termo_original: termo,
+        resultados_count: searchResults.length
+      });
     }, 2000); // 2s após parar de digitar (já tem 300ms do debounce)
 
     return () => clearTimeout(timer);
