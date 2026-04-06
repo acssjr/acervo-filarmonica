@@ -35,6 +35,7 @@ coverage/
 .claude/
 .auto-claude/
 .superpowers/
+.worktrees/
 
 # Secretos
 .env
