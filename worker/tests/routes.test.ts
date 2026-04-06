@@ -138,6 +138,56 @@ describe('Rotas Autenticadas', () => {
       expect(response.status).toBe(401);
     });
   });
+
+  describe('POST /api/tracking/events', () => {
+    it('rejeita evento sem autenticação', async () => {
+      const response = await SELF.fetch('https://test.local/api/tracking/events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tipo: 'partitura_aberta' }),
+      });
+
+      expect(response.status).toBe(401);
+    });
+
+    it('registra evento autenticado', async () => {
+      const partituraId = await env.DB.prepare(`
+        INSERT INTO partituras (titulo, compositor, categoria_id, arquivo_nome, arquivo_tamanho, destaque, ativo)
+        VALUES ('Tracking Route Test', 'Compositor Teste', 1, 'tracking-route-test.pdf', 100, 0, 1)
+        RETURNING id
+      `).first('id') as number;
+
+      const response = await SELF.fetch('https://test.local/api/tracking/events', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${userToken}`,
+        },
+        body: JSON.stringify({
+          tipo: 'partitura_aberta',
+          origem: 'acervo',
+          partitura_id: partituraId,
+        }),
+      });
+
+      expect(response.status).toBe(200);
+      const body = await response.json() as { success: boolean };
+      expect(body.success).toBe(true);
+
+      const evento = await env.DB.prepare(`
+        SELECT tipo, origem, usuario_id, partitura_id
+        FROM tracking_events
+        WHERE tipo = 'partitura_aberta'
+        ORDER BY id DESC
+        LIMIT 1
+      `).first() as { tipo: string; origem: string; usuario_id: number; partitura_id: number } | null;
+
+      expect(evento).not.toBeNull();
+      expect(evento?.origem).toBe('acervo');
+      expect(evento?.usuario_id).toBe(2);
+      expect(evento?.partitura_id).toBe(partituraId);
+    });
+  });
 });
 
 describe('Rotas Admin', () => {

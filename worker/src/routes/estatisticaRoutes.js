@@ -6,6 +6,7 @@ import {
   getInstrumentos
 } from '../domain/estatisticas/estatisticaService.js';
 import { getAnalyticsDashboard } from '../domain/analytics/analyticsService.js';
+import { handleTrackingEvent } from '../domain/analytics/eventService.js';
 import { trackSearch } from '../domain/analytics/trackingService.js';
 
 /**
@@ -19,6 +20,9 @@ export function setupEstatisticaRoutes(router) {
 
   // Rota de tracking (requer auth para vincular ao usuário)
   router.post('/api/tracking/search', trackSearch, [authMiddleware]);
+  router.post('/api/tracking/events', async (request, env, _params, context) => {
+    return handleTrackingEvent(request, env, context.user);
+  }, [authMiddleware]);
 
   // Rotas admin
   router.get('/api/admin/estatisticas', getEstatisticasAdmin, [adminMiddleware]);
