@@ -95,7 +95,8 @@ const STATEMENTS = [
     inicio_em DATETIME DEFAULT CURRENT_TIMESTAMP,
     fim_em DATETIME,
     fim_motivo TEXT,
-    ultimo_evento_em DATETIME DEFAULT CURRENT_TIMESTAMP
+    ultimo_evento_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
   )`,
 
   `CREATE INDEX IF NOT EXISTS idx_tracking_sessions_usuario_inicio
@@ -118,7 +119,12 @@ const STATEMENTS = [
     termo_normalizado TEXT,
     resultados_count INTEGER,
     metadata_json TEXT,
-    criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
+    criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (session_id) REFERENCES tracking_sessions(id),
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id),
+    FOREIGN KEY (partitura_id) REFERENCES partituras(id),
+    FOREIGN KEY (parte_id) REFERENCES partes(id),
+    FOREIGN KEY (repertorio_id) REFERENCES repertorios(id)
   )`,
 
   `CREATE INDEX IF NOT EXISTS idx_tracking_events_criado
