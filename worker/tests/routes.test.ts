@@ -243,6 +243,24 @@ describe('Rotas Admin', () => {
       expect(response.status).toBe(403);
     });
   });
+
+  describe('GET /api/admin/analytics/dashboard', () => {
+    it('retorna seções para uso do acervo, pessoas, ensaios e alterações', async () => {
+      const response = await SELF.fetch('https://test.local/api/admin/analytics/dashboard', {
+        headers: { Authorization: `Bearer ${adminToken}` },
+      });
+
+      expect(response.status).toBe(200);
+      const data = await response.json() as Record<string, unknown>;
+      expect(data).toHaveProperty('uso_acervo');
+      expect(data).toHaveProperty('pessoas');
+      expect(data).toHaveProperty('ensaios');
+      expect(data).toHaveProperty('alteracoes');
+      expect(data).toHaveProperty('atividade_recente');
+      expect(data).toHaveProperty('instrumentos_dist');
+      expect(data).toHaveProperty('presencas_familia');
+    });
+  });
 });
 
 describe('Rotas de Partes (BUG FIX)', () => {
