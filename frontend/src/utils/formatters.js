@@ -2,7 +2,7 @@
 // Utilitarios para formatar datas, textos e dados de atividades
 
 /**
- * Formata uma data para tempo relativo (ex: "5 min atras", "ontem")
+ * Formata uma data para tempo relativo (ex: "5 min atrás", "ontem")
  * @param {string|Date} dateString - Data a ser formatada
  * @param {boolean} short - Se true, usa formato curto (ex: "5min" ao inves de "5 min atras")
  * @returns {string} Tempo formatado
@@ -35,12 +35,12 @@ export const formatTimeAgo = (dateString, short = false) => {
 
   // Formato longo para home screen
   if (diffMins < 1) return 'agora mesmo';
-  if (diffMins < 60) return `${diffMins} min atras`;
-  if (diffHours < 24) return `${diffHours}h atras`;
+  if (diffMins < 60) return `${diffMins} min atrás`;
+  if (diffHours < 24) return `${diffHours}h atrás`;
   if (diffDays === 1) return 'ontem';
-  if (diffDays < 7) return `${diffDays} dias atras`;
-  if (diffDays < 30) return `${Math.floor(diffDays / 7)} semana(s) atras`;
-  return `${Math.floor(diffDays / 30)} mes(es) atras`;
+  if (diffDays < 7) return `${diffDays} dias atrás`;
+  if (diffDays < 30) return `${Math.floor(diffDays / 7)} semana(s) atrás`;
+  return `${Math.floor(diffDays / 30)} mês(es) atrás`;
 };
 
 /**
@@ -57,7 +57,21 @@ export const getAtividadeInfo = (tipo, short = false) => {
     'favorito': { action: 'Favorito adicionado', color: '#E54D87' },
     'login': { action: 'Acesso ao sistema', color: '#95a5a6' },
     'novo_repertorio': { action: 'Novo repertório criado', color: '#9B59D0' },
-    'add_repertorio': { action: 'Adição ao repertório', color: '#9B59D0' }
+    'add_repertorio': { action: 'Adição ao repertório', color: '#9B59D0' },
+    'update_partitura': { action: 'Partitura atualizada', color: '#5B8DEF' },
+    'delete_partitura': { action: 'Partitura removida', color: '#E74C3C' },
+    'nova_parte': { action: 'Parte adicionada', color: '#43B97F' },
+    'update_parte': { action: 'Parte atualizada', color: '#5B8DEF' },
+    'delete_parte': { action: 'Parte removida', color: '#E74C3C' },
+    'partitura_aberta': { action: 'Partitura aberta', color: '#D4AF37' },
+    'pdf_visualizado_grade': { action: 'Grade visualizada', color: '#3498db' },
+    'pdf_visualizado_parte': { action: 'Parte visualizada', color: '#3498db' },
+    'download_grade': { action: 'Grade baixada', color: '#5B8DEF' },
+    'download_parte': { action: 'Parte baixada', color: '#5B8DEF' },
+    'busca_digitada': { action: 'Busca digitada', color: '#9B59D0' },
+    'busca_realizada': { action: 'Busca realizada', color: '#9B59D0' },
+    'favorito_adicionado': { action: 'Favorito adicionado', color: '#E54D87' },
+    'favorito_removido': { action: 'Favorito removido', color: '#E54D87' }
   };
 
   const mapShort = {
@@ -67,7 +81,21 @@ export const getAtividadeInfo = (tipo, short = false) => {
     'favorito': { action: 'Favorito', color: '#E54D87' },
     'login': { action: 'Login', color: '#95a5a6' },
     'novo_repertorio': { action: 'Novo repertório', color: '#9B59D0' },
-    'add_repertorio': { action: 'Adicionado ao repertório', color: '#9B59D0' }
+    'add_repertorio': { action: 'Adicionado ao repertório', color: '#9B59D0' },
+    'update_partitura': { action: 'Partitura atualizada', color: '#5B8DEF' },
+    'delete_partitura': { action: 'Partitura removida', color: '#E74C3C' },
+    'nova_parte': { action: 'Parte adicionada', color: '#43B97F' },
+    'update_parte': { action: 'Parte atualizada', color: '#5B8DEF' },
+    'delete_parte': { action: 'Parte removida', color: '#E74C3C' },
+    'partitura_aberta': { action: 'Partitura aberta', color: '#D4AF37' },
+    'pdf_visualizado_grade': { action: 'Grade visualizada', color: '#3498db' },
+    'pdf_visualizado_parte': { action: 'Parte visualizada', color: '#3498db' },
+    'download_grade': { action: 'Grade baixada', color: '#5B8DEF' },
+    'download_parte': { action: 'Parte baixada', color: '#5B8DEF' },
+    'busca_digitada': { action: 'Busca digitada', color: '#9B59D0' },
+    'busca_realizada': { action: 'Busca realizada', color: '#9B59D0' },
+    'favorito_adicionado': { action: 'Favorito adicionado', color: '#E54D87' },
+    'favorito_removido': { action: 'Favorito removido', color: '#E54D87' }
   };
 
   const map = short ? mapShort : mapLong;
