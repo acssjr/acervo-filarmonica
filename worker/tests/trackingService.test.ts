@@ -5,7 +5,8 @@ import {
 } from '../src/domain/analytics/eventSanitizer.js';
 import {
   buildTrackingEventPayload,
-  handleTrackingEvent
+  handleTrackingEvent,
+  registrarTrackingEvent
 } from '../src/domain/analytics/eventService.js';
 import {
   SESSION_IDLE_MINUTES,
@@ -141,6 +142,58 @@ describe('tracking helpers', () => {
     await expect(startTrackingSession(env, {} as any)).rejects.toThrow(
       'Usuário inválido para tracking'
     );
+  });
+
+  it('rejects missing user id before insert in registrarTrackingEvent', async () => {
+    const prepare = vi.fn();
+    const env = { DB: { prepare } } as any;
+
+    await expect(
+      registrarTrackingEvent(env, {}, 'sess_1_test', {
+        tipo: 'download_parte'
+      })
+    ).rejects.toThrow('Usuário inválido para tracking');
+
+    expect(prepare).not.toHaveBeenCalled();
+  });
+
+  it('keeps successful event inserts successful even if session touch fails', async () => {
+    const run = vi.fn().mockResolvedValue({ success: true });
+    const bind = vi.fn(() => ({ run }));
+    const prepare = vi.fn(() => {
+      const sql = prepare.mock.calls[prepare.mock.calls.length - 1]?.[0] ?? '';
+      if (String(sql).includes('UPDATE tracking_sessions')) {
+        return {
+          bind: vi.fn(() => ({
+            run: vi.fn().mockRejectedValue(new Error('touch failed'))
+          }))
+        };
+      }
+      return { bind };
+    });
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const env = { DB: { prepare } } as any;
+
+    await expect(
+      handleTrackingEvent(
+        new Request('https://example.com', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Tracking-Session': 'sess_1_test'
+          },
+          body: JSON.stringify({ tipo: 'download_parte' })
+        }),
+        env,
+        { id: 1 } as any
+      )
+    ).resolves.toMatchObject({ status: 200 });
+
+    expect(errorSpy).toHaveBeenCalledWith(
+      'Erro ao atualizar sessao de tracking:',
+      expect.any(Error)
+    );
+    errorSpy.mockRestore();
   });
 
   it('returns 400 for validation errors and 500 for runtime failures in handleTrackingEvent', async () => {

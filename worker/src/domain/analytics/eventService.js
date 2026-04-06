@@ -27,6 +27,37 @@ function isValidationError(error) {
   return error instanceof TrackingValidationError || error?.name === 'TrackingValidationError';
 }
 
+function assertTrackingUserId(user) {
+  if (user?.id === null || user?.id === undefined || user?.id === '') {
+    throw new TrackingValidationError('Usuário inválido para tracking');
+  }
+}
+
+function coerceMetadata(inputMetadata) {
+  if (inputMetadata === undefined || inputMetadata === null) {
+    return null;
+  }
+
+  try {
+    const serialized = JSON.stringify(inputMetadata);
+    if (typeof serialized !== 'string') {
+      throw new TrackingValidationError('Metadata invalida');
+    }
+
+    if (serialized.length > 2000) {
+      throw new TrackingValidationError('Metadata muito grande');
+    }
+
+    return serialized;
+  } catch (error) {
+    if (isValidationError(error)) {
+      throw error;
+    }
+
+    throw new TrackingValidationError('Metadata invalida');
+  }
+}
+
 export function buildTrackingEventPayload(input) {
   if (!ALLOWED_EVENT_TYPES.has(input?.tipo)) {
     throw new TrackingValidationError('Tipo de evento invalido');
@@ -44,25 +75,6 @@ export function buildTrackingEventPayload(input) {
     ? (termoOriginal === '[termo ocultado]' ? termoOriginal : normalizeSearchTerm(rawTerm))
     : null;
 
-  const hasMetadata = input.metadata !== undefined && input.metadata !== null;
-  let metadataJson = null;
-
-  if (hasMetadata) {
-    try {
-      metadataJson = JSON.stringify(input.metadata);
-    } catch {
-      throw new TrackingValidationError('Metadata invalida');
-    }
-
-    if (typeof metadataJson !== 'string') {
-      throw new TrackingValidationError('Metadata invalida');
-    }
-
-    if (metadataJson.length > 2000) {
-      throw new TrackingValidationError('Metadata muito grande');
-    }
-  }
-
   return {
     tipo: input.tipo,
     origem: input.origem ?? null,
@@ -72,11 +84,12 @@ export function buildTrackingEventPayload(input) {
     termo_original: termoOriginal,
     termo_normalizado: termoNormalizado,
     resultados_count: Number.isFinite(input.resultados_count) ? input.resultados_count : null,
-    metadata_json: metadataJson
+    metadata_json: coerceMetadata(input.metadata)
   };
 }
 
 export async function registrarTrackingEvent(env, user, sessionId, input) {
+  assertTrackingUserId(user);
   const payload = buildTrackingEventPayload(input);
 
   await env.DB.prepare(`
@@ -95,7 +108,7 @@ export async function registrarTrackingEvent(env, user, sessionId, input) {
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).bind(
     sessionId ?? null,
-    user?.id ?? null,
+    user.id,
     payload.tipo,
     payload.origem,
     payload.partitura_id,
@@ -107,7 +120,11 @@ export async function registrarTrackingEvent(env, user, sessionId, input) {
     payload.metadata_json
   ).run();
 
-  await touchTrackingSession(env, sessionId);
+  try {
+    await touchTrackingSession(env, sessionId);
+  } catch (error) {
+    console.error('Erro ao atualizar sessao de tracking:', error);
+  }
 }
 
 export async function handleTrackingEvent(request, env, user) {
