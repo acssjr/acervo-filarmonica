@@ -266,6 +266,38 @@ export async function uploadPastaPartitura(request, env, admin) {
  *
  * Extraido de: worker/index.js linhas 880-908
  */
+function describeValue(value) {
+  if (value === null || value === undefined || value === '') {
+    return 'vazio';
+  }
+  return String(value);
+}
+
+function describeBoolean(value) {
+  return Number(value) === 1 ? 'Sim' : 'Não';
+}
+
+function addChange(changes, label, before, after) {
+  const beforeText = describeValue(before);
+  const afterText = describeValue(after);
+  if (beforeText !== afterText) {
+    changes.push(`${label}: "${beforeText}" -> "${afterText}"`);
+  }
+}
+
+function buildPartituraUpdateDetails(before, after) {
+  const changes = [];
+  addChange(changes, 'Título', before.titulo, after.titulo);
+  addChange(changes, 'Compositor', before.compositor, after.compositor);
+  addChange(changes, 'Arranjador', before.arranjador, after.arranjador);
+  addChange(changes, 'Categoria', before.categoria_id, after.categoria_id);
+  addChange(changes, 'Ano', before.ano, after.ano);
+  addChange(changes, 'Descrição', before.descricao, after.descricao);
+  addChange(changes, 'Destaque', describeBoolean(before.destaque), describeBoolean(after.destaque));
+
+  return changes.length > 0 ? changes.join('; ') : 'Sem alterações nos campos principais';
+}
+
 export async function updatePartitura(id, request, env, user) {
   try {
     const data = await request.json();
@@ -282,18 +314,39 @@ export async function updatePartitura(id, request, env, user) {
       return errorResponse('Categoria é obrigatória', 400, request);
     }
 
+    const partituraAtual = await env.DB.prepare(`
+      SELECT titulo, compositor, arranjador, categoria_id, ano, descricao, destaque
+      FROM partituras
+      WHERE id = ?
+    `).bind(id).first();
+
+    if (!partituraAtual) {
+      return errorResponse('Partitura não encontrada', 404, request);
+    }
+
+    const novaPartitura = {
+      titulo: tituloFinal,
+      compositor: compositor ?? null,
+      arranjador: arranjador ?? null,
+      categoria_id: categoriaFinal,
+      ano: ano ?? null,
+      descricao: descricao ?? null,
+      destaque: destaque ? 1 : 0,
+    };
+    const detalhes = buildPartituraUpdateDetails(partituraAtual, novaPartitura);
+
     const updateResult = await env.DB.prepare(`
       UPDATE partituras
       SET titulo = ?, compositor = ?, arranjador = ?, categoria_id = ?, ano = ?, descricao = ?, destaque = ?, atualizado_em = CURRENT_TIMESTAMP
       WHERE id = ?
     `).bind(
-      tituloFinal,
-      compositor ?? null,
-      arranjador ?? null,
-      categoriaFinal,
-      ano ?? null,
-      descricao ?? null,
-      destaque ? 1 : 0,
+      novaPartitura.titulo,
+      novaPartitura.compositor,
+      novaPartitura.arranjador,
+      novaPartitura.categoria_id,
+      novaPartitura.ano,
+      novaPartitura.descricao,
+      novaPartitura.destaque,
       id
     ).run();
 
@@ -301,7 +354,7 @@ export async function updatePartitura(id, request, env, user) {
       return errorResponse('Partitura não encontrada', 404, request);
     }
 
-    await registrarAtividade(env, 'update_partitura', tituloFinal, 'Partitura atualizada', user.id);
+    await registrarAtividade(env, 'update_partitura', tituloFinal, detalhes, user.id);
 
     return jsonResponse({ success: true, message: 'Partitura atualizada!' }, 200, request);
   } catch (error) {
@@ -366,7 +419,7 @@ export async function deletePartitura(id, request, env, user) {
  * Corrigir partes de Bombardino de uma partitura (Admin)
  * Deleta partes existentes de Bombardino e faz upload das novas com nomes corretos
  */
-export async function corrigirBombardinosPartitura(partituraId, request, env) {
+export async function corrigirBombardinosPartitura(partituraId, request, env, admin) {
   try {
     const formData = await request.formData();
     const totalArquivos = parseInt(formData.get('total_arquivos') || '0');
@@ -446,10 +499,19 @@ export async function corrigirBombardinosPartitura(partituraId, request, env) {
     }
 
     const partesAdicionadas = uploadedFiles.length;
+    const partesRemovidas = (partesAntigas.results || []).length;
+
+    await registrarAtividade(
+      env,
+      'update_parte',
+      partitura.titulo,
+      `Bombardinos corrigidos: ${partesRemovidas} partes removidas, ${partesAdicionadas} partes adicionadas`,
+      admin?.id ?? null
+    );
 
     return jsonResponse({
       success: true,
-      partes_removidas: (partesAntigas.results || []).length,
+      partes_removidas: partesRemovidas,
       partes_adicionadas: partesAdicionadas,
       message: `Bombardinos corrigidos: ${partesAdicionadas} partes atualizadas!`
     }, 200, request);

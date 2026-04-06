@@ -45,9 +45,9 @@ export function setupPartituraRoutes(router) {
   router.post('/api/partituras/upload-pasta', (req, env, params, context) => {
     return uploadPastaPartitura(req, env, context.user);
   }, [adminMiddleware]);
-  router.post('/api/partituras/:id/corrigir-bombardinos', (req, env, params) => {
+  router.post('/api/partituras/:id/corrigir-bombardinos', (req, env, params, context) => {
     const id = params.id;
-    return corrigirBombardinosPartitura(id, req, env);
+    return corrigirBombardinosPartitura(id, req, env, context.user);
   }, [adminMiddleware]);
   router.post('/api/partituras', (req, env, params, context) => {
     return createPartitura(req, env, context.user);
@@ -72,16 +72,16 @@ export function setupPartituraRoutes(router) {
     const id = params.id;
     return addParte(id, req, env, context.user);
   }, [adminMiddleware]);
-  router.put('/api/partes/:id/substituir', (req, env, params) => {
+  router.put('/api/partes/:id/substituir', (req, env, params, context) => {
     const id = params.id;
-    return substituirParte(id, req, env);
+    return substituirParte(id, req, env, context.user);
   }, [adminMiddleware]);
-  router.put('/api/partes/:id/renomear', (req, env, params) => {
+  router.put('/api/partes/:id/renomear', (req, env, params, context) => {
     const id = params.id;
-    return renomearParte(id, req, env);
+    return renomearParte(id, req, env, context.user);
   }, [adminMiddleware]);
-  router.delete('/api/partes/:id', (req, env, params) => {
+  router.delete('/api/partes/:id', (req, env, params, context) => {
     const id = params.id;
-    return deleteParte(id, req, env);
+    return deleteParte(id, req, env, context.user);
   }, [adminMiddleware]);
 }

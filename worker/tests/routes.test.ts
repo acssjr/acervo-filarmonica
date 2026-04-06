@@ -590,6 +590,19 @@ describe('CRUD de Partituras - Update', () => {
     ).bind(testPartituraId).first() as { titulo: string; compositor: string };
     expect(check.titulo).toBe('Partitura Renomeada');
     expect(check.compositor).toBe('Novo Compositor');
+
+    const atividade = await env.DB.prepare(`
+      SELECT tipo, titulo, detalhes, usuario_id
+      FROM atividades
+      WHERE tipo = 'update_partitura' AND titulo = 'Partitura Renomeada'
+      ORDER BY id DESC
+      LIMIT 1
+    `).first() as { tipo: string; detalhes: string; usuario_id: number } | null;
+
+    expect(atividade).not.toBeNull();
+    expect(atividade?.detalhes).toContain('Título:');
+    expect(atividade?.detalhes).toContain('Compositor:');
+    expect(atividade?.usuario_id).toBe(1);
   });
 
   it('rejeita update sem título', async () => {
