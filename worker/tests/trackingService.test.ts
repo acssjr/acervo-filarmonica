@@ -25,8 +25,10 @@ describe('tracking helpers', () => {
   it('masks sensitive search terms', () => {
     expect(maskSensitiveSearchTerm('contato@exemplo.com')).toBe('[termo ocultado]');
     expect(maskSensitiveSearchTerm('(11) 91234-5678')).toBe('[termo ocultado]');
+    expect(maskSensitiveSearchTerm('+55 84 99999-9999')).toBe('[termo ocultado]');
     expect(maskSensitiveSearchTerm('123.456.789-09')).toBe('[termo ocultado]');
     expect(maskSensitiveSearchTerm('1234')).toBe('[termo ocultado]');
+    expect(maskSensitiveSearchTerm('1234567890123')).toBe('1234567890123');
     expect(maskSensitiveSearchTerm('Verde X Branco')).toBe('Verde X Branco');
   });
 
@@ -46,6 +48,25 @@ describe('tracking helpers', () => {
       termo_original: '[termo ocultado]',
       termo_normalizado: '[termo ocultado]',
       resultados_count: 0,
+      metadata_json: null
+    });
+  });
+
+  it('treats empty or whitespace search terms as absent', () => {
+    expect(
+      buildTrackingEventPayload({
+        tipo: 'busca_realizada',
+        termo_original: '   '
+      })
+    ).toEqual({
+      tipo: 'busca_realizada',
+      origem: null,
+      partitura_id: null,
+      parte_id: null,
+      repertorio_id: null,
+      termo_original: null,
+      termo_normalizado: null,
+      resultados_count: null,
       metadata_json: null
     });
   });

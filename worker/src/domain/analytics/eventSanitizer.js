@@ -27,9 +27,7 @@ function isBrazilianPhone(term) {
 
   return (
     /^\+55\s?\(?\d{2}\)?\s?\d{4,5}[-.\s]?\d{4}$/.test(normalized) ||
-    /^\(?\d{2}\)?\s?\d{4,5}[-.\s]?\d{4}$/.test(normalized) ||
-    /^\d{11}$/.test(normalized) ||
-    /^\d{13}$/.test(normalized)
+    /^\(?\d{2}\)?\s?\d{4,5}[-.\s]?\d{4}$/.test(normalized)
   );
 }
 
