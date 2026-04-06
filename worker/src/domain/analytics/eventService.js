@@ -32,12 +32,16 @@ export function buildTrackingEventPayload(input) {
     throw new TrackingValidationError('Tipo de evento invalido');
   }
 
-  const termoOriginal = typeof input.termo_original === 'string'
-    ? maskSensitiveSearchTerm(input.termo_original)
+  const hasTerm = typeof input.termo_original === 'string';
+  const rawTerm = hasTerm ? input.termo_original.trim() : null;
+  const hasMeaningfulTerm = typeof rawTerm === 'string' && rawTerm.length > 0;
+
+  const termoOriginal = hasMeaningfulTerm
+    ? maskSensitiveSearchTerm(rawTerm)
     : null;
 
-  const termoNormalizado = typeof input.termo_original === 'string'
-    ? (termoOriginal === '[termo ocultado]' ? termoOriginal : normalizeSearchTerm(termoOriginal))
+  const termoNormalizado = hasMeaningfulTerm
+    ? (termoOriginal === '[termo ocultado]' ? termoOriginal : normalizeSearchTerm(rawTerm))
     : null;
 
   const hasMetadata = input.metadata !== undefined && input.metadata !== null;

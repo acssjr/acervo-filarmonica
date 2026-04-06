@@ -23,13 +23,14 @@ function isCpf(term) {
 }
 
 function isBrazilianPhone(term) {
-  const digits = term.replace(/\D/g, '');
+  const normalized = term.trim();
 
-  if (digits.length < 10 || digits.length > 13) {
-    return false;
-  }
-
-  return true;
+  return (
+    /^\+55\s?\(?\d{2}\)?\s?\d{4,5}[-.\s]?\d{4}$/.test(normalized) ||
+    /^\(?\d{2}\)?\s?\d{4,5}[-.\s]?\d{4}$/.test(normalized) ||
+    /^\d{11}$/.test(normalized) ||
+    /^\d{13}$/.test(normalized)
+  );
 }
 
 function isNumericPin(term) {
