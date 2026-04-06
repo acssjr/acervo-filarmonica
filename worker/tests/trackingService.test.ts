@@ -102,6 +102,37 @@ describe('tracking helpers', () => {
     });
   });
 
+  it('prefers a valid body session id when the header is whitespace', async () => {
+    const first = vi.fn().mockResolvedValue({ usuario_id: 1 });
+    const insertRun = vi.fn().mockResolvedValue({ success: true });
+    const touchRun = vi.fn().mockResolvedValue({ success: true });
+    const prepare = vi.fn((sql) => {
+      if (String(sql).includes('SELECT usuario_id')) {
+        return { bind: vi.fn(() => ({ first })) };
+      }
+      if (String(sql).includes('UPDATE tracking_sessions')) {
+        return { bind: vi.fn(() => ({ run: touchRun })) };
+      }
+      return { bind: vi.fn(() => ({ run: insertRun })) };
+    });
+    const env = { DB: { prepare } } as any;
+
+    await expect(
+      handleTrackingEvent(
+        new Request('https://example.com', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Tracking-Session': '   '
+          },
+          body: JSON.stringify({ tipo: 'download_parte', session_id: 'sess_1_test' })
+        }),
+        env,
+        { id: 1 } as any
+      )
+    ).resolves.toMatchObject({ status: 200 });
+  });
+
   it('rejects invalid event types', () => {
     expect(() => buildTrackingEventPayload({ tipo: 'nao_existente' as any })).toThrow(
       'Tipo de evento invalido'
@@ -165,12 +196,12 @@ describe('tracking helpers', () => {
   });
 
   it('fails fast when createSessionId receives a missing user id', async () => {
-    expect(() => createSessionId(undefined)).toThrow('Usuário inválido para tracking');
+    expect(() => createSessionId(undefined)).toThrow('Usu\u00e1rio inv\u00e1lido para tracking');
 
     const env = { DB: { prepare: vi.fn() } } as unknown as Parameters<typeof startTrackingSession>[0];
 
     await expect(startTrackingSession(env, {} as any)).rejects.toThrow(
-      'Usuário inválido para tracking'
+      'Usu\u00e1rio inv\u00e1lido para tracking'
     );
   });
 
@@ -182,7 +213,7 @@ describe('tracking helpers', () => {
       registrarTrackingEvent(env, {}, 'sess_1_test', {
         tipo: 'download_parte'
       })
-    ).rejects.toThrow('Usuário inválido para tracking');
+    ).rejects.toThrow('Usu\u00e1rio inv\u00e1lido para tracking');
 
     expect(prepare).not.toHaveBeenCalled();
   });
@@ -196,7 +227,7 @@ describe('tracking helpers', () => {
       registrarTrackingEvent(env, { id: 1 }, 'sess_1_test', {
         tipo: 'download_parte'
       })
-    ).rejects.toThrow('Sessão inválida ou não pertence ao usuário');
+    ).rejects.toThrow('Sess\u00e3o inv\u00e1lida ou n\u00e3o pertence ao usu\u00e1rio');
 
     expect(prepare).toHaveBeenCalledTimes(1);
   });
@@ -204,6 +235,7 @@ describe('tracking helpers', () => {
   it('keeps successful event inserts successful even if session touch fails', async () => {
     const insertRun = vi.fn().mockResolvedValue({ success: true });
     const touchRun = vi.fn().mockRejectedValue(new Error('touch failed'));
+
     const prepare = vi.fn((sql) => {
       if (String(sql).includes('SELECT usuario_id')) {
         return { bind: vi.fn(() => ({ first: vi.fn().mockResolvedValue({ usuario_id: 1 }) })) };

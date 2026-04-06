@@ -29,7 +29,7 @@ function isValidationError(error) {
 
 function assertTrackingUserId(user) {
   if (user?.id === null || user?.id === undefined || user?.id === '') {
-    throw new TrackingValidationError('Usuário inválido para tracking');
+    throw new TrackingValidationError('Usu\u00e1rio inv\u00e1lido para tracking');
   }
 }
 
@@ -98,7 +98,7 @@ async function assertSessionOwnership(env, user, sessionId) {
   `).bind(sessionId).first();
 
   if (!session || session.usuario_id !== user.id) {
-    throw new TrackingValidationError('Sessão inválida ou não pertence ao usuário');
+    throw new TrackingValidationError('Sess\u00e3o inv\u00e1lida ou n\u00e3o pertence ao usu\u00e1rio');
   }
 }
 
