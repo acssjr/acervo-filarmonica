@@ -33,6 +33,33 @@ function assertTrackingUserId(user) {
   }
 }
 
+function normalizeTrackingSessionId(sessionId) {
+  if (typeof sessionId !== 'string') {
+    return null;
+  }
+
+  const normalized = sessionId.trim();
+  return normalized.length > 0 ? normalized : null;
+}
+
+function coerceResultCount(value) {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : null;
+  }
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return null;
+    }
+
+    const parsed = Number(trimmed);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  return null;
+}
+
 function coerceMetadata(inputMetadata) {
   if (inputMetadata === undefined || inputMetadata === null) {
     return null;
@@ -55,6 +82,23 @@ function coerceMetadata(inputMetadata) {
     }
 
     throw new TrackingValidationError('Metadata invalida');
+  }
+}
+
+async function assertSessionOwnership(env, user, sessionId) {
+  if (!sessionId) {
+    return;
+  }
+
+  const session = await env.DB.prepare(`
+    SELECT usuario_id
+    FROM tracking_sessions
+    WHERE id = ? AND fim_em IS NULL
+    LIMIT 1
+  `).bind(sessionId).first();
+
+  if (!session || session.usuario_id !== user.id) {
+    throw new TrackingValidationError('Sessão inválida ou não pertence ao usuário');
   }
 }
 
@@ -83,13 +127,16 @@ export function buildTrackingEventPayload(input) {
     repertorio_id: input.repertorio_id ?? null,
     termo_original: termoOriginal,
     termo_normalizado: termoNormalizado,
-    resultados_count: Number.isFinite(input.resultados_count) ? input.resultados_count : null,
+    resultados_count: coerceResultCount(input.resultados_count),
     metadata_json: coerceMetadata(input.metadata)
   };
 }
 
 export async function registrarTrackingEvent(env, user, sessionId, input) {
   assertTrackingUserId(user);
+  const normalizedSessionId = normalizeTrackingSessionId(sessionId);
+  await assertSessionOwnership(env, user, normalizedSessionId);
+
   const payload = buildTrackingEventPayload(input);
 
   await env.DB.prepare(`
@@ -107,7 +154,7 @@ export async function registrarTrackingEvent(env, user, sessionId, input) {
       metadata_json
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).bind(
-    sessionId ?? null,
+    normalizedSessionId,
     user.id,
     payload.tipo,
     payload.origem,
@@ -121,7 +168,7 @@ export async function registrarTrackingEvent(env, user, sessionId, input) {
   ).run();
 
   try {
-    await touchTrackingSession(env, sessionId);
+    await touchTrackingSession(env, normalizedSessionId);
   } catch (error) {
     console.error('Erro ao atualizar sessao de tracking:', error);
   }
@@ -136,7 +183,7 @@ export async function handleTrackingEvent(request, env, user) {
       throw new TrackingValidationError('JSON invalido');
     }
 
-    const sessionId = request.headers.get('X-Tracking-Session') || body?.session_id || null;
+    const sessionId = normalizeTrackingSessionId(request.headers.get('X-Tracking-Session') || body?.session_id || null);
 
     await registrarTrackingEvent(env, user, sessionId, body);
 

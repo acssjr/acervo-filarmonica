@@ -53,6 +53,36 @@ describe('tracking helpers', () => {
     });
   });
 
+  it('coerces numeric string search counts and rejects empty or invalid values', () => {
+    expect(
+      buildTrackingEventPayload({
+        tipo: 'busca_realizada',
+        resultados_count: '0'
+      })
+    ).toEqual(expect.objectContaining({ resultados_count: 0 }));
+
+    expect(
+      buildTrackingEventPayload({
+        tipo: 'busca_realizada',
+        resultados_count: '12'
+      })
+    ).toEqual(expect.objectContaining({ resultados_count: 12 }));
+
+    expect(
+      buildTrackingEventPayload({
+        tipo: 'busca_realizada',
+        resultados_count: ''
+      })
+    ).toEqual(expect.objectContaining({ resultados_count: null }));
+
+    expect(
+      buildTrackingEventPayload({
+        tipo: 'busca_realizada',
+        resultados_count: 'abc'
+      })
+    ).toEqual(expect.objectContaining({ resultados_count: null }));
+  });
+
   it('treats empty or whitespace search terms as absent', () => {
     expect(
       buildTrackingEventPayload({
@@ -157,19 +187,31 @@ describe('tracking helpers', () => {
     expect(prepare).not.toHaveBeenCalled();
   });
 
+  it('rejects sessions that do not belong to the current user before insert', async () => {
+    const first = vi.fn().mockResolvedValue({ usuario_id: 2 });
+    const prepare = vi.fn(() => ({ bind: vi.fn(() => ({ first })) }));
+    const env = { DB: { prepare } } as any;
+
+    await expect(
+      registrarTrackingEvent(env, { id: 1 }, 'sess_1_test', {
+        tipo: 'download_parte'
+      })
+    ).rejects.toThrow('Sessão inválida ou não pertence ao usuário');
+
+    expect(prepare).toHaveBeenCalledTimes(1);
+  });
+
   it('keeps successful event inserts successful even if session touch fails', async () => {
-    const run = vi.fn().mockResolvedValue({ success: true });
-    const bind = vi.fn(() => ({ run }));
-    const prepare = vi.fn(() => {
-      const sql = prepare.mock.calls[prepare.mock.calls.length - 1]?.[0] ?? '';
-      if (String(sql).includes('UPDATE tracking_sessions')) {
-        return {
-          bind: vi.fn(() => ({
-            run: vi.fn().mockRejectedValue(new Error('touch failed'))
-          }))
-        };
+    const insertRun = vi.fn().mockResolvedValue({ success: true });
+    const touchRun = vi.fn().mockRejectedValue(new Error('touch failed'));
+    const prepare = vi.fn((sql) => {
+      if (String(sql).includes('SELECT usuario_id')) {
+        return { bind: vi.fn(() => ({ first: vi.fn().mockResolvedValue({ usuario_id: 1 }) })) };
       }
-      return { bind };
+      if (String(sql).includes('UPDATE tracking_sessions')) {
+        return { bind: vi.fn(() => ({ run: touchRun })) };
+      }
+      return { bind: vi.fn(() => ({ run: insertRun })) };
     });
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const env = { DB: { prepare } } as any;
