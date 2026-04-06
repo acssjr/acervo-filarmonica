@@ -10,6 +10,12 @@ import { createPostHogClient, shutdownPostHog } from '../../infrastructure/posth
  */
 export async function downloadPartitura(id, request, env, user) {
   try {
+    const url = new URL(request.url);
+    const action = url.searchParams.get('action');
+    const userIsAdmin = user?.admin === 1 || user?._isAdmin === true;
+    const isAdmin = action === 'admin' && userIsAdmin;
+    const isView = action === 'view' && request.headers.get('X-Requested-With') === 'XMLHttpRequest';
+
     const partitura = await env.DB.prepare(
       'SELECT * FROM partituras WHERE id = ? AND ativo = 1'
     ).bind(id).first();
@@ -24,25 +30,31 @@ export async function downloadPartitura(id, request, env, user) {
       return errorResponse('Arquivo não encontrado', 404, request);
     }
 
-    await env.DB.prepare(
-      'UPDATE partituras SET downloads = downloads + 1 WHERE id = ?'
-    ).bind(id).run();
+    if (!isAdmin) {
+      if (!isView) {
+        await env.DB.prepare(
+          'UPDATE partituras SET downloads = downloads + 1 WHERE id = ?'
+        ).bind(id).run();
+      }
 
-    // Registra atividade de download
-    await registrarAtividade(env, 'download', partitura.titulo, null, user.id);
+      // Registra atividade diferenciada
+      await registrarAtividade(env, isView ? 'visualizacao' : 'download', partitura.titulo, null, user.id);
 
-    // Log de download
-    try {
-      await env.DB.prepare(
-        'INSERT INTO logs_download (partitura_id, instrumento_id, ip, usuario_id) VALUES (?, NULL, ?, ?)'
-      ).bind(id, request.headers.get('CF-Connecting-IP'), user.id).run();
-    } catch (logError) {
-      console.error('Erro ao registrar log:', logError);
+      // Log de download
+      if (!isView) {
+        try {
+          await env.DB.prepare(
+            'INSERT INTO logs_download (partitura_id, instrumento_id, ip, usuario_id) VALUES (?, NULL, ?, ?)'
+          ).bind(id, request.headers.get('CF-Connecting-IP'), user.id).run();
+        } catch (logError) {
+          console.error('Erro ao registrar log:', logError);
+        }
+      }
     }
 
     // PostHog: capture partitura download event
     const posthog = createPostHogClient(env);
-    if (posthog) {
+    if (posthog && !isAdmin) {
       posthog.capture({
         distinctId: `user_${user.id}`,
         event: 'partitura_downloaded',
@@ -50,15 +62,18 @@ export async function downloadPartitura(id, request, env, user) {
           partitura_id: id,
           partitura_titulo: partitura.titulo,
           compositor: partitura.compositor,
+          is_view: isView,
         },
       });
       await shutdownPostHog(posthog);
     }
 
+    const disposition = isView ? 'inline' : 'attachment';
+
     return new Response(arquivo.body, {
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="${partitura.titulo}.pdf"`,
+        'Content-Disposition': `${disposition}; filename="${partitura.titulo}.pdf"`,
         ...getCorsHeaders(request),
       },
     });

@@ -4,6 +4,7 @@
 
 import { useState, useCallback } from 'react';
 import { API_BASE_URL } from '@constants/api';
+import { API } from '@services/api';
 import { Storage } from '@services/storage';
 
 /**
@@ -150,6 +151,14 @@ export const useSheetDownload = ({ showToast, selectedSheet, partes = [] }) => {
         // Criar blob com tipo explicito para PDF
         const pdfBlob = new Blob([blob], { type: 'application/pdf' });
 
+        API.trackEvent({
+          tipo: 'download_parte',
+          origem: 'detalhe_partitura',
+          partitura_id: selectedSheet.id,
+          parte_id: parte.id,
+          metadata: { instrumento: parte.instrumento }
+        });
+
         // Usar funcao de save dedicada
         saveBlob(pdfBlob, filename);
 
@@ -185,6 +194,11 @@ export const useSheetDownload = ({ showToast, selectedSheet, partes = [] }) => {
       if (response.ok) {
         const blob = await response.blob();
         const pdfBlob = new Blob([blob], { type: 'application/pdf' });
+        API.trackEvent({
+          tipo: 'download_grade',
+          origem: 'detalhe_partitura',
+          partitura_id: selectedSheet.id
+        });
         saveBlob(pdfBlob, `${selectedSheet.title}.pdf`);
         showToast('Iniciando download...');
       } else {
@@ -344,6 +358,14 @@ export const useSheetDownload = ({ showToast, selectedSheet, partes = [] }) => {
       if (response.ok) {
         const blob = await response.blob();
         const blobUrl = URL.createObjectURL(blob);
+
+        API.trackEvent({
+          tipo: parte.instrumento?.toLowerCase() === 'grade' ? 'pdf_visualizado_grade' : 'pdf_visualizado_parte',
+          origem: 'detalhe_partitura',
+          partitura_id: selectedSheet.id,
+          parte_id: parte.id,
+          metadata: { instrumento: parte.instrumento }
+        });
 
         // Abre no modal embutido
         setPdfViewer({

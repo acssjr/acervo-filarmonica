@@ -489,6 +489,22 @@ export const API = {
     }
   },
 
+  async trackEvent(event) {
+    try {
+      const token = Storage.get('authToken', null);
+      await fetch(`${API_BASE_URL}/api/tracking/events`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { 'Authorization': `Bearer ${token}` })
+        },
+        body: JSON.stringify(event)
+      });
+    } catch {
+      // Ignorar erros de tracking
+    }
+  },
+
   // ============ MANUTENÇÃO ADMIN ============
 
   async limparNomesUsuarios() {

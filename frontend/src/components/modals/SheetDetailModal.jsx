@@ -128,6 +128,12 @@ const SheetDetailModal = () => {
     setShowInstrumentPicker(false);
     download.handleCancelDownload();
 
+    API.trackEvent({
+      tipo: 'partitura_aberta',
+      origem: 'detalhe_partitura',
+      partitura_id: selectedSheet.id,
+    });
+
     const fetchPartes = async () => {
       setLoadingPartes(true);
       try {
