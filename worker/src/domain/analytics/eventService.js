@@ -183,7 +183,9 @@ export async function handleTrackingEvent(request, env, user) {
       throw new TrackingValidationError('JSON invalido');
     }
 
-    const sessionId = normalizeTrackingSessionId(request.headers.get('X-Tracking-Session') || body?.session_id || null);
+    const headerSessionId = normalizeTrackingSessionId(request.headers.get('X-Tracking-Session'));
+    const bodySessionId = normalizeTrackingSessionId(body?.session_id);
+    const sessionId = headerSessionId || bodySessionId;
 
     await registrarTrackingEvent(env, user, sessionId, body);
 

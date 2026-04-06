@@ -103,6 +103,7 @@ describe('tracking helpers', () => {
   });
 
   it('prefers a valid body session id when the header is whitespace', async () => {
+    let insertedSessionId = null;
     const first = vi.fn().mockResolvedValue({ usuario_id: 1 });
     const insertRun = vi.fn().mockResolvedValue({ success: true });
     const touchRun = vi.fn().mockResolvedValue({ success: true });
@@ -113,7 +114,12 @@ describe('tracking helpers', () => {
       if (String(sql).includes('UPDATE tracking_sessions')) {
         return { bind: vi.fn(() => ({ run: touchRun })) };
       }
-      return { bind: vi.fn(() => ({ run: insertRun })) };
+      return {
+        bind: vi.fn((sessionId) => {
+          insertedSessionId = sessionId;
+          return { run: insertRun };
+        })
+      };
     });
     const env = { DB: { prepare } } as any;
 
@@ -131,6 +137,8 @@ describe('tracking helpers', () => {
         { id: 1 } as any
       )
     ).resolves.toMatchObject({ status: 200 });
+
+    expect(insertedSessionId).toBe('sess_1_test');
   });
 
   it('rejects invalid event types', () => {
