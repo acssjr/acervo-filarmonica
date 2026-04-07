@@ -1,897 +1,536 @@
 // ===== ADMIN ANALYTICS =====
-// Dashboard de Analytics & Insights — Filarmônica 25 de Março
-// Design consistente com AdminDashboard: cards, grids, tipografia Plus Jakarta Sans
+// Dashboard organizado por perguntas administrativas.
 
-import { useState, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { API } from '@services/api';
 import { useMediaQuery } from '@hooks/useMediaQuery';
-import LineChart from '@components/charts/LineChart';
-import BarChart from '@components/charts/BarChart';
-import PieChart from '@components/charts/PieChart';
+import { getAtividadeInfo, formatTimeAgo } from '@utils/formatters';
 import {
-    Download, Users, Search, TrendingUp, Music,
-    RefreshCw, AlertTriangle, Clock, Award, Activity,
-    Eye, BarChart3, UserCheck, CalendarDays, Flame
+  Activity,
+  AlertTriangle,
+  BarChart3,
+  CalendarDays,
+  Download,
+  Eye,
+  Flame,
+  Music,
+  RefreshCw,
+  Search,
+  UserCheck,
+  Users
 } from 'lucide-react';
 
-// ============ DESIGN TOKENS ============
 const GOLD = '#D4AF37';
-const GOLD_DARK = '#B8860B';
 const COLORS = {
-    gold: GOLD,
-    blue: '#4A90D9',
-    green: '#34C759',
-    red: '#E74C3C',
-    purple: '#9B59B6',
-    orange: '#E67E22',
-    cyan: '#00BCD4',
-    pink: '#E91E63'
+  gold: GOLD,
+  blue: '#4A90D9',
+  green: '#34C759',
+  red: '#E74C3C',
+  purple: '#9B59B6',
+  orange: '#E67E22',
 };
 
-// Gradiente signature da filarmônica
-const GOLD_GRADIENT = `linear-gradient(135deg, ${GOLD} 0%, ${GOLD_DARK} 100%)`;
+const formatLocalDate = (date) =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 
-// ============ COMPONENT ============
+const now = new Date();
+const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+const monthEnd = formatLocalDate(nextMonth);
+
+const tabs = [
+  { id: 'acervo', icon: Music, label: 'Uso do acervo' },
+  { id: 'pessoas', icon: Users, label: 'Pessoas' },
+  { id: 'ensaios', icon: UserCheck, label: 'Ensaios' },
+  { id: 'alteracoes', icon: Activity, label: 'Alterações' },
+];
+
+const number = (value) => Number(value || 0).toLocaleString('pt-BR');
+const percent = (value) => `${Number(value || 0).toLocaleString('pt-BR')}%`;
+
 const AdminAnalytics = () => {
-    const [data, setData] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [activeTab, setActiveTab] = useState('overview');
-    const [loadingMoreAtividades, setLoadingMoreAtividades] = useState(false);
-    const isMobile = useMediaQuery('(max-width: 767px)');
+  const isMobile = useMediaQuery('(max-width: 767px)');
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [activeTab, setActiveTab] = useState('acervo');
+  const [periodStart, setPeriodStart] = useState(monthStart);
+  const [periodEnd, setPeriodEnd] = useState(monthEnd);
+  const [selectedUserId, setSelectedUserId] = useState('');
+  const [selectedAdminId, setSelectedAdminId] = useState('');
+  const [loadingMore, setLoadingMore] = useState(false);
+  const analyticsRequestIdRef = useRef(0);
 
-    useEffect(() => { loadAnalytics(); }, []);
+  const buildQuery = useCallback((extra = {}) => {
+    const params = new URLSearchParams({
+      inicio: periodStart,
+      fim: periodEnd,
+      ...extra
+    });
 
-    const loadAnalytics = async () => {
-        try {
-            setLoading(true);
-            setError(null);
-            const result = await API.getAnalyticsDashboard();
-            setData(result);
-        } catch (err) {
-            console.error('Erro analytics:', err);
-            setError(err.message || 'Erro ao carregar dados');
-        } finally {
-            setLoading(false);
-        }
-    };
+    if (selectedUserId) params.set('usuario_id', selectedUserId);
+    if (selectedAdminId) params.set('atividade_usuario_id', selectedAdminId);
 
-    // Músicos inativos (sem acesso > 30 dias)
-    const musicosInativos = useMemo(() => {
-        if (!data?.ultimo_acesso) return [];
-        const limite = Date.now() - 30 * 24 * 60 * 60 * 1000;
-        return data.ultimo_acesso.filter(m => {
-            if (!m.ultimo_acesso) return true;
-            return new Date(m.ultimo_acesso).getTime() < limite;
-        });
-    }, [data]);
+    return `?${params.toString()}`;
+  }, [periodStart, periodEnd, selectedUserId, selectedAdminId]);
 
-    // Carrega mais atividades (paginação)
-    const loadMoreAtividades = async () => {
-        if (!data || loadingMoreAtividades) return;
-        setLoadingMoreAtividades(true);
-        try {
-            const offset = data.atividade_recente?.length || 0;
-            const result = await API.getAnalyticsDashboard(`?atividades_limit=30&atividades_offset=${offset}`);
-            if (result.atividade_recente?.length > 0) {
-                setData(prev => {
-                    const merged = [...(prev.atividade_recente || []), ...result.atividade_recente];
-                    const deduped = Array.from(
-                        new Map(
-                            merged.map((a, idx) => [
-                                a.id ?? `${a.criado_em}-${a.tipo}-${a.usuario_nome ?? ''}-${idx}`,
-                                a
-                            ])
-                        ).values()
-                    );
-                    return { ...prev, atividade_recente: deduped };
-                });
-            }
-        } catch (err) {
-            console.error('Erro ao carregar mais atividades:', err);
-        } finally {
-            setLoadingMoreAtividades(false);
-        }
-    };
+  const loadAnalytics = useCallback(async () => {
+    const requestId = analyticsRequestIdRef.current + 1;
+    analyticsRequestIdRef.current = requestId;
 
-    if (loading) {
-        return (
-            <div style={{ padding: isMobile ? '16px' : '32px', maxWidth: '1200px', margin: '0 auto' }}>
-                <div role="status" aria-live="polite" aria-label="Carregando analytics" style={{ position: 'absolute', width: '1px', height: '1px', overflow: 'hidden', clip: 'rect(0,0,0,0)', whiteSpace: 'nowrap' }}>Carregando analytics...</div>
-                {/* Header skeleton */}
-                <div style={{ marginBottom: '28px' }}>
-                    <div style={{ width: '180px', height: '24px', borderRadius: '8px', background: 'var(--border)', animation: 'shimmer 1.6s ease-in-out infinite', marginBottom: '8px' }} />
-                    <div style={{ width: '260px', height: '14px', borderRadius: '6px', background: 'var(--border)', animation: 'shimmer 1.6s ease-in-out infinite' }} />
-                </div>
-                {/* Tabs skeleton */}
-                <div style={{ display: 'flex', gap: '8px', marginBottom: '24px' }}>
-                    {[120, 100, 120, 90].map((w, i) => (
-                        <div key={i} style={{ width: `${w}px`, height: '38px', borderRadius: '10px', background: 'var(--border)', animation: 'shimmer 1.6s ease-in-out infinite' }} />
-                    ))}
-                </div>
-                {/* Stat cards skeleton */}
-                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)', gap: '12px', marginBottom: '24px' }}>
-                    {[0,1,2,3].map(i => (
-                        <div key={i} style={{ borderRadius: '16px', padding: '20px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', minHeight: '100px' }}>
-                            <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'var(--border)', animation: 'shimmer 1.6s ease-in-out infinite', marginBottom: '14px' }} />
-                            <div style={{ width: '60px', height: '28px', borderRadius: '6px', background: 'var(--border)', animation: 'shimmer 1.6s ease-in-out infinite', marginBottom: '8px' }} />
-                            <div style={{ width: '90px', height: '11px', borderRadius: '4px', background: 'var(--border)', animation: 'shimmer 1.6s ease-in-out infinite' }} />
-                        </div>
-                    ))}
-                </div>
-                {/* Chart skeleton */}
-                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '2fr 1fr', gap: '12px' }}>
-                    <div style={{ borderRadius: '16px', padding: '24px', background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}>
-                        <div style={{ width: '140px', height: '18px', borderRadius: '6px', background: 'var(--border)', animation: 'shimmer 1.6s ease-in-out infinite', marginBottom: '24px' }} />
-                        <div style={{ width: '100%', height: '180px', borderRadius: '10px', background: 'var(--border)', animation: 'shimmer 1.6s ease-in-out infinite' }} />
-                    </div>
-                    <div style={{ borderRadius: '16px', padding: '24px', background: 'var(--bg-secondary)', border: '1px solid var(--border)' }}>
-                        <div style={{ width: '120px', height: '18px', borderRadius: '6px', background: 'var(--border)', animation: 'shimmer 1.6s ease-in-out infinite', marginBottom: '24px' }} />
-                        {[100, 80, 90, 60, 70].map((w, i) => (
-                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
-                                <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'var(--border)', animation: 'shimmer 1.6s ease-in-out infinite', flexShrink: 0 }} />
-                                <div style={{ flex: 1, height: '12px', borderRadius: '4px', background: 'var(--border)', animation: 'shimmer 1.6s ease-in-out infinite', maxWidth: `${w}%` }} />
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </div>
-        );
+    try {
+      setLoading(true);
+      setError(null);
+      const result = await API.getAnalyticsDashboard(buildQuery());
+      if (analyticsRequestIdRef.current !== requestId) return;
+      setData(result);
+    } catch (err) {
+      if (analyticsRequestIdRef.current !== requestId) return;
+      console.error('Erro analytics:', err);
+      setError(err.message || 'Erro ao carregar analytics');
+    } finally {
+      if (analyticsRequestIdRef.current === requestId) {
+        setLoading(false);
+      }
     }
+  }, [buildQuery]);
 
-    if (error) {
-        return (
-            <div style={{
-                display: 'flex', flexDirection: 'column', alignItems: 'center',
-                justifyContent: 'center', minHeight: '400px', gap: '16px',
-                padding: isMobile ? '20px' : '40px'
-            }}>
-                <div style={{
-                    width: '56px', height: '56px', borderRadius: '14px',
-                    background: 'rgba(231, 76, 60, 0.1)', display: 'flex',
-                    alignItems: 'center', justifyContent: 'center'
-                }}>
-                    <AlertTriangle size={28} color={COLORS.red} />
-                </div>
-                <p style={{ color: 'var(--text-primary)', fontWeight: '600', margin: 0, }}>
-                    Erro ao carregar analytics
+  useEffect(() => {
+    loadAnalytics();
+  }, [loadAnalytics]);
+
+  const loadMoreAtividades = async () => {
+    if (!data || loadingMore) return;
+    const current = data.alteracoes?.atividades || data.atividade_recente || [];
+    setLoadingMore(true);
+    try {
+      const result = await API.getAnalyticsDashboard(buildQuery({
+        atividades_limit: '30',
+        atividades_offset: String(current.length)
+      }));
+      const nextItems = result.alteracoes?.atividades || result.atividade_recente || [];
+      setData(prev => ({
+        ...prev,
+        alteracoes: {
+          ...(prev.alteracoes || {}),
+          atividades: [...current, ...nextItems],
+          total: result.alteracoes?.total ?? prev.alteracoes?.total ?? prev.total_atividades ?? current.length
+        },
+        atividade_recente: [...current, ...nextItems],
+        total_atividades: result.total_atividades ?? prev.total_atividades
+      }));
+    } catch (err) {
+      console.error('Erro ao carregar mais atividades:', err);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
+  const usoAcervo = data?.uso_acervo || {};
+  const pessoas = data?.pessoas || {};
+  const ensaios = data?.ensaios || {};
+  const alteracoes = data?.alteracoes || {
+    usuarios: [],
+    atividades: data?.atividade_recente || [],
+    total: data?.total_atividades || 0
+  };
+
+  const maxFunil = useMemo(() => {
+    return Math.max(...(usoAcervo.funil || []).map(item => Number(item.total || 0)), 1);
+  }, [usoAcervo.funil]);
+
+  if (loading && !data) {
+    return <LoadingState isMobile={isMobile} />;
+  }
+
+  if (error) {
+    return (
+      <CenteredState
+        icon={AlertTriangle}
+        title="Erro ao carregar analytics"
+        description={error}
+        action={<Button onClick={loadAnalytics}><RefreshCw size={16} /> Tentar novamente</Button>}
+      />
+    );
+  }
+
+  return (
+    <div className="page-transition" style={{ padding: isMobile ? '16px' : '32px', maxWidth: '1200px', margin: '0 auto' }}>
+      <header style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', alignItems: isMobile ? 'stretch' : 'flex-start', flexDirection: isMobile ? 'column' : 'row', marginBottom: '24px' }}>
+        <div>
+          <h1 style={{ margin: 0, fontSize: isMobile ? '24px' : '30px', color: 'var(--text-primary)' }}>
+            Analytics
+          </h1>
+          <p style={{ margin: '8px 0 0', color: 'var(--text-muted)', fontSize: '14px', maxWidth: '640px', lineHeight: 1.5 }}>
+            Acompanhe uso do acervo, comportamento por pessoa, assiduidade dos ensaios e alterações administrativas.
+          </p>
+        </div>
+        <Button onClick={loadAnalytics} disabled={loading}>
+          <RefreshCw size={16} /> {loading ? 'Atualizando...' : 'Atualizar'}
+        </Button>
+      </header>
+
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr auto auto', gap: '12px', alignItems: 'end', marginBottom: '18px' }}>
+        <div style={{ display: 'flex', gap: '8px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '12px', padding: '4px', overflowX: 'auto' }}>
+          {tabs.map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              style={{
+                border: 'none',
+                borderRadius: '8px',
+                padding: '10px 14px',
+                background: activeTab === tab.id ? 'var(--bg-primary)' : 'transparent',
+                color: activeTab === tab.id ? GOLD : 'var(--text-muted)',
+                display: 'flex',
+                gap: '8px',
+                alignItems: 'center',
+                fontWeight: 700,
+                cursor: 'pointer',
+                whiteSpace: 'nowrap'
+              }}
+            >
+              <tab.icon size={16} /> {tab.label}
+            </button>
+          ))}
+        </div>
+        <DateField label="Início" value={periodStart} onChange={setPeriodStart} />
+        <DateField label="Fim" value={periodEnd} onChange={setPeriodEnd} />
+      </div>
+
+      {activeTab === 'acervo' && (
+        <SectionGrid>
+          <KpiCard icon={Music} label="Partituras abertas" value={number(usoAcervo.resumo?.partituras_abertas)} color={COLORS.gold} />
+          <KpiCard icon={Eye} label="PDFs visualizados" value={number(usoAcervo.resumo?.pdfs_visualizados)} color={COLORS.blue} />
+          <KpiCard icon={Download} label="Downloads reais" value={number(usoAcervo.resumo?.downloads_reais)} color={COLORS.green} />
+          <KpiCard icon={Search} label="Buscas sem resultado" value={number(usoAcervo.resumo?.buscas_sem_resultado)} color={COLORS.red} />
+
+          <Panel title="Funil do acervo" icon={<BarChart3 size={18} color={GOLD} />} wide>
+            <p style={helpTextStyle}>Consulta e download são comportamentos diferentes: visualizar PDF não conta como download real.</p>
+            {(usoAcervo.funil || []).map(item => (
+              <ProgressRow key={item.etapa} label={item.etapa} value={item.total} max={maxFunil} color={GOLD} />
+            ))}
+          </Panel>
+
+          <Panel title="Insights do período" icon={<AlertTriangle size={18} color={COLORS.orange} />}>
+            {usoAcervo.insights?.length ? (
+              <SimpleList items={usoAcervo.insights} renderItem={(item) => ({ primary: item.titulo, secondary: item.descricao })} />
+            ) : (
+              <EmptyState icon={AlertTriangle} message="Sem alertas de uso no período" />
+            )}
+          </Panel>
+
+          <Panel title="Partituras mais usadas" icon={<Music size={18} color={COLORS.blue} />}>
+            <SimpleList
+              items={usoAcervo.top_partituras || []}
+              renderItem={(item) => ({
+                primary: item.titulo,
+                secondary: `${item.compositor || 'Sem compositor'} · ${number(item.aberturas)} aberturas · ${number(item.visualizacoes)} visualizações`,
+                value: `${number(item.downloads)} downloads`
+              })}
+            />
+          </Panel>
+
+          <Panel title="Partes mais usadas" icon={<Download size={18} color={COLORS.green} />}>
+            <SimpleList
+              items={usoAcervo.top_partes || []}
+              renderItem={(item) => ({
+                primary: item.instrumento,
+                secondary: item.partitura_titulo,
+                value: `${number(item.downloads)} downloads`
+              })}
+            />
+          </Panel>
+        </SectionGrid>
+      )}
+
+      {activeTab === 'pessoas' && (
+        <SectionGrid>
+          <Panel title="Filtro por pessoa" icon={<Users size={18} color={GOLD} />} wide>
+            <SelectField value={selectedUserId} onChange={setSelectedUserId}>
+              <option value="">Selecione uma pessoa</option>
+              {(pessoas.usuarios || []).map(user => (
+                <option key={user.id} value={user.id}>{user.nome}</option>
+              ))}
+            </SelectField>
+          </Panel>
+
+          {selectedUserId ? (
+            <>
+              <KpiCard icon={Music} label="Partituras abertas" value={number(pessoas.resumo_usuario?.partituras_abertas)} color={COLORS.gold} />
+              <KpiCard icon={Eye} label="PDFs visualizados" value={number(pessoas.resumo_usuario?.pdfs_visualizados)} color={COLORS.blue} />
+              <KpiCard icon={Download} label="Downloads reais" value={number(pessoas.resumo_usuario?.downloads_reais)} color={COLORS.green} />
+              <KpiCard icon={Search} label="Buscas" value={number(pessoas.resumo_usuario?.buscas)} color={COLORS.purple} />
+
+              <Panel title="Timeline da pessoa" icon={<Activity size={18} color={COLORS.blue} />} wide>
+                <Timeline items={pessoas.timeline || []} total={pessoas.total_timeline || 0} />
+              </Panel>
+            </>
+          ) : (
+            <Panel title="Resumo por pessoa" icon={<Users size={18} color={GOLD} />} wide>
+              <EmptyState icon={Users} message="Selecione uma pessoa para ver resumo e timeline." />
+            </Panel>
+          )}
+        </SectionGrid>
+      )}
+
+      {activeTab === 'ensaios' && (
+        <SectionGrid>
+          <KpiCard icon={UserCheck} label="Presença média do mês" value={percent(ensaios.resumo?.presenca_media)} color={COLORS.green} />
+          <KpiCard icon={Flame} label="Maior streak ativo" value={number(ensaios.resumo?.maior_streak_ativo)} color={COLORS.orange} />
+          <KpiCard icon={Users} label="Presença perfeita" value={number(ensaios.resumo?.musicos_presenca_perfeita)} color={COLORS.gold} />
+          <KpiCard icon={CalendarDays} label="Ensaios registrados" value={number(ensaios.resumo?.ensaios_registrados)} color={COLORS.blue} />
+
+          <Panel title="Streaks de presença" icon={<Flame size={18} color={COLORS.orange} />}>
+            <SimpleList
+              items={ensaios.streaks || []}
+              renderItem={(item) => ({
+                primary: item.nome,
+                secondary: item.instrumento,
+                value: `${number(item.streak)} ensaio${item.streak === 1 ? '' : 's'}`
+              })}
+            />
+          </Panel>
+
+          <Panel title="Assiduidade por músico" icon={<UserCheck size={18} color={COLORS.green} />}>
+            <SimpleList
+              items={ensaios.assiduidade_musicos || []}
+              renderItem={(item) => ({
+                primary: item.nome,
+                secondary: `${number(item.presencas)} de ${number(item.ensaios)} ensaios`,
+                value: percent(item.taxa)
+              })}
+            />
+          </Panel>
+
+          <Panel title="Presença por naipe" icon={<Users size={18} color={COLORS.purple} />} wide>
+            {ensaios.empty_state && <p style={helpTextStyle}>{ensaios.empty_state}</p>}
+            {(ensaios.presenca_naipes || []).map(item => (
+              <details key={item.familia} style={{ background: 'var(--bg-primary)', border: '1px solid var(--border)', borderRadius: '8px', padding: '12px', marginBottom: '8px' }}>
+                <summary style={{ cursor: 'pointer', color: 'var(--text-primary)', fontWeight: 700 }}>
+                  {item.familia}: {number(item.registradas)} presenças registradas de {number(item.esperadas)} esperadas
+                </summary>
+                <p style={{ ...helpTextStyle, marginTop: '8px' }}>
+                  {number(item.musicos)} músicos ativos × {number(item.ensaios)} ensaios registrados = {number(item.esperadas)} presenças esperadas. Taxa: {percent(item.taxa)}.
                 </p>
-                <p style={{ color: 'var(--text-muted)', fontSize: '14px', margin: 0, textAlign: 'center' }}>
-                    {error}
-                </p>
-                <button onClick={loadAnalytics} style={{
-                    display: 'flex', alignItems: 'center', gap: '8px',
-                    padding: '10px 24px', background: GOLD_GRADIENT,
-                    border: 'none', borderRadius: '10px', color: '#fff',
-                    fontWeight: '600', cursor: 'pointer', marginTop: '8px'
-                }}>
-                    <RefreshCw size={16} /> Tentar novamente
-                </button>
+              </details>
+            ))}
+          </Panel>
+        </SectionGrid>
+      )}
+
+      {activeTab === 'alteracoes' && (
+        <SectionGrid>
+          <Panel title="Filtro por admin" icon={<Users size={18} color={GOLD} />} wide>
+            <SelectField value={selectedAdminId} onChange={setSelectedAdminId}>
+              <option value="">Todos os admins</option>
+              {(alteracoes.usuarios || []).map(user => (
+                <option key={user.id} value={user.id}>{user.nome}</option>
+              ))}
+            </SelectField>
+          </Panel>
+          <Panel title="Alterações recentes" icon={<Activity size={18} color={COLORS.blue} />} wide>
+            <ActivityFeed
+              items={alteracoes.atividades || []}
+              totalCount={alteracoes.total || 0}
+              onLoadMore={loadMoreAtividades}
+              loadingMore={loadingMore}
+            />
+          </Panel>
+        </SectionGrid>
+      )}
+    </div>
+  );
+};
+
+const helpTextStyle = {
+  color: 'var(--text-muted)',
+  fontSize: '14px',
+  lineHeight: 1.5,
+  margin: '0 0 14px'
+};
+
+const controlStyle = {
+  background: 'var(--bg-primary)',
+  color: 'var(--text-primary)',
+  border: '1px solid var(--border)',
+  borderRadius: '8px',
+  padding: '10px 12px',
+  minHeight: '40px'
+};
+
+const Button = ({ children, ...props }) => (
+  <button
+    {...props}
+    style={{
+      ...controlStyle,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '8px',
+      color: GOLD,
+      fontWeight: 700,
+      cursor: props.disabled ? 'wait' : 'pointer',
+      opacity: props.disabled ? 0.7 : 1
+    }}
+  >
+    {children}
+  </button>
+);
+
+const DateField = ({ label, value, onChange }) => (
+  <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', color: 'var(--text-muted)', fontSize: '12px', fontWeight: 700 }}>
+    {label}
+    <input type="date" value={value} onChange={(event) => onChange(event.target.value)} style={controlStyle} />
+  </label>
+);
+
+const SelectField = ({ value, onChange, children }) => (
+  <select value={value} onChange={(event) => onChange(event.target.value)} style={{ ...controlStyle, width: '100%' }}>
+    {children}
+  </select>
+);
+
+const SectionGrid = ({ children }) => (
+  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
+    {children}
+  </div>
+);
+
+const KpiCard = ({ icon: Icon, label, value, color }) => (
+  <div style={{ minWidth: 0, background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '8px', padding: '18px' }}>
+    <div style={{ width: '38px', height: '38px', borderRadius: '8px', background: `${color}18`, color, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '12px' }}>
+      <Icon size={20} />
+    </div>
+    <div style={{ color, fontSize: '28px', fontWeight: 800 }}>{value}</div>
+    <div style={{ color: 'var(--text-muted)', fontSize: '13px', marginTop: '4px' }}>{label}</div>
+  </div>
+);
+
+const Panel = ({ title, icon, children, wide }) => (
+  <section style={{ gridColumn: wide ? '1 / -1' : undefined, background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '8px', padding: '20px', minWidth: 0 }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+      {icon}
+      <h2 style={{ color: 'var(--text-primary)', fontSize: '18px', margin: 0 }}>{title}</h2>
+    </div>
+    {children}
+  </section>
+);
+
+const ProgressRow = ({ label, value, max, color }) => (
+  <div style={{ marginBottom: '14px' }}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', marginBottom: '6px', color: 'var(--text-primary)', fontWeight: 700 }}>
+      <span>{label}</span>
+      <span>{number(value)}</span>
+    </div>
+    <div style={{ height: '10px', background: 'var(--bg-primary)', border: '1px solid var(--border)', borderRadius: '999px', overflow: 'hidden' }}>
+      <div style={{ width: `${Math.max(4, (Number(value || 0) / max) * 100)}%`, height: '100%', background: color, borderRadius: '999px' }} />
+    </div>
+  </div>
+);
+
+const SimpleList = ({ items, renderItem }) => {
+  if (!items?.length) return <EmptyState icon={BarChart3} message="Nenhum dado disponível" />;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      {items.map((item, index) => {
+        const rendered = renderItem(item);
+        return (
+          <div key={item.id ?? index} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', borderRadius: '8px', background: 'var(--bg-primary)' }}>
+            <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: index < 3 ? `${GOLD}18` : 'var(--bg-secondary)', color: index < 3 ? GOLD : 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}>
+              {index + 1}
             </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ color: 'var(--text-primary)', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{rendered.primary}</div>
+              {rendered.secondary && <div style={{ color: 'var(--text-muted)', fontSize: '13px', marginTop: '2px' }}>{rendered.secondary}</div>}
+            </div>
+            {rendered.value && <div style={{ color: GOLD, fontWeight: 700, whiteSpace: 'nowrap' }}>{rendered.value}</div>}
+          </div>
         );
-    }
-
-    if (!data) return null;
-
-    const tabs = [
-        { id: 'overview', icon: BarChart3, label: 'Visão Geral' },
-        { id: 'musicians', icon: Users, label: 'Músicos' },
-        { id: 'engagement', icon: Activity, label: 'Engajamento' },
-        { id: 'search', icon: Search, label: 'Buscas' },
-    ];
-
-    return (
-        <div className="page-transition" style={{
-            padding: isMobile ? '16px' : '32px',
-            maxWidth: '1200px', margin: '0 auto',
-        }}>
-
-            {/* ====== HEADER ====== */}
-            <div style={{
-                display: 'flex', justifyContent: 'space-between',
-                alignItems: isMobile ? 'flex-start' : 'center',
-                marginBottom: isMobile ? '20px' : '28px',
-                flexDirection: isMobile ? 'column' : 'row',
-                gap: '12px'
-            }}>
-                <div>
-                    <h1 style={{
-                        fontSize: isMobile ? '22px' : '28px', fontWeight: '700',
-                        margin: '0 0 6px 0',
-                        background: GOLD_GRADIENT,
-                        WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-                    }}>
-                        Analytics & Insights
-                    </h1>
-                    <p style={{ color: 'var(--text-muted)', margin: 0, fontSize: '14px' }}>
-                        Análise completa do acervo e engajamento
-                    </p>
-                </div>
-                <button onClick={loadAnalytics} style={{
-                    display: 'flex', alignItems: 'center', gap: '6px',
-                    padding: '8px 16px', background: 'var(--bg-secondary)',
-                    border: '1px solid var(--border)', borderRadius: '10px',
-                    color: 'var(--text-muted)', cursor: 'pointer',
-                    fontSize: '13px', fontWeight: '500',
-                    transition: 'all 0.2s', whiteSpace: 'nowrap'
-                }}>
-                    <RefreshCw size={14} /> Atualizar
-                </button>
-            </div>
-
-            {/* ====== KPI CARDS ====== */}
-            <div style={{
-                display: 'grid',
-                gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
-                gap: isMobile ? '10px' : '16px',
-                marginBottom: isMobile ? '20px' : '28px'
-            }}>
-                <KpiCard
-                    icon={Users} label="Músicos Ativos"
-                    value={data.resumo?.musicos_ativos || 0}
-                    color={COLORS.gold} isMobile={isMobile}
-                />
-                <KpiCard
-                    icon={Download} label="Downloads Total"
-                    value={data.resumo?.total_downloads || 0}
-                    color={COLORS.blue} isMobile={isMobile}
-                />
-                <KpiCard
-                    icon={CalendarDays} label="Ensaios (30d)"
-                    value={data.resumo?.ensaios_ultimo_mes || 0}
-                    color={COLORS.green} isMobile={isMobile}
-                />
-                <KpiCard
-                    icon={UserCheck} label="Presentes (30d)"
-                    value={data.resumo?.presentes_ultimo_mes || 0}
-                    color={COLORS.purple} isMobile={isMobile}
-                />
-            </div>
-
-            {/* ====== TABS ====== */}
-            <div style={{
-                display: 'flex', gap: '4px',
-                marginBottom: isMobile ? '20px' : '28px',
-                background: 'var(--bg-secondary)',
-                borderRadius: '12px', padding: '4px',
-                border: '1px solid var(--border)',
-                overflowX: 'auto',
-                WebkitOverflowScrolling: 'touch'
-            }}>
-                {tabs.map(tab => (
-                    <button
-                        key={tab.id}
-                        onClick={() => setActiveTab(tab.id)}
-                        style={{
-                            display: 'flex', alignItems: 'center', gap: '6px',
-                            padding: isMobile ? '8px 12px' : '10px 16px',
-                            background: activeTab === tab.id ? 'var(--bg-primary)' : 'transparent',
-                            border: 'none', borderRadius: '8px',
-                            color: activeTab === tab.id ? GOLD : 'var(--text-muted)',
-                            fontWeight: activeTab === tab.id ? '600' : '400',
-                            cursor: 'pointer', transition: 'all 0.2s',
-                            fontSize: isMobile ? '12px' : '14px',
-                            whiteSpace: 'nowrap', flex: isMobile ? '1' : 'none',
-                            justifyContent: 'center',
-                            boxShadow: activeTab === tab.id ? '0 1px 3px rgba(0,0,0,0.08)' : 'none'
-                        }}
-                    >
-                        <tab.icon size={isMobile ? 14 : 16} />
-                        {isMobile ? tab.label.split(' ')[0] : tab.label}
-                    </button>
-                ))}
-            </div>
-
-            {/* ====== TAB CONTENT ====== */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '16px' : '24px' }}>
-
-                {/* ---------- OVERVIEW ---------- */}
-                {activeTab === 'overview' && (
-                    <>
-                        <Panel title="Downloads — últimos 30 dias" icon={<TrendingUp size={18} color={GOLD} />}>
-                            {data.downloads_timeline?.length > 0 ? (
-                                <LineChart data={data.downloads_timeline} xAxisKey="data" dataKey="total" />
-                            ) : (
-                                <EmptyState icon={TrendingUp} message="Sem downloads registrados neste período" />
-                            )}
-                        </Panel>
-
-                        <div style={{
-                            display: 'grid',
-                            gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
-                            gap: isMobile ? '16px' : '24px'
-                        }}>
-                            <Panel title="Top Partituras" icon={<Award size={18} color={GOLD} />}>
-                                <RankingList
-                                    items={data.top_partituras}
-                                    renderItem={(item) => ({
-                                        primary: item.titulo,
-                                        secondary: item.compositor,
-                                        value: item.downloads,
-                                        suffix: 'downloads'
-                                    })}
-                                    accentColor={GOLD}
-                                    isMobile={isMobile}
-                                />
-                            </Panel>
-
-                            <Panel title="Atividade Recente" icon={<Activity size={18} color={COLORS.blue} />}>
-                                <ActivityFeed
-                                    items={data.atividade_recente}
-                                    totalCount={data.total_atividades}
-                                    onLoadMore={loadMoreAtividades}
-                                    loadingMore={loadingMoreAtividades}
-                                />
-                            </Panel>
-                        </div>
-                    </>
-                )}
-
-                {/* ---------- MUSICIANS ---------- */}
-                {activeTab === 'musicians' && (
-                    <>
-                        <div style={{
-                            display: 'grid',
-                            gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
-                            gap: isMobile ? '16px' : '24px'
-                        }}>
-                            <Panel title="Distribuição por Instrumento" icon={<Music size={18} color={COLORS.purple} />}>
-                                {data.instrumentos_dist?.length > 0 ? (
-                                    <PieChart data={data.instrumentos_dist} nameKey="instrumento" dataKey="total" />
-                                ) : (
-                                    <EmptyState icon={Music} message="Sem dados de instrumentos" />
-                                )}
-                            </Panel>
-
-                            <Panel title="Presenças por Naipe (90 dias)" icon={<UserCheck size={18} color={COLORS.green} />}>
-                                {data.presencas_familia?.length > 0 ? (
-                                    <BarChart
-                                        data={data.presencas_familia}
-                                        xAxisKey="familia"
-                                        dataKey="total_presencas"
-                                        colors={[COLORS.blue, COLORS.red, COLORS.green, COLORS.purple, COLORS.orange]}
-                                    />
-                                ) : (
-                                    <EmptyState icon={UserCheck} message="Sem dados de presença" />
-                                )}
-                            </Panel>
-                        </div>
-
-                        <Panel title="Último Acesso dos Músicos" icon={<Clock size={18} color={COLORS.orange} />}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', marginTop: '-8px' }}>
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2"><polyline points="6 9 12 15 18 9" /></svg>
-                                <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontStyle: 'italic' }}>Ordenado do mais recente ao mais antigo</span>
-                            </div>
-                            <AccessTable data={data.ultimo_acesso} isMobile={isMobile} />
-                        </Panel>
-                    </>
-                )}
-
-                {/* ---------- ENGAGEMENT ---------- */}
-                {
-                    activeTab === 'engagement' && (
-                        <>
-                            <Panel title="Quem Mais Baixou Partituras" icon={<Flame size={18} color={COLORS.orange} />}>
-                                <RankingList
-                                    items={data.musicos_mais_ativos}
-                                    renderItem={(item) => ({
-                                        primary: item.nome,
-                                        secondary: item.instrumento,
-                                        value: item.total_downloads,
-                                        suffix: 'downloads',
-                                        avatar: item.foto_url,
-                                        initials: item.nome?.charAt(0)
-                                    })}
-                                    accentColor={COLORS.orange}
-                                    showAvatar
-                                    isMobile={isMobile}
-                                />
-                            </Panel>
-
-                            <Panel title="Tendência de Presença" icon={<TrendingUp size={18} color={COLORS.green} />}>
-                                {data.tendencia_presenca?.length > 0 ? (
-                                    <LineChart
-                                        data={data.tendencia_presenca}
-                                        xAxisKey="data"
-                                        dataKey="presentes"
-                                        color={COLORS.green} unit="músicos"
-                                    />
-                                ) : (
-                                    <EmptyState icon={TrendingUp} message="Sem dados de presença" />
-                                )}
-                            </Panel>
-
-                            <Panel title="Músicos Inativos (+30 dias)" icon={<AlertTriangle size={18} color={COLORS.red} />}>
-                                {musicosInativos.length > 0 ? (
-                                    <AccessTable data={musicosInativos} isMobile={isMobile} highlight="danger" />
-                                ) : (
-                                    <EmptyState icon={UserCheck} message="Todos os músicos acessaram recentemente 🎉" positive />
-                                )}
-                            </Panel>
-                        </>
-                    )
-                }
-
-                {/* ---------- SEARCH ---------- */}
-                {
-                    activeTab === 'search' && (
-                        <div style={{
-                            display: 'grid',
-                            gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
-                            gap: isMobile ? '16px' : '24px'
-                        }}>
-                            <Panel title="Buscas sem Resultado" icon={<AlertTriangle size={18} color={COLORS.red} />}>
-                                <p style={{
-                                    fontSize: '13px', color: 'var(--text-muted)',
-                                    margin: '0 0 16px 0', lineHeight: '1.5'
-                                }}>
-                                    Termos que retornaram 0 resultados. Priorize digitalizar estas obras.
-                                </p>
-                                <RankingList
-                                    items={data.failed_search_terms}
-                                    renderItem={(item) => ({
-                                        primary: item.termo,
-                                        value: item.tentativas,
-                                        suffix: 'tentativas'
-                                    })}
-                                    accentColor={COLORS.red}
-                                    isMobile={isMobile}
-                                />
-                            </Panel>
-
-                            <Panel title="Termos Mais Buscados" icon={<Eye size={18} color={COLORS.blue} />}>
-                                <RankingList
-                                    items={data.top_search_terms}
-                                    renderItem={(item) => ({
-                                        primary: item.termo,
-                                        value: item.total,
-                                        suffix: 'buscas'
-                                    })}
-                                    accentColor={COLORS.blue}
-                                    isMobile={isMobile}
-                                />
-                            </Panel>
-                        </div>
-                    )
-                }
-
-            </div >
-        </div >
-    );
+      })}
+    </div>
+  );
 };
 
+const Timeline = ({ items, total }) => {
+  if (!items?.length) return <EmptyState icon={Activity} message="Nenhuma atividade dessa pessoa no período" />;
 
-// ============================================================
-//  SUB-COMPONENTS — Design System Interno
-// ============================================================
-
-// KPI Card (estilo consistente com AdminDashboard.StatCard)
-const KpiCard = ({ icon: Icon, label, value, color, isMobile }) => (
-    <div className="card-hover" style={{
-        background: 'var(--bg-secondary)',
-        borderRadius: '16px',
-        padding: isMobile ? '14px 12px' : '20px',
-        textAlign: 'center',
-        border: '1px solid var(--border)',
-    }}>
-        <div style={{
-            display: 'flex', justifyContent: 'center', marginBottom: isMobile ? '8px' : '12px'
-        }}>
-            <div style={{
-                width: isMobile ? '36px' : '44px',
-                height: isMobile ? '36px' : '44px',
-                borderRadius: isMobile ? '10px' : '12px',
-                background: `${color}15`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center'
-            }}>
-                <Icon size={isMobile ? 18 : 22} color={color} />
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      {items.map(item => {
+        const info = getAtividadeInfo(item.tipo, true);
+        return (
+          <div key={item.id} style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '12px', padding: '12px', borderRadius: '8px', background: 'var(--bg-primary)' }}>
+            <div>
+              <div style={{ color: 'var(--text-primary)', fontWeight: 700 }}>{info.action}</div>
+              <div style={{ color: 'var(--text-muted)', fontSize: '13px', marginTop: '3px' }}>
+                {[item.partitura_titulo, item.parte_instrumento, item.termo_original].filter(Boolean).join(' · ') || item.origem || 'Evento registrado'}
+              </div>
             </div>
-        </div>
-        <div style={{
-            fontSize: isMobile ? '22px' : '28px',
-            fontWeight: '700', color,
-            marginBottom: '2px',
-        }}>
-            {typeof value === 'number' ? value.toLocaleString('pt-BR') : value}
-        </div>
-        <div style={{
-            fontSize: isMobile ? '11px' : '12px',
-            color: 'var(--text-muted)',
-        }}>
-            {label}
-        </div>
+            <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>{formatTimeAgo(item.criado_em, true)}</span>
+          </div>
+        );
+      })}
+      <div style={{ color: 'var(--text-muted)', fontSize: '12px' }}>{number(items.length)} de {number(total)} eventos</div>
     </div>
-);
-
-// Panel / Card wrapper
-const Panel = ({ title, icon, children }) => (
-    <div style={{
-        background: 'var(--bg-secondary)',
-        borderRadius: '16px',
-        padding: '20px',
-        border: '1px solid var(--border)',
-    }}>
-        <div style={{
-            display: 'flex', alignItems: 'center', gap: '10px',
-            marginBottom: '20px'
-        }}>
-            {icon}
-            <h3 style={{
-                margin: 0, fontSize: '16px', fontWeight: '600',
-                color: 'var(--text-primary)',
-            }}>
-                {title}
-            </h3>
-        </div>
-        {children}
-    </div>
-);
-
-// Empty State
-const EmptyState = ({ icon: Icon, message, positive }) => (
-    <div style={{
-        display: 'flex', flexDirection: 'column',
-        alignItems: 'center', justifyContent: 'center',
-        padding: '40px 20px', gap: '12px'
-    }}>
-        <div style={{
-            width: '48px', height: '48px', borderRadius: '12px',
-            background: positive ? 'rgba(52, 199, 89, 0.1)' : 'var(--bg-primary)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center'
-        }}>
-            <Icon size={24} color={positive ? COLORS.green : 'var(--text-muted)'} style={{ opacity: positive ? 1 : 0.4 }} />
-        </div>
-        <span style={{
-            color: positive ? COLORS.green : 'var(--text-muted)',
-            fontSize: '14px', textAlign: 'center'
-        }}>
-            {message}
-        </span>
-    </div>
-);
-
-// Ranking List — substitui o antigo TopList (sem border-left genérico)
-const RankingList = ({ items, renderItem, accentColor, showAvatar, isMobile }) => {
-    if (!items || items.length === 0) {
-        return <EmptyState icon={BarChart3} message="Nenhum dado disponível" />;
-    }
-
-    return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            {items.map((item, i) => {
-                const { primary, secondary, value, suffix, avatar, initials } = renderItem(item, i);
-                const isTop3 = i < 3;
-                const badgeColors = [GOLD, '#C0C0C0', '#CD7F32']; // ouro, prata, bronze
-
-                return (
-                    <div key={i} style={{
-                        display: 'flex', alignItems: 'center', gap: '12px',
-                        padding: isMobile ? '10px 12px' : '12px 16px',
-                        background: isTop3 ? `${accentColor}08` : 'var(--bg-primary)',
-                        borderRadius: '12px',
-                        transition: 'background 0.2s',
-                    }}>
-                        {/* Badge de posição */}
-                        <div style={{
-                            width: '28px', height: '28px', borderRadius: '8px',
-                            background: isTop3 ? `${badgeColors[i]}18` : 'var(--bg-secondary)',
-                            color: isTop3 ? badgeColors[i] : 'var(--text-muted)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontSize: '12px', fontWeight: '700', flexShrink: 0,
-                            border: isTop3 ? `1px solid ${badgeColors[i]}30` : '1px solid var(--border)'
-                        }}>
-                            {i + 1}
-                        </div>
-
-                        {/* Avatar (se habilitado) */}
-                        {showAvatar && (
-                            <div style={{
-                                width: '32px', height: '32px', borderRadius: '50%',
-                                background: avatar ? 'transparent' : `${accentColor}20`,
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                overflow: 'hidden', flexShrink: 0,
-                                border: `1px solid ${accentColor}30`
-                            }}>
-                                {avatar ? (
-                                    <img src={avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                ) : (
-                                    <span style={{
-                                        fontSize: '13px', fontWeight: '700',
-                                        color: accentColor,
-                                    }}>
-                                        {initials || '?'}
-                                    </span>
-                                )}
-                            </div>
-                        )}
-
-                        {/* Content */}
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{
-                                fontWeight: '500', color: 'var(--text-primary)',
-                                fontSize: isMobile ? '13px' : '14px',
-                                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                            }}>
-                                {primary}
-                            </div>
-                            {secondary && (
-                                <div style={{
-                                    fontSize: '12px', color: 'var(--text-muted)',
-                                }}>
-                                    {secondary}
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Value */}
-                        <div style={{
-                            fontWeight: '600', fontSize: '13px',
-                            color: isTop3 ? accentColor : 'var(--text-muted)',
-                            whiteSpace: 'nowrap',
-                        }}>
-                            {value} <span style={{ fontWeight: '400', fontSize: '11px' }}>{suffix}</span>
-                        </div>
-                    </div>
-                );
-            })}
-        </div>
-    );
+  );
 };
 
-// Access Table - Último acesso
-const AccessTable = ({ data, isMobile, highlight }) => {
-    // ... (same as before until formatDate)
-
-    const formatDate = (dateStr) => {
-        if (!dateStr) return 'Nunca acessou';
-        // Force UTC parsing for SQLite timestamps
-        const safeDate = dateStr.includes('T') ? dateStr : dateStr.replace(' ', 'T') + 'Z';
-        const d = new Date(safeDate);
-        const now = new Date();
-        const diff = Math.floor((now - d) / (1000 * 60 * 60 * 24));
-
-        if (diff < 0) return 'Hoje'; // Safety for small clock skew
-        if (diff === 0) return 'Hoje';
-        if (diff === 1) return 'Ontem';
-        if (diff < 7) return `${diff} dias atrás`;
-        if (diff < 30) return `${Math.floor(diff / 7)} sem. atrás`;
-        return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
-    };
-
-    const getStatusColor = (dateStr) => {
-        if (!dateStr) return COLORS.red;
-        const safeDate = dateStr.includes('T') ? dateStr : dateStr.replace(' ', 'T') + 'Z';
-        const diff = Math.floor((Date.now() - new Date(safeDate).getTime()) / (1000 * 60 * 60 * 24));
-        if (diff < 7) return COLORS.green;
-        if (diff < 30) return COLORS.orange;
-        return COLORS.red;
-    };
-
-    return (
-        <div style={{
-            display: 'grid',
-            gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
-            gap: '6px',
-            maxHeight: '400px',
-            overflowY: 'auto'
-        }}>
-            {data.map((m, _i) => {
-                const statusColor = highlight === 'danger' ? COLORS.red : getStatusColor(m.ultimo_acesso);
-                return (
-                    <div key={_i} style={{
-                        display: 'flex', alignItems: 'center', gap: '10px',
-                        padding: '10px 12px', borderRadius: '10px',
-                        background: 'var(--bg-primary)',
-                    }}>
-                        {/* Avatar */}
-                        <div style={{
-                            width: '32px', height: '32px', borderRadius: '50%',
-                            background: `${statusColor}15`,
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            flexShrink: 0, overflow: 'hidden'
-                        }}>
-                            {m.foto_url ? (
-                                <img src={m.foto_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                            ) : (
-                                <span style={{
-                                    fontSize: '13px', fontWeight: '700',
-                                    color: statusColor,
-                                }}>
-                                    {m.nome?.charAt(0) || '?'}
-                                </span>
-                            )}
-                        </div>
-
-                        {/* Info */}
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{
-                                fontWeight: '500', fontSize: '13px',
-                                color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
-                            }}>
-                                {m.nome}
-                            </div>
-                            <div style={{
-                                fontSize: '11px', color: 'var(--text-muted)',
-                            }}>
-                                {m.instrumento || 'Sem instrumento'}
-                            </div>
-                        </div>
-
-                        {/* Status dot + date */}
-                        <div style={{
-                            display: 'flex', alignItems: 'center', gap: '6px',
-                            flexShrink: 0
-                        }}>
-                            <div style={{
-                                width: '7px', height: '7px', borderRadius: '50%',
-                                background: statusColor, flexShrink: 0
-                            }} />
-                            <span style={{
-                                fontSize: '11px', color: statusColor,
-                                fontWeight: '500', whiteSpace: 'nowrap'
-                            }}>
-                                {formatDate(m.ultimo_acesso)}
-                            </span>
-                        </div>
-                    </div>
-                );
-            })}
-        </div>
-    );
-};
-
-// Activity Feed — atividade recente (com paginação)
 const ActivityFeed = ({ items, totalCount, onLoadMore, loadingMore }) => {
-    if (!items || items.length === 0) {
-        return <EmptyState icon={Activity} message="Sem atividades recentes" />;
-    }
+  if (!items?.length) return <EmptyState icon={Activity} message="Sem alterações recentes" />;
+  const hasMore = Number(totalCount || 0) > items.length;
 
-    const getIcon = (tipo) => {
-        const map = {
-            'upload': Download,
-            'download': Download,
-            'visualizacao': Eye,
-            'login': Users,
-            'cadastro': UserCheck,
-            'admin': Award,
-            'nova_partitura': Music,
-            'favorito': Award,
-        };
-        return map[tipo] || Activity;
-    };
-
-    const getColor = (tipo) => {
-        const map = {
-            'download': COLORS.blue,
-            'visualizacao': COLORS.cyan,
-            'login': '#95a5a6',
-            'nova_partitura': COLORS.green,
-            'favorito': COLORS.pink,
-            'novo_repertorio': COLORS.purple,
-            'add_repertorio': COLORS.purple,
-        };
-        return map[tipo] || COLORS.blue;
-    };
-
-    const formatDate = (dateStr) => {
-        if (!dateStr) return '';
-        // Force UTC parsing
-        const safeDate = dateStr.includes('T') ? dateStr : dateStr.replace(' ', 'T') + 'Z';
-        const d = new Date(safeDate);
-        const now = new Date();
-        const diffMs = now - d;
-        const diffMin = Math.floor(diffMs / 60000);
-        const diffH = Math.floor(diffMs / 3600000);
-        const diffD = Math.floor(diffMs / 86400000);
-
-        if (diffMin < 0) return 'agora'; // Clock skew
-        if (diffMin < 1) return 'agora';
-        if (diffMin < 60) return `${diffMin} min`;
-        if (diffH < 24) return `${diffH} h`;
-        if (diffD === 1) return 'ontem';
-        if (diffD < 7) return `${diffD} d`;
-        return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
-    };
-
-    const getActionLabel = (tipo) => {
-        const map = {
-            'download': 'Download',
-            'visualizacao': 'Visualização',
-            'login': 'Login',
-            'nova_partitura': 'Nova partitura',
-            'favorito': 'Favorito',
-            'novo_repertorio': 'Novo repertório',
-            'add_repertorio': 'Adicionado ao repertório',
-            'update_partitura': 'Atualização',
-            'delete_partitura': 'Remoção',
-        };
-        return map[tipo] || tipo;
-    };
-
-    const hasMore = totalCount > items.length;
-
-    return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-            <div style={{
-                maxHeight: '500px', overflowY: 'auto',
-                display: 'flex', flexDirection: 'column', gap: '2px'
-            }}>
-                {items.map((item, i) => {
-                    const Icon = getIcon(item.tipo);
-                    const color = getColor(item.tipo);
-                    // Para login, não mostrar detalhes (contém IP)
-                    const detalhes = item.tipo === 'login' ? null : item.detalhes;
-                    const titulo = item.tipo === 'login'
-                        ? (item.usuario_nome || 'Usuário')
-                        : item.titulo;
-                    const activityKey = item.id ?? `${item.criado_em}-${item.tipo}-${item.usuario_nome ?? ''}-${i}`;
-
-                    return (
-                        <div key={activityKey} style={{
-                            display: 'flex', alignItems: 'flex-start', gap: '10px',
-                            padding: '10px 12px', borderRadius: '10px',
-                            background: i % 2 === 0 ? 'transparent' : 'var(--bg-primary)',
-                        }}>
-                            <div style={{
-                                width: '28px', height: '28px', borderRadius: '8px',
-                                background: `${color}12`,
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                flexShrink: 0, marginTop: '1px'
-                            }}>
-                                <Icon size={14} color={color} />
-                            </div>
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                                <div style={{
-                                    fontSize: '13px', color: 'var(--text-primary)',
-                                    fontWeight: '500',
-                                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
-                                }}>
-                                    {getActionLabel(item.tipo)}: {titulo}
-                                </div>
-                                {(item.usuario_nome && item.tipo !== 'login') && (
-                                    <div style={{
-                                        fontSize: '12px', color: 'var(--text-muted)',
-                                        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
-                                    }}>
-                                        {item.usuario_nome} {detalhes && `• ${detalhes}`}
-                                    </div>
-                                )}
-                            </div>
-                            <span style={{
-                                fontSize: '11px', color: 'var(--text-muted)',
-                                whiteSpace: 'nowrap', flexShrink: 0
-                            }}>
-                                {formatDate(item.criado_em)}
-                            </span>
-                        </div>
-                    );
-                })}
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      {items.map(item => {
+        const info = getAtividadeInfo(item.tipo, true);
+        return (
+          <div key={item.id} style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '12px', padding: '12px', borderRadius: '8px', background: 'var(--bg-primary)' }}>
+            <div>
+              <div style={{ color: 'var(--text-primary)', fontWeight: 700 }}>{info.action}: {item.titulo}</div>
+              <div style={{ color: 'var(--text-muted)', fontSize: '13px', marginTop: '3px' }}>
+                {[item.usuario_nome, item.detalhes].filter(Boolean).join(' · ')}
+              </div>
             </div>
-
-            {/* Rodapé: contagem + botão carregar mais */}
-            <div style={{
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                padding: '12px 12px 4px', borderTop: '1px solid var(--border)', marginTop: '8px'
-            }}>
-                <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                    {items.length} de {totalCount || items.length} atividades
-                </span>
-                {hasMore && onLoadMore && (
-                    <button onClick={onLoadMore} disabled={loadingMore} style={{
-                        display: 'flex', alignItems: 'center', gap: '6px',
-                        padding: '6px 14px', background: 'var(--bg-primary)',
-                        border: '1px solid var(--border)', borderRadius: '8px',
-                        color: GOLD, fontSize: '12px', fontWeight: '500',
-                        cursor: loadingMore ? 'not-allowed' : 'pointer',
-                        opacity: loadingMore ? 0.6 : 1,
-                        transition: 'all 0.2s'
-                    }}>
-                        {loadingMore ? 'Carregando...' : 'Carregar mais'}
-                    </button>
-                )}
-            </div>
-        </div>
-    );
+            <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>{formatTimeAgo(item.criado_em, true)}</span>
+          </div>
+        );
+      })}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border)', paddingTop: '12px' }}>
+        <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>{number(items.length)} de {number(totalCount)} alterações</span>
+        {hasMore && <Button onClick={onLoadMore} disabled={loadingMore}>{loadingMore ? 'Carregando...' : 'Carregar mais'}</Button>}
+      </div>
+    </div>
+  );
 };
+
+const EmptyState = ({ icon: Icon, message }) => (
+  <div style={{ minHeight: '140px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px', color: 'var(--text-muted)' }}>
+    <Icon size={28} />
+    <span style={{ textAlign: 'center' }}>{message}</span>
+  </div>
+);
+
+const CenteredState = ({ icon: Icon, title, description, action }) => (
+  <div style={{ minHeight: '420px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '14px', padding: '24px' }}>
+    <Icon size={34} color={COLORS.red} />
+    <h2 style={{ margin: 0, color: 'var(--text-primary)' }}>{title}</h2>
+    <p style={{ margin: 0, color: 'var(--text-muted)' }}>{description}</p>
+    {action}
+  </div>
+);
+
+const LoadingState = ({ isMobile }) => (
+  <div style={{ padding: isMobile ? '16px' : '32px', maxWidth: '1200px', margin: '0 auto' }}>
+    <div style={{ height: '34px', width: '220px', borderRadius: '8px', background: 'var(--border)', marginBottom: '12px' }} />
+    <div style={{ height: '16px', width: '420px', maxWidth: '100%', borderRadius: '8px', background: 'var(--border)', marginBottom: '24px' }} />
+    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)', gap: '16px' }}>
+      {[0, 1, 2, 3].map(item => (
+        <div key={item} style={{ height: '120px', borderRadius: '8px', background: 'var(--bg-secondary)', border: '1px solid var(--border)' }} />
+      ))}
+    </div>
+  </div>
+);
 
 export default AdminAnalytics;

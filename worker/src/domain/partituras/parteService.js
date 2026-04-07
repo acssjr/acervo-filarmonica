@@ -43,6 +43,15 @@ export async function getPartesPartitura(partituraId, request, env) {
   return jsonResponse(partes.results, 200, request);
 }
 
+async function getParteComPartitura(env, parteId) {
+  return env.DB.prepare(`
+    SELECT partes.*, partituras.titulo AS partitura_titulo
+    FROM partes
+    INNER JOIN partituras ON partituras.id = partes.partitura_id
+    WHERE partes.id = ?
+  `).bind(parteId).first();
+}
+
 /**
  * Adicionar nova parte a uma partitura (Admin)
  *
@@ -106,7 +115,7 @@ export async function addParte(partituraId, request, env, admin) {
  *
  * Extraido de: worker/index.js linhas 796-849
  */
-export async function substituirParte(parteId, request, env) {
+export async function substituirParte(parteId, request, env, admin) {
   try {
     const formData = await request.formData();
     const arquivo = formData.get('arquivo');
@@ -115,9 +124,7 @@ export async function substituirParte(parteId, request, env) {
       return errorResponse('Arquivo é obrigatório', 400, request);
     }
 
-    const parte = await env.DB.prepare(
-      'SELECT * FROM partes WHERE id = ?'
-    ).bind(parteId).first();
+    const parte = await getParteComPartitura(env, parteId);
 
     if (!parte) {
       return errorResponse('Parte não encontrada', 404, request);
@@ -148,6 +155,14 @@ export async function substituirParte(parteId, request, env) {
       UPDATE partes SET arquivo_nome = ?, criado_em = CURRENT_TIMESTAMP WHERE id = ?
     `).bind(nomeArquivoStorage, parteId).run();
 
+    await registrarAtividade(
+      env,
+      'update_parte',
+      parte.partitura_titulo,
+      `Arquivo substituído: ${parte.instrumento} (${parte.arquivo_nome || 'sem arquivo'} -> ${nomeArquivoStorage})`,
+      admin?.id ?? null
+    );
+
     return jsonResponse({ success: true, message: 'Parte substituída com sucesso!' }, 200, request);
 
   } catch (error) {
@@ -159,7 +174,7 @@ export async function substituirParte(parteId, request, env) {
  * Renomear instrumento de uma parte (Admin)
  * Permite corrigir o nome do instrumento sem re-upload
  */
-export async function renomearParte(parteId, request, env) {
+export async function renomearParte(parteId, request, env, admin) {
   try {
     const data = await request.json();
     const { instrumento } = data;
@@ -168,9 +183,7 @@ export async function renomearParte(parteId, request, env) {
       return errorResponse('Nome do instrumento é obrigatório', 400, request);
     }
 
-    const parte = await env.DB.prepare(
-      'SELECT * FROM partes WHERE id = ?'
-    ).bind(parteId).first();
+    const parte = await getParteComPartitura(env, parteId);
 
     if (!parte) {
       return errorResponse('Parte não encontrada', 404, request);
@@ -179,6 +192,14 @@ export async function renomearParte(parteId, request, env) {
     await env.DB.prepare(
       'UPDATE partes SET instrumento = ? WHERE id = ?'
     ).bind(instrumento.trim(), parteId).run();
+
+    await registrarAtividade(
+      env,
+      'update_parte',
+      parte.partitura_titulo,
+      `Instrumento renomeado: "${parte.instrumento}" -> "${instrumento.trim()}"`,
+      admin?.id ?? null
+    );
 
     return jsonResponse({
       success: true,
@@ -195,11 +216,9 @@ export async function renomearParte(parteId, request, env) {
  *
  * Extraido de: worker/index.js linhas 851-878
  */
-export async function deleteParte(parteId, request, env) {
+export async function deleteParte(parteId, request, env, admin) {
   try {
-    const parte = await env.DB.prepare(
-      'SELECT * FROM partes WHERE id = ?'
-    ).bind(parteId).first();
+    const parte = await getParteComPartitura(env, parteId);
 
     if (!parte) {
       return errorResponse('Parte não encontrada', 404, request);
@@ -210,6 +229,14 @@ export async function deleteParte(parteId, request, env) {
     }
 
     await env.DB.prepare('DELETE FROM partes WHERE id = ?').bind(parteId).run();
+
+    await registrarAtividade(
+      env,
+      'delete_parte',
+      parte.partitura_titulo,
+      `Parte removida: ${parte.instrumento}`,
+      admin?.id ?? null
+    );
 
     return jsonResponse({ success: true, message: 'Parte removida com sucesso!' }, 200, request);
 

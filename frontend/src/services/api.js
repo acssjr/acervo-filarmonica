@@ -33,6 +33,7 @@ export const API = {
   clearAuth() {
     Storage.remove('authToken');
     Storage.remove('tokenExpiresAt');
+    Storage.remove('trackingSessionId');
     Storage.remove('user');
   },
 
@@ -276,6 +277,10 @@ export const API = {
         const expiresAt = Date.now() + (result.expiresIn * 1000);
         Storage.set('tokenExpiresAt', expiresAt);
       }
+
+      if (result.tracking_session_id) {
+        Storage.set('trackingSessionId', result.tracking_session_id);
+      }
     }
 
     return result;
@@ -302,8 +307,14 @@ export const API = {
     }
   },
 
-  logout() {
-    this.clearAuth();
+  async logout() {
+    try {
+      await this.endTrackingSession();
+    } catch (error) {
+      console.error('Erro ao encerrar sessao de tracking:', error);
+    } finally {
+      this.clearAuth();
+    }
   },
 
   // ============ HEALTH CHECK ============
@@ -489,7 +500,52 @@ export const API = {
     }
   },
 
+  async trackEvent(event) {
+    try {
+      const token = Storage.get('authToken', null);
+      if (!token) return;
+
+      const trackingSessionId = Storage.get('trackingSessionId', null);
+      const response = await fetch(`${API_BASE_URL}/api/tracking/events`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+          ...(trackingSessionId && { 'X-Tracking-Session': trackingSessionId })
+        },
+        body: JSON.stringify(event)
+      });
+
+      const result = await response.json().catch(() => null);
+      if (result?.session_id) {
+        Storage.set('trackingSessionId', result.session_id);
+      }
+    } catch {
+      // Ignorar erros de tracking
+    }
+  },
+
   // ============ MANUTENÇÃO ADMIN ============
+
+  async endTrackingSession() {
+    try {
+      const token = Storage.get('authToken', null);
+      const trackingSessionId = Storage.get('trackingSessionId', null);
+      if (!token || !trackingSessionId) return;
+
+      await fetch(`${API_BASE_URL}/api/tracking/session/end`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+          'X-Tracking-Session': trackingSessionId
+        },
+        body: JSON.stringify({ session_id: trackingSessionId })
+      });
+    } catch {
+      // Ignorar erros de tracking
+    }
+  },
 
   async limparNomesUsuarios() {
     return this.request('/api/admin/manutencao/limpar-nomes', {

@@ -20,8 +20,8 @@ export const AuthProvider = ({ children, onTokenExpired }) => {
   const [user, setUser] = useState(() => Storage.get('user', null));
 
   // Funcao de logout
-  const logout = useCallback(() => {
-    API.logout();
+  const logout = useCallback(async () => {
+    await API.logout();
     setUser(null);
     Storage.remove('user');
     Storage.remove('favorites');
@@ -30,8 +30,8 @@ export const AuthProvider = ({ children, onTokenExpired }) => {
 
   // Registra callback para expiracao de token
   useEffect(() => {
-    API.setOnTokenExpired(() => {
-      logout();
+    API.setOnTokenExpired(async () => {
+      await logout();
       if (onTokenExpired) {
         onTokenExpired();
       }
@@ -45,7 +45,7 @@ export const AuthProvider = ({ children, onTokenExpired }) => {
   // Verifica token ao iniciar
   useEffect(() => {
     if (USE_API && API.isTokenExpired()) {
-      logout();
+      void logout();
     }
   }, [logout]);
 

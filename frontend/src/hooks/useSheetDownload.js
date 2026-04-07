@@ -4,6 +4,7 @@
 
 import { useState, useCallback } from 'react';
 import { API_BASE_URL } from '@constants/api';
+import { API } from '@services/api';
 import { Storage } from '@services/storage';
 
 /**
@@ -49,6 +50,33 @@ const normalizeInstrumento = (nome) => {
     .replace(/clarineta/g, 'clarinete') // Variante
     .replace(/\s+/g, ' ') // Colapsa espacos
     .trim();
+};
+
+const GRADE_INSTRUMENT_ALIASES = new Set([
+  'grade',
+  'score',
+  'conductor',
+  'full score',
+  'partitura',
+  'maestro',
+  'regente'
+]);
+
+const isGradeInstrument = (instrumento) => {
+  if (typeof instrumento !== 'string') return false;
+  return GRADE_INSTRUMENT_ALIASES.has(normalizeInstrumento(instrumento));
+};
+
+export const getParteTrackingEventType = (parteOrAction, actionOrInstrumento = 'download') => {
+  const action = typeof parteOrAction === 'string' ? parteOrAction : actionOrInstrumento;
+  const instrumento = typeof parteOrAction === 'string'
+    ? actionOrInstrumento
+    : parteOrAction?.instrumento;
+  const isGrade = isGradeInstrument(instrumento);
+  if (action === 'view') {
+    return isGrade ? 'pdf_visualizado_grade' : 'pdf_visualizado_parte';
+  }
+  return isGrade ? 'download_grade' : 'download_parte';
 };
 
 /**
@@ -150,6 +178,14 @@ export const useSheetDownload = ({ showToast, selectedSheet, partes = [] }) => {
         // Criar blob com tipo explicito para PDF
         const pdfBlob = new Blob([blob], { type: 'application/pdf' });
 
+        API.trackEvent({
+          tipo: getParteTrackingEventType(parte),
+          origem: 'detalhe_partitura',
+          partitura_id: selectedSheet.id,
+          parte_id: parte.id,
+          metadata: { instrumento: parte.instrumento }
+        });
+
         // Usar funcao de save dedicada
         saveBlob(pdfBlob, filename);
 
@@ -185,6 +221,11 @@ export const useSheetDownload = ({ showToast, selectedSheet, partes = [] }) => {
       if (response.ok) {
         const blob = await response.blob();
         const pdfBlob = new Blob([blob], { type: 'application/pdf' });
+        API.trackEvent({
+          tipo: 'download_grade',
+          origem: 'detalhe_partitura',
+          partitura_id: selectedSheet.id
+        });
         saveBlob(pdfBlob, `${selectedSheet.title}.pdf`);
         showToast('Iniciando download...');
       } else {
@@ -344,6 +385,14 @@ export const useSheetDownload = ({ showToast, selectedSheet, partes = [] }) => {
       if (response.ok) {
         const blob = await response.blob();
         const blobUrl = URL.createObjectURL(blob);
+
+        API.trackEvent({
+          tipo: getParteTrackingEventType(parte, 'view'),
+          origem: 'detalhe_partitura',
+          partitura_id: selectedSheet.id,
+          parte_id: parte.id,
+          metadata: { instrumento: parte.instrumento }
+        });
 
         // Abre no modal embutido
         setPdfViewer({

@@ -103,8 +103,8 @@ const AdminApp = () => {
   const { diasEnsaio, repertorioAtivo } = useData();
 
   // Funcao de logout
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate('/login', { replace: true });
   };
 

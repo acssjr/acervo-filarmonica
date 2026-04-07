@@ -43,7 +43,13 @@ const MobileSearchOverlay = () => {
   const cardRef = useRef(null);      // glass card
   const heightRef = useRef(null);    // última altura estável para transição
   const lastTrackedRef = useRef('');
+  const lastTypedTrackedRef = useRef('');
   const debouncedQuery = useDebounce(query, 300);
+
+  const resetTrackingRefs = useCallback(() => {
+    lastTrackedRef.current = '';
+    lastTypedTrackedRef.current = '';
+  }, []);
 
   // Scroll lock (iOS Safari safe)
   useScrollLock(mobileSearchOpen);
@@ -61,6 +67,7 @@ const MobileSearchOverlay = () => {
     if (!container || !card) return;
 
     if (mobileSearchOpen) {
+      resetTrackingRefs();
       setQuery('');
       heightRef.current = null;
 
@@ -83,6 +90,7 @@ const MobileSearchOverlay = () => {
         }
       );
     } else {
+      resetTrackingRefs();
       // Sair: mais rápido que entrar (UX padrão)
       gsap.to(container, {
         autoAlpha: 0, duration: 0.22, ease: 'power2.in',
@@ -93,7 +101,7 @@ const MobileSearchOverlay = () => {
         duration: 0.2, ease: 'power2.in',
       });
     }
-  }, [mobileSearchOpen]);
+  }, [mobileSearchOpen, resetTrackingRefs]);
 
   // ── Transição suave de altura quando conteúdo muda ───────────────────
   // useLayoutEffect garante que o estado anterior é travado ANTES do browser pintar
@@ -139,7 +147,7 @@ const MobileSearchOverlay = () => {
   }, [sheets]);
 
   // ── Busca fuzzy (idêntica ao SearchScreen.jsx) ───────────────────────
-  const searchResults = useMemo(() => {
+  const allSearchResults = useMemo(() => {
     if (!debouncedQuery.trim()) return [];
     const q = normalize(debouncedQuery);
     const qT = transliterate(q);
@@ -195,25 +203,61 @@ const MobileSearchOverlay = () => {
       if (score > 0) results.push({ ...sheet, score, category: cat });
     }
     results.sort((a, b) => b.score - a.score);
-    return results.slice(0, 8);
+    return results;
   }, [debouncedQuery, sheets, categoriesMap]);
+  const searchResults = useMemo(() => allSearchResults.slice(0, 8), [allSearchResults]);
+  const searchResultsCount = allSearchResults.length;
 
   // ── Tracking ─────────────────────────────────────────────────────────
+  useEffect(() => {
+    const currentQuery = query.trim();
+    if (!currentQuery) {
+      resetTrackingRefs();
+      return;
+    }
+
+    const termo = debouncedQuery.trim();
+    if (!termo || termo !== currentQuery) return;
+    const resultadosCount = searchResultsCount;
+
+    const timer = setTimeout(() => {
+      if (lastTypedTrackedRef.current === termo) return;
+      lastTypedTrackedRef.current = termo;
+
+      API.trackEvent({
+        tipo: 'busca_digitada',
+        origem: 'busca_mobile',
+        termo_original: termo,
+        resultados_count: resultadosCount
+      });
+    }, 350);
+
+    return () => clearTimeout(timer);
+  }, [query, debouncedQuery, searchResultsCount, resetTrackingRefs]);
+
   useEffect(() => {
     if (!debouncedQuery || debouncedQuery.trim().length < 3) return;
     if (lastTrackedRef.current === debouncedQuery.trim()) return;
     const timer = setTimeout(() => {
-      lastTrackedRef.current = debouncedQuery.trim();
-      API.trackSearch(debouncedQuery.trim(), searchResults.length).catch(() => {});
+      const termo = debouncedQuery.trim();
+      lastTrackedRef.current = termo;
+      API.trackSearch(termo, searchResultsCount).catch(() => {});
+      API.trackEvent({
+        tipo: 'busca_realizada',
+        origem: 'busca_mobile',
+        termo_original: termo,
+        resultados_count: searchResultsCount
+      });
     }, 2000);
     return () => clearTimeout(timer);
-  }, [debouncedQuery, searchResults.length]);
+  }, [debouncedQuery, searchResultsCount]);
 
   // ── Handlers ─────────────────────────────────────────────────────────
   const handleClose = useCallback(() => {
+    resetTrackingRefs();
     setMobileSearchOpen(false);
     setQuery('');
-  }, [setMobileSearchOpen]);
+  }, [resetTrackingRefs, setMobileSearchOpen]);
 
   const handleSelectSheet = useCallback((sheet) => {
     const categoryId = typeof sheet.category === 'string'
@@ -403,7 +447,7 @@ const MobileSearchOverlay = () => {
                 textTransform: 'uppercase', color: mutedColor,
                 padding: '8px 16px 4px', margin: 0,
               }}>
-                {searchResults.length} resultado{searchResults.length !== 1 ? 's' : ''}
+                {searchResultsCount} resultado{searchResultsCount !== 1 ? 's' : ''}
               </p>
               {searchResults.map((sheet, i) => renderItem(sheet, i, sheet.category))}
             </div>

@@ -552,15 +552,79 @@ describe('API Service', () => {
     });
   });
 
+  // ============ TRACKING ============
+
+  describe('trackEvent()', () => {
+    it('não envia request quando não há token', async () => {
+      mockStorage.get.mockReturnValue(null);
+      global.fetch = jest.fn();
+
+      await API.trackEvent({ tipo: 'partitura_aberta' });
+
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    it('envia sessão de tracking quando existe no storage', async () => {
+      mockStorage.get.mockImplementation((key) => {
+        if (key === 'authToken') return 'fake-token';
+        if (key === 'trackingSessionId') return 'sess_2_test';
+        return null;
+      });
+      global.fetch = createMockFetch({ data: { success: true, session_id: 'sess_2_test' } });
+
+      await API.trackEvent({ tipo: 'partitura_aberta' });
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/tracking/events'),
+        expect.objectContaining({
+          method: 'POST',
+          headers: expect.objectContaining({
+            Authorization: 'Bearer fake-token',
+            'X-Tracking-Session': 'sess_2_test'
+          })
+        })
+      );
+    });
+  });
+
   // ============ LOGOUT ============
 
   describe('logout()', () => {
-    it('limpa dados de autenticacao', () => {
-      API.logout();
+    it('limpa dados de autenticacao', async () => {
+      await API.logout();
 
       expect(mockStorage.remove).toHaveBeenCalledWith('authToken');
       expect(mockStorage.remove).toHaveBeenCalledWith('tokenExpiresAt');
       expect(mockStorage.remove).toHaveBeenCalledWith('user');
+    });
+
+    it('aguarda encerrar sessao antes de limpar dados de autenticacao', async () => {
+      let resolveFetch;
+      mockStorage.get.mockImplementation((key) => {
+        if (key === 'authToken') return 'fake-token';
+        if (key === 'trackingSessionId') return 'sess_1_test';
+        return null;
+      });
+      global.fetch = jest.fn(() => new Promise((resolve) => {
+        resolveFetch = resolve;
+      }));
+
+      const logoutPromise = API.logout();
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/tracking/session/end'),
+        expect.anything()
+      );
+      expect(mockStorage.remove).not.toHaveBeenCalledWith('authToken');
+
+      resolveFetch({
+        ok: true,
+        json: async () => ({ success: true })
+      });
+      await logoutPromise;
+
+      expect(mockStorage.remove).toHaveBeenCalledWith('authToken');
+      expect(mockStorage.remove).toHaveBeenCalledWith('trackingSessionId');
     });
   });
 

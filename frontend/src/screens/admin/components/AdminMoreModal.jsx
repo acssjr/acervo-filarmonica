@@ -81,9 +81,9 @@ const AdminMoreModal = ({ activeSection, onNavigate, onClose }) => {
     onClose();
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     onClose();
-    logout();
+    await logout();
   };
 
   // ---- Tokens de tema ----

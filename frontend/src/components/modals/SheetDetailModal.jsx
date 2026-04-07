@@ -37,6 +37,7 @@ const SheetDetailModal = () => {
     selectedSheet,
     partes
   });
+  const selectedSheetId = selectedSheet?.id;
 
   // Handler para adicionar parte ao carrinho de compartilhamento
   const handleAddToCart = useCallback((instrument) => {
@@ -128,10 +129,16 @@ const SheetDetailModal = () => {
     setShowInstrumentPicker(false);
     download.handleCancelDownload();
 
+    API.trackEvent({
+      tipo: 'partitura_aberta',
+      origem: 'detalhe_partitura',
+      partitura_id: selectedSheetId,
+    });
+
     const fetchPartes = async () => {
       setLoadingPartes(true);
       try {
-        const data = await API.getPartesPartitura(selectedSheet.id);
+        const data = await API.getPartesPartitura(selectedSheetId);
         if (!cancelled) {
           setPartes(data || []);
         }
@@ -150,7 +157,7 @@ const SheetDetailModal = () => {
 
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- download é estável (useSheetDownload)
-  }, [selectedSheet]);
+  }, [selectedSheetId]);
 
   // Dados derivados do selectedSheet (só acessados quando existe)
   const category = selectedSheet ? categoriesMap.get(selectedSheet.category) : null;

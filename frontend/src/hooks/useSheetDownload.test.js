@@ -2,7 +2,7 @@
 // Testes unitarios para o hook de download de partituras
 
 import { describe, it, expect } from '@jest/globals';
-import { findPartesCorrespondentes, findParteExata } from './useSheetDownload';
+import { findPartesCorrespondentes, findParteExata, getParteTrackingEventType } from './useSheetDownload';
 
 // Dados de teste
 const mockPartes = [
@@ -176,6 +176,20 @@ describe('findParteExata', () => {
     expect(bateria.instrumento).toBe('Bateria');
     expect(flauta).toBeDefined();
     expect(flauta.instrumento).toBe('Flauta');
+  });
+});
+
+describe('getParteTrackingEventType', () => {
+  it('classifica aliases de grade como eventos de grade', () => {
+    expect(getParteTrackingEventType('download', 'Grade')).toBe('download_grade');
+    expect(getParteTrackingEventType('download', 'Maestro')).toBe('download_grade');
+    expect(getParteTrackingEventType('view', 'Regente')).toBe('pdf_visualizado_grade');
+    expect(getParteTrackingEventType('view', 'Full Score')).toBe('pdf_visualizado_grade');
+  });
+
+  it('classifica instrumentos comuns como eventos de parte', () => {
+    expect(getParteTrackingEventType('download', 'Trompete Bb 1')).toBe('download_parte');
+    expect(getParteTrackingEventType('view', 'Clarinete Bb')).toBe('pdf_visualizado_parte');
   });
 });
 

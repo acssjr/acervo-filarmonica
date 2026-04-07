@@ -1,11 +1,18 @@
 // worker/src/routes/estatisticaRoutes.js
 import { adminMiddleware, authMiddleware } from '../middleware/index.js';
+import { errorResponse, jsonResponse } from '../infrastructure/index.js';
 import {
   getEstatisticas,
   getEstatisticasAdmin,
   getInstrumentos
 } from '../domain/estatisticas/estatisticaService.js';
 import { getAnalyticsDashboard } from '../domain/analytics/analyticsService.js';
+import {
+  isTrackingValidationError,
+  normalizeTrackingSessionId,
+  registrarTrackingEvent
+} from '../domain/analytics/eventService.js';
+import { endTrackingSession } from '../domain/analytics/sessionService.js';
 import { trackSearch } from '../domain/analytics/trackingService.js';
 
 /**
@@ -19,6 +26,49 @@ export function setupEstatisticaRoutes(router) {
 
   // Rota de tracking (requer auth para vincular ao usuário)
   router.post('/api/tracking/search', trackSearch, [authMiddleware]);
+  router.post('/api/tracking/events', async (request, env, _params, context) => {
+    try {
+      let body;
+      try {
+        body = await request.json();
+      } catch {
+        return errorResponse('JSON inválido', 400, request);
+      }
+
+      const headerSessionId = normalizeTrackingSessionId(request.headers.get('X-Tracking-Session'));
+      const bodySessionId = normalizeTrackingSessionId(body?.session_id);
+      const sessionId = headerSessionId || bodySessionId;
+      const result = await registrarTrackingEvent(env, context.user, sessionId, body);
+
+      return jsonResponse({ success: true, session_id: result.session_id }, 200, request);
+    } catch (error) {
+      if (isTrackingValidationError(error)) {
+        return errorResponse(error.message, 400, request);
+      }
+
+      console.error('Erro ao registrar evento de tracking:', error);
+      return errorResponse('Erro ao registrar evento de tracking', 500, request);
+    }
+  }, [authMiddleware]);
+
+  router.post('/api/tracking/session/end', async (request, env, _params, context) => {
+    let body = {};
+    try {
+      body = await request.json();
+    } catch {
+      body = {};
+    }
+
+    const headerSessionId = normalizeTrackingSessionId(request.headers.get('X-Tracking-Session'));
+    const bodySessionId = normalizeTrackingSessionId(body?.session_id);
+    const sessionId = headerSessionId || bodySessionId;
+    if (!sessionId) {
+      return errorResponse('Sessão inválida', 400, request);
+    }
+
+    await endTrackingSession(env, sessionId, 'logout', context.user.id);
+    return jsonResponse({ success: true }, 200, request);
+  }, [authMiddleware]);
 
   // Rotas admin
   router.get('/api/admin/estatisticas', getEstatisticasAdmin, [adminMiddleware]);
