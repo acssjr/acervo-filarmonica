@@ -16,7 +16,7 @@ import { endTrackingSession } from '../domain/analytics/sessionService.js';
 import { trackSearch } from '../domain/analytics/trackingService.js';
 import { checkTrackingRateLimit } from '../infrastructure/ratelimit/rateLimiter.js';
 
-export async function trackingRateLimitMiddleware(request, env, next, _params, context) {
+export async function trackingRateLimitMiddleware(request, env, next, context) {
   const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
   const userId = context?.user?.id || null;
 
