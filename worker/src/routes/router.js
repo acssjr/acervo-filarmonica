@@ -131,7 +131,7 @@ export class Router {
    * @param {Object} env - Environment bindings
    * @returns {Response} - Response
    */
-  async handle(request, env) {
+  async handle(request, env, executionCtx = null) {
     // CORS preflight automático
     if (request.method === 'OPTIONS') {
       return new Response(null, {
@@ -158,7 +158,7 @@ export class Router {
       const params = this.extractParams(route.regex, route.paramNames, pathname);
 
       // Contexto compartilhado entre middleware
-      const context = { params };
+      const context = { params, executionCtx };
 
       // Executar middleware global
       const globalResult = await this.executeMiddleware(

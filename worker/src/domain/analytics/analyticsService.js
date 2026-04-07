@@ -6,12 +6,21 @@ const NAIPES_VALIDOS = ['Madeiras', 'Metais', 'Percussão'];
 const AUDIT_ACTIVITY_TYPES = [
   'nova_partitura',
   'novo_repertorio',
+  'update_repertorio',
+  'delete_repertorio',
   'add_repertorio',
+  'remove_repertorio',
+  'reorder_repertorio',
   'update_partitura',
   'delete_partitura',
   'nova_parte',
   'update_parte',
-  'delete_parte'
+  'delete_parte',
+  'aviso_criado',
+  'aviso_atualizado',
+  'aviso_ativado',
+  'aviso_desativado',
+  'aviso_excluido'
 ];
 const AUDIT_ACTIVITY_PLACEHOLDERS = AUDIT_ACTIVITY_TYPES.map(() => '?').join(', ');
 
@@ -37,66 +46,136 @@ function getPositiveStreak(userId, ensaiosDesc, presencasSet) {
   return streak;
 }
 
+function withCompetitionRanking(items, tieKey) {
+  let lastKey = null;
+  let lastPosition = 0;
+
+  return items.map((item, index) => {
+    const key = tieKey(item);
+    const position = key === lastKey ? lastPosition : index + 1;
+    lastKey = key;
+    lastPosition = position;
+    return { ...item, posicao: position };
+  });
+}
+
 async function getUsoAcervo(env, start, end) {
   const resumo = await env.DB.prepare(`
     SELECT
-      SUM(CASE WHEN tipo = 'partitura_aberta' THEN 1 ELSE 0 END) as partituras_abertas,
-      SUM(CASE WHEN tipo IN ('pdf_visualizado_grade', 'pdf_visualizado_parte') THEN 1 ELSE 0 END) as pdfs_visualizados,
-      SUM(CASE WHEN tipo IN ('download_grade', 'download_parte') THEN 1 ELSE 0 END) as downloads_reais,
-      SUM(CASE WHEN tipo = 'busca_realizada' AND resultados_count = 0 THEN 1 ELSE 0 END) as buscas_sem_resultado
-    FROM tracking_events
-    WHERE criado_em >= ? AND criado_em < ?
-  `).bind(start, end).first();
+      (SELECT COUNT(*) FROM tracking_events WHERE tipo = 'partitura_aberta' AND criado_em >= ? AND criado_em < ?) as partituras_abertas,
+      (SELECT COUNT(*) FROM tracking_events WHERE tipo IN ('pdf_visualizado_grade', 'pdf_visualizado_parte') AND criado_em >= ? AND criado_em < ?) as pdfs_visualizados,
+      (SELECT COUNT(*) FROM logs_download WHERE data >= ? AND data < ?) as downloads_reais,
+      (
+        (SELECT COUNT(*) FROM logs_buscas WHERE resultados_count = 0 AND data >= ? AND data < ?) +
+        (SELECT COUNT(*) FROM tracking_events WHERE tipo = 'busca_realizada' AND resultados_count = 0 AND criado_em >= ? AND criado_em < ?)
+      ) as buscas_sem_resultado
+  `).bind(start, end, start, end, start, end, start, end, start, end).first();
 
   const partiturasAbertas = resumo?.partituras_abertas || 0;
   const pdfsVisualizados = resumo?.pdfs_visualizados || 0;
   const downloadsReais = resumo?.downloads_reais || 0;
 
   const topPartituras = await env.DB.prepare(`
+    WITH uso_partituras AS (
+      SELECT
+        partitura_id,
+        SUM(CASE WHEN tipo = 'partitura_aberta' THEN 1 ELSE 0 END) as aberturas,
+        SUM(CASE WHEN tipo IN ('pdf_visualizado_grade', 'pdf_visualizado_parte') THEN 1 ELSE 0 END) as visualizacoes,
+        0 as downloads
+      FROM tracking_events
+      WHERE criado_em >= ? AND criado_em < ?
+        AND partitura_id IS NOT NULL
+      GROUP BY partitura_id
+
+      UNION ALL
+
+      SELECT
+        partitura_id,
+        0 as aberturas,
+        0 as visualizacoes,
+        COUNT(*) as downloads
+      FROM logs_download
+      WHERE data >= ? AND data < ?
+      GROUP BY partitura_id
+    )
     SELECT
       p.id,
       p.titulo,
       p.compositor,
-      SUM(CASE WHEN te.tipo = 'partitura_aberta' THEN 1 ELSE 0 END) as aberturas,
-      SUM(CASE WHEN te.tipo IN ('pdf_visualizado_grade', 'pdf_visualizado_parte') THEN 1 ELSE 0 END) as visualizacoes,
-      SUM(CASE WHEN te.tipo IN ('download_grade', 'download_parte') THEN 1 ELSE 0 END) as downloads
-    FROM tracking_events te
-    JOIN partituras p ON p.id = te.partitura_id
-    WHERE te.criado_em >= ? AND te.criado_em < ?
-      AND te.partitura_id IS NOT NULL
+      SUM(up.aberturas) as aberturas,
+      SUM(up.visualizacoes) as visualizacoes,
+      SUM(up.downloads) as downloads
+    FROM uso_partituras up
+    JOIN partituras p ON p.id = up.partitura_id
     GROUP BY p.id, p.titulo, p.compositor
-    ORDER BY (aberturas + visualizacoes + downloads) DESC
+    ORDER BY (SUM(up.aberturas) + SUM(up.visualizacoes) + SUM(up.downloads)) DESC
     LIMIT 10
-  `).bind(start, end).all();
+  `).bind(start, end, start, end).all();
 
   const topPartes = await env.DB.prepare(`
+    WITH uso_partes AS (
+      SELECT
+        pa.id,
+        pa.instrumento,
+        p.titulo as partitura_titulo,
+        COUNT(*) as visualizacoes,
+        0 as downloads
+      FROM tracking_events te
+      JOIN partes pa ON pa.id = te.parte_id
+      JOIN partituras p ON p.id = pa.partitura_id
+      WHERE te.criado_em >= ? AND te.criado_em < ?
+        AND te.tipo = 'pdf_visualizado_parte'
+        AND te.parte_id IS NOT NULL
+      GROUP BY pa.id, pa.instrumento, p.titulo
+
+      UNION ALL
+
+      SELECT
+        NULL as id,
+        COALESCE(ld.instrumento_id, 'Parte não identificada') as instrumento,
+        p.titulo as partitura_titulo,
+        0 as visualizacoes,
+        COUNT(*) as downloads
+      FROM logs_download ld
+      JOIN partituras p ON p.id = ld.partitura_id
+      WHERE ld.data >= ? AND ld.data < ?
+        AND ld.instrumento_id IS NOT NULL
+      GROUP BY ld.instrumento_id, p.titulo
+    )
     SELECT
-      pa.id,
-      pa.instrumento,
-      p.titulo as partitura_titulo,
-      SUM(CASE WHEN te.tipo = 'pdf_visualizado_parte' THEN 1 ELSE 0 END) as visualizacoes,
-      SUM(CASE WHEN te.tipo = 'download_parte' THEN 1 ELSE 0 END) as downloads
-    FROM tracking_events te
-    JOIN partes pa ON pa.id = te.parte_id
-    JOIN partituras p ON p.id = pa.partitura_id
-    WHERE te.criado_em >= ? AND te.criado_em < ?
-      AND te.parte_id IS NOT NULL
-    GROUP BY pa.id, pa.instrumento, p.titulo
+      id,
+      instrumento,
+      partitura_titulo,
+      SUM(visualizacoes) as visualizacoes,
+      SUM(downloads) as downloads
+    FROM uso_partes
+    GROUP BY id, instrumento, partitura_titulo
     ORDER BY (visualizacoes + downloads) DESC
     LIMIT 10
-  `).bind(start, end).all();
+  `).bind(start, end, start, end).all();
 
   const buscasSemResultado = await env.DB.prepare(`
-    SELECT termo_normalizado as termo, COUNT(*) as tentativas
-    FROM tracking_events
-    WHERE criado_em >= ? AND criado_em < ?
-      AND tipo = 'busca_realizada'
-      AND resultados_count = 0
-      AND termo_normalizado IS NOT NULL
-    GROUP BY termo_normalizado
+    SELECT termo, COUNT(*) as tentativas
+    FROM (
+      SELECT termo_normalizado as termo
+      FROM tracking_events
+      WHERE criado_em >= ? AND criado_em < ?
+        AND tipo = 'busca_realizada'
+        AND resultados_count = 0
+        AND termo_normalizado IS NOT NULL
+
+      UNION ALL
+
+      SELECT termo
+      FROM logs_buscas
+      WHERE data >= ? AND data < ?
+        AND resultados_count = 0
+        AND termo IS NOT NULL
+    )
+    GROUP BY termo
     ORDER BY tentativas DESC
     LIMIT 5
-  `).bind(start, end).all();
+  `).bind(start, end, start, end).all();
 
   const insights = emptyResults(buscasSemResultado).map((item) => ({
     tipo: 'busca_sem_resultado',
@@ -132,13 +211,14 @@ async function getPessoas(env, url, start, end) {
   const timelineOffset = Number.isFinite(rawOffset) && rawOffset > 0 ? rawOffset : 0;
 
   const usuarios = await env.DB.prepare(`
-    SELECT DISTINCT u.id, u.nome, u.foto_url, i.nome as instrumento
-    FROM tracking_events te
-    JOIN usuarios u ON u.id = te.usuario_id
+    SELECT u.id, u.nome, u.foto_url, i.nome as instrumento
+    FROM usuarios u
     LEFT JOIN instrumentos i ON i.id = u.instrumento_id
-    WHERE te.criado_em >= ? AND te.criado_em < ?
+    WHERE u.ativo = 1
+      AND u.admin = 0
+      AND COALESCE(u.convidado, 0) = 0
     ORDER BY u.nome ASC
-  `).bind(start, end).all();
+  `).all();
 
   if (!selectedUserId) {
     return {
@@ -151,44 +231,106 @@ async function getPessoas(env, url, start, end) {
 
   const resumoUsuario = await env.DB.prepare(`
     SELECT
-      SUM(CASE WHEN tipo = 'partitura_aberta' THEN 1 ELSE 0 END) as partituras_abertas,
-      SUM(CASE WHEN tipo IN ('pdf_visualizado_grade', 'pdf_visualizado_parte') THEN 1 ELSE 0 END) as pdfs_visualizados,
-      SUM(CASE WHEN tipo IN ('download_grade', 'download_parte') THEN 1 ELSE 0 END) as downloads_reais,
-      SUM(CASE WHEN tipo IN ('busca_realizada', 'busca_digitada') THEN 1 ELSE 0 END) as buscas,
-      SUM(CASE WHEN tipo = 'favorito_adicionado' THEN 1 ELSE 0 END) as favoritos
-    FROM tracking_events
-    WHERE usuario_id = ? AND criado_em >= ? AND criado_em < ?
-  `).bind(selectedUserId, start, end).first();
+      (SELECT COUNT(*) FROM tracking_events WHERE usuario_id = ? AND tipo = 'partitura_aberta' AND criado_em >= ? AND criado_em < ?) as partituras_abertas,
+      (SELECT COUNT(*) FROM tracking_events WHERE usuario_id = ? AND tipo IN ('pdf_visualizado_grade', 'pdf_visualizado_parte') AND criado_em >= ? AND criado_em < ?) as pdfs_visualizados,
+      (SELECT COUNT(*) FROM logs_download WHERE usuario_id = ? AND data >= ? AND data < ?) as downloads_reais,
+      (
+        (SELECT COUNT(*) FROM logs_buscas WHERE usuario_id = ? AND data >= ? AND data < ?) +
+        (SELECT COUNT(*) FROM tracking_events WHERE usuario_id = ? AND tipo = 'busca_digitada' AND criado_em >= ? AND criado_em < ?)
+      ) as buscas,
+      (SELECT COUNT(*) FROM tracking_events WHERE usuario_id = ? AND tipo = 'favorito_adicionado' AND criado_em >= ? AND criado_em < ?) as favoritos
+  `).bind(
+    selectedUserId, start, end,
+    selectedUserId, start, end,
+    selectedUserId, start, end,
+    selectedUserId, start, end,
+    selectedUserId, start, end,
+    selectedUserId, start, end
+  ).first();
 
   const timeline = await env.DB.prepare(`
-    SELECT
-      te.id,
-      te.session_id,
-      te.tipo,
-      te.origem,
-      te.partitura_id,
-      te.parte_id,
-      te.repertorio_id,
-      te.termo_original,
-      te.termo_normalizado,
-      te.resultados_count,
-      te.metadata_json,
-      te.criado_em,
-      p.titulo as partitura_titulo,
-      pa.instrumento as parte_instrumento
-    FROM tracking_events te
-    LEFT JOIN partituras p ON p.id = te.partitura_id
-    LEFT JOIN partes pa ON pa.id = te.parte_id
-    WHERE te.usuario_id = ? AND te.criado_em >= ? AND te.criado_em < ?
-    ORDER BY te.criado_em DESC
+    SELECT *
+    FROM (
+      SELECT
+        'tracking_' || te.id as id,
+        te.session_id,
+        te.tipo,
+        te.origem,
+        te.partitura_id,
+        te.parte_id,
+        te.repertorio_id,
+        te.termo_original,
+        te.termo_normalizado,
+        te.resultados_count,
+        te.metadata_json,
+        te.criado_em,
+        p.titulo as partitura_titulo,
+        pa.instrumento as parte_instrumento
+      FROM tracking_events te
+      LEFT JOIN partituras p ON p.id = te.partitura_id
+      LEFT JOIN partes pa ON pa.id = te.parte_id
+      WHERE te.usuario_id = ? AND te.criado_em >= ? AND te.criado_em < ?
+
+      UNION ALL
+
+      SELECT
+        'download_' || ld.id as id,
+        NULL as session_id,
+        'download_historico' as tipo,
+        'historico' as origem,
+        ld.partitura_id,
+        NULL as parte_id,
+        NULL as repertorio_id,
+        NULL as termo_original,
+        NULL as termo_normalizado,
+        NULL as resultados_count,
+        NULL as metadata_json,
+        ld.data as criado_em,
+        p.titulo as partitura_titulo,
+        COALESCE(ld.instrumento_id, 'Arquivo completo') as parte_instrumento
+      FROM logs_download ld
+      JOIN partituras p ON p.id = ld.partitura_id
+      WHERE ld.usuario_id = ? AND ld.data >= ? AND ld.data < ?
+
+      UNION ALL
+
+      SELECT
+        'busca_' || lb.id as id,
+        NULL as session_id,
+        'busca_historica' as tipo,
+        'historico' as origem,
+        NULL as partitura_id,
+        NULL as parte_id,
+        NULL as repertorio_id,
+        lb.termo as termo_original,
+        lb.termo as termo_normalizado,
+        lb.resultados_count,
+        NULL as metadata_json,
+        lb.data as criado_em,
+        NULL as partitura_titulo,
+        NULL as parte_instrumento
+      FROM logs_buscas lb
+      WHERE lb.usuario_id = ? AND lb.data >= ? AND lb.data < ?
+    )
+    ORDER BY criado_em DESC
     LIMIT ? OFFSET ?
-  `).bind(selectedUserId, start, end, timelineLimit, timelineOffset).all();
+  `).bind(
+    selectedUserId, start, end,
+    selectedUserId, start, end,
+    selectedUserId, start, end,
+    timelineLimit, timelineOffset
+  ).all();
 
   const totalTimeline = await env.DB.prepare(`
-    SELECT COUNT(*) as total
-    FROM tracking_events
-    WHERE usuario_id = ? AND criado_em >= ? AND criado_em < ?
-  `).bind(selectedUserId, start, end).first();
+    SELECT
+      (SELECT COUNT(*) FROM tracking_events WHERE usuario_id = ? AND criado_em >= ? AND criado_em < ?) +
+      (SELECT COUNT(*) FROM logs_download WHERE usuario_id = ? AND data >= ? AND data < ?) +
+      (SELECT COUNT(*) FROM logs_buscas WHERE usuario_id = ? AND data >= ? AND data < ?) as total
+  `).bind(
+    selectedUserId, start, end,
+    selectedUserId, start, end,
+    selectedUserId, start, end
+  ).first();
 
   return {
     usuarios: emptyResults(usuarios),
@@ -207,6 +349,7 @@ async function getEnsaios(env, start, end) {
     WHERE p.data_ensaio >= ? AND p.data_ensaio < ?
       AND u.ativo = 1
       AND u.admin = 0
+      AND COALESCE(u.convidado, 0) = 0
       AND i.familia IN ('Madeiras', 'Metais', 'Percussão')
     ORDER BY p.data_ensaio DESC
   `).bind(start, end).all();
@@ -220,6 +363,7 @@ async function getEnsaios(env, start, end) {
     JOIN instrumentos i ON i.id = u.instrumento_id
     WHERE u.ativo = 1
       AND u.admin = 0
+      AND COALESCE(u.convidado, 0) = 0
       AND i.familia IN ('Madeiras', 'Metais', 'Percussão')
     ORDER BY u.nome ASC
   `).all();
@@ -232,6 +376,7 @@ async function getEnsaios(env, start, end) {
     WHERE p.data_ensaio >= ? AND p.data_ensaio < ?
       AND u.ativo = 1
       AND u.admin = 0
+      AND COALESCE(u.convidado, 0) = 0
       AND i.familia IN ('Madeiras', 'Metais', 'Percussão')
   `).bind(start, end).all();
 
@@ -270,6 +415,22 @@ async function getEnsaios(env, start, end) {
 
   const maiorStreak = assiduidade.reduce((max, item) => Math.max(max, item.streak), 0);
   const presencasEsperadas = musicosRows.length * totalEnsaios;
+  const streaks = withCompetitionRanking(
+    [...assiduidade].sort((a, b) => {
+      if (b.streak !== a.streak) return b.streak - a.streak;
+      return a.nome.localeCompare(b.nome, 'pt-BR');
+    }),
+    (item) => item.streak
+  );
+
+  const assiduidadeRankeada = withCompetitionRanking(
+    [...assiduidade].sort((a, b) => {
+      if (b.taxa !== a.taxa) return b.taxa - a.taxa;
+      if (b.presencas !== a.presencas) return b.presencas - a.presencas;
+      return a.nome.localeCompare(b.nome, 'pt-BR');
+    }),
+    (item) => `${item.taxa}:${item.presencas}`
+  );
 
   return {
     mes: start.slice(0, 7),
@@ -280,8 +441,8 @@ async function getEnsaios(env, start, end) {
       musicos_presenca_perfeita: assiduidade.filter((item) => totalEnsaios > 0 && item.presencas === totalEnsaios).length,
       ensaios_registrados: totalEnsaios
     },
-    streaks: [...assiduidade].sort((a, b) => b.streak - a.streak).slice(0, 15),
-    assiduidade_musicos: assiduidade,
+    streaks,
+    assiduidade_musicos: assiduidadeRankeada,
     presenca_naipes: presencaNaipes
   };
 }
@@ -343,6 +504,39 @@ export async function getAnalyticsDashboard(request, env, _params, _context) {
   try {
     const url = new URL(request.url);
     const { start, end } = getPeriod(url);
+    const section = url.searchParams.get('section') || 'all';
+    const base = { periodo: { inicio: start, fim: end } };
+
+    if (section === 'acervo') {
+      return jsonResponse({
+        ...base,
+        uso_acervo: await getUsoAcervo(env, start, end)
+      }, 200, request);
+    }
+
+    if (section === 'pessoas') {
+      return jsonResponse({
+        ...base,
+        pessoas: await getPessoas(env, url, start, end)
+      }, 200, request);
+    }
+
+    if (section === 'ensaios') {
+      return jsonResponse({
+        ...base,
+        ensaios: await getEnsaios(env, start, end)
+      }, 200, request);
+    }
+
+    if (section === 'alteracoes') {
+      const alteracoes = await getAlteracoes(env, start, end, url);
+      return jsonResponse({
+        ...base,
+        alteracoes,
+        atividade_recente: alteracoes.atividades,
+        total_atividades: alteracoes.total
+      }, 200, request);
+    }
 
     // Chaves legadas mantidas temporariamente para rollout seguro.
     const resumo = await env.DB.prepare(`

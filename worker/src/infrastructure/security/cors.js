@@ -14,7 +14,7 @@ export function getCorsHeaders(request) {
   const origin = request.headers.get('Origin');
   const headers = {
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, X-Tracking-Session',
   };
 
   if (origin && isOriginAllowed(origin)) {

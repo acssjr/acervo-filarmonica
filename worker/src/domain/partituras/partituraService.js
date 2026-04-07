@@ -298,6 +298,38 @@ function buildPartituraUpdateDetails(before, after) {
   return changes.length > 0 ? changes.join('; ') : 'Sem alterações nos campos principais';
 }
 
+export async function deleteBucketObjects(bucket, keys) {
+  const validKeys = [...new Set((keys || []).filter(Boolean))];
+  await Promise.allSettled(validKeys.map(key => bucket.delete(key)));
+}
+
+async function capturePartituraDeleted(env, user, partituraId, titulo) {
+  const posthog = createPostHogClient(env);
+  if (!posthog) return;
+
+  posthog.capture({
+    distinctId: `user_${user.id}`,
+    event: 'partitura_deleted',
+    properties: {
+      partitura_id: partituraId,
+      titulo,
+    },
+  });
+
+  await shutdownPostHog(posthog);
+}
+
+function runAfterResponse(context, task) {
+  if (context?.executionCtx?.waitUntil) {
+    context.executionCtx.waitUntil(task.catch(error => {
+      console.error('Erro em tarefa de fundo:', error);
+    }));
+    return Promise.resolve();
+  }
+
+  return task;
+}
+
 export async function updatePartitura(id, request, env, user) {
   try {
     const data = await request.json();
@@ -372,7 +404,7 @@ export async function updatePartitura(id, request, env, user) {
   }
 }
 
-export async function deletePartitura(id, request, env, user) {
+export async function deletePartitura(id, request, env, user, context = null) {
   // Busca info antes de deletar para log
   const partitura = await env.DB.prepare('SELECT titulo FROM partituras WHERE id = ?').bind(id).first();
 
@@ -385,19 +417,16 @@ export async function deletePartitura(id, request, env, user) {
     'SELECT id, arquivo_nome FROM partes WHERE partitura_id = ?'
   ).bind(id).all();
 
-  // 2. Deletar arquivos do R2
-  for (const parte of (partes.results || [])) {
-    if (parte.arquivo_nome) {
-      try {
-        await env.BUCKET.delete(parte.arquivo_nome);
-      } catch {
-        // Continua mesmo se falhar ao deletar do R2
-      }
-    }
-  }
+  const arquivosParaRemover = (partes.results || []).map(parte => parte.arquivo_nome);
 
   // 3. & 4. Deletar registros relacionados e a partitura (transacionalmente)
   await env.DB.batch([
+    env.DB.prepare(`
+      UPDATE tracking_events
+      SET partitura_id = NULL, parte_id = NULL
+      WHERE partitura_id = ? OR parte_id IN (SELECT id FROM partes WHERE partitura_id = ?)
+    `).bind(id, id),
+    env.DB.prepare('DELETE FROM logs_download WHERE partitura_id = ?').bind(id),
     env.DB.prepare('DELETE FROM partes WHERE partitura_id = ?').bind(id),
     env.DB.prepare('DELETE FROM favoritos WHERE partitura_id = ?').bind(id),
     env.DB.prepare('DELETE FROM repertorio_partituras WHERE partitura_id = ?').bind(id),
@@ -407,19 +436,8 @@ export async function deletePartitura(id, request, env, user) {
 
   await registrarAtividade(env, 'delete_partitura', partitura.titulo, 'Partitura removida permanentemente', user.id);
 
-  // PostHog: capture partitura deletion event
-  const posthog = createPostHogClient(env);
-  if (posthog) {
-    posthog.capture({
-      distinctId: `user_${user.id}`,
-      event: 'partitura_deleted',
-      properties: {
-        partitura_id: id,
-        titulo: partitura.titulo,
-      },
-    });
-    await shutdownPostHog(posthog);
-  }
+  await runAfterResponse(context, deleteBucketObjects(env.BUCKET, arquivosParaRemover));
+  await runAfterResponse(context, capturePartituraDeleted(env, user, id, partitura.titulo));
 
   return jsonResponse({ success: true, message: 'Partitura removida permanentemente!' }, 200, request);
 }

@@ -1,5 +1,33 @@
 // worker/src/domain/avisos/avisoService.js
 import { jsonResponse } from '../../infrastructure/index.js';
+import { registrarAtividade } from '../atividades/index.js';
+
+function describeValue(value) {
+    if (value === null || value === undefined || value === '') return 'vazio';
+    return String(value);
+}
+
+function describeBoolean(value) {
+    return Number(value) === 1 ? 'Sim' : 'Não';
+}
+
+function addChange(changes, label, before, after) {
+    const beforeText = describeValue(before);
+    const afterText = describeValue(after);
+    if (beforeText !== afterText) {
+        changes.push(`${label}: "${beforeText}" -> "${afterText}"`);
+    }
+}
+
+function buildAvisoUpdateDetails(before, after) {
+    const changes = [];
+    addChange(changes, 'Título', before.titulo, after.titulo);
+    addChange(changes, 'Mensagem', before.mensagem, after.mensagem);
+    addChange(changes, 'Ativo', describeBoolean(before.ativo), describeBoolean(after.ativo));
+    addChange(changes, 'Início', before.inicia_em, after.inicia_em);
+    addChange(changes, 'Expiração', before.expira_em, after.expira_em);
+    return changes.length ? changes.join('; ') : 'Sem alterações nos campos principais';
+}
 
 /**
  * Listar todos os avisos (admin)
@@ -32,6 +60,8 @@ export async function criarAviso(request, env, params, context) {
         'INSERT INTO avisos (titulo, mensagem, inicia_em, expira_em, criado_por) VALUES (?, ?, ?, ?, ?)'
     ).bind(titulo, mensagem, inicia_em || null, expira_em || null, user?.id || null).run();
 
+    await registrarAtividade(env, 'aviso_criado', titulo, 'Aviso criado', user?.id || null);
+
     return jsonResponse({
         id: result.meta?.last_row_id,
         titulo,
@@ -43,7 +73,7 @@ export async function criarAviso(request, env, params, context) {
 /**
  * Atualizar aviso (admin) - editar ou ativar/desativar
  */
-export async function atualizarAviso(request, env, params) {
+export async function atualizarAviso(request, env, params, context) {
     const id = params.id;
     const body = await request.json();
     const { titulo, mensagem, ativo } = body;
@@ -53,16 +83,36 @@ export async function atualizarAviso(request, env, params) {
         return jsonResponse({ error: 'Aviso não encontrado' }, 404, request);
     }
 
+    const updated = {
+        titulo: titulo !== undefined ? titulo : aviso.titulo,
+        mensagem: mensagem !== undefined ? mensagem : aviso.mensagem,
+        ativo: ativo !== undefined ? (ativo ? 1 : 0) : aviso.ativo,
+        inicia_em: 'inicia_em' in body ? (body.inicia_em || null) : aviso.inicia_em,
+        expira_em: 'expira_em' in body ? (body.expira_em || null) : aviso.expira_em,
+    };
+
     await env.DB.prepare(
         'UPDATE avisos SET titulo = ?, mensagem = ?, ativo = ?, inicia_em = ?, expira_em = ? WHERE id = ?'
     ).bind(
-        titulo !== undefined ? titulo : aviso.titulo,
-        mensagem !== undefined ? mensagem : aviso.mensagem,
-        ativo !== undefined ? (ativo ? 1 : 0) : aviso.ativo,
-        'inicia_em' in body ? (body.inicia_em || null) : aviso.inicia_em,
-        'expira_em' in body ? (body.expira_em || null) : aviso.expira_em,
+        updated.titulo,
+        updated.mensagem,
+        updated.ativo,
+        updated.inicia_em,
+        updated.expira_em,
         id
     ).run();
+
+    let tipo = 'aviso_atualizado';
+    if (Number(aviso.ativo) !== Number(updated.ativo)) {
+        tipo = Number(updated.ativo) === 1 ? 'aviso_ativado' : 'aviso_desativado';
+    }
+    await registrarAtividade(
+        env,
+        tipo,
+        updated.titulo,
+        buildAvisoUpdateDetails(aviso, updated),
+        context?.user?.id || null
+    );
 
     return jsonResponse({ success: true }, 200, request);
 }
@@ -70,9 +120,13 @@ export async function atualizarAviso(request, env, params) {
 /**
  * Excluir aviso (admin)
  */
-export async function excluirAviso(request, env, params) {
+export async function excluirAviso(request, env, params, context) {
     const id = params.id;
+    const aviso = await env.DB.prepare('SELECT titulo FROM avisos WHERE id = ?').bind(id).first();
     await env.DB.prepare('DELETE FROM avisos WHERE id = ?').bind(id).run();
+    if (aviso) {
+        await registrarAtividade(env, 'aviso_excluido', aviso.titulo, 'Aviso excluído', context?.user?.id || null);
+    }
     return jsonResponse({ success: true }, 200, request);
 }
 
