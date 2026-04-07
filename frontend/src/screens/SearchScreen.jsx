@@ -191,44 +191,50 @@ const SearchScreen = () => {
   const handleClear = useCallback(() => setSearchQuery(''), []);
 
   const lastTypedTrackedRef = useRef('');
+  const lastTrackedRef = useRef('');
   useEffect(() => {
-    if (!searchQuery.trim()) {
+    const currentQuery = searchQuery.trim();
+    if (!currentQuery) {
       lastTypedTrackedRef.current = '';
+      lastTrackedRef.current = '';
       return;
     }
 
+    const termo = debouncedQuery.trim();
+    if (!termo || termo !== currentQuery) return;
+    const snapshotCount = searchResults.length;
+
     const timer = setTimeout(() => {
-      const termo = searchQuery.trim();
-      if (!termo || lastTypedTrackedRef.current === termo) return;
+      if (lastTypedTrackedRef.current === termo) return;
       lastTypedTrackedRef.current = termo;
 
       API.trackEvent({
         tipo: 'busca_digitada',
         origem: 'busca',
         termo_original: termo,
-        resultados_count: searchResults.length
+        resultados_count: snapshotCount
       });
     }, 350);
 
     return () => clearTimeout(timer);
-  }, [searchQuery, searchResults.length]);
+  }, [searchQuery, debouncedQuery, searchResults.length]);
 
   // === TRACKING: Envia log de busca após 2s de inatividade ===
-  const lastTrackedRef = useRef('');
   useEffect(() => {
     if (!debouncedQuery || debouncedQuery.trim().length < 3) return;
     // Não trackear o mesmo termo duas vezes seguidas
     if (lastTrackedRef.current === debouncedQuery.trim()) return;
 
+    const snapshotCount = searchResults.length;
     const timer = setTimeout(() => {
       const termo = debouncedQuery.trim();
       lastTrackedRef.current = termo;
-      API.trackSearch(termo, searchResults.length);
+      API.trackSearch(termo, snapshotCount);
       API.trackEvent({
         tipo: 'busca_realizada',
         origem: 'busca',
         termo_original: termo,
-        resultados_count: searchResults.length
+        resultados_count: snapshotCount
       });
     }, 2000); // 2s após parar de digitar (já tem 300ms do debounce)
 

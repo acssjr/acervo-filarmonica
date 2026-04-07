@@ -307,9 +307,14 @@ export const API = {
     }
   },
 
-  logout() {
-    this.endTrackingSession();
-    this.clearAuth();
+  async logout() {
+    try {
+      await this.endTrackingSession();
+    } catch (error) {
+      console.error('Erro ao encerrar sessao de tracking:', error);
+    } finally {
+      this.clearAuth();
+    }
   },
 
   // ============ HEALTH CHECK ============

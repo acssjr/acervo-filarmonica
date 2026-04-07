@@ -46,6 +46,11 @@ const MobileSearchOverlay = () => {
   const lastTypedTrackedRef = useRef('');
   const debouncedQuery = useDebounce(query, 300);
 
+  const resetTrackingRefs = useCallback(() => {
+    lastTrackedRef.current = '';
+    lastTypedTrackedRef.current = '';
+  }, []);
+
   // Scroll lock (iOS Safari safe)
   useScrollLock(mobileSearchOpen);
 
@@ -62,6 +67,7 @@ const MobileSearchOverlay = () => {
     if (!container || !card) return;
 
     if (mobileSearchOpen) {
+      resetTrackingRefs();
       setQuery('');
       heightRef.current = null;
 
@@ -84,6 +90,7 @@ const MobileSearchOverlay = () => {
         }
       );
     } else {
+      resetTrackingRefs();
       // Sair: mais rápido que entrar (UX padrão)
       gsap.to(container, {
         autoAlpha: 0, duration: 0.22, ease: 'power2.in',
@@ -94,7 +101,7 @@ const MobileSearchOverlay = () => {
         duration: 0.2, ease: 'power2.in',
       });
     }
-  }, [mobileSearchOpen]);
+  }, [mobileSearchOpen, resetTrackingRefs]);
 
   // ── Transição suave de altura quando conteúdo muda ───────────────────
   // useLayoutEffect garante que o estado anterior é travado ANTES do browser pintar
@@ -203,26 +210,30 @@ const MobileSearchOverlay = () => {
 
   // ── Tracking ─────────────────────────────────────────────────────────
   useEffect(() => {
-    if (!query.trim()) {
-      lastTypedTrackedRef.current = '';
+    const currentQuery = query.trim();
+    if (!currentQuery) {
+      resetTrackingRefs();
       return;
     }
 
+    const termo = debouncedQuery.trim();
+    if (!termo || termo !== currentQuery) return;
+    const resultadosCount = searchResultsCount;
+
     const timer = setTimeout(() => {
-      const termo = query.trim();
-      if (!termo || lastTypedTrackedRef.current === termo) return;
+      if (lastTypedTrackedRef.current === termo) return;
       lastTypedTrackedRef.current = termo;
 
       API.trackEvent({
         tipo: 'busca_digitada',
         origem: 'busca_mobile',
         termo_original: termo,
-        resultados_count: searchResultsCount
+        resultados_count: resultadosCount
       });
     }, 350);
 
     return () => clearTimeout(timer);
-  }, [query, searchResultsCount]);
+  }, [query, debouncedQuery, searchResultsCount, resetTrackingRefs]);
 
   useEffect(() => {
     if (!debouncedQuery || debouncedQuery.trim().length < 3) return;
@@ -243,9 +254,10 @@ const MobileSearchOverlay = () => {
 
   // ── Handlers ─────────────────────────────────────────────────────────
   const handleClose = useCallback(() => {
+    resetTrackingRefs();
     setMobileSearchOpen(false);
     setQuery('');
-  }, [setMobileSearchOpen]);
+  }, [resetTrackingRefs, setMobileSearchOpen]);
 
   const handleSelectSheet = useCallback((sheet) => {
     const categoryId = typeof sheet.category === 'string'

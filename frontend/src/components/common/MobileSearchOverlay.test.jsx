@@ -1,16 +1,18 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, jest, test } from '@jest/globals';
 
 const mockNavigate = jest.fn();
 const mockSetMobileSearchOpen = jest.fn();
 const mockSetActiveTab = jest.fn();
 const mockSetGlobalSearch = jest.fn();
+const mockTrackSearch = jest.fn(() => Promise.resolve());
 const mockTrackEvent = jest.fn();
 
 let mockMobileSearchOpen = true;
 let mockTheme = 'dark';
 let mockSheets = [];
 let mockCategoriesMap = new Map();
+let mockDebouncedValue;
 
 jest.unstable_mockModule('react-router-dom', () => ({
   useNavigate: () => mockNavigate
@@ -38,12 +40,12 @@ jest.unstable_mockModule('@hooks/useScrollLock', () => ({
 }));
 
 jest.unstable_mockModule('@hooks/useDebounce', () => ({
-  default: (value) => value
+  default: (value) => (mockDebouncedValue === undefined ? value : mockDebouncedValue)
 }));
 
 jest.unstable_mockModule('@services/api', () => ({
   API: {
-    trackSearch: jest.fn(() => Promise.resolve()),
+    trackSearch: mockTrackSearch,
     trackEvent: mockTrackEvent
   }
 }));
@@ -90,10 +92,12 @@ describe('MobileSearchOverlay', () => {
     mockSetMobileSearchOpen.mockClear();
     mockSetActiveTab.mockClear();
     mockSetGlobalSearch.mockClear();
+    mockTrackSearch.mockClear();
     mockTrackEvent.mockClear();
 
     mockMobileSearchOpen = true;
     mockTheme = 'dark';
+    mockDebouncedValue = undefined;
     mockCategoriesMap = new Map([
       ['dobrados', { id: 'dobrados', name: 'Dobrados' }]
     ]);
@@ -154,12 +158,93 @@ describe('MobileSearchOverlay', () => {
       screen.getByPlaceholderText('Buscar partituras, compositores...'),
       { target: { value: 'Azul' } }
     );
-    jest.advanceTimersByTime(350);
+    act(() => {
+      jest.advanceTimersByTime(350);
+    });
 
     expect(mockTrackEvent).toHaveBeenCalledWith(expect.objectContaining({
       tipo: 'busca_digitada',
       resultados_count: 9
     }));
+
+    jest.useRealTimers();
+  });
+
+  test('nao registra busca digitada ate o debounce corresponder ao termo atual', () => {
+    jest.useFakeTimers();
+    mockDebouncedValue = 'Azul';
+    mockSheets = [
+      {
+        id: '1',
+        title: 'Azul da Cor do Mar',
+        composer: 'Tim Maia',
+        category: 'dobrados',
+        featured: false
+      },
+      {
+        id: '2',
+        title: 'Marcha Um',
+        composer: 'Banda',
+        category: 'dobrados',
+        featured: false
+      },
+      {
+        id: '3',
+        title: 'Marcha Dois',
+        composer: 'Banda',
+        category: 'dobrados',
+        featured: false
+      }
+    ];
+
+    const { rerender } = render(<MobileSearchOverlay />);
+
+    fireEvent.change(
+      screen.getByPlaceholderText('Buscar partituras, compositores...'),
+      { target: { value: 'Marcha' } }
+    );
+    act(() => {
+      jest.advanceTimersByTime(350);
+    });
+
+    expect(mockTrackEvent).not.toHaveBeenCalledWith(expect.objectContaining({
+      tipo: 'busca_digitada',
+      termo_original: 'Marcha'
+    }));
+
+    mockDebouncedValue = 'Marcha';
+    rerender(<MobileSearchOverlay />);
+    act(() => {
+      jest.advanceTimersByTime(350);
+    });
+
+    expect(mockTrackEvent).toHaveBeenCalledWith(expect.objectContaining({
+      tipo: 'busca_digitada',
+      termo_original: 'Marcha',
+      resultados_count: 2
+    }));
+
+    jest.useRealTimers();
+  });
+
+  test('reseta dedupe de busca realizada quando a busca e limpa', () => {
+    jest.useFakeTimers();
+
+    render(<MobileSearchOverlay />);
+
+    const input = screen.getByPlaceholderText('Buscar partituras, compositores...');
+    fireEvent.change(input, { target: { value: 'Azul' } });
+    act(() => {
+      jest.advanceTimersByTime(2000);
+    });
+
+    fireEvent.change(input, { target: { value: '' } });
+    fireEvent.change(input, { target: { value: 'Azul' } });
+    act(() => {
+      jest.advanceTimersByTime(2000);
+    });
+
+    expect(mockTrackSearch).toHaveBeenCalledTimes(2);
 
     jest.useRealTimers();
   });

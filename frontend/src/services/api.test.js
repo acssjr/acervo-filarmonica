@@ -590,12 +590,41 @@ describe('API Service', () => {
   // ============ LOGOUT ============
 
   describe('logout()', () => {
-    it('limpa dados de autenticacao', () => {
-      API.logout();
+    it('limpa dados de autenticacao', async () => {
+      await API.logout();
 
       expect(mockStorage.remove).toHaveBeenCalledWith('authToken');
       expect(mockStorage.remove).toHaveBeenCalledWith('tokenExpiresAt');
       expect(mockStorage.remove).toHaveBeenCalledWith('user');
+    });
+
+    it('aguarda encerrar sessao antes de limpar dados de autenticacao', async () => {
+      let resolveFetch;
+      mockStorage.get.mockImplementation((key) => {
+        if (key === 'authToken') return 'fake-token';
+        if (key === 'trackingSessionId') return 'sess_1_test';
+        return null;
+      });
+      global.fetch = jest.fn(() => new Promise((resolve) => {
+        resolveFetch = resolve;
+      }));
+
+      const logoutPromise = API.logout();
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/tracking/session/end'),
+        expect.anything()
+      );
+      expect(mockStorage.remove).not.toHaveBeenCalledWith('authToken');
+
+      resolveFetch({
+        ok: true,
+        json: async () => ({ success: true })
+      });
+      await logoutPromise;
+
+      expect(mockStorage.remove).toHaveBeenCalledWith('authToken');
+      expect(mockStorage.remove).toHaveBeenCalledWith('trackingSessionId');
     });
   });
 
