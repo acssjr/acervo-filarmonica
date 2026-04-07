@@ -62,12 +62,15 @@ const AdminConfig = () => {
     );
   };
 
-  const handleLogout = () => {
-    API.logout();
-    Storage.remove('user');
-    clearNotifications();
-    setUser(null);
-    window.location.reload();
+  const handleLogout = async () => {
+    try {
+      await API.logout();
+    } finally {
+      Storage.remove('user');
+      clearNotifications();
+      setUser(null);
+      window.location.reload();
+    }
   };
 
   const handlePhotoUpload = async (e) => {
