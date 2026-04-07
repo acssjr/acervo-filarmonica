@@ -5,6 +5,7 @@ const mockNavigate = jest.fn();
 const mockSetMobileSearchOpen = jest.fn();
 const mockSetActiveTab = jest.fn();
 const mockSetGlobalSearch = jest.fn();
+const mockTrackEvent = jest.fn();
 
 let mockMobileSearchOpen = true;
 let mockTheme = 'dark';
@@ -42,7 +43,8 @@ jest.unstable_mockModule('@hooks/useDebounce', () => ({
 
 jest.unstable_mockModule('@services/api', () => ({
   API: {
-    trackSearch: jest.fn(() => Promise.resolve())
+    trackSearch: jest.fn(() => Promise.resolve()),
+    trackEvent: mockTrackEvent
   }
 }));
 
@@ -88,6 +90,7 @@ describe('MobileSearchOverlay', () => {
     mockSetMobileSearchOpen.mockClear();
     mockSetActiveTab.mockClear();
     mockSetGlobalSearch.mockClear();
+    mockTrackEvent.mockClear();
 
     mockMobileSearchOpen = true;
     mockTheme = 'dark';
@@ -133,5 +136,31 @@ describe('MobileSearchOverlay', () => {
     expect(mockSetActiveTab).toHaveBeenCalledWith('library');
     expect(mockNavigate).toHaveBeenCalledWith('/acervo/dobrados/123');
     expect(mockNavigate).not.toHaveBeenCalledWith('/acervo/[object Object]/123');
+  });
+
+  test('envia total bruto de resultados no tracking mesmo renderizando só oito itens', () => {
+    jest.useFakeTimers();
+    mockSheets = Array.from({ length: 9 }, (_, index) => ({
+      id: String(index + 1),
+      title: `Azul da Cor do Mar ${index + 1}`,
+      composer: 'Tim Maia',
+      category: 'dobrados',
+      featured: false
+    }));
+
+    render(<MobileSearchOverlay />);
+
+    fireEvent.change(
+      screen.getByPlaceholderText('Buscar partituras, compositores...'),
+      { target: { value: 'Azul' } }
+    );
+    jest.advanceTimersByTime(350);
+
+    expect(mockTrackEvent).toHaveBeenCalledWith(expect.objectContaining({
+      tipo: 'busca_digitada',
+      resultados_count: 9
+    }));
+
+    jest.useRealTimers();
   });
 });

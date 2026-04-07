@@ -1,7 +1,7 @@
 // ===== ADMIN ANALYTICS =====
 // Dashboard organizado por perguntas administrativas.
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { API } from '@services/api';
 import { useMediaQuery } from '@hooks/useMediaQuery';
 import { getAtividadeInfo, formatTimeAgo } from '@utils/formatters';
@@ -30,10 +30,13 @@ const COLORS = {
   orange: '#E67E22',
 };
 
+const formatLocalDate = (date) =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+
 const now = new Date();
 const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
 const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-const monthEnd = nextMonth.toISOString().slice(0, 10);
+const monthEnd = formatLocalDate(nextMonth);
 
 const tabs = [
   { id: 'acervo', icon: Music, label: 'Uso do acervo' },
@@ -56,6 +59,7 @@ const AdminAnalytics = () => {
   const [selectedUserId, setSelectedUserId] = useState('');
   const [selectedAdminId, setSelectedAdminId] = useState('');
   const [loadingMore, setLoadingMore] = useState(false);
+  const analyticsRequestIdRef = useRef(0);
 
   const buildQuery = useCallback((extra = {}) => {
     const params = new URLSearchParams({
@@ -71,16 +75,23 @@ const AdminAnalytics = () => {
   }, [periodStart, periodEnd, selectedUserId, selectedAdminId]);
 
   const loadAnalytics = useCallback(async () => {
+    const requestId = analyticsRequestIdRef.current + 1;
+    analyticsRequestIdRef.current = requestId;
+
     try {
       setLoading(true);
       setError(null);
       const result = await API.getAnalyticsDashboard(buildQuery());
+      if (analyticsRequestIdRef.current !== requestId) return;
       setData(result);
     } catch (err) {
+      if (analyticsRequestIdRef.current !== requestId) return;
       console.error('Erro analytics:', err);
       setError(err.message || 'Erro ao carregar analytics');
     } finally {
-      setLoading(false);
+      if (analyticsRequestIdRef.current === requestId) {
+        setLoading(false);
+      }
     }
   }, [buildQuery]);
 
@@ -397,7 +408,7 @@ const KpiCard = ({ icon: Icon, label, value, color }) => (
 );
 
 const Panel = ({ title, icon, children, wide }) => (
-  <section style={{ gridColumn: wide ? '1 / -1' : 'span 2', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '8px', padding: '20px', minWidth: 0 }}>
+  <section style={{ gridColumn: wide ? '1 / -1' : undefined, background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '8px', padding: '20px', minWidth: 0 }}>
     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
       {icon}
       <h2 style={{ color: 'var(--text-primary)', fontSize: '18px', margin: 0 }}>{title}</h2>

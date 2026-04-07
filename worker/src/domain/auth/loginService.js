@@ -11,6 +11,7 @@ import {
   getJwtSecret
 } from '../../infrastructure/index.js';
 import { registrarAtividade } from '../atividades/atividadeService.js';
+import { startTrackingSession } from '../analytics/sessionService.js';
 import { JWT_EXPIRY_HOURS, JWT_EXPIRY_HOURS_REMEMBER } from '../../config/index.js';
 import { createPostHogClient, shutdownPostHog } from '../../infrastructure/posthog/posthogClient.js';
 
@@ -133,6 +134,7 @@ export async function login(request, env) {
 
   // Log atividade
   await registrarAtividade(env, 'login', 'Login realizado', ip, user.id);
+  const trackingSessionId = await startTrackingSession(env, user);
 
   // Buscar nome do instrumento
   let instrumentoNome = null;
@@ -199,6 +201,7 @@ export async function login(request, env) {
       foto_url: user.foto_url,
     },
     token,
+    tracking_session_id: trackingSessionId,
     expiresIn: expiryHours * 60 * 60
   }, 200, request);
 }

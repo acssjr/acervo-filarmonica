@@ -52,15 +52,19 @@ export async function touchTrackingSession(env, sessionId) {
   `).bind(sessionId).run();
 }
 
-export async function endTrackingSession(env, sessionId, reason = 'logout') {
+export async function endTrackingSession(env, sessionId, reason = 'logout', userId = null) {
   if (!sessionId) {
     return;
   }
 
-  await env.DB.prepare(`
+  const userFilter = userId !== null && userId !== undefined ? 'AND usuario_id = ?' : '';
+  const statement = env.DB.prepare(`
     UPDATE tracking_sessions
     SET fim_em = CURRENT_TIMESTAMP,
         fim_motivo = ?
     WHERE id = ? AND fim_em IS NULL
-  `).bind(reason, sessionId).run();
+      ${userFilter}
+  `);
+  const params = userFilter ? [reason, sessionId, userId] : [reason, sessionId];
+  await statement.bind(...params).run();
 }

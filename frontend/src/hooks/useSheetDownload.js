@@ -52,6 +52,33 @@ const normalizeInstrumento = (nome) => {
     .trim();
 };
 
+const GRADE_INSTRUMENT_ALIASES = new Set([
+  'grade',
+  'score',
+  'conductor',
+  'full score',
+  'partitura',
+  'maestro',
+  'regente'
+]);
+
+const isGradeInstrument = (instrumento) => {
+  if (typeof instrumento !== 'string') return false;
+  return GRADE_INSTRUMENT_ALIASES.has(normalizeInstrumento(instrumento));
+};
+
+export const getParteTrackingEventType = (parteOrAction, actionOrInstrumento = 'download') => {
+  const action = typeof parteOrAction === 'string' ? parteOrAction : actionOrInstrumento;
+  const instrumento = typeof parteOrAction === 'string'
+    ? actionOrInstrumento
+    : parteOrAction?.instrumento;
+  const isGrade = isGradeInstrument(instrumento);
+  if (action === 'view') {
+    return isGrade ? 'pdf_visualizado_grade' : 'pdf_visualizado_parte';
+  }
+  return isGrade ? 'download_grade' : 'download_parte';
+};
+
 /**
  * Extrai tonalidade de um nome de instrumento normalizado
  * Ex: "trompa f" -> "f", "trompete bb 1" -> "bb", "clarinete" -> null
@@ -152,7 +179,7 @@ export const useSheetDownload = ({ showToast, selectedSheet, partes = [] }) => {
         const pdfBlob = new Blob([blob], { type: 'application/pdf' });
 
         API.trackEvent({
-          tipo: 'download_parte',
+          tipo: getParteTrackingEventType(parte),
           origem: 'detalhe_partitura',
           partitura_id: selectedSheet.id,
           parte_id: parte.id,
@@ -360,7 +387,7 @@ export const useSheetDownload = ({ showToast, selectedSheet, partes = [] }) => {
         const blobUrl = URL.createObjectURL(blob);
 
         API.trackEvent({
-          tipo: parte.instrumento?.toLowerCase() === 'grade' ? 'pdf_visualizado_grade' : 'pdf_visualizado_parte',
+          tipo: getParteTrackingEventType(parte, 'view'),
           origem: 'detalhe_partitura',
           partitura_id: selectedSheet.id,
           parte_id: parte.id,

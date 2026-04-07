@@ -71,7 +71,9 @@ export const getAtividadeInfo = (tipo, short = false) => {
     'busca_digitada': { action: 'Busca digitada', color: '#9B59D0' },
     'busca_realizada': { action: 'Busca realizada', color: '#9B59D0' },
     'favorito_adicionado': { action: 'Favorito adicionado', color: '#E54D87' },
-    'favorito_removido': { action: 'Favorito removido', color: '#E54D87' }
+    'favorito_removido': { action: 'Favorito removido', color: '#E54D87' },
+    'sessao_iniciada': { action: 'Sessao iniciada', color: '#95a5a6' },
+    'sessao_encerrada': { action: 'Sessao encerrada', color: '#95a5a6' }
   };
 
   const mapShort = {
@@ -95,7 +97,9 @@ export const getAtividadeInfo = (tipo, short = false) => {
     'busca_digitada': { action: 'Busca digitada', color: '#9B59D0' },
     'busca_realizada': { action: 'Busca realizada', color: '#9B59D0' },
     'favorito_adicionado': { action: 'Favorito adicionado', color: '#E54D87' },
-    'favorito_removido': { action: 'Favorito removido', color: '#E54D87' }
+    'favorito_removido': { action: 'Favorito removido', color: '#E54D87' },
+    'sessao_iniciada': { action: 'Sessao iniciada', color: '#95a5a6' },
+    'sessao_encerrada': { action: 'Sessao encerrada', color: '#95a5a6' }
   };
 
   const map = short ? mapShort : mapLong;

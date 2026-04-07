@@ -103,6 +103,18 @@ export const mockUsuarios = [
 // ===== HANDLERS =====
 // Handlers para URLs relativas (localhost/testes) e absolutas (producao)
 export const handlers = [
+  ...createHandler('post', '/api/tracking/events', () => {
+    return HttpResponse.json({ success: true, session_id: 'sess_1_mock' });
+  }),
+
+  ...createHandler('post', '/api/tracking/search', () => {
+    return HttpResponse.json({ success: true });
+  }),
+
+  ...createHandler('post', '/api/tracking/session/end', () => {
+    return HttpResponse.json({ success: true });
+  }),
+
   // ----- HEALTH CHECK (URLs relativas primeiro) -----
   http.get('/api/health', () => {
     return HttpResponse.json({ status: 'ok', timestamp: Date.now() });

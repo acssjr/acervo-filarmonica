@@ -192,7 +192,10 @@ const SearchScreen = () => {
 
   const lastTypedTrackedRef = useRef('');
   useEffect(() => {
-    if (!searchQuery.trim()) return;
+    if (!searchQuery.trim()) {
+      lastTypedTrackedRef.current = '';
+      return;
+    }
 
     const timer = setTimeout(() => {
       const termo = searchQuery.trim();

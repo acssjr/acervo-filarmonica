@@ -104,6 +104,28 @@ describe('Rotas Públicas', () => {
       expect([200, 401]).toContain(response.status);
     });
 
+    it('retorna sessao de tracking no login valido', async () => {
+      const response = await SELF.fetch('https://test.local/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: 'musico', pin: '1234' }),
+      });
+
+      expect(response.status).toBe(200);
+      const data = await response.json() as { success: boolean; tracking_session_id: string };
+      expect(data.success).toBe(true);
+      expect(data.tracking_session_id).toMatch(/^sess_2_/);
+
+      const session = await env.DB.prepare(`
+        SELECT usuario_id, fim_em
+        FROM tracking_sessions
+        WHERE id = ?
+      `).bind(data.tracking_session_id).first() as { usuario_id: number; fim_em: string | null } | null;
+
+      expect(session?.usuario_id).toBe(2);
+      expect(session?.fim_em).toBeNull();
+    });
+
     it('rejeita GET', async () => {
       const response = await SELF.fetch('https://test.local/api/login');
       expect(response.status).toBe(404);
@@ -171,22 +193,120 @@ describe('Rotas Autenticadas', () => {
       });
 
       expect(response.status).toBe(200);
-      const body = await response.json() as { success: boolean };
+      const body = await response.json() as { success: boolean; session_id: string };
       expect(body.success).toBe(true);
+      expect(body.session_id).toMatch(/^sess_2_/);
 
       const evento = await env.DB.prepare(`
-        SELECT tipo, origem, usuario_id, partitura_id
+        SELECT tipo, origem, usuario_id, partitura_id, session_id
         FROM tracking_events
         WHERE tipo = 'partitura_aberta'
         ORDER BY id DESC
         LIMIT 1
-      `).first() as { tipo: string; origem: string; usuario_id: number; partitura_id: number } | null;
+      `).first() as { tipo: string; origem: string; usuario_id: number; partitura_id: number; session_id: string } | null;
 
       expect(evento).not.toBeNull();
       expect(evento?.origem).toBe('acervo');
       expect(evento?.usuario_id).toBe(2);
       expect(evento?.partitura_id).toBe(partituraId);
+      expect(evento?.session_id).toBe(body.session_id);
     });
+
+    it('encerra sessao de tracking autenticada', async () => {
+      const eventResponse = await SELF.fetch('https://test.local/api/tracking/events', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${userToken}`,
+        },
+        body: JSON.stringify({ tipo: 'busca_realizada', termo_original: 'dobrado', resultados_count: 1 }),
+      });
+      const eventBody = await eventResponse.json() as { session_id: string };
+
+      const response = await SELF.fetch('https://test.local/api/tracking/session/end', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${userToken}`,
+          'X-Tracking-Session': eventBody.session_id,
+        },
+        body: JSON.stringify({ session_id: eventBody.session_id }),
+      });
+
+      expect(response.status).toBe(200);
+      const session = await env.DB.prepare(`
+        SELECT fim_em, fim_motivo
+        FROM tracking_sessions
+        WHERE id = ?
+      `).bind(eventBody.session_id).first() as { fim_em: string | null; fim_motivo: string | null } | null;
+
+      expect(session?.fim_em).not.toBeNull();
+      expect(session?.fim_motivo).toBe('logout');
+    });
+  });
+});
+
+describe('Download view analytics', () => {
+  let userToken: string;
+
+  beforeAll(async () => {
+    userToken = await createTestToken(2, false);
+  });
+
+  it('nao conta action=view de parte como download real', async () => {
+    const arquivoNome = 'view-parte-route-test.pdf';
+    await env.BUCKET.put(arquivoNome, new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2D]));
+    const partituraId = await env.DB.prepare(`
+      INSERT INTO partituras (titulo, compositor, categoria_id, arquivo_nome, arquivo_tamanho, downloads, destaque, ativo)
+      VALUES ('Teste View Parte', 'Mock', 1, ?, 5, 0, 0, 1) RETURNING id
+    `).bind(arquivoNome).first('id') as number;
+    const parteId = await env.DB.prepare(`
+      INSERT INTO partes (partitura_id, instrumento, arquivo_nome)
+      VALUES (?, 'Trompete Bb', ?) RETURNING id
+    `).bind(partituraId, arquivoNome).first('id') as number;
+
+    const response = await SELF.fetch(`https://test.local/api/download/parte/${parteId}?action=view`, {
+      headers: { Authorization: `Bearer ${userToken}` }
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('Content-Disposition')).toContain('inline');
+    await response.arrayBuffer();
+    const partitura = await env.DB.prepare('SELECT downloads FROM partituras WHERE id = ?')
+      .bind(partituraId)
+      .first() as { downloads: number };
+    const logs = await env.DB.prepare('SELECT COUNT(*) as total FROM logs_download WHERE partitura_id = ?')
+      .bind(partituraId)
+      .first() as { total: number };
+
+    expect(partitura.downloads).toBe(0);
+    expect(logs.total).toBe(0);
+  });
+
+  it('nao conta action=view de partitura completa como download real', async () => {
+    const arquivoNome = 'view-partitura-route-test.pdf';
+    await env.BUCKET.put(arquivoNome, new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2D]));
+    const partituraId = await env.DB.prepare(`
+      INSERT INTO partituras (titulo, compositor, categoria_id, arquivo_nome, arquivo_tamanho, downloads, destaque, ativo)
+      VALUES ('Teste View Partitura', 'Mock', 1, ?, 5, 0, 0, 1) RETURNING id
+    `).bind(arquivoNome).first('id') as number;
+
+    const response = await SELF.fetch(`https://test.local/api/download/${partituraId}?action=view`, {
+      headers: { Authorization: `Bearer ${userToken}` }
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('Content-Disposition')).toContain('inline');
+    await response.arrayBuffer();
+    const partitura = await env.DB.prepare('SELECT downloads FROM partituras WHERE id = ?')
+      .bind(partituraId)
+      .first() as { downloads: number };
+    const logs = await env.DB.prepare('SELECT COUNT(*) as total FROM logs_download WHERE partitura_id = ?')
+      .bind(partituraId)
+      .first() as { total: number };
+
+    expect(partitura.downloads).toBe(0);
+    expect(logs.total).toBe(0);
   });
 });
 
@@ -259,6 +379,74 @@ describe('Rotas Admin', () => {
       expect(data).toHaveProperty('atividade_recente');
       expect(data).toHaveProperty('instrumentos_dist');
       expect(data).toHaveProperty('presencas_familia');
+    });
+
+    it('conta busca sem resultado apenas para busca realizada', async () => {
+      await env.DB.prepare(`
+        INSERT INTO tracking_events (usuario_id, tipo, termo_original, termo_normalizado, resultados_count, criado_em)
+        VALUES
+          (2, 'busca_digitada', 'sem resultado digitado', 'sem resultado digitado', 0, '2099-01-10 10:00:00'),
+          (2, 'busca_realizada', 'sem resultado final', 'sem resultado final', 0, '2099-01-10 10:01:00')
+      `).run();
+
+      const response = await SELF.fetch('https://test.local/api/admin/analytics/dashboard?inicio=2099-01-01&fim=2099-02-01', {
+        headers: { Authorization: `Bearer ${adminToken}` },
+      });
+
+      expect(response.status).toBe(200);
+      const data = await response.json() as { uso_acervo: { resumo: { buscas_sem_resultado: number }; insights: Array<{ descricao: string }> } };
+      expect(data.uso_acervo.resumo.buscas_sem_resultado).toBe(1);
+      expect(data.uso_acervo.insights.map((item) => item.descricao).join(' ')).toContain('sem resultado final');
+      expect(data.uso_acervo.insights.map((item) => item.descricao).join(' ')).not.toContain('sem resultado digitado');
+    });
+
+    it('considera ensaios apenas com presenca de musico elegivel', async () => {
+      await env.DB.prepare(`
+        INSERT OR REPLACE INTO instrumentos (id, nome, familia, ordem) VALUES
+          ('test_metal_analytics', 'Trompete Analytics', 'Metais', 900),
+          ('test_outro_analytics', 'Diretoria Analytics', 'Diretoria', 901)
+      `).run();
+      await env.DB.prepare(`
+        INSERT OR REPLACE INTO usuarios (id, username, nome, pin_hash, admin, ativo, instrumento_id) VALUES
+          (130, 'musico.analytics', 'Musico Analytics', '1234', 0, 1, 'test_metal_analytics'),
+          (131, 'admin.analytics', 'Admin Analytics', '1234', 1, 1, 'test_metal_analytics'),
+          (132, 'inativo.analytics', 'Inativo Analytics', '1234', 0, 0, 'test_metal_analytics'),
+          (133, 'social.analytics', 'Social Analytics', '1234', 0, 1, 'test_outro_analytics')
+      `).run();
+      await env.DB.prepare(`
+        INSERT OR IGNORE INTO presencas (usuario_id, data_ensaio, criado_por) VALUES
+          (130, '2099-03-01', 1),
+          (131, '2099-03-02', 1),
+          (132, '2099-03-03', 1),
+          (133, '2099-03-04', 1)
+      `).run();
+
+      const response = await SELF.fetch('https://test.local/api/admin/analytics/dashboard?inicio=2099-03-01&fim=2099-04-01', {
+        headers: { Authorization: `Bearer ${adminToken}` },
+      });
+
+      expect(response.status).toBe(200);
+      const data = await response.json() as { ensaios: { resumo: { ensaios_registrados: number } } };
+      expect(data.ensaios.resumo.ensaios_registrados).toBe(1);
+    });
+
+    it('mostra apenas atividades administrativas na aba alteracoes', async () => {
+      await env.DB.prepare(`
+        INSERT INTO atividades (tipo, titulo, detalhes, usuario_id, criado_em)
+        VALUES
+          ('download', 'Download comum', 'Trompete', 2, '2099-04-10 10:00:00'),
+          ('visualizacao', 'Visualizacao comum', 'Trompete', 2, '2099-04-10 10:01:00'),
+          ('update_partitura', 'Alteracao auditavel', 'Titulo atualizado', 1, '2099-04-10 10:02:00')
+      `).run();
+
+      const response = await SELF.fetch('https://test.local/api/admin/analytics/dashboard?inicio=2099-04-01&fim=2099-05-01', {
+        headers: { Authorization: `Bearer ${adminToken}` },
+      });
+
+      expect(response.status).toBe(200);
+      const data = await response.json() as { alteracoes: { total: number; atividades: Array<{ tipo: string }> } };
+      expect(data.alteracoes.total).toBe(1);
+      expect(data.alteracoes.atividades.map((item) => item.tipo)).toEqual(['update_partitura']);
     });
   });
 });
@@ -618,6 +806,60 @@ describe('CRUD de Partituras - Update', () => {
       }),
     });
     expect(response.status).toBe(400);
+  });
+
+  it('preserva compositor existente quando o campo nao e enviado', async () => {
+    const partituraId = await env.DB.prepare(`
+      INSERT INTO partituras (titulo, compositor, arranjador, categoria_id, arquivo_nome, arquivo_tamanho, destaque, ativo)
+      VALUES ('Partitura Preserva Compositor', 'Compositor Preservado', NULL, 1, 'preserva.pdf', 100, 0, 1) RETURNING id
+    `).first('id') as number;
+
+    const response = await SELF.fetch(`https://test.local/api/partituras/${partituraId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${adminToken}`,
+      },
+      body: JSON.stringify({
+        titulo: 'Partitura Preserva Compositor Atualizada',
+        categoria_id: 1,
+        destaque: 0,
+      }),
+    });
+
+    expect(response.status).toBe(200);
+    const check = await env.DB.prepare('SELECT compositor FROM partituras WHERE id = ?')
+      .bind(partituraId)
+      .first() as { compositor: string };
+    expect(check.compositor).toBe('Compositor Preservado');
+  });
+
+  it('rejeita titulo duplicado ao atualizar partitura', async () => {
+    const originalId = await env.DB.prepare(`
+      INSERT INTO partituras (titulo, compositor, categoria_id, arquivo_nome, arquivo_tamanho, destaque, ativo)
+      VALUES ('Titulo Duplicado Analytics', 'Compositor A', 1, 'duplicada-a.pdf', 100, 0, 1) RETURNING id
+    `).first('id') as number;
+    const alvoId = await env.DB.prepare(`
+      INSERT INTO partituras (titulo, compositor, categoria_id, arquivo_nome, arquivo_tamanho, destaque, ativo)
+      VALUES ('Titulo Temporario Analytics', 'Compositor B', 1, 'duplicada-b.pdf', 100, 0, 1) RETURNING id
+    `).first('id') as number;
+
+    const response = await SELF.fetch(`https://test.local/api/partituras/${alvoId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${adminToken}`,
+      },
+      body: JSON.stringify({
+        titulo: 'Titulo Duplicado Analytics',
+        compositor: 'Compositor B',
+        categoria_id: 1,
+        destaque: 0,
+      }),
+    });
+
+    expect(originalId).toBeGreaterThan(0);
+    expect(response.status).toBe(409);
   });
 
   it('rejeita update sem categoria', async () => {

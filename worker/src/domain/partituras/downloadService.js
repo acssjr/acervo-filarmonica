@@ -14,7 +14,7 @@ export async function downloadPartitura(id, request, env, user) {
     const action = url.searchParams.get('action');
     const userIsAdmin = user?.admin === 1 || user?._isAdmin === true;
     const isAdmin = action === 'admin' && userIsAdmin;
-    const isView = action === 'view' && request.headers.get('X-Requested-With') === 'XMLHttpRequest';
+    const isView = action === 'view';
 
     const partitura = await env.DB.prepare(
       'SELECT * FROM partituras WHERE id = ? AND ativo = 1'
@@ -52,20 +52,25 @@ export async function downloadPartitura(id, request, env, user) {
       }
     }
 
-    // PostHog: capture partitura download event
-    const posthog = createPostHogClient(env);
-    if (posthog && !isAdmin) {
-      posthog.capture({
-        distinctId: `user_${user.id}`,
-        event: 'partitura_downloaded',
-        properties: {
-          partitura_id: id,
-          partitura_titulo: partitura.titulo,
-          compositor: partitura.compositor,
-          is_view: isView,
-        },
-      });
-      await shutdownPostHog(posthog);
+    if (!isAdmin) {
+      try {
+        const posthog = createPostHogClient(env);
+        if (posthog) {
+          posthog.capture({
+            distinctId: `user_${user.id}`,
+            event: 'partitura_downloaded',
+            properties: {
+              partitura_id: id,
+              partitura_titulo: partitura.titulo,
+              compositor: partitura.compositor,
+              is_view: isView,
+            },
+          });
+          await shutdownPostHog(posthog);
+        }
+      } catch (e) {
+        console.error('PostHog capture failed:', e);
+      }
     }
 
     const disposition = isView ? 'inline' : 'attachment';
@@ -111,7 +116,7 @@ export async function downloadParte(parteId, request, env, user) {
     const action = url.searchParams.get('action');
     const userIsAdmin = user?.admin === 1 || user?._isAdmin === true;
     const isAdmin = action === 'admin' && userIsAdmin;
-    const isView = action === 'view' && request.headers.get('X-Requested-With') === 'XMLHttpRequest';
+    const isView = action === 'view';
 
     // Admin preview: não conta nada (sem tracking, sem incremento)
     if (!isAdmin) {
@@ -171,7 +176,7 @@ export async function downloadParte(parteId, request, env, user) {
     // Usa Content-Disposition: inline quando requisicao eh AJAX (X-Requested-With)
     // Isso evita que gerenciadores de download (IDM, etc) interceptem a requisicao
     const isAjaxRequest = request.headers.get('X-Requested-With') === 'XMLHttpRequest';
-    const disposition = isAjaxRequest ? 'inline' : 'attachment';
+    const disposition = (isView || isAjaxRequest) ? 'inline' : 'attachment';
 
     return new Response(arquivo.body, {
       headers: {

@@ -3,10 +3,15 @@ import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, jest, beforeEach, beforeAll, afterAll } from '@jest/globals';
 
 // Mock do Storage ANTES de importar o hook (hoisted)
+const mockStorage = {
+    get: jest.fn(() => 'fake-jwt-token'),
+    set: jest.fn(),
+    remove: jest.fn()
+};
+
 jest.unstable_mockModule('@services/storage', () => ({
-    Storage: {
-        get: jest.fn(() => 'fake-jwt-token')
-    }
+    default: mockStorage,
+    Storage: mockStorage
 }));
 
 // Import dinâmico DEPOIS do mock para garantir que o mock seja aplicado

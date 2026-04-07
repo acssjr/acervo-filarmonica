@@ -1,6 +1,6 @@
 import { errorResponse, jsonResponse } from '../../infrastructure/index.js';
 import { maskSensitiveSearchTerm, normalizeSearchTerm } from './eventSanitizer.js';
-import { touchTrackingSession } from './sessionService.js';
+import { startTrackingSession, touchTrackingSession } from './sessionService.js';
 
 const ALLOWED_EVENT_TYPES = new Set([
   'partitura_aberta',
@@ -27,13 +27,17 @@ function isValidationError(error) {
   return error instanceof TrackingValidationError || error?.name === 'TrackingValidationError';
 }
 
+export function isTrackingValidationError(error) {
+  return isValidationError(error);
+}
+
 function assertTrackingUserId(user) {
   if (user?.id === null || user?.id === undefined || user?.id === '') {
     throw new TrackingValidationError('Usu\u00e1rio inv\u00e1lido para tracking');
   }
 }
 
-function normalizeTrackingSessionId(sessionId) {
+export function normalizeTrackingSessionId(sessionId) {
   if (typeof sessionId !== 'string') {
     return null;
   }
@@ -85,21 +89,39 @@ function coerceMetadata(inputMetadata) {
   }
 }
 
-async function assertSessionOwnership(env, user, sessionId) {
+async function resolveTrackingSession(env, user, sessionId) {
   if (!sessionId) {
-    return;
+    return startTrackingSession(env, user);
   }
 
   const session = await env.DB.prepare(`
     SELECT usuario_id
     FROM tracking_sessions
-    WHERE id = ? AND fim_em IS NULL
+    WHERE id = ?
+      AND fim_em IS NULL
+      AND ultimo_evento_em >= datetime('now', '-30 minutes')
     LIMIT 1
   `).bind(sessionId).first();
 
-  if (!session || session.usuario_id !== user.id) {
+  if (session) {
+    if (session.usuario_id !== user.id) {
+      throw new TrackingValidationError('Sess\u00e3o inv\u00e1lida ou n\u00e3o pertence ao usu\u00e1rio');
+    }
+    return sessionId;
+  }
+
+  const existingSession = await env.DB.prepare(`
+    SELECT usuario_id
+    FROM tracking_sessions
+    WHERE id = ?
+    LIMIT 1
+  `).bind(sessionId).first();
+
+  if (existingSession && existingSession.usuario_id !== user.id) {
     throw new TrackingValidationError('Sess\u00e3o inv\u00e1lida ou n\u00e3o pertence ao usu\u00e1rio');
   }
+
+  return startTrackingSession(env, user);
 }
 
 export function buildTrackingEventPayload(input) {
@@ -134,10 +156,9 @@ export function buildTrackingEventPayload(input) {
 
 export async function registrarTrackingEvent(env, user, sessionId, input) {
   assertTrackingUserId(user);
-  const normalizedSessionId = normalizeTrackingSessionId(sessionId);
-  await assertSessionOwnership(env, user, normalizedSessionId);
-
   const payload = buildTrackingEventPayload(input);
+  const normalizedSessionId = normalizeTrackingSessionId(sessionId);
+  const resolvedSessionId = await resolveTrackingSession(env, user, normalizedSessionId);
 
   await env.DB.prepare(`
     INSERT INTO tracking_events (
@@ -154,7 +175,7 @@ export async function registrarTrackingEvent(env, user, sessionId, input) {
       metadata_json
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).bind(
-    normalizedSessionId,
+    resolvedSessionId,
     user.id,
     payload.tipo,
     payload.origem,
@@ -168,10 +189,12 @@ export async function registrarTrackingEvent(env, user, sessionId, input) {
   ).run();
 
   try {
-    await touchTrackingSession(env, normalizedSessionId);
+    await touchTrackingSession(env, resolvedSessionId);
   } catch (error) {
     console.error('Erro ao atualizar sessao de tracking:', error);
   }
+
+  return { session_id: resolvedSessionId };
 }
 
 export async function handleTrackingEvent(request, env, user) {
@@ -187,9 +210,9 @@ export async function handleTrackingEvent(request, env, user) {
     const bodySessionId = normalizeTrackingSessionId(body?.session_id);
     const sessionId = headerSessionId || bodySessionId;
 
-    await registrarTrackingEvent(env, user, sessionId, body);
+    const result = await registrarTrackingEvent(env, user, sessionId, body);
 
-    return jsonResponse({ success: true }, 200, request);
+    return jsonResponse({ success: true, session_id: result.session_id }, 200, request);
   } catch (error) {
     if (isValidationError(error)) {
       return errorResponse(error.message, 400, request);

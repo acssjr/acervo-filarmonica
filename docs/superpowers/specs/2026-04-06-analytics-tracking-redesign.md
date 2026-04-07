@@ -1,25 +1,25 @@
-# Analytics and Tracking Redesign
+# Redesign de Analytics e Tracking
 
-Date: 2026-04-06
+Data: 2026-04-06
 
-## Goal
+## Objetivo
 
-Redesign the admin analytics experience so an administrator who did not design the screen can quickly understand what each area answers. The dashboard should prioritize real usage of the sheet music archive, while keeping rehearsal metrics separate and making admin changes auditable.
+Redesenhar a área de analytics do admin para responder perguntas práticas sobre o uso do acervo, sem misturar downloads, visualizações, buscas, presença em ensaios e alterações administrativas.
 
-The main navigation will be organized by administrator questions:
+A navegação principal fica organizada em quatro abas:
 
-- **Uso do acervo**: what is being opened, viewed, downloaded, and searched.
-- **Pessoas**: who is using the archive and what journey each person followed.
-- **Ensaios**: monthly attendance, streaks, and rehearsal participation.
-- **Alterações**: what admins changed in the archive, parts, and repertoire.
+- **Uso do acervo**: o que está sendo aberto, visualizado, baixado e buscado.
+- **Pessoas**: quem usa o acervo e qual sequência de ações cada pessoa realizou.
+- **Ensaios**: presença mensal, streaks e participação por naipe.
+- **Alterações**: mudanças administrativas no acervo, partes e repertórios.
 
-Frontend changes must follow the existing brand language: dark UI, gold as the main accent, simple cards, restrained borders, clear hierarchy, and direct product copy. Visible user-facing text touched by this work should have correct Portuguese accents.
+Textos visíveis para o usuário devem ficar em PT-BR com acentuação correta. Nomes técnicos de eventos podem permanecer em inglês quando forem chaves internas.
 
-## Tracking Model
+## Modelo de Tracking
 
-D1 will be the source of truth for the admin dashboard. PostHog must not be required for this feature, since it is not considered reliable in the current project and the admin dashboard needs direct joins with users, partituras, partes, repertórios, and presenças.
+O D1 é a fonte de verdade para o dashboard admin. PostHog pode continuar existindo como integração auxiliar, mas não deve ser dependência para métricas administrativas.
 
-Add two tracking tables:
+Tabelas adicionadas:
 
 - `tracking_sessions`
   - `id`
@@ -27,8 +27,7 @@ Add two tracking tables:
   - `inicio_em`
   - `fim_em`
   - `fim_motivo`
-  - Session starts at login or at the first authenticated action if an existing token is already valid.
-  - Session ends on explicit logout or after 30 minutes without tracked activity.
+  - `ultimo_evento_em`
 
 - `tracking_events`
   - `id`
@@ -37,197 +36,111 @@ Add two tracking tables:
   - `tipo`
   - `origem`
   - `criado_em`
-  - Optional entity references: `partitura_id`, `parte_id`, `repertorio_id`
-  - Search fields when applicable: `termo_original`, `termo_normalizado`, `resultados_count`
-  - A small metadata JSON field only for data that materially improves analysis.
+  - `partitura_id`
+  - `parte_id`
+  - `repertorio_id`
+  - `termo_original`
+  - `termo_normalizado`
+  - `resultados_count`
+  - `metadata_json`
 
-Indexes should support dashboard queries without reading broad payloads:
+Regras de sessão:
 
-- `criado_em`
-- `usuario_id, criado_em`
-- `session_id`
-- `tipo, criado_em`
-- `partitura_id, criado_em`
-- `parte_id, criado_em`
+- Login válido inicia uma sessão de tracking e retorna `tracking_session_id`.
+- Evento autenticado sem sessão inicia uma nova sessão.
+- Sessão enviada pelo cliente só é reutilizada se pertencer ao usuário, estiver aberta e tiver atividade nos últimos 30 minutos.
+- Sessão desconhecida, encerrada ou expirada gera uma nova sessão para o mesmo usuário.
+- Logout explícito encerra a sessão informada.
 
-The default dashboard period is the current month. Every detailed query must use a period filter and pagination.
+## Eventos
 
-## Events
+Eventos iniciais rastreados:
 
-Track these initial events:
-
-- `partitura_aberta`: details modal or page opened successfully.
-- `pdf_visualizado_grade`: full score or grade viewed in the in-browser renderer.
-- `pdf_visualizado_parte`: specific part viewed in the in-browser renderer.
-- `download_grade`: full score or grade downloaded to the device.
-- `download_parte`: specific part downloaded to the device.
-- `busca_digitada`: search input changed, including the typed sequence.
-- `busca_realizada`: stable or submitted search with result count.
+- `partitura_aberta`
+- `pdf_visualizado_grade`
+- `pdf_visualizado_parte`
+- `download_grade`
+- `download_parte`
+- `busca_digitada`
+- `busca_realizada`
 - `favorito_adicionado`
 - `favorito_removido`
 - `sessao_iniciada`
 - `sessao_encerrada`
 
-Important rules:
+Regras importantes:
 
-- Viewing with the eye icon is not a download, even if the backend request uses a download-like route.
-- Repeated PDF views count as separate events.
-- Timeline events remain separate. If a user views and then downloads the same PDF, show both actions.
-- Search stores both original and normalized terms.
-- Search terms that look sensitive, such as PINs, email, phone, CPF-like values, or similar patterns, should be masked in the dashboard and preferably masked before persistence.
-- Downloads must include origin context when available: acervo, busca, favoritos, repertorio, carrinho_compartilhamento, detalhe_partitura, or another explicit source.
+- Visualizar pelo ícone de olho não conta como download.
+- Visualizações repetidas contam como eventos separados.
+- Download real só é contado quando o usuário baixa o arquivo para o dispositivo.
+- Buscas armazenam termo original e termo normalizado.
+- Termos sensíveis, como PIN, e-mail, telefone e CPF, devem ser mascarados antes de aparecer no dashboard.
+- A origem deve ser explícita quando disponível: `acervo`, `busca`, `favoritos`, `repertorio`, `carrinho_compartilhamento`, `detalhe_partitura` ou equivalente.
 
-Admin-facing labels should be human:
+## Uso do Acervo
 
-- `Abriu partitura`
-- `Visualizou grade`
-- `Visualizou parte`
-- `Baixou grade`
-- `Baixou parte`
-- `Buscou por termo`
-- `Favoritou partitura`
+Esta aba responde: “o que está sendo usado?”
 
-Technical event names should not be shown by default in the UI.
+Métricas:
 
-## Uso Do Acervo
+- Partituras abertas.
+- PDFs visualizados.
+- Downloads reais.
+- Buscas sem resultado.
+- Conversão de abertura para visualização.
+- Conversão de abertura para download.
 
-This tab answers: "What is being used?"
+Regras:
 
-Default period: current month, with a customizable date range.
-
-Top cards:
-
-- Partituras abertas
-- PDFs visualizados
-- Downloads reais
-- Conversão para visualização
-- Conversão para download
-- Buscas sem resultado
-
-Main sections:
-
-- Funnel: `abriu partitura -> visualizou PDF -> baixou arquivo`
-- Ranking by partitura: opens, PDF views, downloads, and download conversion.
-- Ranking by part/instrument: most viewed and downloaded parts.
-- Informational insight cards:
-  - high view count with low download count
-  - search terms with no results
-  - direct downloads without prior view
-  - most active users in the period
-
-Insights are informational in this version. Do not add correction actions or new workflows yet.
+- `buscas_sem_resultado` conta apenas `busca_realizada` com `resultados_count = 0`.
+- `busca_digitada` serve para entender intenção, mas não deve inflar busca sem resultado.
+- Rankings de partituras e partes usam eventos de tracking, não somente contadores legados.
 
 ## Pessoas
 
-This tab answers: "Who is using the archive?"
+Esta aba responde: “quem usou e o que fez?”
 
-Default period: current month.
+Deve permitir selecionar uma pessoa e visualizar:
 
-Behavior:
-
-- Filter by person.
-- Show a summary first:
-  - partituras opened
-  - PDF views
-  - real downloads
-  - searches
-  - favorites
-  - sessions
-- Show the most opened/viewed/downloaded partituras for that person.
-- Show a paginated session timeline after the summary.
-
-Timeline should group events by session but keep events separate:
-
-- login or session start
-- search input / search performed
-- partitura opened
-- grade or part viewed
-- grade or part downloaded
-- favorite changes
-- session end
+- Resumo de aberturas, visualizações, downloads e buscas.
+- Timeline paginada por período.
+- Eventos com rótulos humanos, sem expor chaves técnicas por padrão.
 
 ## Ensaios
 
-This tab answers: "How is attendance going?"
+Esta aba responde: “como está a presença em ensaios?”
 
-It must remain separate from archive usage analytics.
+Regras:
 
-Default period: current month.
-
-Rules:
-
-- Only use rehearsals actually registered in the system.
-- Do not calculate expected attendance from configured rehearsal days that have not been registered yet.
-- Maestro/admin users are excluded from attendance metrics.
-- Valid families are only Madeiras, Metais, and Percussão. Do not show "Outros". If data falls outside those families, treat it as a data issue rather than a chart category.
-- Streak means physical presence. Any absence breaks the streak, even if justified.
-
-Top cards:
-
-- Presença média do mês
-- Maior streak ativo
-- Músicos com presença perfeita no mês
-- Ensaios registrados no mes
-
-Main sections:
-
-- Positive streak ranking by musician.
-- Monthly attendance by musician, for example `4/4 ensaios - 100%`.
-- Attendance by family using clear text:
-  - `Madeiras: 139 presenças registradas de 180 esperadas`
-  - Expand detail: `15 músicos ativos x 12 ensaios registrados = 180 presenças esperadas`
-
-Avoid the label "presenças possíveis" in the UI because it is unclear. Use "presenças esperadas" and provide the calculation in an expandable explanation.
+- O período padrão é o mês atual.
+- Datas de ensaio só entram no denominador quando têm presença de músico elegível.
+- Músico elegível: usuário ativo, não admin, com instrumento em `Madeiras`, `Metais` ou `Percussão`.
+- Presenças de admin, usuário inativo ou família fora dos naipes elegíveis não devem criar ensaio para o cálculo.
 
 ## Alterações
 
-This tab answers: "What changed?"
+Esta aba responde: “o que foi alterado no acervo?”
 
-It is an admin audit view.
+Deve listar somente eventos auditáveis de administração, como:
 
-Filters:
+- `nova_partitura`
+- `novo_repertorio`
+- `add_repertorio`
+- `update_partitura`
+- `delete_partitura`
+- `nova_parte`
+- `update_parte`
+- `delete_parte`
 
-- admin/person
-- action type
-- period
+Eventos comuns de uso, como `download`, `visualizacao` e `login`, não devem aparecer como alterações administrativas.
 
-Events should be shown in human language, never as raw technical identifiers like `update_partitura`.
+## Critérios de Aceite
 
-Examples:
-
-- `Partitura atualizada: Verde X Branco`
-  - `Compositor: "A" -> "B"`
-  - `Destaque: "nao" -> "sim"`
-- `Parte atualizada: Verde X Branco`
-  - `Instrumento renomeado: "Trompete" -> "Trompete Bb 1"`
-- `Parte removida: Verde X Branco`
-  - `Parte removida: Trompete Bb 1`
-
-## Data Retention
-
-Keep detailed events indefinitely for now. Do not design annual export or cleanup in this iteration.
-
-Performance requirements:
-
-- Default to current month.
-- Require period filters for heavy views.
-- Use pagination for timelines and event lists.
-- Keep event metadata small.
-- Add indexes before relying on dashboard queries.
-
-Future export or archival can be designed later if database growth becomes a practical issue.
-
-## Out Of Scope For This Iteration
-
-- PostHog dashboards.
-- Annual retrospective export.
-- Data cleanup workflow.
-- Actionable correction buttons from insights.
-- Rewriting unrelated admin screens.
-- Refactoring non-user-facing comments or internal variable names just for accent fixes.
-
-## Open Implementation Notes
-
-- The existing frontend can temporarily show broken/empty new metrics if pointed at an older production Worker. Deployment order should account for this: backend first or backwards-compatible frontend fallback.
-- The current activity log can continue to exist during migration, but new journey analytics should use the new tracking tables.
-- Existing activity labels should still be corrected so admin previews never show raw names like `update_partitura`.
+- Login retorna e persiste sessão de tracking.
+- Eventos autenticados sempre gravam `session_id` válido.
+- Visualização com `action=view` não incrementa downloads nem `logs_download`.
+- Grade é classificada por aliases como `Grade`, `Maestro`, `Regente`, `Score`, `Full Score`, `Conductor` e `Partitura`.
+- Busca mobile envia o total bruto de resultados, mesmo renderizando só os primeiros itens.
+- Dashboard admin evita respostas antigas sobrescrevendo respostas recentes.
+- Cards do dashboard não geram overflow em mobile.
+- Testes automatizados cobrem tracking, analytics, download view e atualização de partitura.

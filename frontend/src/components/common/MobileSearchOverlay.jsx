@@ -140,7 +140,7 @@ const MobileSearchOverlay = () => {
   }, [sheets]);
 
   // ── Busca fuzzy (idêntica ao SearchScreen.jsx) ───────────────────────
-  const searchResults = useMemo(() => {
+  const allSearchResults = useMemo(() => {
     if (!debouncedQuery.trim()) return [];
     const q = normalize(debouncedQuery);
     const qT = transliterate(q);
@@ -196,12 +196,17 @@ const MobileSearchOverlay = () => {
       if (score > 0) results.push({ ...sheet, score, category: cat });
     }
     results.sort((a, b) => b.score - a.score);
-    return results.slice(0, 8);
+    return results;
   }, [debouncedQuery, sheets, categoriesMap]);
+  const searchResults = useMemo(() => allSearchResults.slice(0, 8), [allSearchResults]);
+  const searchResultsCount = allSearchResults.length;
 
   // ── Tracking ─────────────────────────────────────────────────────────
   useEffect(() => {
-    if (!query.trim()) return;
+    if (!query.trim()) {
+      lastTypedTrackedRef.current = '';
+      return;
+    }
 
     const timer = setTimeout(() => {
       const termo = query.trim();
@@ -212,12 +217,12 @@ const MobileSearchOverlay = () => {
         tipo: 'busca_digitada',
         origem: 'busca_mobile',
         termo_original: termo,
-        resultados_count: searchResults.length
+        resultados_count: searchResultsCount
       });
     }, 350);
 
     return () => clearTimeout(timer);
-  }, [query, searchResults.length]);
+  }, [query, searchResultsCount]);
 
   useEffect(() => {
     if (!debouncedQuery || debouncedQuery.trim().length < 3) return;
@@ -225,16 +230,16 @@ const MobileSearchOverlay = () => {
     const timer = setTimeout(() => {
       const termo = debouncedQuery.trim();
       lastTrackedRef.current = termo;
-      API.trackSearch(termo, searchResults.length).catch(() => {});
+      API.trackSearch(termo, searchResultsCount).catch(() => {});
       API.trackEvent({
         tipo: 'busca_realizada',
         origem: 'busca_mobile',
         termo_original: termo,
-        resultados_count: searchResults.length
+        resultados_count: searchResultsCount
       });
     }, 2000);
     return () => clearTimeout(timer);
-  }, [debouncedQuery, searchResults.length]);
+  }, [debouncedQuery, searchResultsCount]);
 
   // ── Handlers ─────────────────────────────────────────────────────────
   const handleClose = useCallback(() => {
@@ -430,7 +435,7 @@ const MobileSearchOverlay = () => {
                 textTransform: 'uppercase', color: mutedColor,
                 padding: '8px 16px 4px', margin: 0,
               }}>
-                {searchResults.length} resultado{searchResults.length !== 1 ? 's' : ''}
+                {searchResultsCount} resultado{searchResultsCount !== 1 ? 's' : ''}
               </p>
               {searchResults.map((sheet, i) => renderItem(sheet, i, sheet.category))}
             </div>

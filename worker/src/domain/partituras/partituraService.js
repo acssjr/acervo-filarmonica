@@ -324,9 +324,18 @@ export async function updatePartitura(id, request, env, user) {
       return errorResponse('Partitura não encontrada', 404, request);
     }
 
+    const duplicada = await env.DB.prepare(`
+      SELECT id, titulo FROM partituras
+      WHERE id <> ? AND LOWER(TRIM(titulo)) = ? AND ativo = 1
+    `).bind(id, tituloFinal.toLowerCase()).first();
+
+    if (duplicada) {
+      return errorResponse(`Já existe uma partitura com o título "${duplicada.titulo}"`, 409, request);
+    }
+
     const novaPartitura = {
       titulo: tituloFinal,
-      compositor: compositor ?? null,
+      compositor: compositor ?? partituraAtual.compositor,
       arranjador: arranjador ?? null,
       categoria_id: categoriaFinal,
       ano: ano ?? null,

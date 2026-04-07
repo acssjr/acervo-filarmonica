@@ -226,6 +226,111 @@ describe('tracking helpers', () => {
     expect(prepare).not.toHaveBeenCalled();
   });
 
+  it('starts a tracking session when an authenticated event has no session id', async () => {
+    let sessionInsertId: string | null = null;
+    let eventSessionId: string | null = null;
+
+    const prepare = vi.fn((sql) => {
+      const text = String(sql);
+
+      if (text.includes('INSERT INTO tracking_sessions')) {
+        return {
+          bind: vi.fn((sessionId) => {
+            sessionInsertId = sessionId;
+            return { run: vi.fn().mockResolvedValue({ success: true }) };
+          })
+        };
+      }
+
+      if (text.includes('INSERT INTO tracking_events')) {
+        return {
+          bind: vi.fn((sessionId) => {
+            eventSessionId = sessionId;
+            return { run: vi.fn().mockResolvedValue({ success: true }) };
+          })
+        };
+      }
+
+      if (text.includes('UPDATE tracking_sessions')) {
+        return { bind: vi.fn(() => ({ run: vi.fn().mockResolvedValue({ meta: { changes: 1 } }) })) };
+      }
+
+      throw new Error(`Unexpected SQL: ${text}`);
+    });
+    const env = { DB: { prepare } } as any;
+
+    const response = await handleTrackingEvent(
+      new Request('https://example.com', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tipo: 'partitura_aberta' })
+      }),
+      env,
+      { id: 1 } as any
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      success: true,
+      session_id: expect.stringMatching(/^sess_1_/)
+    });
+    expect(sessionInsertId).toBe(eventSessionId);
+    expect(eventSessionId).toMatch(/^sess_1_/);
+  });
+
+  it('starts a new session instead of reusing an unknown session header', async () => {
+    let eventSessionId: string | null = null;
+
+    const prepare = vi.fn((sql) => {
+      const text = String(sql);
+
+      if (text.includes('SELECT usuario_id')) {
+        return { bind: vi.fn(() => ({ first: vi.fn().mockResolvedValue(null) })) };
+      }
+
+      if (text.includes('INSERT INTO tracking_sessions')) {
+        return { bind: vi.fn(() => ({ run: vi.fn().mockResolvedValue({ success: true }) })) };
+      }
+
+      if (text.includes('INSERT INTO tracking_events')) {
+        return {
+          bind: vi.fn((sessionId) => {
+            eventSessionId = sessionId;
+            return { run: vi.fn().mockResolvedValue({ success: true }) };
+          })
+        };
+      }
+
+      if (text.includes('UPDATE tracking_sessions')) {
+        return { bind: vi.fn(() => ({ run: vi.fn().mockResolvedValue({ meta: { changes: 1 } }) })) };
+      }
+
+      throw new Error(`Unexpected SQL: ${text}`);
+    });
+    const env = { DB: { prepare } } as any;
+
+    const response = await handleTrackingEvent(
+      new Request('https://example.com', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Tracking-Session': 'sess_1_old'
+        },
+        body: JSON.stringify({ tipo: 'download_parte' })
+      }),
+      env,
+      { id: 1 } as any
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      success: true,
+      session_id: expect.stringMatching(/^sess_1_/)
+    });
+    expect(eventSessionId).not.toBe('sess_1_old');
+    expect(eventSessionId).toMatch(/^sess_1_/);
+  });
+
   it('rejects sessions that do not belong to the current user before insert', async () => {
     const first = vi.fn().mockResolvedValue({ usuario_id: 2 });
     const prepare = vi.fn(() => ({ bind: vi.fn(() => ({ first })) }));

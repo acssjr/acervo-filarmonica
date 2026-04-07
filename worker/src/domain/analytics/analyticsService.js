@@ -3,6 +3,18 @@ import { jsonResponse } from '../../infrastructure/index.js';
 
 const NAIPES_VALIDOS = ['Madeiras', 'Metais', 'Percussão'];
 
+const AUDIT_ACTIVITY_TYPES = [
+  'nova_partitura',
+  'novo_repertorio',
+  'add_repertorio',
+  'update_partitura',
+  'delete_partitura',
+  'nova_parte',
+  'update_parte',
+  'delete_parte'
+];
+const AUDIT_ACTIVITY_PLACEHOLDERS = AUDIT_ACTIVITY_TYPES.map(() => '?').join(', ');
+
 const emptyResults = (result) => result?.results || [];
 
 function getPeriod(url) {
@@ -31,7 +43,7 @@ async function getUsoAcervo(env, start, end) {
       SUM(CASE WHEN tipo = 'partitura_aberta' THEN 1 ELSE 0 END) as partituras_abertas,
       SUM(CASE WHEN tipo IN ('pdf_visualizado_grade', 'pdf_visualizado_parte') THEN 1 ELSE 0 END) as pdfs_visualizados,
       SUM(CASE WHEN tipo IN ('download_grade', 'download_parte') THEN 1 ELSE 0 END) as downloads_reais,
-      SUM(CASE WHEN tipo IN ('busca_realizada', 'busca_digitada') AND resultados_count = 0 THEN 1 ELSE 0 END) as buscas_sem_resultado
+      SUM(CASE WHEN tipo = 'busca_realizada' AND resultados_count = 0 THEN 1 ELSE 0 END) as buscas_sem_resultado
     FROM tracking_events
     WHERE criado_em >= ? AND criado_em < ?
   `).bind(start, end).first();
@@ -78,7 +90,7 @@ async function getUsoAcervo(env, start, end) {
     SELECT termo_normalizado as termo, COUNT(*) as tentativas
     FROM tracking_events
     WHERE criado_em >= ? AND criado_em < ?
-      AND tipo IN ('busca_realizada', 'busca_digitada')
+      AND tipo = 'busca_realizada'
       AND resultados_count = 0
       AND termo_normalizado IS NOT NULL
     GROUP BY termo_normalizado
@@ -188,10 +200,15 @@ async function getPessoas(env, url, start, end) {
 
 async function getEnsaios(env, start, end) {
   const ensaios = await env.DB.prepare(`
-    SELECT DISTINCT data_ensaio
-    FROM presencas
-    WHERE data_ensaio >= ? AND data_ensaio < ?
-    ORDER BY data_ensaio DESC
+    SELECT DISTINCT p.data_ensaio
+    FROM presencas p
+    JOIN usuarios u ON u.id = p.usuario_id
+    JOIN instrumentos i ON i.id = u.instrumento_id
+    WHERE p.data_ensaio >= ? AND p.data_ensaio < ?
+      AND u.ativo = 1
+      AND u.admin = 0
+      AND i.familia IN ('Madeiras', 'Metais', 'Percussão')
+    ORDER BY p.data_ensaio DESC
   `).bind(start, end).all();
 
   const ensaiosDesc = emptyResults(ensaios).map((row) => row.data_ensaio);
@@ -275,7 +292,7 @@ async function getAlteracoes(env, start, end, url) {
   const rawOffset = Number.parseInt(url.searchParams.get('atividades_offset') ?? '', 10);
   const limit = Math.min(Number.isFinite(rawLimit) && rawLimit > 0 ? rawLimit : 15, 100);
   const offset = Number.isFinite(rawOffset) && rawOffset > 0 ? rawOffset : 0;
-  const params = [start, end];
+  const params = [start, end, ...AUDIT_ACTIVITY_TYPES];
   const usuarioFilter = usuarioId ? 'AND a.usuario_id = ?' : '';
   if (usuarioId) params.push(usuarioId);
 
@@ -291,6 +308,7 @@ async function getAlteracoes(env, start, end, url) {
     FROM atividades a
     LEFT JOIN usuarios u ON a.usuario_id = u.id
     WHERE a.criado_em >= ? AND a.criado_em < ?
+      AND a.tipo IN (${AUDIT_ACTIVITY_PLACEHOLDERS})
       ${usuarioFilter}
     ORDER BY a.criado_em DESC
     LIMIT ? OFFSET ?
@@ -300,6 +318,7 @@ async function getAlteracoes(env, start, end, url) {
     SELECT COUNT(*) as total
     FROM atividades a
     WHERE a.criado_em >= ? AND a.criado_em < ?
+      AND a.tipo IN (${AUDIT_ACTIVITY_PLACEHOLDERS})
       ${usuarioFilter}
   `).bind(...params).first();
 
@@ -308,8 +327,10 @@ async function getAlteracoes(env, start, end, url) {
     FROM atividades a
     JOIN usuarios u ON u.id = a.usuario_id
     WHERE a.criado_em >= ? AND a.criado_em < ?
+      AND a.tipo IN (${AUDIT_ACTIVITY_PLACEHOLDERS})
+      AND u.admin = 1
     ORDER BY u.nome ASC
-  `).bind(start, end).all();
+  `).bind(start, end, ...AUDIT_ACTIVITY_TYPES).all();
 
   return {
     usuarios: emptyResults(usuarios),
