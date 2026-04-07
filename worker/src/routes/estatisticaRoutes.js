@@ -14,12 +14,13 @@ import {
 } from '../domain/analytics/eventService.js';
 import { endTrackingSession } from '../domain/analytics/sessionService.js';
 import { trackSearch } from '../domain/analytics/trackingService.js';
-import { checkRateLimit } from '../infrastructure/ratelimit/rateLimiter.js';
+import { checkTrackingRateLimit } from '../infrastructure/ratelimit/rateLimiter.js';
 
-export async function trackingRateLimitMiddleware(request, env, next) {
+export async function trackingRateLimitMiddleware(request, env, next, _params, context) {
   const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
-  const url = new URL(request.url);
-  const rateLimit = await checkRateLimit(env, `tracking:${ip}:${url.pathname}`);
+  const userId = context?.user?.id || null;
+
+  const rateLimit = await checkTrackingRateLimit(env, userId, ip);
   if (!rateLimit.allowed) {
     return errorResponse(`Muitas tentativas. Tente novamente em ${rateLimit.retryAfter} segundos.`, 429, request);
   }

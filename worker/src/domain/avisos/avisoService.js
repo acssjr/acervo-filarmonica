@@ -44,7 +44,11 @@ export async function criarAviso(request, env, params, context) {
         'INSERT INTO avisos (titulo, mensagem, inicia_em, expira_em, criado_por) VALUES (?, ?, ?, ?, ?)'
     ).bind(titulo, mensagem, inicia_em || null, expira_em || null, user?.id || null).run();
 
-    await registrarAtividade(env, 'aviso_criado', titulo, 'Aviso criado', user?.id || null);
+    try {
+        await registrarAtividade(env, 'aviso_criado', titulo, 'Aviso criado', user?.id || null);
+    } catch (err) {
+        console.error('registrarAtividade error:', err);
+    }
 
     return jsonResponse({
         id: result.meta?.last_row_id,
@@ -90,13 +94,17 @@ export async function atualizarAviso(request, env, params, context) {
     if (Number(aviso.ativo) !== Number(updated.ativo)) {
         tipo = Number(updated.ativo) === 1 ? 'aviso_ativado' : 'aviso_desativado';
     }
-    await registrarAtividade(
-        env,
-        tipo,
-        updated.titulo,
-        buildAvisoUpdateDetails(aviso, updated),
-        context?.user?.id || null
-    );
+    try {
+        await registrarAtividade(
+            env,
+            tipo,
+            updated.titulo,
+            buildAvisoUpdateDetails(aviso, updated),
+            context?.user?.id || null
+        );
+    } catch (err) {
+        console.error('registrarAtividade error:', err);
+    }
 
     return jsonResponse({ success: true }, 200, request);
 }
@@ -109,7 +117,11 @@ export async function excluirAviso(request, env, params, context) {
     const aviso = await env.DB.prepare('SELECT titulo FROM avisos WHERE id = ?').bind(id).first();
     await env.DB.prepare('DELETE FROM avisos WHERE id = ?').bind(id).run();
     if (aviso) {
-        await registrarAtividade(env, 'aviso_excluido', aviso.titulo, 'Aviso excluído', context?.user?.id || null);
+        try {
+            await registrarAtividade(env, 'aviso_excluido', aviso.titulo, 'Aviso excluído', context?.user?.id || null);
+        } catch (err) {
+            console.error('registrarAtividade error:', err);
+        }
     }
     return jsonResponse({ success: true }, 200, request);
 }

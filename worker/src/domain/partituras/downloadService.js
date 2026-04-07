@@ -139,9 +139,21 @@ export async function downloadParte(parteId, request, env, user) {
       // Log de download (apenas para downloads reais, não visualizações)
       if (!isView) {
         try {
+          // Valida se o instrumento existe na tabela instrumentos
+          let instrumentId = null;
+          if (parte.instrumento) {
+            const instrumentoRow = await env.DB.prepare(
+              'SELECT id FROM instrumentos WHERE id = ?'
+            ).bind(parte.instrumento).first();
+
+            if (instrumentoRow) {
+              instrumentId = parte.instrumento;
+            }
+          }
+
           await env.DB.prepare(
             'INSERT INTO logs_download (partitura_id, instrumento_id, ip, usuario_id) VALUES (?, ?, ?, ?)'
-          ).bind(parte.partitura_id, parte.instrumento, request.headers.get('CF-Connecting-IP'), user.id).run();
+          ).bind(parte.partitura_id, instrumentId, request.headers.get('CF-Connecting-IP'), user.id).run();
         } catch (logError) {
           console.error('Erro ao registrar log:', logError);
         }
