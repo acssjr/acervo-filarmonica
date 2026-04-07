@@ -7,7 +7,7 @@ export function jsonResponse(data, status = 200, request) {
     status,
     headers: {
       'Content-Type': 'application/json; charset=utf-8',
-      ...getCorsHeaders(request),
+      ...getCorsHeaders(request, null),
     },
   });
 }

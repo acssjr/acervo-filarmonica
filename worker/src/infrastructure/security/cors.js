@@ -10,8 +10,9 @@ export function isOriginAllowed(origin) {
 }
 
 // Gera CORS headers baseado na origem
-export function getCorsHeaders(request) {
+export function getCorsHeaders(request, env = null) {
   const origin = request.headers.get('Origin');
+  const allowNoOriginWildcard = env?.ENVIRONMENT === 'development';
   const headers = {
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, X-Tracking-Session',
@@ -20,8 +21,8 @@ export function getCorsHeaders(request) {
   if (origin && isOriginAllowed(origin)) {
     headers['Access-Control-Allow-Origin'] = origin;
     headers['Access-Control-Allow-Credentials'] = 'true';
-  } else if (!origin) {
-    // Requisições sem origin (ex: curl, postman) - permite em dev
+  } else if (!origin && allowNoOriginWildcard) {
+    // Requisições sem origin (ex: curl, postman) - permite apenas fora de produção
     headers['Access-Control-Allow-Origin'] = '*';
   }
 

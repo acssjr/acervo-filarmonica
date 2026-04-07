@@ -79,7 +79,7 @@ export async function downloadPartitura(id, request, env, user) {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `${disposition}; filename="${partitura.titulo}.pdf"`,
-        ...getCorsHeaders(request),
+        ...getCorsHeaders(request, env),
       },
     });
   } catch (error) {
@@ -140,8 +140,8 @@ export async function downloadParte(parteId, request, env, user) {
       if (!isView) {
         try {
           await env.DB.prepare(
-            'INSERT INTO logs_download (partitura_id, instrumento_id, ip, usuario_id) VALUES (?, NULL, ?, ?)'
-          ).bind(parte.partitura_id, request.headers.get('CF-Connecting-IP'), user.id).run();
+            'INSERT INTO logs_download (partitura_id, instrumento_id, ip, usuario_id) VALUES (?, ?, ?, ?)'
+          ).bind(parte.partitura_id, parte.instrumento, request.headers.get('CF-Connecting-IP'), user.id).run();
         } catch (logError) {
           console.error('Erro ao registrar log:', logError);
         }
@@ -185,7 +185,7 @@ export async function downloadParte(parteId, request, env, user) {
         // Cache-Control: no-cache para sempre buscar versão atualizada
         // (importante quando admin substitui uma parte)
         'Cache-Control': 'private, no-cache',
-        ...getCorsHeaders(request),
+        ...getCorsHeaders(request, env),
       },
     });
   } catch (error) {

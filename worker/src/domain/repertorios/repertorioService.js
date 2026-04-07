@@ -1,34 +1,18 @@
 // worker/src/domain/repertorios/repertorioService.js
 import { jsonResponse, errorResponse, getCorsHeaders } from '../../infrastructure/index.js';
 import { registrarAtividade } from '../atividades/index.js';
+import { buildUpdateDetails, describeBoolean } from '../atividades/auditUtils.js';
 import { createPostHogClient, shutdownPostHog } from '../../infrastructure/posthog/posthogClient.js';
 
 // ============ LEITURA ============
 
-function describeValue(value) {
-  if (value === null || value === undefined || value === '') return 'vazio';
-  return String(value);
-}
-
-function describeBoolean(value) {
-  return Number(value) === 1 ? 'Sim' : 'Não';
-}
-
-function addChange(changes, label, before, after) {
-  const beforeText = describeValue(before);
-  const afterText = describeValue(after);
-  if (beforeText !== afterText) {
-    changes.push(`${label}: "${beforeText}" -> "${afterText}"`);
-  }
-}
-
 function buildRepertorioUpdateDetails(before, after) {
-  const changes = [];
-  addChange(changes, 'Nome', before.nome, after.nome);
-  addChange(changes, 'Descrição', before.descricao, after.descricao);
-  addChange(changes, 'Data de apresentação', before.data_apresentacao, after.data_apresentacao);
-  addChange(changes, 'Ativo', describeBoolean(before.ativo), describeBoolean(after.ativo));
-  return changes.length ? changes.join('; ') : 'Sem alterações nos campos principais';
+  return buildUpdateDetails(before, after, [
+    { key: 'nome', label: 'Nome' },
+    { key: 'descricao', label: 'Descrição' },
+    { key: 'data_apresentacao', label: 'Data de apresentação' },
+    { key: 'ativo', label: 'Ativo', format: describeBoolean }
+  ]);
 }
 
 /**
@@ -647,7 +631,7 @@ export async function removePartituraFromRepertorio(repertorioId, partituraId, r
       env,
       'remove_repertorio',
       item.partitura_titulo,
-      `Removida do repertorio: ${item.repertorio_nome}`,
+      `Removida do repertório: ${item.repertorio_nome}`,
       admin?.id ?? null
     );
   }
@@ -1087,7 +1071,7 @@ async function generatePdfDownload(env, partes, repertorio, instrumento, request
     headers: {
       'Content-Type': 'application/pdf',
       'Content-Disposition': `attachment; filename="${nomeArquivo}"`,
-      ...getCorsHeaders(request)
+      ...getCorsHeaders(request, env)
     }
   });
 }
@@ -1125,7 +1109,7 @@ async function generateZipDownload(env, partes, repertorio, instrumento, request
     headers: {
       'Content-Type': 'application/zip',
       'Content-Disposition': `attachment; filename="${nomeArquivo}"`,
-      ...getCorsHeaders(request)
+      ...getCorsHeaders(request, env)
     }
   });
 }

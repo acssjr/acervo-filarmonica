@@ -683,7 +683,7 @@ const ProgressRow = ({ label, value, max, color }) => (
 
 const CompactList = ({ items, renderItem, initialLimit = 6 }) => {
   const [expanded, setExpanded] = useState(false);
-  if (!items?.length) return <EmptyState icon={BarChart3} message="Nenhum dado disponÃ­vel" />;
+  if (!items?.length) return <EmptyState icon={BarChart3} message="Nenhum dado disponível" />;
   const visibleItems = expanded ? items : items.slice(0, initialLimit);
   const hasMore = items.length > initialLimit;
 

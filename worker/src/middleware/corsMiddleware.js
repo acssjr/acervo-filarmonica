@@ -9,7 +9,7 @@ import { getCorsHeaders } from '../infrastructure/security/cors.js';
  */
 export function corsMiddleware(request, env, next, context) {
   // Armazenar CORS headers no contexto para uso posterior
-  context.corsHeaders = getCorsHeaders(request);
+  context.corsHeaders = getCorsHeaders(request, env);
 
   // Continuar para próximo middleware/handler
   next();

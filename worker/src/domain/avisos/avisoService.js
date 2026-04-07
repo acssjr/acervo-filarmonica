@@ -1,32 +1,16 @@
 // worker/src/domain/avisos/avisoService.js
 import { jsonResponse } from '../../infrastructure/index.js';
 import { registrarAtividade } from '../atividades/index.js';
-
-function describeValue(value) {
-    if (value === null || value === undefined || value === '') return 'vazio';
-    return String(value);
-}
-
-function describeBoolean(value) {
-    return Number(value) === 1 ? 'Sim' : 'Não';
-}
-
-function addChange(changes, label, before, after) {
-    const beforeText = describeValue(before);
-    const afterText = describeValue(after);
-    if (beforeText !== afterText) {
-        changes.push(`${label}: "${beforeText}" -> "${afterText}"`);
-    }
-}
+import { buildUpdateDetails, describeBoolean } from '../atividades/auditUtils.js';
 
 function buildAvisoUpdateDetails(before, after) {
-    const changes = [];
-    addChange(changes, 'Título', before.titulo, after.titulo);
-    addChange(changes, 'Mensagem', before.mensagem, after.mensagem);
-    addChange(changes, 'Ativo', describeBoolean(before.ativo), describeBoolean(after.ativo));
-    addChange(changes, 'Início', before.inicia_em, after.inicia_em);
-    addChange(changes, 'Expiração', before.expira_em, after.expira_em);
-    return changes.length ? changes.join('; ') : 'Sem alterações nos campos principais';
+    return buildUpdateDetails(before, after, [
+        { key: 'titulo', label: 'Título' },
+        { key: 'mensagem', label: 'Mensagem' },
+        { key: 'ativo', label: 'Ativo', format: describeBoolean },
+        { key: 'inicia_em', label: 'Início' },
+        { key: 'expira_em', label: 'Expiração' }
+    ]);
 }
 
 /**

@@ -1,6 +1,7 @@
 // worker/src/domain/partituras/partituraService.js
 import { jsonResponse, errorResponse } from '../../infrastructure/index.js';
 import { registrarAtividade } from '../atividades/index.js';
+import { buildUpdateDetails, describeBoolean } from '../atividades/auditUtils.js';
 import { createPostHogClient, shutdownPostHog } from '../../infrastructure/posthog/posthogClient.js';
 
 /**
@@ -266,41 +267,28 @@ export async function uploadPastaPartitura(request, env, admin) {
  *
  * Extraido de: worker/index.js linhas 880-908
  */
-function describeValue(value) {
-  if (value === null || value === undefined || value === '') {
-    return 'vazio';
-  }
-  return String(value);
-}
-
-function describeBoolean(value) {
-  return Number(value) === 1 ? 'Sim' : 'Não';
-}
-
-function addChange(changes, label, before, after) {
-  const beforeText = describeValue(before);
-  const afterText = describeValue(after);
-  if (beforeText !== afterText) {
-    changes.push(`${label}: "${beforeText}" -> "${afterText}"`);
-  }
-}
-
 function buildPartituraUpdateDetails(before, after) {
-  const changes = [];
-  addChange(changes, 'Título', before.titulo, after.titulo);
-  addChange(changes, 'Compositor', before.compositor, after.compositor);
-  addChange(changes, 'Arranjador', before.arranjador, after.arranjador);
-  addChange(changes, 'Categoria', before.categoria_id, after.categoria_id);
-  addChange(changes, 'Ano', before.ano, after.ano);
-  addChange(changes, 'Descrição', before.descricao, after.descricao);
-  addChange(changes, 'Destaque', describeBoolean(before.destaque), describeBoolean(after.destaque));
-
-  return changes.length > 0 ? changes.join('; ') : 'Sem alterações nos campos principais';
+  return buildUpdateDetails(before, after, [
+    { key: 'titulo', label: 'Título' },
+    { key: 'compositor', label: 'Compositor' },
+    { key: 'arranjador', label: 'Arranjador' },
+    { key: 'categoria_id', label: 'Categoria' },
+    { key: 'ano', label: 'Ano' },
+    { key: 'descricao', label: 'Descrição' },
+    { key: 'destaque', label: 'Destaque', format: describeBoolean }
+  ]);
 }
 
 export async function deleteBucketObjects(bucket, keys) {
   const validKeys = [...new Set((keys || []).filter(Boolean))];
   await Promise.allSettled(validKeys.map(key => bucket.delete(key)));
+}
+
+export function getPartituraDeleteKeys(partitura, partes = []) {
+  return [
+    partitura?.arquivo_nome,
+    ...partes.map(parte => parte?.arquivo_nome)
+  ].filter(Boolean);
 }
 
 async function capturePartituraDeleted(env, user, partituraId, titulo) {
@@ -406,7 +394,7 @@ export async function updatePartitura(id, request, env, user) {
 
 export async function deletePartitura(id, request, env, user, context = null) {
   // Busca info antes de deletar para log
-  const partitura = await env.DB.prepare('SELECT titulo FROM partituras WHERE id = ?').bind(id).first();
+  const partitura = await env.DB.prepare('SELECT titulo, arquivo_nome FROM partituras WHERE id = ?').bind(id).first();
 
   if (!partitura) {
     return errorResponse('Partitura não encontrada', 404, request);
@@ -417,7 +405,7 @@ export async function deletePartitura(id, request, env, user, context = null) {
     'SELECT id, arquivo_nome FROM partes WHERE partitura_id = ?'
   ).bind(id).all();
 
-  const arquivosParaRemover = (partes.results || []).map(parte => parte.arquivo_nome);
+  const arquivosParaRemover = getPartituraDeleteKeys(partitura, partes.results || []);
 
   // 3. & 4. Deletar registros relacionados e a partitura (transacionalmente)
   await env.DB.batch([

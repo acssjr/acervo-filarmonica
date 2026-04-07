@@ -131,16 +131,17 @@ async function getUsoAcervo(env, start, end) {
       UNION ALL
 
       SELECT
-        NULL as id,
-        COALESCE(ld.instrumento_id, 'Parte não identificada') as instrumento,
+        pa.id,
+        COALESCE(pa.instrumento, ld.instrumento_id, 'Parte não identificada') as instrumento,
         p.titulo as partitura_titulo,
         0 as visualizacoes,
         COUNT(*) as downloads
       FROM logs_download ld
       JOIN partituras p ON p.id = ld.partitura_id
+      LEFT JOIN partes pa ON pa.partitura_id = ld.partitura_id AND pa.instrumento = ld.instrumento_id
       WHERE ld.data >= ? AND ld.data < ?
         AND ld.instrumento_id IS NOT NULL
-      GROUP BY ld.instrumento_id, p.titulo
+      GROUP BY pa.id, pa.instrumento, ld.instrumento_id, p.titulo
     )
     SELECT
       id,

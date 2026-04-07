@@ -136,7 +136,7 @@ export class Router {
     if (request.method === 'OPTIONS') {
       return new Response(null, {
         status: 204,
-        headers: getCorsHeaders(request)
+        headers: getCorsHeaders(request, env)
       });
     }
 

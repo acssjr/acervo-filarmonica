@@ -1,5 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
-import { deleteBucketObjects } from '../src/domain/partituras/partituraService.js';
+import {
+  deleteBucketObjects,
+  getPartituraDeleteKeys
+} from '../src/domain/partituras/partituraService.js';
 
 describe('deleteBucketObjects', () => {
   it('dispara delecoes de R2 em paralelo e ignora falhas individuais', async () => {
@@ -22,5 +25,18 @@ describe('deleteBucketObjects', () => {
 
     resolvers.forEach(resolve => resolve());
     await expect(promise).resolves.toBeUndefined();
+  });
+
+  it('inclui o arquivo principal e os arquivos das partes na limpeza do R2', () => {
+    expect(
+      getPartituraDeleteKeys(
+        { arquivo_nome: 'grade-principal.pdf' },
+        [
+          { arquivo_nome: 'clarinete.pdf' },
+          { arquivo_nome: 'trompete.pdf' },
+          { arquivo_nome: null }
+        ]
+      )
+    ).toEqual(['grade-principal.pdf', 'clarinete.pdf', 'trompete.pdf']);
   });
 });

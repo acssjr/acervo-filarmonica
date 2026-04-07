@@ -308,6 +308,36 @@ describe('Download view analytics', () => {
     expect(partitura.downloads).toBe(0);
     expect(logs.total).toBe(0);
   });
+
+  it('registra o instrumento da parte em logs_download para analytics legado', async () => {
+    const arquivoNome = 'download-parte-instrumento-test.pdf';
+    await env.BUCKET.put(arquivoNome, new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2D]));
+    const partituraId = await env.DB.prepare(`
+      INSERT INTO partituras (titulo, compositor, categoria_id, arquivo_nome, arquivo_tamanho, downloads, destaque, ativo)
+      VALUES ('Teste Download Parte Instrumento', 'Mock', 1, ?, 5, 0, 0, 1) RETURNING id
+    `).bind(arquivoNome).first('id') as number;
+    const parteId = await env.DB.prepare(`
+      INSERT INTO partes (partitura_id, instrumento, arquivo_nome)
+      VALUES (?, 'Trompete Bb 1', ?) RETURNING id
+    `).bind(partituraId, arquivoNome).first('id') as number;
+
+    const response = await SELF.fetch(`https://test.local/api/download/parte/${parteId}`, {
+      headers: { Authorization: `Bearer ${userToken}` }
+    });
+
+    expect(response.status).toBe(200);
+    await response.arrayBuffer();
+
+    const log = await env.DB.prepare(`
+      SELECT instrumento_id
+      FROM logs_download
+      WHERE partitura_id = ?
+      ORDER BY id DESC
+      LIMIT 1
+    `).bind(partituraId).first() as { instrumento_id: string | null };
+
+    expect(log.instrumento_id).toBe('Trompete Bb 1');
+  });
 });
 
 describe('Rotas Admin', () => {
@@ -451,6 +481,57 @@ describe('Rotas Admin', () => {
       expect(pessoaData.pessoas.timeline).toEqual(expect.arrayContaining([
         expect.objectContaining({ tipo: 'download_historico', partitura_titulo: 'Legado Analytics' }),
         expect.objectContaining({ tipo: 'busca_historica', termo_original: 'busca legado vazia' })
+      ]));
+    });
+
+    it('mescla downloads historicos de partes com visualizacoes novas da mesma parte', async () => {
+      const partituraId = await env.DB.prepare(`
+        INSERT INTO partituras (titulo, compositor, categoria_id, arquivo_nome, arquivo_tamanho, downloads, destaque, ativo)
+        VALUES ('Parte Analytics Merge', 'Compositor Merge', 'dobrados', 'merge.pdf', 100, 0, 0, 1)
+        RETURNING id
+      `).first('id') as number;
+
+      const parteId = await env.DB.prepare(`
+        INSERT INTO partes (partitura_id, instrumento, arquivo_nome)
+        VALUES (?, 'Trompete Merge', 'trompete-merge.pdf')
+        RETURNING id
+      `).bind(partituraId).first('id') as number;
+
+      await env.DB.prepare(`
+        INSERT INTO tracking_events (usuario_id, tipo, partitura_id, parte_id, criado_em)
+        VALUES (2, 'pdf_visualizado_parte', ?, ?, '2099-03-10 10:00:00')
+      `).bind(partituraId, parteId).run();
+
+      await env.DB.prepare(`
+        INSERT INTO logs_download (partitura_id, instrumento_id, usuario_id, data)
+        VALUES (?, 'Trompete Merge', 2, '2099-03-10 10:05:00')
+      `).bind(partituraId).run();
+
+      const response = await SELF.fetch('https://test.local/api/admin/analytics/dashboard?inicio=2099-03-01&fim=2099-04-01&section=acervo', {
+        headers: { Authorization: `Bearer ${adminToken}` },
+      });
+
+      expect(response.status).toBe(200);
+      const data = await response.json() as {
+        uso_acervo: {
+          top_partes: Array<{
+            id: number;
+            instrumento: string;
+            partitura_titulo: string;
+            visualizacoes: number;
+            downloads: number;
+          }>;
+        };
+      };
+
+      expect(data.uso_acervo.top_partes).toEqual(expect.arrayContaining([
+        expect.objectContaining({
+          id: parteId,
+          instrumento: 'Trompete Merge',
+          partitura_titulo: 'Parte Analytics Merge',
+          visualizacoes: 1,
+          downloads: 1
+        })
       ]));
     });
 
