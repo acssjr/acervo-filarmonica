@@ -779,15 +779,19 @@ describe('Rotas de Partes (BUG FIX)', () => {
         return originalDelete(key);
       };
 
-      const response = await SELF.fetch(`https://test.local/api/partes/${parteId}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${adminToken}` },
-      });
+      try {
+        const response = await SELF.fetch(`https://test.local/api/partes/${parteId}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${adminToken}` },
+        });
 
-      expect(response.status).toBe(200);
+        expect(response.status).toBe(200);
 
-      const parte = await env.DB.prepare('SELECT id FROM partes WHERE id = ?').bind(parteId).first();
-      expect(parte).toBeNull();
+        const parte = await env.DB.prepare('SELECT id FROM partes WHERE id = ?').bind(parteId).first();
+        expect(parte).toBeNull();
+      } finally {
+        env.BUCKET.delete = originalDelete;
+      }
     });
   });
 
