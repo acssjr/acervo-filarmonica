@@ -717,6 +717,82 @@ describe('Rotas de Partes (BUG FIX)', () => {
       });
       expect(response.status).toBe(404);
     });
+
+    it('remove parte com histórico de tracking sem erro interno', async () => {
+      const arquivoNome = 'delete-parte-com-tracking.pdf';
+      await env.BUCKET.put(arquivoNome, new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2D]));
+
+      const partituraId = await env.DB.prepare(`
+        INSERT INTO partituras (titulo, compositor, categoria_id, arquivo_nome, arquivo_tamanho, downloads, destaque, ativo)
+        VALUES ('Teste Delete Parte Tracking', 'Mock', 1, 'grade-delete-parte.pdf', 5, 0, 0, 1)
+        RETURNING id
+      `).first('id') as number;
+
+      const parteId = await env.DB.prepare(`
+        INSERT INTO partes (partitura_id, instrumento, arquivo_nome)
+        VALUES (?, 'Trompete Bb 1', ?)
+        RETURNING id
+      `).bind(partituraId, arquivoNome).first('id') as number;
+
+      await env.DB.prepare(`
+        INSERT INTO tracking_events (usuario_id, tipo, partitura_id, parte_id, criado_em)
+        VALUES (2, 'pdf_visualizado_parte', ?, ?, '2099-03-10 10:00:00')
+      `).bind(partituraId, parteId).run();
+
+      const response = await SELF.fetch(`https://test.local/api/partes/${parteId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${adminToken}` },
+      });
+
+      expect(response.status).toBe(200);
+
+      const parte = await env.DB.prepare('SELECT id FROM partes WHERE id = ?').bind(parteId).first();
+      const tracking = await env.DB.prepare(`
+        SELECT parte_id
+        FROM tracking_events
+        WHERE partitura_id = ?
+        LIMIT 1
+      `).bind(partituraId).first() as { parte_id: number | null } | null;
+
+      expect(parte).toBeNull();
+      expect(tracking?.parte_id).toBeNull();
+    });
+
+    it('remove o registro da parte mesmo se o arquivo já não existir no storage', async () => {
+      const partituraId = await env.DB.prepare(`
+        INSERT INTO partituras (titulo, compositor, categoria_id, arquivo_nome, arquivo_tamanho, downloads, destaque, ativo)
+        VALUES ('Teste Delete Parte Sem Arquivo', 'Mock', 1, 'grade-delete-parte-missing.pdf', 5, 0, 0, 1)
+        RETURNING id
+      `).first('id') as number;
+
+      const parteId = await env.DB.prepare(`
+        INSERT INTO partes (partitura_id, instrumento, arquivo_nome)
+        VALUES (?, 'Trombone', 'arquivo-que-nao-existe.pdf')
+        RETURNING id
+      `).bind(partituraId).first('id') as number;
+
+      const originalDelete = env.BUCKET.delete.bind(env.BUCKET);
+      env.BUCKET.delete = async (key) => {
+        if (key === 'arquivo-que-nao-existe.pdf') {
+          throw new Error('missing');
+        }
+        return originalDelete(key);
+      };
+
+      try {
+        const response = await SELF.fetch(`https://test.local/api/partes/${parteId}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${adminToken}` },
+        });
+
+        expect(response.status).toBe(200);
+
+        const parte = await env.DB.prepare('SELECT id FROM partes WHERE id = ?').bind(parteId).first();
+        expect(parte).toBeNull();
+      } finally {
+        env.BUCKET.delete = originalDelete;
+      }
+    });
   });
 
   describe('GET /api/partituras/:id/partes', () => {
