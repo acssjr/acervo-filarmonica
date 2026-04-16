@@ -14,6 +14,20 @@ import {
 } from '../domain/analytics/eventService.js';
 import { endTrackingSession } from '../domain/analytics/sessionService.js';
 import { trackSearch } from '../domain/analytics/trackingService.js';
+import { checkTrackingRateLimit } from '../infrastructure/ratelimit/rateLimiter.js';
+
+export async function trackingRateLimitMiddleware(request, env, next, context) {
+  const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+  const userId = context?.user?.id || null;
+
+  const rateLimit = await checkTrackingRateLimit(env, userId, ip);
+  if (!rateLimit.allowed) {
+    return errorResponse(`Muitas tentativas. Tente novamente em ${rateLimit.retryAfter} segundos.`, 429, request);
+  }
+
+  next();
+  return null;
+}
 
 /**
  * Configurar rotas de estatísticas e analytics
@@ -25,7 +39,7 @@ export function setupEstatisticaRoutes(router) {
   router.get('/api/instrumentos', getInstrumentos);
 
   // Rota de tracking (requer auth para vincular ao usuário)
-  router.post('/api/tracking/search', trackSearch, [authMiddleware]);
+  router.post('/api/tracking/search', trackSearch, [trackingRateLimitMiddleware, authMiddleware]);
   router.post('/api/tracking/events', async (request, env, _params, context) => {
     try {
       let body;
@@ -49,7 +63,7 @@ export function setupEstatisticaRoutes(router) {
       console.error('Erro ao registrar evento de tracking:', error);
       return errorResponse('Erro ao registrar evento de tracking', 500, request);
     }
-  }, [authMiddleware]);
+  }, [trackingRateLimitMiddleware, authMiddleware]);
 
   router.post('/api/tracking/session/end', async (request, env, _params, context) => {
     let body = {};
@@ -68,7 +82,7 @@ export function setupEstatisticaRoutes(router) {
 
     await endTrackingSession(env, sessionId, 'logout', context.user.id);
     return jsonResponse({ success: true }, 200, request);
-  }, [authMiddleware]);
+  }, [trackingRateLimitMiddleware, authMiddleware]);
 
   // Rotas admin
   router.get('/api/admin/estatisticas', getEstatisticasAdmin, [adminMiddleware]);

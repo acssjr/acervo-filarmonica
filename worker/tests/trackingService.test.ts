@@ -6,6 +6,7 @@ import {
 import {
   buildTrackingEventPayload,
   handleTrackingEvent,
+  normalizeTrackingSessionId,
   registrarTrackingEvent
 } from '../src/domain/analytics/eventService.js';
 import {
@@ -139,6 +140,14 @@ describe('tracking helpers', () => {
     ).resolves.toMatchObject({ status: 200 });
 
     expect(insertedSessionId).toBe('sess_1_test');
+  });
+
+  it('rejects malformed or oversized tracking session ids', () => {
+    expect(normalizeTrackingSessionId(' sess_1-abc ')).toBe('sess_1-abc');
+    expect(normalizeTrackingSessionId('sess_1_abc')).toBe('sess_1_abc');
+    expect(normalizeTrackingSessionId('sess_1_<script>')).toBeNull();
+    expect(normalizeTrackingSessionId('sess_1/abc')).toBeNull();
+    expect(normalizeTrackingSessionId('a'.repeat(65))).toBeNull();
   });
 
   it('rejects invalid event types', () => {

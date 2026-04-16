@@ -224,11 +224,22 @@ export async function deleteParte(parteId, request, env, admin) {
       return errorResponse('Parte não encontrada', 404, request);
     }
 
-    if (parte.arquivo_nome) {
-      await env.BUCKET.delete(parte.arquivo_nome);
-    }
+    await env.DB.batch([
+      env.DB.prepare(`
+        UPDATE tracking_events
+        SET parte_id = NULL
+        WHERE parte_id = ?
+      `).bind(parteId),
+      env.DB.prepare('DELETE FROM partes WHERE id = ?').bind(parteId)
+    ]);
 
-    await env.DB.prepare('DELETE FROM partes WHERE id = ?').bind(parteId).run();
+    if (parte.arquivo_nome) {
+      try {
+        await env.BUCKET.delete(parte.arquivo_nome);
+      } catch (storageError) {
+        console.error('Erro ao remover arquivo da parte no storage:', storageError);
+      }
+    }
 
     await registrarAtividade(
       env,

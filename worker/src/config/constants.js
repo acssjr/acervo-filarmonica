@@ -23,5 +23,9 @@ export const PBKDF2_KEY_LENGTH = 256;
 export const MAX_LOGIN_ATTEMPTS = 5;
 export const RATE_LIMIT_WINDOW_SECONDS = 300; // 5 minutos
 
+// Tracking rate limiting
+export const MAX_TRACKING_ATTEMPTS = 100;
+export const TRACKING_RATE_LIMIT_WINDOW_SECONDS = 60; // 1 minuto
+
 // Upload limits
 export const MAX_PHOTO_SIZE_BYTES = 2 * 1024 * 1024; // 2MB

@@ -58,7 +58,7 @@ export function setupPartituraRoutes(router) {
   }, [adminMiddleware]);
   router.delete('/api/partituras/:id', (req, env, params, context) => {
     const id = params.id;
-    return deletePartitura(id, req, env, context.user);
+    return deletePartitura(id, req, env, context.user, context);
   }, [adminMiddleware]);
 
   // Rota autenticada - listar partes (qualquer usuário logado pode ver para download)

@@ -1,9 +1,19 @@
 // worker/src/domain/repertorios/repertorioService.js
 import { jsonResponse, errorResponse, getCorsHeaders } from '../../infrastructure/index.js';
 import { registrarAtividade } from '../atividades/index.js';
+import { buildUpdateDetails, describeBoolean } from '../atividades/auditUtils.js';
 import { createPostHogClient, shutdownPostHog } from '../../infrastructure/posthog/posthogClient.js';
 
 // ============ LEITURA ============
+
+function buildRepertorioUpdateDetails(before, after) {
+  return buildUpdateDetails(before, after, [
+    { key: 'nome', label: 'Nome' },
+    { key: 'descricao', label: 'Descrição' },
+    { key: 'data_apresentacao', label: 'Data de apresentação' },
+    { key: 'ativo', label: 'Ativo', format: describeBoolean }
+  ]);
+}
 
 /**
  * Obter repertório ativo com suas partituras
@@ -459,7 +469,7 @@ export async function createRepertorio(request, env, admin) {
 /**
  * Atualizar repertório
  */
-export async function updateRepertorio(id, request, env, _admin) {
+export async function updateRepertorio(id, request, env, admin) {
   const data = await request.json();
   const { nome, descricao, data_apresentacao, ativo } = data;
 
@@ -478,17 +488,27 @@ export async function updateRepertorio(id, request, env, _admin) {
     ).run();
   }
 
+  const updated = {
+    nome: nome?.trim() || existing.nome,
+    descricao: descricao?.trim() || existing.descricao,
+    data_apresentacao: data_apresentacao || existing.data_apresentacao,
+    ativo: ativo !== undefined ? (ativo ? 1 : 0) : existing.ativo,
+  };
+  const detalhes = buildRepertorioUpdateDetails(existing, updated);
+
   await env.DB.prepare(`
     UPDATE repertorios
     SET nome = ?, descricao = ?, data_apresentacao = ?, ativo = ?
     WHERE id = ?
   `).bind(
-    nome?.trim() || existing.nome,
-    descricao?.trim() || existing.descricao,
-    data_apresentacao || existing.data_apresentacao,
-    ativo !== undefined ? (ativo ? 1 : 0) : existing.ativo,
+    updated.nome,
+    updated.descricao,
+    updated.data_apresentacao,
+    updated.ativo,
     id
   ).run();
+
+  await registrarAtividade(env, 'update_repertorio', updated.nome, detalhes, admin?.id ?? null);
 
   return jsonResponse({
     success: true,
@@ -499,7 +519,7 @@ export async function updateRepertorio(id, request, env, _admin) {
 /**
  * Deletar repertório
  */
-export async function deleteRepertorio(id, request, env, _admin) {
+export async function deleteRepertorio(id, request, env, admin) {
   const existing = await env.DB.prepare(
     'SELECT * FROM repertorios WHERE id = ?'
   ).bind(id).first();
@@ -516,6 +536,8 @@ export async function deleteRepertorio(id, request, env, _admin) {
   await env.DB.prepare(
     'DELETE FROM repertorios WHERE id = ?'
   ).bind(id).run();
+
+  await registrarAtividade(env, 'delete_repertorio', existing.nome, 'Repertório removido', admin?.id ?? null);
 
   return jsonResponse({
     success: true,
@@ -567,7 +589,13 @@ export async function addPartituraToRepertorio(repertorioId, request, env, admin
       VALUES (?, ?, ?)
     `).bind(repertorioId, partitura_id, novaOrdem).run();
 
-    await registrarAtividade(env, 'add_repertorio', partitura.titulo, null, admin.id);
+    await registrarAtividade(
+      env,
+      'add_repertorio',
+      partitura.titulo,
+      `Adicionada ao repertório: ${repertorio.nome}`,
+      admin?.id ?? null
+    );
   } catch (e) {
     // Já existe no repertório
     return jsonResponse({
@@ -585,10 +613,28 @@ export async function addPartituraToRepertorio(repertorioId, request, env, admin
 /**
  * Remover partitura do repertório
  */
-export async function removePartituraFromRepertorio(repertorioId, partituraId, request, env, _admin) {
+export async function removePartituraFromRepertorio(repertorioId, partituraId, request, env, admin) {
+  const item = await env.DB.prepare(`
+    SELECT r.nome as repertorio_nome, p.titulo as partitura_titulo
+    FROM repertorios r
+    JOIN repertorio_partituras rp ON rp.repertorio_id = r.id
+    JOIN partituras p ON p.id = rp.partitura_id
+    WHERE r.id = ? AND p.id = ?
+  `).bind(repertorioId, partituraId).first();
+
   await env.DB.prepare(
     'DELETE FROM repertorio_partituras WHERE repertorio_id = ? AND partitura_id = ?'
   ).bind(repertorioId, partituraId).run();
+
+  if (item) {
+    await registrarAtividade(
+      env,
+      'remove_repertorio',
+      item.partitura_titulo,
+      `Removida do repertório: ${item.repertorio_nome}`,
+      admin?.id ?? null
+    );
+  }
 
   return jsonResponse({
     success: true,
@@ -599,7 +645,7 @@ export async function removePartituraFromRepertorio(repertorioId, partituraId, r
 /**
  * Reordenar partituras no repertório
  */
-export async function reorderPartiturasRepertorio(repertorioId, request, env, _admin) {
+export async function reorderPartiturasRepertorio(repertorioId, request, env, admin) {
   const data = await request.json();
   const { ordens } = data; // Array de { partitura_id, ordem }
 
@@ -612,6 +658,17 @@ export async function reorderPartiturasRepertorio(repertorioId, request, env, _a
       'UPDATE repertorio_partituras SET ordem = ? WHERE repertorio_id = ? AND partitura_id = ?'
     ).bind(item.ordem, repertorioId, item.partitura_id).run();
   }
+
+  const repertorio = await env.DB.prepare(
+    'SELECT nome FROM repertorios WHERE id = ?'
+  ).bind(repertorioId).first();
+  await registrarAtividade(
+    env,
+    'reorder_repertorio',
+    repertorio?.nome || 'Repertorio',
+    `Ordem atualizada: ${ordens.length} partitura${ordens.length === 1 ? '' : 's'}`,
+    admin?.id ?? null
+  );
 
   return jsonResponse({
     success: true,
@@ -1014,7 +1071,7 @@ async function generatePdfDownload(env, partes, repertorio, instrumento, request
     headers: {
       'Content-Type': 'application/pdf',
       'Content-Disposition': `attachment; filename="${nomeArquivo}"`,
-      ...getCorsHeaders(request)
+      ...getCorsHeaders(request, env)
     }
   });
 }
@@ -1052,7 +1109,7 @@ async function generateZipDownload(env, partes, repertorio, instrumento, request
     headers: {
       'Content-Type': 'application/zip',
       'Content-Disposition': `attachment; filename="${nomeArquivo}"`,
-      ...getCorsHeaders(request)
+      ...getCorsHeaders(request, env)
     }
   });
 }

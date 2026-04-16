@@ -308,6 +308,36 @@ describe('Download view analytics', () => {
     expect(partitura.downloads).toBe(0);
     expect(logs.total).toBe(0);
   });
+
+  it('registra o instrumento da parte em logs_download para analytics legado', async () => {
+    const arquivoNome = 'download-parte-instrumento-test.pdf';
+    await env.BUCKET.put(arquivoNome, new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2D]));
+    const partituraId = await env.DB.prepare(`
+      INSERT INTO partituras (titulo, compositor, categoria_id, arquivo_nome, arquivo_tamanho, downloads, destaque, ativo)
+      VALUES ('Teste Download Parte Instrumento', 'Mock', 1, ?, 5, 0, 0, 1) RETURNING id
+    `).bind(arquivoNome).first('id') as number;
+    const parteId = await env.DB.prepare(`
+      INSERT INTO partes (partitura_id, instrumento, arquivo_nome)
+      VALUES (?, 'Trompete Bb 1', ?) RETURNING id
+    `).bind(partituraId, arquivoNome).first('id') as number;
+
+    const response = await SELF.fetch(`https://test.local/api/download/parte/${parteId}`, {
+      headers: { Authorization: `Bearer ${userToken}` }
+    });
+
+    expect(response.status).toBe(200);
+    await response.arrayBuffer();
+
+    const log = await env.DB.prepare(`
+      SELECT instrumento_id
+      FROM logs_download
+      WHERE partitura_id = ?
+      ORDER BY id DESC
+      LIMIT 1
+    `).bind(partituraId).first() as { instrumento_id: string | null };
+
+    expect(log.instrumento_id).toBe('Trompete Bb 1');
+  });
 });
 
 describe('Rotas Admin', () => {
@@ -400,6 +430,135 @@ describe('Rotas Admin', () => {
       expect(data.uso_acervo.insights.map((item) => item.descricao).join(' ')).not.toContain('sem resultado digitado');
     });
 
+    it('inclui downloads e buscas historicos na aba de uso do acervo', async () => {
+      const partituraId = await env.DB.prepare(`
+        INSERT INTO partituras (titulo, compositor, categoria_id, arquivo_nome, arquivo_tamanho, downloads, destaque, ativo)
+        VALUES ('Legado Analytics', 'Compositor Legado', 'dobrados', 'legado-analytics.pdf', 100, 2, 0, 1)
+        RETURNING id
+      `).first('id') as number;
+
+      await env.DB.prepare(`
+        INSERT INTO logs_download (partitura_id, instrumento_id, usuario_id, data)
+        VALUES (?, 'Trompete Bb', 2, '2099-02-10 10:00:00')
+      `).bind(partituraId).run();
+
+      await env.DB.prepare(`
+        INSERT INTO logs_buscas (termo, resultados_count, usuario_id, data)
+        VALUES ('busca legado vazia', 0, 2, '2099-02-10 10:05:00')
+      `).run();
+
+      const response = await SELF.fetch('https://test.local/api/admin/analytics/dashboard?inicio=2099-02-01&fim=2099-03-01', {
+        headers: { Authorization: `Bearer ${adminToken}` },
+      });
+
+      expect(response.status).toBe(200);
+      const data = await response.json() as {
+        uso_acervo: {
+          resumo: { downloads_reais: number; buscas_sem_resultado: number };
+          top_partituras: Array<{ titulo: string; downloads: number }>;
+          insights: Array<{ descricao: string }>;
+        };
+        pessoas: { usuarios: Array<{ id: number; nome: string }> };
+      };
+
+      expect(data.uso_acervo.resumo.downloads_reais).toBe(1);
+      expect(data.uso_acervo.resumo.buscas_sem_resultado).toBe(1);
+      expect(data.uso_acervo.top_partituras).toEqual(expect.arrayContaining([
+        expect.objectContaining({ titulo: 'Legado Analytics', downloads: 1 })
+      ]));
+      expect(data.uso_acervo.insights.map((item) => item.descricao).join(' ')).toContain('busca legado vazia');
+      expect(data.pessoas.usuarios).toEqual(expect.arrayContaining([
+        expect.objectContaining({ id: 2, nome: 'Músico Teste' })
+      ]));
+      const pessoaResponse = await SELF.fetch('https://test.local/api/admin/analytics/dashboard?inicio=2099-02-01&fim=2099-03-01&usuario_id=2', {
+        headers: { Authorization: `Bearer ${adminToken}` },
+      });
+
+      expect(pessoaResponse.status).toBe(200);
+      const pessoaData = await pessoaResponse.json() as {
+        pessoas: { timeline: Array<{ tipo: string; partitura_titulo?: string; termo_original?: string }> };
+      };
+      expect(pessoaData.pessoas.timeline).toEqual(expect.arrayContaining([
+        expect.objectContaining({ tipo: 'download_historico', partitura_titulo: 'Legado Analytics' }),
+        expect.objectContaining({ tipo: 'busca_historica', termo_original: 'busca legado vazia' })
+      ]));
+    });
+
+    it('mescla downloads historicos de partes com visualizacoes novas da mesma parte', async () => {
+      const partituraId = await env.DB.prepare(`
+        INSERT INTO partituras (titulo, compositor, categoria_id, arquivo_nome, arquivo_tamanho, downloads, destaque, ativo)
+        VALUES ('Parte Analytics Merge', 'Compositor Merge', 'dobrados', 'merge.pdf', 100, 0, 0, 1)
+        RETURNING id
+      `).first('id') as number;
+
+      const parteId = await env.DB.prepare(`
+        INSERT INTO partes (partitura_id, instrumento, arquivo_nome)
+        VALUES (?, 'Trompete Merge', 'trompete-merge.pdf')
+        RETURNING id
+      `).bind(partituraId).first('id') as number;
+
+      await env.DB.prepare(`
+        INSERT INTO tracking_events (usuario_id, tipo, partitura_id, parte_id, criado_em)
+        VALUES (2, 'pdf_visualizado_parte', ?, ?, '2099-03-10 10:00:00')
+      `).bind(partituraId, parteId).run();
+
+      await env.DB.prepare(`
+        INSERT INTO logs_download (partitura_id, instrumento_id, usuario_id, data)
+        VALUES (?, 'Trompete Merge', 2, '2099-03-10 10:05:00')
+      `).bind(partituraId).run();
+
+      const response = await SELF.fetch('https://test.local/api/admin/analytics/dashboard?inicio=2099-03-01&fim=2099-04-01&section=acervo', {
+        headers: { Authorization: `Bearer ${adminToken}` },
+      });
+
+      expect(response.status).toBe(200);
+      const data = await response.json() as {
+        uso_acervo: {
+          top_partes: Array<{
+            id: number;
+            instrumento: string;
+            partitura_titulo: string;
+            visualizacoes: number;
+            downloads: number;
+          }>;
+        };
+      };
+
+      expect(data.uso_acervo.top_partes).toEqual(expect.arrayContaining([
+        expect.objectContaining({
+          id: parteId,
+          instrumento: 'Trompete Merge',
+          partitura_titulo: 'Parte Analytics Merge',
+          visualizacoes: 1,
+          downloads: 1
+        })
+      ]));
+    });
+
+    it('lista musicos ativos no filtro de pessoas mesmo sem historico no periodo', async () => {
+      await env.DB.prepare(`
+        INSERT OR REPLACE INTO instrumentos (id, nome, familia, ordem) VALUES
+          ('test_sem_historico_analytics', 'Clarinete Sem Historico', 'Madeiras', 920)
+      `).run();
+      await env.DB.prepare(`
+        INSERT OR REPLACE INTO usuarios (id, username, nome, pin_hash, admin, ativo, instrumento_id, convidado) VALUES
+          (150, 'sem.historico.analytics', 'Sem Historico Analytics', '1234', 0, 1, 'test_sem_historico_analytics', 0)
+      `).run();
+
+      const response = await SELF.fetch('https://test.local/api/admin/analytics/dashboard?inicio=2099-06-01&fim=2099-07-01&section=pessoas', {
+        headers: { Authorization: `Bearer ${adminToken}` },
+      });
+
+      expect(response.status).toBe(200);
+      const data = await response.json() as {
+        pessoas: { usuarios: Array<{ id: number; nome: string }> };
+      };
+
+      expect(data.pessoas.usuarios).toEqual(expect.arrayContaining([
+        expect.objectContaining({ id: 150, nome: 'Sem Historico Analytics' })
+      ]));
+    });
+
     it('considera ensaios apenas com presenca de musico elegivel', async () => {
       await env.DB.prepare(`
         INSERT OR REPLACE INTO instrumentos (id, nome, familia, ordem) VALUES
@@ -407,18 +566,20 @@ describe('Rotas Admin', () => {
           ('test_outro_analytics', 'Diretoria Analytics', 'Diretoria', 901)
       `).run();
       await env.DB.prepare(`
-        INSERT OR REPLACE INTO usuarios (id, username, nome, pin_hash, admin, ativo, instrumento_id) VALUES
-          (130, 'musico.analytics', 'Musico Analytics', '1234', 0, 1, 'test_metal_analytics'),
-          (131, 'admin.analytics', 'Admin Analytics', '1234', 1, 1, 'test_metal_analytics'),
-          (132, 'inativo.analytics', 'Inativo Analytics', '1234', 0, 0, 'test_metal_analytics'),
-          (133, 'social.analytics', 'Social Analytics', '1234', 0, 1, 'test_outro_analytics')
+        INSERT OR REPLACE INTO usuarios (id, username, nome, pin_hash, admin, ativo, instrumento_id, convidado) VALUES
+          (130, 'musico.analytics', 'Musico Analytics', '1234', 0, 1, 'test_metal_analytics', 0),
+          (131, 'admin.analytics', 'Admin Analytics', '1234', 1, 1, 'test_metal_analytics', 0),
+          (132, 'inativo.analytics', 'Inativo Analytics', '1234', 0, 0, 'test_metal_analytics', 0),
+          (133, 'social.analytics', 'Social Analytics', '1234', 0, 1, 'test_outro_analytics', 0),
+          (134, 'convidado.analytics', 'Convidado Analytics', '1234', 0, 1, 'test_metal_analytics', 1)
       `).run();
       await env.DB.prepare(`
         INSERT OR IGNORE INTO presencas (usuario_id, data_ensaio, criado_por) VALUES
           (130, '2099-03-01', 1),
           (131, '2099-03-02', 1),
           (132, '2099-03-03', 1),
-          (133, '2099-03-04', 1)
+          (133, '2099-03-04', 1),
+          (134, '2099-03-05', 1)
       `).run();
 
       const response = await SELF.fetch('https://test.local/api/admin/analytics/dashboard?inicio=2099-03-01&fim=2099-04-01', {
@@ -426,8 +587,65 @@ describe('Rotas Admin', () => {
       });
 
       expect(response.status).toBe(200);
-      const data = await response.json() as { ensaios: { resumo: { ensaios_registrados: number } } };
+      const data = await response.json() as {
+        ensaios: {
+          resumo: { ensaios_registrados: number };
+          assiduidade_musicos: Array<{ id: number }>;
+          streaks: Array<{ id: number }>;
+        };
+      };
       expect(data.ensaios.resumo.ensaios_registrados).toBe(1);
+      expect(data.ensaios.assiduidade_musicos.map((item) => item.id)).not.toContain(134);
+      expect(data.ensaios.streaks.map((item) => item.id)).not.toContain(134);
+    });
+
+    it('retorna apenas a secao solicitada e ranqueia empates na mesma posicao', async () => {
+      await env.DB.prepare(`
+        INSERT OR REPLACE INTO instrumentos (id, nome, familia, ordem) VALUES
+          ('test_rank_analytics', 'Clarinete Rank', 'Madeiras', 910)
+      `).run();
+      await env.DB.prepare(`
+        INSERT OR REPLACE INTO usuarios (id, username, nome, pin_hash, admin, ativo, instrumento_id, convidado) VALUES
+          (140, 'rank.a', 'Rank A', '1234', 0, 1, 'test_rank_analytics', 0),
+          (141, 'rank.b', 'Rank B', '1234', 0, 1, 'test_rank_analytics', 0),
+          (142, 'rank.c', 'Rank C', '1234', 0, 1, 'test_rank_analytics', 0)
+      `).run();
+      await env.DB.prepare(`
+        INSERT OR IGNORE INTO presencas (usuario_id, data_ensaio, criado_por) VALUES
+          (140, '2099-07-01', 1),
+          (141, '2099-07-01', 1),
+          (142, '2099-07-01', 1),
+          (140, '2099-07-08', 1),
+          (141, '2099-07-08', 1)
+      `).run();
+
+      const response = await SELF.fetch('https://test.local/api/admin/analytics/dashboard?inicio=2099-07-01&fim=2099-08-01&section=ensaios', {
+        headers: { Authorization: `Bearer ${adminToken}` },
+      });
+
+      expect(response.status).toBe(200);
+      const data = await response.json() as {
+        ensaios: {
+          streaks: Array<{ nome: string; streak: number; posicao: number }>;
+          assiduidade_musicos: Array<{ nome: string; taxa: number; posicao: number }>;
+        };
+        uso_acervo?: unknown;
+      };
+
+      expect(data).not.toHaveProperty('uso_acervo');
+      const streaks = data.ensaios.streaks.filter((item) => ['Rank A', 'Rank B', 'Rank C'].includes(item.nome));
+      expect(streaks).toEqual(expect.arrayContaining([
+        expect.objectContaining({ nome: 'Rank A', streak: 2, posicao: 1 }),
+        expect.objectContaining({ nome: 'Rank B', streak: 2, posicao: 1 }),
+        expect.objectContaining({ nome: 'Rank C', streak: 0, posicao: 3 })
+      ]));
+
+      const assiduidade = data.ensaios.assiduidade_musicos.filter((item) => ['Rank A', 'Rank B', 'Rank C'].includes(item.nome));
+      expect(assiduidade).toEqual(expect.arrayContaining([
+        expect.objectContaining({ nome: 'Rank A', taxa: 100, posicao: 1 }),
+        expect.objectContaining({ nome: 'Rank B', taxa: 100, posicao: 1 }),
+        expect.objectContaining({ nome: 'Rank C', taxa: 50, posicao: 3 })
+      ]));
     });
 
     it('mostra apenas atividades administrativas na aba alteracoes', async () => {
@@ -498,6 +716,82 @@ describe('Rotas de Partes (BUG FIX)', () => {
         headers: { Authorization: `Bearer ${adminToken}` },
       });
       expect(response.status).toBe(404);
+    });
+
+    it('remove parte com histórico de tracking sem erro interno', async () => {
+      const arquivoNome = 'delete-parte-com-tracking.pdf';
+      await env.BUCKET.put(arquivoNome, new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2D]));
+
+      const partituraId = await env.DB.prepare(`
+        INSERT INTO partituras (titulo, compositor, categoria_id, arquivo_nome, arquivo_tamanho, downloads, destaque, ativo)
+        VALUES ('Teste Delete Parte Tracking', 'Mock', 1, 'grade-delete-parte.pdf', 5, 0, 0, 1)
+        RETURNING id
+      `).first('id') as number;
+
+      const parteId = await env.DB.prepare(`
+        INSERT INTO partes (partitura_id, instrumento, arquivo_nome)
+        VALUES (?, 'Trompete Bb 1', ?)
+        RETURNING id
+      `).bind(partituraId, arquivoNome).first('id') as number;
+
+      await env.DB.prepare(`
+        INSERT INTO tracking_events (usuario_id, tipo, partitura_id, parte_id, criado_em)
+        VALUES (2, 'pdf_visualizado_parte', ?, ?, '2099-03-10 10:00:00')
+      `).bind(partituraId, parteId).run();
+
+      const response = await SELF.fetch(`https://test.local/api/partes/${parteId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${adminToken}` },
+      });
+
+      expect(response.status).toBe(200);
+
+      const parte = await env.DB.prepare('SELECT id FROM partes WHERE id = ?').bind(parteId).first();
+      const tracking = await env.DB.prepare(`
+        SELECT parte_id
+        FROM tracking_events
+        WHERE partitura_id = ?
+        LIMIT 1
+      `).bind(partituraId).first() as { parte_id: number | null } | null;
+
+      expect(parte).toBeNull();
+      expect(tracking?.parte_id).toBeNull();
+    });
+
+    it('remove o registro da parte mesmo se o arquivo já não existir no storage', async () => {
+      const partituraId = await env.DB.prepare(`
+        INSERT INTO partituras (titulo, compositor, categoria_id, arquivo_nome, arquivo_tamanho, downloads, destaque, ativo)
+        VALUES ('Teste Delete Parte Sem Arquivo', 'Mock', 1, 'grade-delete-parte-missing.pdf', 5, 0, 0, 1)
+        RETURNING id
+      `).first('id') as number;
+
+      const parteId = await env.DB.prepare(`
+        INSERT INTO partes (partitura_id, instrumento, arquivo_nome)
+        VALUES (?, 'Trombone', 'arquivo-que-nao-existe.pdf')
+        RETURNING id
+      `).bind(partituraId).first('id') as number;
+
+      const originalDelete = env.BUCKET.delete.bind(env.BUCKET);
+      env.BUCKET.delete = async (key) => {
+        if (key === 'arquivo-que-nao-existe.pdf') {
+          throw new Error('missing');
+        }
+        return originalDelete(key);
+      };
+
+      try {
+        const response = await SELF.fetch(`https://test.local/api/partes/${parteId}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${adminToken}` },
+        });
+
+        expect(response.status).toBe(200);
+
+        const parte = await env.DB.prepare('SELECT id FROM partes WHERE id = ?').bind(parteId).first();
+        expect(parte).toBeNull();
+      } finally {
+        env.BUCKET.delete = originalDelete;
+      }
     });
   });
 
@@ -679,7 +973,6 @@ describe('CRUD de Categorias', () => {
     });
 
     expect(updateResponse.status).toBe(200);
-
     // 4. Deletar categoria
     const deleteResponse = await SELF.fetch(`https://test.local/api/categorias/${testCategoryId}`, {
       method: 'DELETE',
@@ -687,7 +980,6 @@ describe('CRUD de Categorias', () => {
     });
 
     expect(deleteResponse.status).toBe(200);
-
     // 5. Verificar que foi deletada
     const checkResponse = await SELF.fetch('https://test.local/api/categorias');
     const checkData = await checkResponse.json() as Array<{ id: string }>;
@@ -876,6 +1168,39 @@ describe('CRUD de Partituras - Update', () => {
     });
     expect(response.status).toBe(400);
   });
+
+  it('remove partitura com historico de download e tracking sem erro interno', async () => {
+    const partituraId = await env.DB.prepare(`
+      INSERT INTO partituras (titulo, compositor, categoria_id, arquivo_nome, arquivo_tamanho, destaque, ativo)
+      VALUES ('Partitura Remocao Com Historico', 'Compositor Historico', 1, 'remocao-historico.pdf', 100, 0, 1) RETURNING id
+    `).first('id') as number;
+
+    await env.DB.prepare(`
+      INSERT INTO logs_download (partitura_id, instrumento_id, usuario_id, data)
+      VALUES (?, NULL, 2, '2099-06-10 10:00:00')
+    `).bind(partituraId).run();
+
+    await env.DB.prepare(`
+      INSERT INTO tracking_events (usuario_id, tipo, partitura_id, criado_em)
+      VALUES (2, 'partitura_aberta', ?, '2099-06-10 10:01:00')
+    `).bind(partituraId).run();
+
+    const response = await SELF.fetch(`https://test.local/api/partituras/${partituraId}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${adminToken}` },
+    });
+
+    expect(response.status).toBe(200);
+    const check = await env.DB.prepare('SELECT id FROM partituras WHERE id = ?').bind(partituraId).first();
+    expect(check).toBeNull();
+
+    const tracking = await env.DB.prepare(`
+      SELECT COUNT(*) as total
+      FROM tracking_events
+      WHERE tipo = 'partitura_aberta' AND partitura_id IS NULL
+    `).first() as { total: number };
+    expect(tracking.total).toBeGreaterThanOrEqual(1);
+  });
 });
 
 describe('CRUD de Repertórios', () => {
@@ -942,6 +1267,64 @@ describe('CRUD de Repertórios', () => {
     expect(checkResponse.status).toBe(404);
   });
 
+  it('registra auditoria detalhada ao atualizar e remover repertorio', async () => {
+    const createResponse = await SELF.fetch('https://test.local/api/repertorios', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${adminToken}`,
+      },
+      body: JSON.stringify({
+        nome: 'Repertorio Auditoria Teste',
+        descricao: 'Descricao inicial',
+      }),
+    });
+    expect(createResponse.status).toBe(201);
+    const createData = await createResponse.json() as { id: number };
+
+    const updateResponse = await SELF.fetch(`https://test.local/api/repertorio/${createData.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${adminToken}`,
+      },
+      body: JSON.stringify({
+        nome: 'Repertorio Auditoria Atualizado',
+        ativo: true,
+      }),
+    });
+    expect(updateResponse.status).toBe(200);
+
+    const updateAtividade = await env.DB.prepare(`
+      SELECT tipo, titulo, detalhes, usuario_id
+      FROM atividades
+      WHERE tipo = 'update_repertorio' AND titulo = 'Repertorio Auditoria Atualizado'
+      ORDER BY id DESC
+      LIMIT 1
+    `).first() as { tipo: string; detalhes: string; usuario_id: number } | null;
+    expect(updateAtividade).not.toBeNull();
+    expect(updateAtividade?.detalhes).toContain('Nome:');
+    expect(updateAtividade?.detalhes).toContain('Ativo:');
+    expect(updateAtividade?.usuario_id).toBe(1);
+
+    const deleteResponse = await SELF.fetch(`https://test.local/api/repertorio/${createData.id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${adminToken}` },
+    });
+    expect(deleteResponse.status).toBe(200);
+
+    const deleteAtividade = await env.DB.prepare(`
+      SELECT tipo, titulo, detalhes, usuario_id
+      FROM atividades
+      WHERE tipo = 'delete_repertorio' AND titulo = 'Repertorio Auditoria Atualizado'
+      ORDER BY id DESC
+      LIMIT 1
+    `).first() as { tipo: string; detalhes: string; usuario_id: number } | null;
+    expect(deleteAtividade).not.toBeNull();
+    expect(deleteAtividade?.detalhes).toContain('Repertório removido');
+    expect(deleteAtividade?.usuario_id).toBe(1);
+  });
+
   it('GET /api/repertorios lista repertórios', async () => {
     const response = await SELF.fetch('https://test.local/api/repertorios', {
       headers: { Authorization: `Bearer ${adminToken}` },
@@ -959,6 +1342,65 @@ describe('CRUD de Repertórios', () => {
 
     // Pode ser 200 (encontrou) ou 404 (não há ativo)
     expect([200, 404]).toContain(response.status);
+  });
+});
+
+describe('CRUD de Avisos', () => {
+  let adminToken: string;
+
+  beforeAll(async () => {
+    adminToken = await createTestToken(1, true);
+  });
+
+  it('registra criacao, desativacao e exclusao de aviso nas atividades', async () => {
+    const createResponse = await SELF.fetch('https://test.local/api/admin/avisos', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${adminToken}`,
+      },
+      body: JSON.stringify({
+        titulo: 'Aviso Analytics Teste',
+        mensagem: 'Mensagem inicial',
+      }),
+    });
+
+    expect(createResponse.status).toBe(201);
+    const createData = await createResponse.json() as { id: number };
+
+    const updateResponse = await SELF.fetch(`https://test.local/api/admin/avisos/${createData.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${adminToken}`,
+      },
+      body: JSON.stringify({
+        mensagem: 'Mensagem atualizada',
+        ativo: false,
+      }),
+    });
+    expect(updateResponse.status).toBe(200);
+
+    const deleteResponse = await SELF.fetch(`https://test.local/api/admin/avisos/${createData.id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${adminToken}` },
+    });
+    expect(deleteResponse.status).toBe(200);
+
+    const atividades = await env.DB.prepare(`
+      SELECT tipo, titulo, detalhes, usuario_id
+      FROM atividades
+      WHERE titulo = 'Aviso Analytics Teste'
+      ORDER BY id ASC
+    `).all() as { results: Array<{ tipo: string; detalhes: string; usuario_id: number }> };
+
+    expect(atividades.results.map((item) => item.tipo)).toEqual([
+      'aviso_criado',
+      'aviso_desativado',
+      'aviso_excluido',
+    ]);
+    expect(atividades.results[1].detalhes).toContain('Mensagem:');
+    expect(atividades.results.every((item) => item.usuario_id === 1)).toBe(true);
   });
 });
 

@@ -58,6 +58,10 @@ export const getAtividadeInfo = (tipo, short = false) => {
     'login': { action: 'Acesso ao sistema', color: '#95a5a6' },
     'novo_repertorio': { action: 'Novo repertório criado', color: '#9B59D0' },
     'add_repertorio': { action: 'Adição ao repertório', color: '#9B59D0' },
+    'update_repertorio': { action: 'Repertório atualizado', color: '#9B59D0' },
+    'delete_repertorio': { action: 'Repertório removido', color: '#E74C3C' },
+    'remove_repertorio': { action: 'Removido do repertório', color: '#E74C3C' },
+    'reorder_repertorio': { action: 'Ordem do repertório atualizada', color: '#9B59D0' },
     'update_partitura': { action: 'Partitura atualizada', color: '#5B8DEF' },
     'delete_partitura': { action: 'Partitura removida', color: '#E74C3C' },
     'nova_parte': { action: 'Parte adicionada', color: '#43B97F' },
@@ -70,10 +74,17 @@ export const getAtividadeInfo = (tipo, short = false) => {
     'download_parte': { action: 'Parte baixada', color: '#5B8DEF' },
     'busca_digitada': { action: 'Busca digitada', color: '#9B59D0' },
     'busca_realizada': { action: 'Busca realizada', color: '#9B59D0' },
+    'download_historico': { action: 'Download histórico', color: '#5B8DEF' },
+    'busca_historica': { action: 'Busca histórica', color: '#9B59D0' },
     'favorito_adicionado': { action: 'Favorito adicionado', color: '#E54D87' },
     'favorito_removido': { action: 'Favorito removido', color: '#E54D87' },
-    'sessao_iniciada': { action: 'Sessao iniciada', color: '#95a5a6' },
-    'sessao_encerrada': { action: 'Sessao encerrada', color: '#95a5a6' }
+    'sessao_iniciada': { action: 'Sessão iniciada', color: '#95a5a6' },
+    'sessao_encerrada': { action: 'Sessão encerrada', color: '#95a5a6' },
+    'aviso_criado': { action: 'Aviso criado', color: '#43B97F' },
+    'aviso_atualizado': { action: 'Aviso atualizado', color: '#5B8DEF' },
+    'aviso_ativado': { action: 'Aviso ativado', color: '#43B97F' },
+    'aviso_desativado': { action: 'Aviso desativado', color: '#E67E22' },
+    'aviso_excluido': { action: 'Aviso excluído', color: '#E74C3C' }
   };
 
   const mapShort = {
@@ -84,6 +95,10 @@ export const getAtividadeInfo = (tipo, short = false) => {
     'login': { action: 'Login', color: '#95a5a6' },
     'novo_repertorio': { action: 'Novo repertório', color: '#9B59D0' },
     'add_repertorio': { action: 'Adicionado ao repertório', color: '#9B59D0' },
+    'update_repertorio': { action: 'Repertório atualizado', color: '#9B59D0' },
+    'delete_repertorio': { action: 'Repertório removido', color: '#E74C3C' },
+    'remove_repertorio': { action: 'Removido do repertório', color: '#E74C3C' },
+    'reorder_repertorio': { action: 'Ordem do repertório', color: '#9B59D0' },
     'update_partitura': { action: 'Partitura atualizada', color: '#5B8DEF' },
     'delete_partitura': { action: 'Partitura removida', color: '#E74C3C' },
     'nova_parte': { action: 'Parte adicionada', color: '#43B97F' },
@@ -96,14 +111,21 @@ export const getAtividadeInfo = (tipo, short = false) => {
     'download_parte': { action: 'Parte baixada', color: '#5B8DEF' },
     'busca_digitada': { action: 'Busca digitada', color: '#9B59D0' },
     'busca_realizada': { action: 'Busca realizada', color: '#9B59D0' },
+    'download_historico': { action: 'Download histórico', color: '#5B8DEF' },
+    'busca_historica': { action: 'Busca histórica', color: '#9B59D0' },
     'favorito_adicionado': { action: 'Favorito adicionado', color: '#E54D87' },
     'favorito_removido': { action: 'Favorito removido', color: '#E54D87' },
-    'sessao_iniciada': { action: 'Sessao iniciada', color: '#95a5a6' },
-    'sessao_encerrada': { action: 'Sessao encerrada', color: '#95a5a6' }
+    'sessao_iniciada': { action: 'Sessão iniciada', color: '#95a5a6' },
+    'sessao_encerrada': { action: 'Sessão encerrada', color: '#95a5a6' },
+    'aviso_criado': { action: 'Aviso criado', color: '#43B97F' },
+    'aviso_atualizado': { action: 'Aviso atualizado', color: '#5B8DEF' },
+    'aviso_ativado': { action: 'Aviso ativado', color: '#43B97F' },
+    'aviso_desativado': { action: 'Aviso desativado', color: '#E67E22' },
+    'aviso_excluido': { action: 'Aviso excluído', color: '#E74C3C' }
   };
 
   const map = short ? mapShort : mapLong;
-  return map[tipo] || { action: tipo, color: '#999' };
+  return map[tipo] || { action: 'Atividade registrada', color: '#999' };
 };
 
 /**

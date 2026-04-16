@@ -43,7 +43,11 @@ export function normalizeTrackingSessionId(sessionId) {
   }
 
   const normalized = sessionId.trim();
-  return normalized.length > 0 ? normalized : null;
+  if (!normalized || normalized.length > 64) {
+    return null;
+  }
+
+  return /^[A-Za-z0-9_-]+$/.test(normalized) ? normalized : null;
 }
 
 function coerceResultCount(value) {
