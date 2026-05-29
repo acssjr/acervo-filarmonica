@@ -77,6 +77,11 @@ const HomeScreen = () => {
     [sheets]
   );
 
+  // Memoiza as partituras favoritas
+  const favoriteSheets = useMemo(() => {
+    return sheets.filter(s => favoritesSet.has(s.id));
+  }, [sheets, favoritesSet]);
+
   // Carrega atividades da API somente se usuario estiver autenticado
   useEffect(() => {
     if (!user) return;
@@ -146,6 +151,76 @@ const HomeScreen = () => {
       {/* Secao de Compositores */}
       <div style={{ margin: '24px 0' }}>
         <ComposerCarousel composers={topComposers} />
+      </div>
+
+      {/* Seção de Favoritos na Home */}
+      <div data-walkthrough="home-favorites">
+        <div style={{ padding: '0 20px', marginTop: '24px', marginBottom: '16px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h2 style={{ fontSize: '18px', fontWeight: '800', letterSpacing: '-0.2px', textTransform: 'uppercase' }}>
+              Minhas Favoritas
+            </h2>
+            <button className="glass-pill-btn" onClick={() => navigate('/favoritos')}>
+              Ver Todas
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 18l6-6-6-6" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div style={{ padding: '0 20px', marginBottom: '24px' }}>
+          {favoriteSheets.length === 0 ? (
+            <div style={{
+              borderRadius: '20px',
+              background: 'linear-gradient(145deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)',
+              border: '1px dashed rgba(255,255,255,0.1)',
+              padding: '24px 20px',
+              textAlign: 'center',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '12px'
+            }}>
+              <div style={{
+                width: '44px', height: '44px', borderRadius: '50%',
+                background: 'rgba(255,255,255,0.05)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: 'var(--text-muted)'
+              }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                </svg>
+              </div>
+              <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0, fontWeight: '500' }}>
+                Nenhuma partitura favoritada ainda
+              </p>
+              <button
+                onClick={() => navigate('/acervo')}
+                style={{
+                  background: 'none', border: 'none',
+                  color: '#D4AF37', fontSize: '12px', fontWeight: '700',
+                  cursor: 'pointer', padding: '4px 8px'
+                }}
+              >
+                Explorar Acervo
+              </button>
+            </div>
+          ) : (
+            <div className="sheets-grid" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {favoriteSheets.slice(0, 3).map((sheet, index) => (
+                <FileCard
+                  key={sheet.id}
+                  sheet={sheet}
+                  category={categoriesMap.get(sheet.category)}
+                  isFavorite={true}
+                  onToggleFavorite={() => handleToggleFavorite(sheet.id)}
+                  index={index}
+                />
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       <div style={{ padding: '0 20px', marginTop: '24px', marginBottom: '12px' }}>

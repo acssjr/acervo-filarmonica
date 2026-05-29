@@ -201,6 +201,7 @@ const UserLayout = ({ children }) => {
     if (path.startsWith('/acervo')) return 'library';
     if (path === '/buscar') return 'search';
     if (path === '/favoritos') return 'favorites';
+    if (path === '/ensaios') return 'ensaios';
     if (path === '/repertorio') return 'repertorio';
     if (path === '/perfil') return 'profile';
     if (path === '/generos') return 'genres';
