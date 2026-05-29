@@ -21,7 +21,7 @@ const BottomNav = ({ activeTab }) => {
     { id: 'home', path: '/', icon: Icons.Home, label: 'Início' },
     { id: 'repertorio', path: '/repertorio', icon: Icons.ListMusic, label: 'Repertório' },
     { id: 'search', path: '/buscar', icon: Icons.Search, label: 'Buscar' },
-    { id: 'favorites', path: '/favoritos', icon: Icons.Heart, label: 'Favoritos' },
+    { id: 'ensaios', path: '/ensaios', icon: Icons.Video, label: 'Ensaios' },
     { id: 'profile', path: '/perfil', icon: Icons.User, label: 'Perfil' }
   ];
 

@@ -9,6 +9,11 @@ const mockSetUser = jest.fn();
 const mockShowToast = jest.fn();
 const mockClearNotifications = jest.fn();
 const mockGetPresencaStats = jest.fn();
+const mockNavigate = jest.fn();
+
+jest.unstable_mockModule('react-router-dom', () => ({
+  useNavigate: () => mockNavigate
+}));
 
 const cachedStats = {
   percentual_frequencia: 95,
@@ -85,7 +90,8 @@ jest.unstable_mockModule('@components/modals/AboutModal', () => ({
 
 jest.unstable_mockModule('@constants/icons', () => ({
   Icons: {
-    Logout: () => null
+    Logout: () => null,
+    Sparkles: () => null
   }
 }));
 

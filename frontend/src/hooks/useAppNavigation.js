@@ -16,6 +16,7 @@ const useAppNavigation = () => {
     library: '/acervo',
     search: '/buscar',
     favorites: '/favoritos',
+    ensaios: '/ensaios',
     profile: '/perfil',
     genres: '/generos',
     composers: '/compositores'

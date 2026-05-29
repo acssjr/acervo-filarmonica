@@ -58,7 +58,7 @@ const DesktopSidebar = ({ activeTab }) => {
   const navItems = [
     { id: 'home', path: '/', icon: Icons.Home, label: 'Inicio' },
     { id: 'repertorio', path: '/repertorio', icon: Icons.ListMusic, label: 'Repertorio' },
-    { id: 'favorites', path: '/favoritos', icon: Icons.Heart, label: 'Favoritos' },
+    { id: 'ensaios', path: '/ensaios', icon: Icons.Video, label: 'Ensaios' },
     { id: 'profile', path: '/perfil', icon: Icons.User, label: 'Perfil' }
   ];
 
@@ -188,6 +188,7 @@ const DesktopSidebar = ({ activeTab }) => {
                 isActive={activeTab === item.id}
                 collapsed={sidebarCollapsed}
                 onClick={() => handleNavigation(item.path)}
+                data-sidebar={item.id}
               />
             </div>
           ))}
