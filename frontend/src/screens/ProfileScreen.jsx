@@ -2,6 +2,7 @@
 // Redesign moderno com stats de presença, badges de conquista e configurações
 
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { gsap } from 'gsap';
 import { useGSAP } from '@gsap/react';
@@ -246,6 +247,7 @@ const SectionGroup = ({ children }) => (
 // ── Tela principal ─────────────────────────────────────────────────────────
 
 const ProfileScreen = () => {
+  const navigate = useNavigate();
   const { user, setUser } = useAuth();
   const { showToast } = useUI();
   const { clearNotifications } = useNotifications();
@@ -372,6 +374,12 @@ const ProfileScreen = () => {
       isSavingNomeRef.current = false;
       setIsSavingNome(false);
     }
+  };
+
+  const handleRestartTutorial = () => {
+    Storage.remove('walkthrough_user_completed');
+    showToast('Tutorial reiniciado! Redirecionando...');
+    navigate('/');
   };
 
   const handleLogout = () => {
@@ -639,6 +647,12 @@ const ProfileScreen = () => {
           </svg>}
           label="Alterar PIN"
           onClick={() => setShowChangePinModal(true)}
+        />
+        <SettingItem
+          icon={<Icons.Sparkles />}
+          label="Reiniciar Tutorial"
+          value="Replay do tour explicativo de primeiro acesso"
+          onClick={handleRestartTutorial}
         />
       </SectionGroup>
 
