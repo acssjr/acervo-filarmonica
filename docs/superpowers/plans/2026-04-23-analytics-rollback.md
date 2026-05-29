@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Restaurar o analytics admin para a estrutura anterior ao redesign, mantendo filtro de periodo funcional e feed de atividade recente com detalhes administrativos expansiveis.
+**Goal:** Restaurar o analytics admin para a estrutura anterior ao redesign, mantendo filtro de período funcional e feed de atividade recente com detalhes administrativos expansíveis.
 
-**Architecture:** O backend volta a expor o payload legado como contrato principal, aplicando `inicio` e `fim` em todas as consultas usadas pela tela antiga e filtrando `atividade_recente` para eventos administrativos auditaveis. O frontend volta para a composicao visual anterior do analytics, adiciona os campos de periodo ao carregamento e reaproveita o detalhamento atual apenas no feed de atividade recente, com expansao inline e paginacao.
+**Architecture:** O backend volta a expor o payload legado como contrato principal, aplicando `inicio` e `fim` em todas as consultas usadas pela tela antiga e filtrando `atividade_recente` para eventos administrativos auditáveis. O frontend volta para a composição visual anterior do analytics, adiciona os campos de período ao carregamento e reaproveita o detalhamento atual apenas no feed de atividade recente, com expansão inline e paginação.
 
 **Tech Stack:** Cloudflare Workers + D1 + Vitest no worker; React + Vite + Jest Testing Library no frontend.
 
@@ -13,19 +13,19 @@
 ## File Map
 
 - Modify: `worker/src/domain/analytics/analyticsService.js`
-  Responsabilidade: voltar o endpoint para o shape legado, aplicar periodo nas queries antigas e serializar `atividade_recente` com itens administrativos detalhados.
+  Responsabilidade: voltar o endpoint para o shape legado, aplicar período nas queries antigas e serializar `atividade_recente` com itens administrativos detalhados.
 
 - Modify: `worker/tests/routes.test.ts`
-  Responsabilidade: travar o contrato do endpoint restaurado, cobrindo periodo e paginacao das atividades administrativas.
+  Responsabilidade: travar o contrato do endpoint restaurado, cobrindo período e paginação das atividades administrativas.
 
 - Modify: `frontend/src/screens/admin/AdminAnalytics.jsx`
   Responsabilidade: restaurar a UI antiga do analytics, enviar `inicio` e `fim`, manter "Carregar mais" e permitir expandir detalhes de atividades.
 
 - Create: `frontend/src/screens/admin/AdminAnalytics.test.jsx`
-  Responsabilidade: cobrir a tela restaurada, o query string de periodo e a expansao de detalhes no feed de atividade.
+  Responsabilidade: cobrir a tela restaurada, o query string de período e a expansão de detalhes no feed de atividade.
 
 - No change expected: `frontend/src/services/api.js`
-  Observacao: `API.getAnalyticsDashboard(queryString = '')` ja aceita query string e pode ser reaproveitado sem alteracao.
+  Observação: `API.getAnalyticsDashboard(queryString = '')` já aceita query string e pode ser reaproveitado sem alteração.
 
 ## Task 1: Lock the worker contract with failing tests
 
@@ -38,7 +38,7 @@
 Add this block inside `describe('GET /api/admin/analytics/dashboard', () => { ... })`:
 
 ```ts
-    it('retorna o payload legado com atividade_recente administrativa detalhada no periodo', async () => {
+    it('retorna o payload legado com atividade_recente administrativa detalhada no período', async () => {
       await env.DB.prepare(`
         INSERT INTO atividades (tipo, titulo, detalhes, usuario_id, criado_em)
         VALUES
@@ -303,7 +303,7 @@ const { default: AdminAnalytics } = await import('./AdminAnalytics');
 Add this test:
 
 ```jsx
-  test('carrega a estrutura legada e envia inicio e fim no primeiro request', async () => {
+  test('carrega a estrutura legada e envia início e fim no primeiro request', async () => {
     mockGetAnalyticsDashboard.mockResolvedValueOnce({
       resumo: { musicos_ativos: 45, total_downloads: 12, ensaios_ultimo_mes: 3, presentes_ultimo_mes: 18 },
       downloads_timeline: [{ data: '2026-04-01', total: 2 }],
@@ -375,7 +375,7 @@ Add this test:
 Add this test:
 
 ```jsx
-  test('carrega mais atividades usando o mesmo periodo ativo', async () => {
+  test('carrega mais atividades usando o mesmo período ativo', async () => {
     mockGetAnalyticsDashboard
       .mockResolvedValueOnce({
         resumo: { musicos_ativos: 45, total_downloads: 12, ensaios_ultimo_mes: 3, presentes_ultimo_mes: 18 },
@@ -479,11 +479,11 @@ Use the older header and place two date fields next to the refresh button:
             Analytics & Insights
           </h1>
           <p style={{ color: 'var(--text-muted)', margin: 0, fontSize: '14px' }}>
-            Analise completa do acervo e engajamento no periodo selecionado
+            Análise completa do acervo e engajamento no período selecionado
           </p>
         </div>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          <DateField label="Inicio" value={periodStart} onChange={setPeriodStart} />
+          <DateField label="Início" value={periodStart} onChange={setPeriodStart} />
           <DateField label="Fim" value={periodEnd} onChange={setPeriodEnd} />
           <button
             onClick={loadAnalytics}
@@ -607,14 +607,14 @@ Adjust only the labels, not the overall layout:
 ```jsx
 <KpiCard
   icon={CalendarDays}
-  label="Ensaios no periodo"
+  label="Ensaios no período"
   value={data.resumo?.ensaios_ultimo_mes || 0}
   color={COLORS.green}
   isMobile={isMobile}
 />
 <KpiCard
   icon={UserCheck}
-  label="Presentes no periodo"
+  label="Presentes no período"
   value={data.resumo?.presentes_ultimo_mes || 0}
   color={COLORS.purple}
   isMobile={isMobile}
@@ -694,7 +694,7 @@ npm run dev
 Manual checklist:
 
 - analytics abre com a estrutura antiga;
-- mudar `Inicio` e `Fim` refaz o request e altera os numeros;
+- mudar `Início` e `Fim` refaz o request e altera os números;
 - o feed "Atividade Recente" continua no lugar antigo;
 - "Ver detalhes" expande o texto de auditoria administrativa;
 - "Carregar mais" anexa novos itens sem duplicar os antigos.

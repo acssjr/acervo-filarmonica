@@ -44,7 +44,7 @@ Essa abordagem reduz risco porque volta para uma tela ja validada pelo uso real 
 
 ### Frontend
 
-O componente [frontend/src/screens/admin/AdminAnalytics.jsx](C:/Users/antonio.santos/Documents/acervo-filarmonica/frontend/src/screens/admin/AdminAnalytics.jsx) voltara a estrutura anterior ao redesign:
+O componente [frontend/src/screens/admin/AdminAnalytics.jsx](frontend/src/screens/admin/AdminAnalytics.jsx) voltara a estrutura anterior ao redesign:
 
 - header antigo;
 - KPIs antigos;
@@ -62,7 +62,7 @@ O feed de atividade nao volta para o renderer totalmente antigo: ele preserva a 
 
 ### Backend
 
-O endpoint [worker/src/domain/analytics/analyticsService.js](C:/Users/antonio.santos/Documents/acervo-filarmonica/worker/src/domain/analytics/analyticsService.js) volta a responder prioritariamente com o shape antigo consumido pela tela anterior.
+O endpoint [worker/src/domain/analytics/analyticsService.js](worker/src/domain/analytics/analyticsService.js) volta a responder prioritariamente com o shape antigo consumido pela tela anterior.
 
 O payload antigo continua incluindo os campos usados no dashboard original, como:
 
