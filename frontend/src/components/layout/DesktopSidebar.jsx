@@ -188,6 +188,7 @@ const DesktopSidebar = ({ activeTab }) => {
                 isActive={activeTab === item.id}
                 collapsed={sidebarCollapsed}
                 onClick={() => handleNavigation(item.path)}
+                data-sidebar={item.id}
               />
             </div>
           ))}
