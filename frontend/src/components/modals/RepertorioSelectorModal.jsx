@@ -10,7 +10,8 @@ const RepertorioSelectorModal = ({
   onCreate,
   repertorios = [],
   partituraTitulo = '',
-  loading = false
+  loading = false,
+  addedRepertorioIds = new Set()
 }) => {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newName, setNewName] = useState('');
@@ -32,10 +33,17 @@ const RepertorioSelectorModal = ({
   };
 
   const hasRepertorios = repertorios.length > 0;
-  const activeRepertorio = repertorios.find(r => r.ativo === 1);
+  const activeRepertorios = repertorios.filter(r => r.ativo === 1);
+  const inactiveRepertorios = repertorios.filter(r => r.ativo !== 1);
 
   return (
     <>
+      <style>{`
+        @keyframes pulse-green {
+          0%, 100% { box-shadow: 0 0 6px rgba(46, 204, 113, 0.4); opacity: 0.6; }
+          50% { box-shadow: 0 0 12px rgba(46, 204, 113, 0.9); opacity: 1; }
+        }
+      `}</style>
       {/* Overlay */}
       <div
         onClick={onClose}
@@ -276,8 +284,8 @@ const RepertorioSelectorModal = ({
           ) : (
             /* Lista de repertórios */
             <div>
-              {/* Repertório ativo primeiro */}
-              {activeRepertorio && (
+              {/* Repertórios ativos primeiro */}
+              {activeRepertorios.length > 0 && (
                 <div style={{ marginBottom: '12px' }}>
                   <p style={{
                     fontSize: '11px',
@@ -286,60 +294,77 @@ const RepertorioSelectorModal = ({
                     textTransform: 'uppercase',
                     marginBottom: '8px'
                   }}>
-                    Repertório Ativo
+                    {activeRepertorios.length === 1 ? 'Repertório Ativo' : 'Repertórios Ativos'}
                   </p>
-                  <button
-                    onClick={() => onSelect(activeRepertorio)}
-                    className="list-item-hover"
-                    style={{
-                      width: '100%',
-                      padding: '14px 16px',
-                      borderRadius: '12px',
-                      border: '2px solid rgba(46, 204, 113, 0.4)',
-                      background: 'rgba(46, 204, 113, 0.08)',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '12px',
-                      textAlign: 'left'
-                    }}
-                  >
-                    <div style={{
-                      width: '8px',
-                      height: '8px',
-                      borderRadius: '50%',
-                      background: '#2ecc71',
-                      flexShrink: 0
-                    }} />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{
-                        margin: 0,
-                        fontSize: '14px',
-                        fontWeight: '600',
-                        color: 'var(--text-primary)',
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis'
-                      }}>
-                        {activeRepertorio.nome}
-                      </p>
-                      <p style={{
-                        margin: '2px 0 0',
-                        fontSize: '12px',
-                        color: 'var(--text-muted)'
-                      }}>
-                        {activeRepertorio.total_partituras || 0} músicas
-                      </p>
-                    </div>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2ecc71" strokeWidth="2">
-                      <polyline points="9 18 15 12 9 6"/>
-                    </svg>
-                  </button>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {activeRepertorios.map(rep => {
+                      const isAdded = addedRepertorioIds.has(rep.id);
+                      return (
+                        <button
+                          key={rep.id}
+                          onClick={() => onSelect(rep)}
+                          className="list-item-hover"
+                          style={{
+                            width: '100%',
+                            padding: '14px 16px',
+                            borderRadius: '12px',
+                            border: isAdded ? '2px solid rgba(46, 204, 113, 0.4)' : '1px solid var(--border)',
+                            background: isAdded ? 'rgba(46, 204, 113, 0.08)' : 'var(--bg-primary)',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '12px',
+                            textAlign: 'left',
+                            transition: 'all 0.2s ease'
+                          }}
+                        >
+                          <div style={{
+                            width: '8px',
+                            height: '8px',
+                            borderRadius: '50%',
+                            background: '#2ecc71',
+                            boxShadow: '0 0 6px rgba(46, 204, 113, 0.5)',
+                            animation: 'pulse-green 2s ease-in-out infinite',
+                            flexShrink: 0
+                          }} />
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <p style={{
+                              margin: 0,
+                              fontSize: '14px',
+                              fontWeight: '600',
+                              color: 'var(--text-primary)',
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis'
+                            }}>
+                              {rep.nome}
+                            </p>
+                            <p style={{
+                              margin: '2px 0 0',
+                              fontSize: '12px',
+                              color: 'var(--text-muted)'
+                            }}>
+                              {rep.total_partituras || 0} músicas
+                            </p>
+                          </div>
+                          {isAdded ? (
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2ecc71" strokeWidth="2">
+                              <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                          ) : (
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2">
+                              <polyline points="9 18 15 12 9 6"/>
+                            </svg>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
 
               {/* Outros repertórios */}
-              {repertorios.filter(r => r.ativo !== 1).length > 0 && (
+              {inactiveRepertorios.length > 0 && (
                 <div style={{ marginBottom: '12px' }}>
                   <p style={{
                     fontSize: '11px',
@@ -351,7 +376,7 @@ const RepertorioSelectorModal = ({
                     Outros Repertórios
                   </p>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    {repertorios.filter(r => r.ativo !== 1).map(rep => (
+                    {inactiveRepertorios.map(rep => (
                       <button
                         key={rep.id}
                         onClick={() => onSelect(rep)}

@@ -112,6 +112,8 @@ const AdminPartituras = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filterCategoria, setFilterCategoria] = useState('');
+  const [filterDestaque, setFilterDestaque] = useState(false);
+  const [filterNoRepertorio, setFilterNoRepertorio] = useState(false);
   const [showCatDropdown, setShowCatDropdown] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showImportacaoLote, setShowImportacaoLote] = useState(false);
@@ -151,7 +153,7 @@ const AdminPartituras = () => {
 
   // Estado para repertório
   const [repertorios, setRepertorios] = useState([]); // Todos os repertórios
-  const [repertorioAtivo, setRepertorioAtivo] = useState(null);
+  const [activeRepertorios, setActiveRepertorios] = useState([]);
   const [partiturasInRepertorio, setPartiturasInRepertorio] = useState(new Set());
   const [showRepertorioModal, setShowRepertorioModal] = useState(false);
   const [selectedPartituraForRepertorio, setSelectedPartituraForRepertorio] = useState(null);
@@ -412,20 +414,22 @@ const AdminPartituras = () => {
   const loadRepertorios = async () => {
     setLoadingRepertorios(true);
     try {
-      const [reps, repDetails] = await Promise.all([
+      const [reps, active] = await Promise.all([
         API.getRepertorios(),
-        API.getRepertorioAtivo().catch(() => null)
+        API.getRepertorioAtivo(true).catch(() => null)
       ]);
       setRepertorios(reps || []);
-      const active = reps?.find(r => r.ativo === 1);
-      setRepertorioAtivo(active || null);
+      const activeList = Array.isArray(active) ? active : (active ? [active] : []);
+      setActiveRepertorios(activeList);
 
       // Se tem repertório ativo e conseguiu carregar detalhes, atualizar partituras
-      if (active && repDetails?.partituras) {
-        setPartiturasInRepertorio(new Set(repDetails.partituras.map(p => p.id)));
-      } else {
-        setPartiturasInRepertorio(new Set());
-      }
+      const allActivePartituraIds = new Set();
+      activeList.forEach(activeRep => {
+        if (activeRep.partituras) {
+          activeRep.partituras.forEach(p => allActivePartituraIds.add(p.id));
+        }
+      });
+      setPartiturasInRepertorio(allActivePartituraIds);
     } catch {
       // Silencioso - repertório pode não existir
     } finally {
@@ -435,21 +439,42 @@ const AdminPartituras = () => {
 
   // Abrir modal de repertório
   const openRepertorioModal = (partitura) => {
-    // Se já está no repertório ativo, remover diretamente
-    if (repertorioAtivo && partiturasInRepertorio.has(partitura.id)) {
-      removeFromRepertorio(repertorioAtivo.id, partitura.id);
+    // Se temos exatamente 1 repertório ativo e a partitura já está nele, remove imediatamente
+    if (activeRepertorios.length === 1 && partiturasInRepertorio.has(partitura.id)) {
+      removeFromRepertorio(activeRepertorios[0].id, partitura.id);
       return;
     }
 
-    // Se só tem um repertório e é o ativo, adicionar diretamente
-    if (repertorios.length === 1 && repertorioAtivo) {
-      addToRepertorio(repertorioAtivo, partitura.id);
+    // Se temos exatamente 1 repertório ativo e a partitura não está nele, adiciona imediatamente
+    if (repertorios.length === 1 && activeRepertorios.length === 1) {
+      addToRepertorio(activeRepertorios[0], partitura.id);
       return;
     }
 
-    // Caso contrário, abrir modal para escolher
+    // Caso contrário (múltiplos ativos, ou múltiplos outros repertórios), abre o modal
     setSelectedPartituraForRepertorio(partitura);
     setShowRepertorioModal(true);
+  };
+
+  const getAddedRepertorioIds = (partituraId) => {
+    const ids = new Set();
+    activeRepertorios.forEach(rep => {
+      if (rep.partituras?.some(p => p.id === partituraId)) {
+        ids.add(rep.id);
+      }
+    });
+    return ids;
+  };
+
+  const handleToggleRepertorio = async (repertorio, partituraId) => {
+    const addedIds = getAddedRepertorioIds(partituraId);
+    if (addedIds.has(repertorio.id)) {
+      setShowRepertorioModal(false);
+      setSelectedPartituraForRepertorio(null);
+      await removeFromRepertorio(repertorio.id, partituraId);
+    } else {
+      await addToRepertorio(repertorio, partituraId);
+    }
   };
 
   // Adicionar partitura ao repertório (UI otimista)
@@ -791,13 +816,19 @@ const AdminPartituras = () => {
     if (filterCategoria) {
       results = results.filter(p => p.categoria_id === filterCategoria);
     }
+    if (filterDestaque) {
+      results = results.filter(p => p.destaque === 1);
+    }
+    if (filterNoRepertorio) {
+      results = results.filter(p => partiturasInRepertorio.has(p.id));
+    }
     if (search) {
       results = results.filter(p =>
         matchesSearch(p.titulo, search) || matchesSearch(p.compositor, search) || matchesSearch(p.arranjador, search)
       );
     }
     return results.sort((a, b) => a.titulo?.localeCompare(b.titulo, 'pt-BR'));
-  }, [partituras, search, filterCategoria]); // matchesSearch é module-level, não precisa de dependência
+  }, [partituras, search, filterCategoria, filterDestaque, filterNoRepertorio, partiturasInRepertorio]); // matchesSearch é module-level, não precisa de dependência
 
   // Expande primeira partitura (para tutorial)
   const expandFirstPartitura = useCallback(() => {
@@ -1077,6 +1108,61 @@ const AdminPartituras = () => {
             </div>
           )}
         </div>
+
+        {/* Filtro de Destaques */}
+        <button
+          type="button"
+          onClick={() => setFilterDestaque(!filterDestaque)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '12px 16px',
+            borderRadius: '12px',
+            border: filterDestaque ? '1.5px solid rgba(212, 175, 55, 0.4)' : '1.5px solid var(--border)',
+            background: filterDestaque ? 'rgba(212, 175, 55, 0.12)' : 'var(--bg-card)',
+            color: filterDestaque ? '#D4AF37' : 'var(--text-muted)',
+            fontSize: '14px',
+            fontWeight: '600',
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+            boxShadow: filterDestaque ? '0 4px 12px rgba(212, 175, 55, 0.1)' : 'none'
+          }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill={filterDestaque ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+          </svg>
+          Destaques
+        </button>
+
+        {/* Filtro de No Repertório */}
+        <button
+          type="button"
+          onClick={() => setFilterNoRepertorio(!filterNoRepertorio)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '12px 16px',
+            borderRadius: '12px',
+            border: filterNoRepertorio ? '1.5px solid rgba(155, 89, 182, 0.4)' : '1.5px solid var(--border)',
+            background: filterNoRepertorio ? 'rgba(155, 89, 182, 0.12)' : 'var(--bg-card)',
+            color: filterNoRepertorio ? '#9b59b6' : 'var(--text-muted)',
+            fontSize: '14px',
+            fontWeight: '600',
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+            boxShadow: filterNoRepertorio ? '0 4px 12px rgba(155, 89, 182, 0.1)' : 'none'
+          }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill={filterNoRepertorio ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2">
+            <path d="M9 18V5l12-2v13" />
+            <circle cx="6" cy="18" r="3" />
+            <circle cx="18" cy="16" r="3" />
+          </svg>
+          No Repertório
+        </button>
+
       </div>
 
       <div style={{ marginBottom: '20px', color: 'var(--text-secondary)', fontSize: '14px', }}>
@@ -1088,20 +1174,25 @@ const AdminPartituras = () => {
         <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)', }}>
           Carregando...
         </div>
-      ) : filtered.length === 0 ? (
-        <div style={{
-          textAlign: 'center',
-          padding: '60px 20px',
-          color: 'var(--text-secondary)',
-        }}>
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ opacity: 0.5, marginBottom: '16px' }}>
-            <circle cx="11" cy="11" r="8" />
-            <path d="m21 21-4.35-4.35" />
-          </svg>
-          <p style={{ margin: 0 }}>Nenhuma partitura encontrada</p>
-        </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+        <div
+          key={`${filterDestaque}-${filterNoRepertorio}-${filterCategoria}-${search}`}
+          className="page-transition"
+        >
+          {filtered.length === 0 ? (
+            <div style={{
+              textAlign: 'center',
+              padding: '60px 20px',
+              color: 'var(--text-secondary)',
+            }}>
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ opacity: 0.5, marginBottom: '16px' }}>
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.35-4.35" />
+              </svg>
+              <p style={{ margin: 0 }}>Nenhuma partitura encontrada</p>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           {sortedLetters.map((letter) => (
             <div key={letter}>
               {/* Header da letra */}
@@ -1666,6 +1757,8 @@ const AdminPartituras = () => {
               </div>
             </div>
           ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -1795,11 +1888,12 @@ const AdminPartituras = () => {
           setShowRepertorioModal(false);
           setSelectedPartituraForRepertorio(null);
         }}
-        onSelect={(repertorio) => addToRepertorio(repertorio, selectedPartituraForRepertorio?.id)}
+        onSelect={(repertorio) => handleToggleRepertorio(repertorio, selectedPartituraForRepertorio?.id)}
         onCreate={createRepertorioAndAdd}
         repertorios={repertorios}
         partituraTitulo={selectedPartituraForRepertorio?.titulo}
         loading={loadingRepertorios}
+        addedRepertorioIds={selectedPartituraForRepertorio ? getAddedRepertorioIds(selectedPartituraForRepertorio.id) : new Set()}
       />
 
       {/* Modal de Edição de Partitura */}
