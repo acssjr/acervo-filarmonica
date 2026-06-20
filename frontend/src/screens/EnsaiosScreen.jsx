@@ -73,12 +73,13 @@ const ArrowButton = () => (
   </div>
 );
 
-const EnsaioCard = ({ ensaio, index, onClick }) => {
+const EnsaioCard = ({ ensaio, index, onClick, youtubeUrl }) => {
   const p = CARD_PALETTE[index % CARD_PALETTE.length];
   const presente = ensaio.usuario_presente === 1;
   const [, mesIdx, dia] = ensaio.data_ensaio.split('-').map(Number);
   const mes = MONTH_ABBR[mesIdx - 1];
   const totalPartituras = ensaio.total_partituras ?? null;
+  const temVideo = !!youtubeUrl;
 
   return (
     <motion.div
@@ -105,6 +106,8 @@ const EnsaioCard = ({ ensaio, index, onClick }) => {
         pointerEvents: 'none',
       }} />
 
+
+
       {/* Data */}
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '52px' }}>
         <span style={{ fontSize: '10px', fontWeight: '600', letterSpacing: '1px', textTransform: 'uppercase', color: p.sub, marginBottom: '2px' }}>{mes}</span>
@@ -115,7 +118,7 @@ const EnsaioCard = ({ ensaio, index, onClick }) => {
       <div style={{ width: '1px', height: '52px', background: 'rgba(255,255,255,0.1)', flexShrink: 0 }} />
 
       {/* Info */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '7px' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
         <div style={{
           display: 'inline-flex', alignItems: 'center', gap: '5px',
           alignSelf: 'flex-start', padding: '4px 10px', borderRadius: '20px',
@@ -125,14 +128,73 @@ const EnsaioCard = ({ ensaio, index, onClick }) => {
           <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: presente ? '#5DE065' : '#FF6B6B', flexShrink: 0 }} />
           {presente ? 'Presente' : 'Ausente'}
         </div>
+        
         {totalPartituras !== null && (
           <span style={{ fontSize: '12px', fontWeight: '500', color: p.sub }}>
             {totalPartituras} {totalPartituras === 1 ? 'partitura' : 'partituras'}
           </span>
         )}
+        
         {ensaio.numero_ensaio ? (
-          <span style={{ fontSize: '11px', fontWeight: '500', color: 'rgba(255,255,255,0.25)' }}>Ensaio #{ensaio.numero_ensaio}</span>
+          <span style={{ fontSize: '11px', fontWeight: '500', color: 'rgba(255,255,255,0.25)', marginBottom: '2px' }}>Ensaio #{ensaio.numero_ensaio}</span>
         ) : null}
+
+        {/* direct recording link if available */}
+        {temVideo ? (
+          <motion.a
+            href={youtubeUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()} // Impede abrir o modal de detalhes
+            animate={{
+              boxShadow: [
+                '0 4px 12px rgba(255,59,48,0.35), 0 0 0 0px rgba(255,59,48,0.4)',
+                '0 4px 12px rgba(255,59,48,0.35), 0 0 0 8px rgba(255,59,48,0)',
+                '0 4px 12px rgba(255,59,48,0.35), 0 0 0 0px rgba(255,59,48,0)'
+              ],
+              scale: [1, 1.03, 1]
+            }}
+            transition={{
+              duration: 1.8,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+            whileHover={{ scale: 1.08 }}
+            whileTap={{ scale: 0.95 }}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: '6px',
+              padding: '7px 14px', borderRadius: '12px',
+              background: 'linear-gradient(135deg, #FF3B30 0%, #E52D27 100%)',
+              color: '#FFFFFF', textDecoration: 'none',
+              fontSize: '11px', fontWeight: '800',
+              marginTop: '6px',
+              alignSelf: 'flex-start',
+              border: '1px solid rgba(255,255,255,0.2)',
+              cursor: 'pointer',
+              letterSpacing: '0.3px',
+              textTransform: 'uppercase',
+              boxSizing: 'border-box'
+            }}
+          >
+            <span style={{
+              width: '6px', height: '6px', borderRadius: '50%',
+              backgroundColor: '#FFFFFF', display: 'inline-block',
+              boxShadow: '0 0 8px #FFF'
+            }} />
+            Gravação disponível
+          </motion.a>
+        ) : (
+          <span style={{
+            fontSize: '11px', fontWeight: '600', color: 'rgba(255,255,255,0.25)',
+            display: 'inline-flex', alignItems: 'center', gap: '4px',
+            marginTop: '4px', alignSelf: 'flex-start'
+          }}>
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.5 }}>
+              <path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/>
+            </svg>
+            Sem gravação
+          </span>
+        )}
       </div>
 
       <ArrowButton />
@@ -194,6 +256,9 @@ const EnsaiosScreen = () => {
   const swipeStartX = useRef(null);
   const swipeStartY = useRef(null);
 
+  // Mapeamento dinâmico de youtubeUrls para o caso de API de produção (onde getMinhaPresenca não traz youtube_url)
+  const [youtubeUrls, setYoutubeUrls] = useState({});
+
   useEffect(() => {
     if (!user) { setLoading(false); return; }
 
@@ -218,6 +283,61 @@ const EnsaiosScreen = () => {
     };
     fetchPresenca();
   }, [user, userCacheKey]);
+
+  // Carrega links do YouTube para os ensaios filtrados do mês atual em paralelo
+  useEffect(() => {
+    if (loading || !presencaData?.ultimos_ensaios) return;
+
+    const filtered = presencaData.ultimos_ensaios.filter(e => {
+      const [ano, mes] = e.data_ensaio.split('-').map(Number);
+      return mes - 1 === selectedMonth && ano === selectedYear;
+    });
+
+    if (filtered.length === 0) return;
+
+    let active = true;
+    const fetchYoutubeUrls = async () => {
+      try {
+        const promises = filtered.map(async (ensaio) => {
+          const date = ensaio.data_ensaio;
+          // Se já buscamos, evitar nova requisição
+          if (youtubeUrls[date] !== undefined) return { date, url: youtubeUrls[date] };
+
+          try {
+            const res = await API.getPartiturasEnsaio(date);
+            return { date, url: res.youtube_url || null };
+          } catch {
+            return { date, url: null };
+          }
+        });
+
+        const results = await Promise.all(promises);
+        if (!active) return;
+
+        const newMap = { ...youtubeUrls };
+        let hasChanges = false;
+        results.forEach(({ date, url }) => {
+          if (newMap[date] !== url) {
+            newMap[date] = url;
+            hasChanges = true;
+          }
+        });
+
+        if (hasChanges) {
+          setYoutubeUrls(newMap);
+        }
+      } catch (err) {
+        console.error("Erro ao carregar gravações:", err);
+      }
+    };
+
+    fetchYoutubeUrls();
+
+    return () => {
+      active = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [presencaData, selectedMonth, selectedYear, loading]);
 
   const isAtCurrentMonth = selectedMonth === now.getMonth() && selectedYear === now.getFullYear();
   const getPrevMonth = () => (selectedMonth === 0 ? 11 : selectedMonth - 1);
@@ -308,7 +428,7 @@ const EnsaiosScreen = () => {
         </div>
 
         <h1 style={{ fontSize: '22px', fontWeight: '700', margin: 0, color: '#FFFFFF', letterSpacing: '-0.3px' }}>
-          Histórico de Ensaios
+          Registros de Ensaios
         </h1>
 
         <div style={{
@@ -388,7 +508,13 @@ const EnsaiosScreen = () => {
               </div>
             ) : (
               filteredEnsaios.map((ensaio, i) => (
-                <EnsaioCard key={ensaio.data_ensaio} ensaio={ensaio} index={i} onClick={handleEnsaioClick} />
+                <EnsaioCard
+                  key={ensaio.data_ensaio}
+                  ensaio={ensaio}
+                  index={i}
+                  onClick={handleEnsaioClick}
+                  youtubeUrl={youtubeUrls[ensaio.data_ensaio] || ensaio.youtube_url}
+                />
               ))
             )}
           </motion.div>

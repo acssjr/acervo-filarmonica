@@ -70,13 +70,21 @@ export const DESKTOP_WALKTHROUGH_STEPS = [
     highlightPadding: 8
   },
   {
-    id: 'nav-favoritos',
-    targetSelector: '[data-sidebar="favorites"]',
-    title: 'Seus favoritos',
-    description: 'Acesse aqui todas as partituras que você salvou.',
-    position: 'right',
-    highlightPadding: 8,
+    id: 'home-favorites',
+    targetSelector: '[data-walkthrough="home-favorites"]',
+    title: 'Suas favoritas',
+    description: 'Encontre e estude as partituras que você salvou diretamente na página inicial.',
+    position: 'top',
+    highlightPadding: 12,
     action: 'closeModal'
+  },
+  {
+    id: 'nav-ensaios',
+    targetSelector: '[data-sidebar="ensaios"]',
+    title: 'Gravações e Ensaios',
+    description: 'Acompanhe seu histórico de presença e assista às gravações dos ensaios em vídeo.',
+    position: 'right',
+    highlightPadding: 8
   },
   {
     id: 'nav-repertorio',
@@ -157,10 +165,18 @@ export const MOBILE_WALKTHROUGH_STEPS = [
     action: 'closeModal'
   },
   {
-    id: 'nav-favoritos',
-    targetSelector: '[data-nav="favorites"]',
-    title: 'Seus favoritos',
-    description: 'Acesse aqui todas as partituras que você salvou.',
+    id: 'home-favorites',
+    targetSelector: '[data-walkthrough="home-favorites"]',
+    title: 'Suas favoritas',
+    description: 'Acesse as partituras que você favoritou direto na página inicial.',
+    position: 'top',
+    highlightPadding: 12
+  },
+  {
+    id: 'nav-ensaios',
+    targetSelector: '[data-nav="ensaios"]',
+    title: 'Gravações e Ensaios',
+    description: 'Veja a presença e assista às gravações de vídeo para estudar as partituras.',
     position: 'top',
     highlightPadding: 12
   },

@@ -72,6 +72,16 @@ describe('useAppNavigation', () => {
       expect(window.location.pathname).toBe('/favoritos');
     });
 
+    it('navega para /ensaios quando tab e ensaios', () => {
+      const { result } = renderHook(() => useAppNavigation(), { wrapper });
+
+      act(() => {
+        result.current.goToTab('ensaios');
+      });
+
+      expect(window.location.pathname).toBe('/ensaios');
+    });
+
     it('navega para / quando tab e desconhecida', () => {
       const { result } = renderHook(() => useAppNavigation(), { wrapper });
 
