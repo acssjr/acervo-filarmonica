@@ -489,6 +489,7 @@ const AdminPartituras = () => {
     try {
       await API.addPartituraToRepertorio(repertorio.id, partituraId);
       showToast(`Adicionada ao "${repertorio.nome}"`);
+      await loadRepertorios();
     } catch (err) {
       // Reverte em caso de erro
       if (repertorio.ativo === 1) {
@@ -504,19 +505,28 @@ const AdminPartituras = () => {
 
   // Remover partitura do repertório (UI otimista)
   const removeFromRepertorio = async (repertorioId, partituraId) => {
-    // UI otimista: atualiza imediatamente
-    setPartiturasInRepertorio(prev => {
-      const next = new Set(prev);
-      next.delete(partituraId);
-      return next;
-    });
+    // UI otimista: atualiza imediatamente se não estiver em outro repertório ativo
+    const stillInOtherActive = activeRepertorios.some(
+      r => r.id !== repertorioId && r.partituras?.some(p => p.id === partituraId)
+    );
+
+    if (!stillInOtherActive) {
+      setPartiturasInRepertorio(prev => {
+        const next = new Set(prev);
+        next.delete(partituraId);
+        return next;
+      });
+    }
 
     try {
       await API.removePartituraFromRepertorio(repertorioId, partituraId);
       showToast('Removida do repertório');
+      await loadRepertorios();
     } catch (err) {
       // Reverte em caso de erro
-      setPartiturasInRepertorio(prev => new Set([...prev, partituraId]));
+      if (!stillInOtherActive) {
+        setPartiturasInRepertorio(prev => new Set([...prev, partituraId]));
+      }
       showToast(err.message || 'Erro ao remover', 'error');
     }
   };
