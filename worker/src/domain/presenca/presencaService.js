@@ -126,6 +126,17 @@ export async function getPresencaUsuario(env, usuarioId) {
     partiturasPorEnsaio.results.map(p => [p.data_ensaio, p.total])
   );
 
+  // 4.1. Buscar links do YouTube (gravações de ensaios)
+  const youtubePorEnsaio = await env.DB.prepare(`
+    SELECT data_ensaio, youtube_url
+    FROM ensaios_config
+    WHERE data_ensaio IN (${datasEnsaios.map(() => '?').join(',')})
+  `).bind(...datasEnsaios).all();
+
+  const youtubeMap = new Map(
+    (youtubePorEnsaio.results || []).map(y => [y.data_ensaio, y.youtube_url])
+  );
+
   // 5. Montar array de ensaios com todas as informações
   const ultimosEnsaios = datasEnsaios.map(dataEnsaio => {
     // Adicionar T12:00:00Z para garantir que a data seja interpretada corretamente no dia (evita timezone shift)
@@ -137,7 +148,8 @@ export async function getPresencaUsuario(env, usuarioId) {
       dia_semana: diaSemana,
       usuario_presente: presencasSet.has(dataEnsaio) ? 1 : 0,
       total_partituras: partiturasMap.get(dataEnsaio) || 0,
-      numero_ensaio: rehearsalMap.get(dataEnsaio) || 0
+      numero_ensaio: rehearsalMap.get(dataEnsaio) || 0,
+      youtube_url: youtubeMap.get(dataEnsaio) || null
     };
   });
 
