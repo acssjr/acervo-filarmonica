@@ -476,7 +476,9 @@ export interface paths {
     };
     "/api/repertorio/ativo": {
         parameters: {
-            query?: never;
+            query?: {
+                all?: boolean;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -1775,7 +1777,9 @@ export interface operations {
     };
     getRepertorioAtivo: {
         parameters: {
-            query?: never;
+            query?: {
+                all?: boolean;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -1788,7 +1792,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Repertorio"];
+                    "application/json": components["schemas"]["Repertorio"] | components["schemas"]["Repertorio"][];
                 };
             };
             /** @description Nenhum repertório ativo */

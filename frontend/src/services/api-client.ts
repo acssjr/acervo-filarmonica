@@ -325,8 +325,10 @@ export const ApiTyped = {
   },
 
   // ==================== REPERTORIO ====================
-  async getRepertorioAtivo() {
-    const { data, error } = await api.GET('/api/repertorio/ativo');
+  async getRepertorioAtivo(all?: boolean) {
+    const { data, error } = await api.GET('/api/repertorio/ativo', {
+      params: { query: { all } },
+    });
     if (error) throw new Error(error.error || 'Nenhum repertório ativo');
     return data;
   },

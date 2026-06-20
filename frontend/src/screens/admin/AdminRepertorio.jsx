@@ -213,7 +213,7 @@ const AdminRepertorio = () => {
     }
   };
 
-  const activeRepertorio = repertorios.find(r => r.ativo === 1);
+  const activeRepertorios = repertorios.filter(r => r.ativo === 1);
   const historico = repertorios.filter(r => r.ativo !== 1);
 
   return (
@@ -306,20 +306,25 @@ const AdminRepertorio = () => {
                 }}>Repertório Ativo</h2>
             </div>
 
-            {activeRepertorio ? (
-              <RepertorioCard
-                repertorio={activeRepertorio}
-                partituras={expandedPartituras[activeRepertorio.id]}
-                isActive
-                isExpanded={expandedId === activeRepertorio.id}
-                onEdit={() => openEditModal(activeRepertorio)}
-                onDelete={() => handleDelete(activeRepertorio.id)}
-                onDuplicate={() => handleDuplicate(activeRepertorio.id)}
-                onDeactivate={() => handleDeactivate(activeRepertorio)}
-                onToggleExpand={() => toggleExpand(activeRepertorio)}
-                onReorder={(from, to) => handleMovePartitura(activeRepertorio.id, from, to)}
-                onGenerateCard={() => handleGenerateCard(activeRepertorio)}
-              />
+            {activeRepertorios.length > 0 ? (
+               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                 {activeRepertorios.map(activeRepertorio => (
+                   <RepertorioCard
+                     key={activeRepertorio.id}
+                     repertorio={activeRepertorio}
+                     partituras={expandedPartituras[activeRepertorio.id]}
+                     isActive
+                     isExpanded={expandedId === activeRepertorio.id}
+                     onEdit={() => openEditModal(activeRepertorio)}
+                     onDelete={() => handleDelete(activeRepertorio.id)}
+                     onDuplicate={() => handleDuplicate(activeRepertorio.id)}
+                     onDeactivate={() => handleDeactivate(activeRepertorio)}
+                     onToggleExpand={() => toggleExpand(activeRepertorio)}
+                     onReorder={(from, to) => handleMovePartitura(activeRepertorio.id, from, to)}
+                     onGenerateCard={() => handleGenerateCard(activeRepertorio)}
+                   />
+                 ))}
+               </div>
             ) : (
               <div style={{
                 padding: '48px 32px',

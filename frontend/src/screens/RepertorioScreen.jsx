@@ -694,24 +694,31 @@ const RepertorioScreen = () => {
   const [showCardModal, setShowCardModal] = useState(false);
 
   const [repertorio, setRepertorio] = useState(null);
+  const [activeRepertorios, setActiveRepertorios] = useState([]);
   const [repertorioInstrumentos, setRepertorioInstrumentos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
   const [showDownloadModal, setShowDownloadModal] = useState(false);
 
-  // Carregar repertório ativo (instrumentos são prefetched em background)
+  // Carregar repertórios ativos (instrumentos são prefetched em background)
   const loadRepertorio = async () => {
     setLoading(true);
     try {
-      const data = await API.getRepertorioAtivo();
-      setRepertorio(data);
-      setLoading(false); // Libera UI imediatamente após dados críticos
+      const data = await API.getRepertorioAtivo(true);
+      const list = Array.isArray(data) ? data : (data ? [data] : []);
+      setActiveRepertorios(list);
 
-      // Prefetch instrumentos em background (non-blocking)
-      if (data?.id) {
-        API.getRepertorioInstrumentos(data.id)
+      if (list.length > 0) {
+        setRepertorio(list[0]);
+        setLoading(false); // Libera UI imediatamente após dados críticos
+
+        // Prefetch instrumentos em background (non-blocking)
+        API.getRepertorioInstrumentos(list[0].id)
           .then(setRepertorioInstrumentos)
           .catch(err => console.error('Prefetch instrumentos falhou:', err));
+      } else {
+        setRepertorio(null);
+        setLoading(false);
       }
     } catch (err) {
       console.error('Erro ao carregar repertório:', err);
@@ -729,6 +736,16 @@ const RepertorioScreen = () => {
       } catch (err) {
         console.error('Erro ao recarregar instrumentos:', err);
       }
+    }
+  };
+
+  const handleSelectRepertorio = async (rep) => {
+    setRepertorio(rep);
+    try {
+      const instrumentos = await API.getRepertorioInstrumentos(rep.id);
+      setRepertorioInstrumentos(instrumentos);
+    } catch (err) {
+      console.error('Erro ao carregar instrumentos do repertório selecionado:', err);
     }
   };
 
@@ -853,6 +870,36 @@ const RepertorioScreen = () => {
         title={repertorio.nome}
         subtitle={`${repertorio.partituras?.length || 0} música${(repertorio.partituras?.length || 0) !== 1 ? 's' : ''}`}
       />
+
+      {/* Seletor de Repertório Ativo (caso haja mais de um) */}
+      {activeRepertorios.length > 1 && (
+        <div style={{ display: 'flex', gap: '8px', padding: '0 16px', marginBottom: '16px', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+          {activeRepertorios.map((rep) => {
+            const isSelected = rep.id === repertorio.id;
+            return (
+              <button
+                key={rep.id}
+                onClick={() => handleSelectRepertorio(rep)}
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: '20px',
+                  background: isSelected ? 'rgba(212, 175, 55, 0.15)' : 'rgba(255, 255, 255, 0.03)',
+                  border: `1px solid ${isSelected ? 'rgba(212, 175, 55, 0.4)' : 'rgba(255, 255, 255, 0.05)'}`,
+                  color: isSelected ? '#D4AF37' : 'var(--text-muted)',
+                  fontWeight: 700,
+                  fontSize: '13px',
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                  transition: 'all 0.2s ease',
+                  boxShadow: isSelected ? '0 4px 12px rgba(212, 175, 55, 0.1)' : 'none'
+                }}
+              >
+                {rep.nome}
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {/* Ações */}
       <div style={{ padding: '0 16px', marginBottom: '16px' }}>

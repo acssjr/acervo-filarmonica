@@ -562,8 +562,8 @@ export const API = {
 
   // ============ REPERTORIO ============
 
-  async getRepertorioAtivo() {
-    return this.request('/api/repertorio/ativo');
+  async getRepertorioAtivo(all = false) {
+    return this.request(`/api/repertorio/ativo${all ? '?all=true' : ''}`);
   },
 
   async getRepertorio(id) {
