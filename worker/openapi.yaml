@@ -1308,13 +1308,24 @@ paths:
       operationId: getRepertorioAtivo
       security:
         - BearerAuth: []
+      parameters:
+        - name: all
+          in: query
+          description: Se true, retorna todos os repertórios ativos
+          required: false
+          schema:
+            type: boolean
       responses:
         '200':
           description: Repertório ativo
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Repertorio'
+                oneOf:
+                  - $ref: '#/components/schemas/Repertorio'
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/Repertorio'
         '404':
           description: Nenhum repertório ativo
           content:

@@ -19,6 +19,51 @@ function buildRepertorioUpdateDetails(before, after) {
  * Obter repertório ativo com suas partituras
  */
 export async function getRepertorioAtivo(request, env) {
+  const url = new URL(request.url);
+  const wantAll = url.searchParams.get('all') === 'true';
+
+  if (wantAll) {
+    const result = await env.DB.prepare(`
+      SELECT r.*,
+             (SELECT COUNT(*) FROM repertorio_partituras rp JOIN partituras p ON rp.partitura_id = p.id WHERE rp.repertorio_id = r.id AND p.ativo = 1) as total_partituras,
+             u.nome as criado_por_nome
+      FROM repertorios r
+      LEFT JOIN usuarios u ON r.criado_por = u.id
+      WHERE r.ativo = 1
+      ORDER BY r.data_apresentacao ASC, r.data_criacao DESC
+    `).all();
+
+    const repertoriosAtivos = [];
+
+    for (const repertorio of result.results) {
+      const partituras = await env.DB.prepare(`
+        SELECT p.*, rp.ordem, c.nome as categoria_nome, c.emoji as categoria_emoji, c.cor as categoria_cor,
+               (SELECT COUNT(*) FROM partes WHERE partitura_id = p.id) as total_partes
+        FROM repertorio_partituras rp
+        JOIN partituras p ON rp.partitura_id = p.id
+        LEFT JOIN categorias c ON p.categoria_id = c.id
+        WHERE rp.repertorio_id = ? AND p.ativo = 1
+        ORDER BY rp.ordem ASC
+      `).bind(repertorio.id).all();
+
+      const publicFields = {
+        id: repertorio.id,
+        nome: repertorio.nome,
+        descricao: repertorio.descricao,
+        ativo: repertorio.ativo,
+        data_criacao: repertorio.data_criacao,
+        data_apresentacao: repertorio.data_apresentacao,
+      };
+
+      repertoriosAtivos.push({
+        ...publicFields,
+        partituras: partituras.results
+      });
+    }
+
+    return jsonResponse(repertoriosAtivos, 200, request);
+  }
+
   const repertorio = await env.DB.prepare(`
     SELECT r.*,
            (SELECT COUNT(*) FROM repertorio_partituras rp JOIN partituras p ON rp.partitura_id = p.id WHERE rp.repertorio_id = r.id AND p.ativo = 1) as total_partituras,
@@ -26,6 +71,7 @@ export async function getRepertorioAtivo(request, env) {
     FROM repertorios r
     LEFT JOIN usuarios u ON r.criado_por = u.id
     WHERE r.ativo = 1
+    ORDER BY r.data_apresentacao ASC, r.data_criacao DESC
     LIMIT 1
   `).first();
 
@@ -423,11 +469,19 @@ export async function createRepertorio(request, env, admin) {
     return errorResponse('Nome do repertório é obrigatório', 400, request);
   }
 
-  // Se criando como ativo, arquivar o atual
+  // Se criando como ativo, desativar os mais antigos se já houver 2 ou mais ativos
   if (ativo) {
-    await env.DB.prepare(
-      'UPDATE repertorios SET ativo = 0 WHERE ativo = 1'
-    ).run();
+    const ativos = await env.DB.prepare(
+      'SELECT id FROM repertorios WHERE ativo = 1 ORDER BY data_apresentacao DESC, data_criacao DESC'
+    ).all();
+    if (ativos.results.length >= 2) {
+      const idsParaDesativar = ativos.results.slice(1).map(r => r.id);
+      for (const idParaDesativar of idsParaDesativar) {
+        await env.DB.prepare(
+          'UPDATE repertorios SET ativo = 0 WHERE id = ?'
+        ).bind(idParaDesativar).run();
+      }
+    }
   }
 
   const result = await env.DB.prepare(`
@@ -481,11 +535,19 @@ export async function updateRepertorio(id, request, env, admin) {
     return errorResponse('Repertório não encontrado', 404, request);
   }
 
-  // Se ativando este repertorio, desativar os outros
+  // Se ativando este repertório, desativar os mais antigos se já houver 2 ou mais ativos
   if (ativo && !existing.ativo) {
-    await env.DB.prepare(
-      'UPDATE repertorios SET ativo = 0 WHERE ativo = 1'
-    ).run();
+    const ativos = await env.DB.prepare(
+      'SELECT id FROM repertorios WHERE ativo = 1 ORDER BY data_apresentacao DESC, data_criacao DESC'
+    ).all();
+    if (ativos.results.length >= 2) {
+      const idsParaDesativar = ativos.results.slice(1).map(r => r.id);
+      for (const idParaDesativar of idsParaDesativar) {
+        await env.DB.prepare(
+          'UPDATE repertorios SET ativo = 0 WHERE id = ?'
+        ).bind(idParaDesativar).run();
+      }
+    }
   }
 
   const updated = {

@@ -157,10 +157,6 @@ const AdminAnalytics = () => {
     total: data?.total_atividades || 0
   };
 
-  const maxFunil = useMemo(() => {
-    return Math.max(...(usoAcervo.funil || []).map(item => Number(item.total || 0)), 1);
-  }, [usoAcervo.funil]);
-
   if (loading && !data) {
     return <LoadingState isMobile={isMobile} />;
   }
@@ -178,6 +174,162 @@ const AdminAnalytics = () => {
 
   return (
     <div className="page-transition" style={{ padding: isMobile ? '12px' : '24px', width: '100%', maxWidth: '1200px', margin: '0 auto', boxSizing: 'border-box', overflowX: 'hidden' }}>
+      <style>{`
+        @keyframes pulse-flame {
+          0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(230, 126, 34, 0.4); }
+          70% { transform: scale(1.05); box-shadow: 0 0 0 8px rgba(230, 126, 34, 0); }
+          100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(230, 126, 34, 0); }
+        }
+
+        @keyframes slide-in-up {
+          from { opacity: 0; transform: translateY(12px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        .kpi-card-premium {
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          position: relative;
+          overflow: hidden;
+          background: var(--bg-secondary) !important;
+          border: 1px solid var(--border) !important;
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
+        }
+
+        .kpi-card-premium:hover {
+          transform: translateY(-5px);
+          border-color: rgba(212, 175, 55, 0.3) !important;
+          box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3) !important;
+        }
+
+        .kpi-card-premium::before {
+          content: '';
+          position: absolute;
+          top: 0; left: -100%;
+          width: 50%; height: 100%;
+          background: linear-gradient(to right, transparent, rgba(255,255,255,0.03), transparent);
+          transform: skewX(-25deg);
+          transition: 0.75s;
+        }
+
+        .kpi-card-premium:hover::before {
+          left: 125%;
+        }
+
+        .flame-pulse {
+          position: relative;
+        }
+        
+        .flame-pulse .kpi-icon-container {
+          animation: pulse-flame 2s infinite ease-in-out;
+        }
+
+        .panel-premium {
+          border-radius: 12px !important;
+          background: var(--bg-secondary) !important;
+          border: 1px solid var(--border) !important;
+          box-shadow: 0 10px 30px rgba(0,0,0,0.18) !important;
+          transition: all 0.3s ease;
+        }
+
+        .panel-premium:hover {
+          border-color: rgba(255, 255, 255, 0.1) !important;
+          box-shadow: 0 16px 40px rgba(0,0,0,0.25) !important;
+        }
+
+        .list-item-premium {
+          transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+          position: relative;
+        }
+
+        .list-item-premium:hover {
+          transform: translateX(4px);
+          background: rgba(255, 255, 255, 0.02) !important;
+        }
+
+        .podium-1 {
+          background: linear-gradient(135deg, rgba(212, 175, 55, 0.22), rgba(212, 175, 55, 0.05)) !important;
+          border: 1px solid rgba(212, 175, 55, 0.4) !important;
+          color: #D4AF37 !important;
+        }
+
+        .podium-2 {
+          background: linear-gradient(135deg, rgba(192, 192, 192, 0.22), rgba(192, 192, 192, 0.05)) !important;
+          border: 1px solid rgba(192, 192, 192, 0.4) !important;
+          color: #C0C0C0 !important;
+        }
+
+        .podium-3 {
+          background: linear-gradient(135deg, rgba(205, 127, 50, 0.22), rgba(205, 127, 50, 0.05)) !important;
+          border: 1px solid rgba(205, 127, 50, 0.4) !important;
+          color: #CD7F32 !important;
+        }
+
+        .dropdown-item-premium {
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .dropdown-item-premium:hover {
+          background: rgba(212, 175, 55, 0.12) !important;
+          color: #D4AF37 !important;
+          padding-left: 14px !important;
+        }
+
+        .naipe-card {
+          background: var(--bg-primary);
+          border: 1px solid var(--border);
+          border-radius: 12px;
+          padding: 18px;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        .naipe-card:hover {
+          transform: translateY(-3px);
+          border-color: rgba(212, 175, 55, 0.2);
+          box-shadow: 0 10px 24px rgba(0,0,0,0.18);
+        }
+
+        .timeline-line {
+          position: absolute;
+          top: 16px;
+          bottom: 0;
+          left: 26px;
+          width: 2px;
+          background: var(--border);
+          opacity: 0.5;
+        }
+
+        .timeline-item {
+          position: relative;
+          padding-left: 52px;
+          margin-bottom: 12px;
+          animation: slide-in-up 0.4s ease forwards;
+        }
+
+        .timeline-icon-container {
+          position: absolute;
+          left: 14px;
+          top: 10px;
+          width: 26px;
+          height: 26px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justifyContent: center;
+          background: var(--bg-secondary);
+          border: 2px solid var(--border);
+          z-index: 2;
+        }
+
+        .admin-tag {
+          font-size: 10px;
+          font-weight: 800;
+          text-transform: uppercase;
+          padding: 3px 7px;
+          border-radius: 6px;
+          display: inline-block;
+          letter-spacing: 0.5px;
+          border: 1px solid rgba(255,255,255,0.04);
+        }
+      `}</style>
       <header style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', alignItems: isMobile ? 'stretch' : 'flex-start', flexDirection: isMobile ? 'column' : 'row', marginBottom: '24px' }}>
         <div>
           <h1 style={{ margin: 0, fontSize: isMobile ? '24px' : '30px', color: 'var(--text-primary)' }}>
@@ -230,11 +382,16 @@ const AdminAnalytics = () => {
           <KpiCard icon={Download} label="Downloads reais" value={number(usoAcervo.resumo?.downloads_reais)} color={COLORS.green} />
           <KpiCard icon={Search} label="Buscas sem resultado" value={number(usoAcervo.resumo?.buscas_sem_resultado)} color={COLORS.red} />
 
-          <Panel title="Funil do acervo" icon={<BarChart3 size={18} color={GOLD} />} wide>
-            <p style={helpTextStyle}>Consulta e download são comportamentos diferentes: visualizar PDF não conta como download real.</p>
-            {(usoAcervo.funil || []).map(item => (
-              <ProgressRow key={item.etapa} label={item.etapa} value={item.total} max={maxFunil} color={GOLD} />
-            ))}
+          <Panel title="Músicos mais ativos (Acervo)" icon={<Users size={18} color={GOLD} />} wide>
+            <CompactList
+              items={usoAcervo.ranking_musicos || []}
+              initialLimit={5}
+              renderItem={(item) => ({
+                primary: item.nome,
+                secondary: `${item.instrumento || 'Sem instrumento'} · ${number(item.aberturas)} aberturas · ${number(item.visualizacoes)} visualizações · ${number(item.downloads)} downloads · ${number(item.buscas)} buscas`,
+                value: `${number(item.total_acoes)} ações`
+              })}
+            />
           </Panel>
 
           <Panel title="Insights do período" icon={<AlertTriangle size={18} color={COLORS.orange} />}>
@@ -250,8 +407,8 @@ const AdminAnalytics = () => {
               items={usoAcervo.top_partituras || []}
               renderItem={(item) => ({
                 primary: item.titulo,
-                secondary: `${item.compositor || 'Sem compositor'} · ${number(item.aberturas)} aberturas · ${number(item.visualizacoes)} visualizações`,
-                value: `${number(item.downloads)} downloads`
+                secondary: `${item.compositor || 'Sem compositor'} · ${number(item.aberturas)} aberturas · ${number(item.visualizacoes)} visualizações · ${number(item.downloads)} downloads`,
+                value: `${number(Number(item.aberturas || 0) + Number(item.visualizacoes || 0) + Number(item.downloads || 0))} acessos`
               })}
             />
           </Panel>
@@ -261,8 +418,8 @@ const AdminAnalytics = () => {
               items={usoAcervo.top_partes || []}
               renderItem={(item) => ({
                 primary: item.instrumento,
-                secondary: item.partitura_titulo,
-                value: `${number(item.downloads)} downloads`
+                secondary: `${item.partitura_titulo} · ${number(item.visualizacoes)} visualizações · ${number(item.downloads)} downloads`,
+                value: `${number(Number(item.visualizacoes || 0) + Number(item.downloads || 0))} acessos`
               })}
             />
           </Panel>
@@ -276,7 +433,7 @@ const AdminAnalytics = () => {
               value={selectedUserId}
               onChange={setSelectedUserId}
               placeholder="Selecione uma pessoa"
-              options={(pessoas.usuarios || []).map(user => ({ value: String(user.id), label: user.nome }))}
+              options={(pessoas.usuarios || []).map(user => ({ value: String(user.id), label: user.nome, sub: user.instrumento }))}
             />
           </Panel>
 
@@ -334,16 +491,46 @@ const AdminAnalytics = () => {
 
           <Panel title="Presença por naipe" icon={<Users size={18} color={COLORS.purple} />} wide>
             {ensaios.empty_state && <p style={helpTextStyle}>{ensaios.empty_state}</p>}
-            {(ensaios.presenca_naipes || []).map(item => (
-              <details key={item.familia} style={{ background: 'var(--bg-primary)', border: '1px solid var(--border)', borderRadius: '8px', padding: '12px', marginBottom: '8px' }}>
-                <summary style={{ cursor: 'pointer', color: 'var(--text-primary)', fontWeight: 700 }}>
-                  {item.familia}: {number(item.registradas)} presenças registradas de {number(item.esperadas)} esperadas
-                </summary>
-                <p style={{ ...helpTextStyle, marginTop: '8px' }}>
-                  {number(item.musicos)} músicos ativos × {number(item.ensaios)} ensaios registrados = {number(item.esperadas)} presenças esperadas. Taxa: {percent(item.taxa)}.
-                </p>
-              </details>
-            ))}
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(320px, 1fr))', gap: '12px', marginTop: '4px' }}>
+              {(ensaios.presenca_naipes || []).map(item => {
+                let barColor = '#EF4444';
+                let statusText = 'Baixa';
+                if (item.taxa >= 75) {
+                  barColor = '#10B981';
+                  statusText = 'Excelente';
+                } else if (item.taxa >= 50) {
+                  barColor = '#F59E0B';
+                  statusText = 'Regular';
+                }
+                
+                return (
+                  <div key={item.familia} className="naipe-card">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                      <div>
+                        <h3 style={{ margin: 0, fontSize: '15px', color: 'var(--text-primary)', fontWeight: 800 }}>{item.familia}</h3>
+                        <span style={{ fontSize: '10px', color: barColor, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                          Presença {statusText}
+                        </span>
+                      </div>
+                      <div style={{ color: 'var(--text-primary)', fontSize: '24px', fontWeight: 900, lineHeight: 1 }}>
+                        {percent(item.taxa)}
+                      </div>
+                    </div>
+                    
+                    <div style={{ height: '8px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '999px', overflow: 'hidden', marginBottom: '10px' }}>
+                      <div style={{ width: `${Math.max(4, Number(item.taxa || 0))}%`, height: '100%', background: barColor, borderRadius: '999px', transition: 'width 0.8s cubic-bezier(0.4, 0, 0.2, 1)' }} />
+                    </div>
+                    
+                    <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '12px', lineHeight: 1.45 }}>
+                      <strong>{number(item.registradas)}</strong> de <strong>{number(item.esperadas)}</strong> presenças registradas <br />
+                      <span style={{ fontSize: '11px', opacity: 0.85 }}>
+                        ({number(item.musicos)} músicos ativos em {number(item.ensaios)} ensaios)
+                      </span>
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
           </Panel>
         </SectionGrid>
       )}
@@ -606,23 +793,89 @@ const SelectField = ({ value, onChange, placeholder, options }) => {
 
   const allOptions = [{ value: '', label: placeholder }, ...options];
 
+  const getInitials = (name) => {
+    if (!name || name === placeholder) return '';
+    return name
+      .split(' ')
+      .filter(Boolean)
+      .slice(0, 2)
+      .map(n => n[0])
+      .join('')
+      .toUpperCase();
+  };
+
   return (
     <div ref={containerRef} style={{ position: 'relative', width: '100%', minWidth: 0 }}>
       <button
         type="button"
         onClick={() => setOpen(prev => !prev)}
-        style={{ ...controlStyle, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', borderColor: open ? GOLD : 'var(--border)', cursor: 'pointer', textAlign: 'left' }}
+        style={{
+          ...controlStyle,
+          width: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '10px',
+          borderColor: open ? GOLD : 'var(--border)',
+          cursor: 'pointer',
+          textAlign: 'left',
+          transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+          background: 'rgba(255, 255, 255, 0.02)'
+        }}
       >
-        <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {selectedOption?.label || placeholder}
-        </span>
-        <ChevronDown size={16} color={GOLD} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+          {selectedOption && selectedOption.value !== '' && (
+            <div style={{
+              width: '24px',
+              height: '24px',
+              borderRadius: '50%',
+              background: `linear-gradient(135deg, ${GOLD}44, ${GOLD}22)`,
+              border: `1px solid ${GOLD}66`,
+              color: GOLD,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '10px',
+              fontWeight: 800,
+              flexShrink: 0
+            }}>
+              {getInitials(selectedOption.label)}
+            </div>
+          )}
+          <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: selectedOption ? 700 : 500 }}>
+            {selectedOption?.label || placeholder}
+          </span>
+        </div>
+        <ChevronDown 
+          size={16} 
+          color={GOLD} 
+          style={{ 
+            transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            transform: open ? 'rotate(180deg)' : 'rotate(0)'
+          }} 
+        />
       </button>
 
       {open && (
-        <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, right: 0, zIndex: 40, maxHeight: '240px', overflowY: 'auto', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '8px', padding: '4px', boxShadow: '0 16px 42px rgba(0,0,0,0.46)' }}>
+        <div style={{
+          position: 'absolute',
+          top: 'calc(100% + 6px)',
+          left: 0,
+          right: 0,
+          zIndex: 40,
+          maxHeight: '260px',
+          overflowY: 'auto',
+          background: 'var(--bg-secondary)',
+          border: '1px solid var(--border)',
+          borderRadius: '10px',
+          padding: '6px',
+          boxShadow: '0 20px 48px rgba(0,0,0,0.5)',
+          backdropFilter: 'blur(20px)',
+          animation: 'slide-in-up 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
+        }}>
           {allOptions.map(option => {
             const selected = String(option.value) === String(value);
+            const initials = getInitials(option.label);
             return (
               <button
                 key={option.value || '__empty'}
@@ -631,9 +884,64 @@ const SelectField = ({ value, onChange, placeholder, options }) => {
                   onChange(option.value);
                   setOpen(false);
                 }}
-                style={{ width: '100%', border: 'none', borderRadius: '6px', background: selected ? `${GOLD}1f` : 'transparent', color: selected ? GOLD : 'var(--text-primary)', padding: '9px 10px', textAlign: 'left', cursor: 'pointer', fontWeight: selected ? 800 : 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                className="dropdown-item-premium"
+                style={{
+                  width: '100%',
+                  border: 'none',
+                  borderRadius: '8px',
+                  background: selected ? `${GOLD}1f` : 'transparent',
+                  color: selected ? GOLD : 'var(--text-primary)',
+                  padding: '8px 10px',
+                  textAlign: 'left',
+                  cursor: 'pointer',
+                  fontWeight: selected ? 800 : 600,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '12px',
+                  marginBottom: '2px',
+                  boxSizing: 'border-box'
+                }}
               >
-                {option.label}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+                  {initials ? (
+                    <div style={{
+                      width: '24px',
+                      height: '24px',
+                      borderRadius: '50%',
+                      background: selected ? `linear-gradient(135deg, ${GOLD}55, ${GOLD}33)` : 'rgba(255, 255, 255, 0.05)',
+                      border: `1px solid ${selected ? GOLD : 'var(--border)'}`,
+                      color: selected ? GOLD : 'var(--text-muted)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '10px',
+                      fontWeight: 800,
+                      flexShrink: 0
+                    }}>
+                      {initials}
+                    </div>
+                  ) : (
+                    <div style={{ width: '24px', height: '24px', flexShrink: 0 }} />
+                  )}
+                  <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {option.label}
+                  </span>
+                </div>
+                {option.sub && (
+                  <span style={{
+                    fontSize: '10px',
+                    fontWeight: 700,
+                    background: selected ? `${GOLD}33` : 'var(--bg-primary)',
+                    color: selected ? GOLD : 'var(--text-muted)',
+                    padding: '2px 8px',
+                    borderRadius: '999px',
+                    whiteSpace: 'nowrap',
+                    border: '1px solid var(--border)'
+                  }}>
+                    {option.sub}
+                  </span>
+                )}
               </button>
             );
           })}
@@ -649,37 +957,44 @@ const SectionGrid = ({ children }) => (
   </div>
 );
 
-const KpiCard = ({ icon: Icon, label, value, color }) => (
-  <div style={{ minWidth: 0, background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '8px', padding: '14px' }}>
-    <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: `${color}18`, color, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '10px' }}>
-      <Icon size={18} />
+const KpiCard = ({ icon: Icon, label, value, color }) => {
+  const isFlame = Icon === Flame;
+  return (
+    <div className={`kpi-card-premium ${isFlame ? 'flame-pulse' : ''}`} style={{ minWidth: 0, borderRadius: '12px', padding: '16px' }}>
+      <div style={{ 
+        width: '38px', 
+        height: '38px', 
+        borderRadius: '50%', 
+        background: `${color}18`, 
+        color, 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        marginBottom: '12px',
+        border: `1px solid ${color}33`,
+        boxShadow: `0 0 10px ${color}10`,
+        transition: 'all 0.3s ease'
+      }} className="kpi-icon-container">
+        <Icon size={20} />
+      </div>
+      <div style={{ color: 'var(--text-primary)', fontSize: '28px', fontWeight: 900, lineHeight: 1, letterSpacing: '-0.5px' }}>{value}</div>
+      <div style={{ color: 'var(--text-muted)', fontSize: '12px', marginTop: '6px', fontWeight: 600, lineHeight: 1.3, textTransform: 'uppercase', letterSpacing: '0.3px' }}>{label}</div>
     </div>
-    <div style={{ color, fontSize: '24px', fontWeight: 800, lineHeight: 1 }}>{value}</div>
-    <div style={{ color: 'var(--text-muted)', fontSize: '12px', marginTop: '5px', lineHeight: 1.3 }}>{label}</div>
-  </div>
-);
+  );
+};
 
 const Panel = ({ title, icon, children, wide }) => (
-  <section style={{ gridColumn: wide ? '1 / -1' : undefined, background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '8px', padding: '14px', minWidth: 0, overflow: 'hidden' }}>
-    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', minWidth: 0 }}>
-      {icon}
-      <h2 style={{ color: 'var(--text-primary)', fontSize: '17px', lineHeight: 1.2, margin: 0 }}>{title}</h2>
+  <section className="panel-premium" style={{ gridColumn: wide ? '1 / -1' : undefined, borderRadius: '12px', padding: '18px', minWidth: 0, overflow: 'hidden' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px', borderBottom: '1px solid rgba(255,255,255,0.04)', paddingBottom: '10px', minWidth: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '28px', height: '28px', borderRadius: '8px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
+        {icon}
+      </div>
+      <h2 style={{ color: 'var(--text-primary)', fontSize: '18px', fontWeight: 800, margin: 0, letterSpacing: '-0.2px' }}>{title}</h2>
     </div>
     {children}
   </section>
 );
 
-const ProgressRow = ({ label, value, max, color }) => (
-  <div style={{ marginBottom: '14px' }}>
-    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', marginBottom: '6px', color: 'var(--text-primary)', fontWeight: 700 }}>
-      <span>{label}</span>
-      <span>{number(value)}</span>
-    </div>
-    <div style={{ height: '10px', background: 'var(--bg-primary)', border: '1px solid var(--border)', borderRadius: '999px', overflow: 'hidden' }}>
-      <div style={{ width: `${Math.max(4, (Number(value || 0) / max) * 100)}%`, height: '100%', background: color, borderRadius: '999px' }} />
-    </div>
-  </div>
-);
 
 const CompactList = ({ items, renderItem, initialLimit = 6 }) => {
   const [expanded, setExpanded] = useState(false);
@@ -692,17 +1007,69 @@ const CompactList = ({ items, renderItem, initialLimit = 6 }) => {
       {visibleItems.map((item, index) => {
         const rendered = renderItem(item);
         const rank = rendered.rank ?? item.posicao ?? index + 1;
-        const highlighted = rank <= 3;
+        const isPodium = rank <= 3;
+        
+        let podiumClass = '';
+        if (isPodium) {
+          if (rank === 1) podiumClass = 'podium-1';
+          else if (rank === 2) podiumClass = 'podium-2';
+          else if (rank === 3) podiumClass = 'podium-3';
+        }
+
         return (
-          <div key={item.id ?? index} style={{ display: 'grid', gridTemplateColumns: '32px minmax(0, 1fr) auto', gap: '10px', alignItems: 'center', padding: '11px', borderRadius: '8px', background: 'var(--bg-primary)', minWidth: 0 }}>
-            <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: highlighted ? `${GOLD}18` : 'var(--bg-secondary)', color: highlighted ? GOLD : 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}>
+          <div 
+            key={item.id ?? index} 
+            className="list-item-premium"
+            style={{ 
+              display: 'grid', 
+              gridTemplateColumns: '32px minmax(0, 1fr) auto', 
+              gap: '12px', 
+              alignItems: 'center', 
+              padding: '10px 12px', 
+              borderRadius: '10px', 
+              background: 'rgba(255, 255, 255, 0.01)', 
+              border: '1px solid rgba(255, 255, 255, 0.03)',
+              minWidth: 0 
+            }}
+          >
+            <div 
+              className={podiumClass}
+              style={{ 
+                width: '26px', 
+                height: '26px', 
+                borderRadius: '50%', 
+                background: 'var(--bg-secondary)', 
+                color: 'var(--text-muted)', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                fontWeight: 900,
+                fontSize: '12px',
+                border: '1px solid var(--border)',
+                boxShadow: isPodium ? '0 4px 10px rgba(0,0,0,0.15)' : 'none'
+              }}
+            >
               {rank}
             </div>
             <div style={{ minWidth: 0 }}>
-              <div style={{ color: 'var(--text-primary)', fontWeight: 700, lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{rendered.primary}</div>
-              {rendered.secondary && <div style={{ color: 'var(--text-muted)', fontSize: '13px', lineHeight: 1.3, marginTop: '3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{rendered.secondary}</div>}
+              <div style={{ color: 'var(--text-primary)', fontWeight: 700, fontSize: '14px', lineHeight: 1.25, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{rendered.primary}</div>
+              {rendered.secondary && <div style={{ color: 'var(--text-muted)', fontSize: '12px', lineHeight: 1.3, marginTop: '3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{rendered.secondary}</div>}
             </div>
-            {rendered.value && <div style={{ color: GOLD, fontWeight: 800, lineHeight: 1.2, whiteSpace: 'nowrap', fontSize: '14px' }}>{rendered.value}</div>}
+            {rendered.value && (
+              <div style={{ 
+                color: isPodium ? 'inherit' : GOLD, 
+                fontWeight: 900, 
+                lineHeight: 1.2, 
+                whiteSpace: 'nowrap', 
+                fontSize: '13px',
+                background: isPodium ? 'transparent' : 'rgba(212, 175, 55, 0.08)',
+                padding: isPodium ? '0' : '4px 8px',
+                borderRadius: '6px',
+                border: isPodium ? 'none' : `1px solid ${GOLD}22`
+              }}>
+                {rendered.value}
+              </div>
+            )}
           </div>
         );
       })}
@@ -710,7 +1077,22 @@ const CompactList = ({ items, renderItem, initialLimit = 6 }) => {
         <button
           type="button"
           onClick={() => setExpanded(prev => !prev)}
-          style={{ ...controlStyle, width: '100%', justifyContent: 'center', color: GOLD, fontWeight: 800, cursor: 'pointer', padding: '9px 12px' }}
+          style={{ 
+            ...controlStyle, 
+            width: '100%', 
+            justifyContent: 'center', 
+            color: GOLD, 
+            fontWeight: 800, 
+            cursor: 'pointer', 
+            padding: '9px 12px',
+            background: 'rgba(212, 175, 55, 0.04)',
+            border: `1px solid rgba(212, 175, 55, 0.15)`,
+            transition: 'all 0.25s ease',
+            borderRadius: '10px',
+            marginTop: '4px'
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(212, 175, 55, 0.08)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(212, 175, 55, 0.04)'; }}
         >
           {expanded ? 'Mostrar menos' : `Ver todos (${items.length})`}
         </button>
@@ -761,32 +1143,63 @@ const Timeline = ({ items, total }) => {
   if (!items?.length) return <EmptyState icon={Activity} message="Nenhuma atividade dessa pessoa no período" />;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-      {items.map(item => {
-        const info = getAtividadeInfo(item.tipo, true);
-        return (
-          <div key={item.id} style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', gap: '12px', padding: '12px', borderRadius: '8px', background: 'var(--bg-primary)', overflow: 'hidden' }}>
-            <div style={{ minWidth: 0, overflow: 'hidden' }}>
-              <div style={{ color: 'var(--text-primary)', fontWeight: 700, lineHeight: 1.25, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{info.action}</div>
-              <div style={{
-                color: 'var(--text-muted)',
-                fontSize: '13px',
-                lineHeight: 1.35,
-                marginTop: '3px',
-                overflow: 'hidden',
-                overflowWrap: 'anywhere',
-                display: '-webkit-box',
-                WebkitLineClamp: 2,
-                WebkitBoxOrient: 'vertical'
+    <div style={{ position: 'relative', padding: '10px 0' }}>
+      <div className="timeline-line" />
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+        {items.map((item, idx) => {
+          const info = getAtividadeInfo(item.tipo, true);
+          let iconColor = GOLD;
+          if (item.tipo?.startsWith('pdf_visualizado')) iconColor = COLORS.blue;
+          else if (item.tipo?.includes('download')) iconColor = COLORS.green;
+          else if (item.tipo?.includes('busca')) iconColor = COLORS.purple;
+
+          return (
+            <div key={item.id} className="timeline-item" style={{ animationDelay: `${idx * 0.05}s` }}>
+              <div className="timeline-icon-container" style={{ borderColor: iconColor }}>
+                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: iconColor }} />
+              </div>
+
+              <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: 'minmax(0, 1fr) auto', 
+                gap: '12px', 
+                padding: '12px 14px', 
+                borderRadius: '10px', 
+                background: 'rgba(255, 255, 255, 0.015)', 
+                border: '1px solid rgba(255, 255, 255, 0.03)',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                overflow: 'hidden' 
               }}>
-                {getTimelineDetail(item)}
+                <div style={{ minWidth: 0, overflow: 'hidden' }}>
+                  <div style={{ color: 'var(--text-primary)', fontWeight: 700, fontSize: '14px', lineHeight: 1.25, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {info.action}
+                  </div>
+                  <div style={{
+                    color: 'var(--text-muted)',
+                    fontSize: '12px',
+                    lineHeight: 1.4,
+                    marginTop: '4px',
+                    overflow: 'hidden',
+                    overflowWrap: 'anywhere',
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical'
+                  }}>
+                    {getTimelineDetail(item)}
+                  </div>
+                </div>
+                <span style={{ color: 'var(--text-muted)', fontSize: '11px', fontWeight: 600, whiteSpace: 'nowrap', marginTop: '2px' }}>
+                  {formatTimeAgo(item.criado_em, true)}
+                </span>
               </div>
             </div>
-            <span style={{ color: 'var(--text-muted)', fontSize: '12px', whiteSpace: 'nowrap' }}>{formatTimeAgo(item.criado_em, true)}</span>
-          </div>
-        );
-      })}
-      <div style={{ color: 'var(--text-muted)', fontSize: '12px' }}>{number(items.length)} de {number(total)} eventos</div>
+          );
+        })}
+      </div>
+      <div style={{ color: 'var(--text-muted)', fontSize: '12px', fontWeight: 600, paddingLeft: '52px', marginTop: '12px' }}>
+        {number(items.length)} de {number(total)} eventos
+      </div>
     </div>
   );
 };
@@ -795,35 +1208,97 @@ const ActivityFeed = ({ items, totalCount, onLoadMore, loadingMore }) => {
   if (!items?.length) return <EmptyState icon={Activity} message="Sem alterações recentes" />;
   const hasMore = Number(totalCount || 0) > items.length;
 
+  const getAdminTagInfo = (tipo) => {
+    const lowerType = String(tipo || '').toLowerCase();
+    if (lowerType.includes('partitura')) {
+      return { label: 'Partitura', bg: 'rgba(74, 144, 217, 0.12)', color: COLORS.blue };
+    }
+    if (lowerType.includes('repertorio')) {
+      return { label: 'Repertório', bg: 'rgba(212, 175, 55, 0.12)', color: GOLD };
+    }
+    if (lowerType.includes('parte')) {
+      return { label: 'Parte', bg: 'rgba(52, 199, 89, 0.12)', color: COLORS.green };
+    }
+    if (lowerType.includes('aviso')) {
+      return { label: 'Aviso', bg: 'rgba(230, 126, 34, 0.12)', color: COLORS.orange };
+    }
+    return { label: 'Sistema', bg: 'rgba(155, 89, 182, 0.12)', color: COLORS.purple };
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-      {items.map(item => {
+      {items.map((item) => {
         const info = getAtividadeInfo(item.tipo, true);
+        const tagInfo = getAdminTagInfo(item.tipo);
         return (
-          <div key={item.id} style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', gap: '12px', padding: '12px', borderRadius: '8px', background: 'var(--bg-primary)', overflow: 'hidden' }}>
+          <div 
+            key={item.id} 
+            className="list-item-premium"
+            style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'minmax(0, 1fr) auto', 
+              gap: '16px', 
+              padding: '14px', 
+              borderRadius: '10px', 
+              background: 'rgba(255, 255, 255, 0.015)', 
+              border: '1px solid rgba(255, 255, 255, 0.03)',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+              overflow: 'hidden' 
+            }}
+          >
             <div style={{ minWidth: 0, overflow: 'hidden' }}>
-              <div style={{ color: 'var(--text-primary)', fontWeight: 700, lineHeight: 1.25, overflowWrap: 'anywhere' }}>{info.action}: {compactText(item.titulo, 120)}</div>
+              <div style={{ color: 'var(--text-primary)', fontWeight: 700, fontSize: '14px', lineHeight: 1.3, display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
+                <span className="admin-tag" style={{ background: tagInfo.bg, color: tagInfo.color }}>
+                  {tagInfo.label}
+                </span>
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {info.action}: {compactText(item.titulo, 100)}
+                </span>
+              </div>
               <div style={{
                 color: 'var(--text-muted)',
-                fontSize: '13px',
-                lineHeight: 1.35,
-                marginTop: '3px',
+                fontSize: '12.5px',
+                lineHeight: 1.4,
+                marginTop: '6px',
                 overflow: 'hidden',
                 overflowWrap: 'anywhere',
                 display: '-webkit-box',
-                WebkitLineClamp: 3,
+                WebkitLineClamp: 2,
                 WebkitBoxOrient: 'vertical'
               }}>
                 {[item.usuario_nome, item.detalhes].map(value => compactText(value, 140)).filter(Boolean).join(' · ')}
               </div>
             </div>
-            <span style={{ color: 'var(--text-muted)', fontSize: '12px', whiteSpace: 'nowrap' }}>{formatTimeAgo(item.criado_em, true)}</span>
+            <span style={{ color: 'var(--text-muted)', fontSize: '11px', fontWeight: 600, whiteSpace: 'nowrap', marginTop: '2px' }}>
+              {formatTimeAgo(item.criado_em, true)}
+            </span>
           </div>
         );
       })}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border)', paddingTop: '12px' }}>
-        <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>{number(items.length)} de {number(totalCount)} alterações</span>
-        {hasMore && <Button onClick={onLoadMore} disabled={loadingMore}>{loadingMore ? 'Carregando...' : 'Carregar mais'}</Button>}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border)', paddingTop: '12px', marginTop: '4px' }}>
+        <span style={{ color: 'var(--text-muted)', fontSize: '12px', fontWeight: 600 }}>{number(items.length)} de {number(totalCount)} alterações</span>
+        {hasMore && (
+          <button 
+            onClick={onLoadMore} 
+            disabled={loadingMore}
+            style={{
+              ...controlStyle,
+              cursor: loadingMore ? 'wait' : 'pointer',
+              color: GOLD,
+              fontWeight: 800,
+              fontSize: '12px',
+              padding: '6px 12px',
+              background: 'rgba(212, 175, 55, 0.04)',
+              border: `1px solid rgba(212, 175, 55, 0.15)`,
+              borderRadius: '8px',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseEnter={(e) => { if (!loadingMore) e.currentTarget.style.background = 'rgba(212, 175, 55, 0.08)'; }}
+            onMouseLeave={(e) => { if (!loadingMore) e.currentTarget.style.background = 'rgba(212, 175, 55, 0.04)'; }}
+          >
+            {loadingMore ? 'Carregando...' : 'Carregar mais'}
+          </button>
+        )}
       </div>
     </div>
   );

@@ -1,3 +1,0 @@
-{
-  "/(auth)/acervo/[categoria]/[partituraId]/page": "app/(auth)/acervo/[categoria]/[partituraId]/page.js"
-}

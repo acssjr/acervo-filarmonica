@@ -184,6 +184,64 @@ async function getUsoAcervo(env, start, end) {
     descricao: `${item.termo}: ${item.tentativas} tentativa${item.tentativas === 1 ? '' : 's'}`
   }));
 
+  const rankingMusicos = await env.DB.prepare(`
+    WITH acoes_usuario AS (
+      SELECT
+        usuario_id,
+        SUM(CASE WHEN tipo = 'partitura_aberta' THEN 1 ELSE 0 END) as aberturas,
+        SUM(CASE WHEN tipo IN ('pdf_visualizado_grade', 'pdf_visualizado_parte') THEN 1 ELSE 0 END) as visualizacoes,
+        0 as downloads,
+        SUM(CASE WHEN tipo = 'busca_digitada' THEN 1 ELSE 0 END) as buscas
+      FROM tracking_events
+      WHERE criado_em >= ? AND criado_em < ?
+        AND usuario_id IS NOT NULL
+      GROUP BY usuario_id
+
+      UNION ALL
+
+      SELECT
+        usuario_id,
+        0 as aberturas,
+        0 as visualizacoes,
+        COUNT(*) as downloads,
+        0 as buscas
+      FROM logs_download
+      WHERE data >= ? AND data < ?
+        AND usuario_id IS NOT NULL
+      GROUP BY usuario_id
+
+      UNION ALL
+
+      SELECT
+        usuario_id,
+        0 as aberturas,
+        0 as visualizacoes,
+        0 as downloads,
+        COUNT(*) as buscas
+      FROM logs_buscas
+      WHERE data >= ? AND data < ?
+        AND usuario_id IS NOT NULL
+      GROUP BY usuario_id
+    )
+    SELECT
+      u.id,
+      u.nome,
+      i.nome as instrumento,
+      u.foto_url,
+      SUM(au.aberturas) as aberturas,
+      SUM(au.visualizacoes) as visualizacoes,
+      SUM(au.downloads) as downloads,
+      SUM(au.buscas) as buscas,
+      (SUM(au.aberturas) + SUM(au.visualizacoes) + SUM(au.downloads) + SUM(au.buscas)) as total_acoes
+    FROM acoes_usuario au
+    JOIN usuarios u ON u.id = au.usuario_id
+    LEFT JOIN instrumentos i ON i.id = u.instrumento_id
+    WHERE u.ativo = 1 AND u.admin = 0
+    GROUP BY u.id, u.nome, i.nome, u.foto_url
+    ORDER BY total_acoes DESC
+    LIMIT 10
+  `).bind(start, end, start, end, start, end).all();
+
   return {
     resumo: {
       partituras_abertas: partiturasAbertas,
@@ -193,11 +251,7 @@ async function getUsoAcervo(env, start, end) {
       conversao_visualizacao: partiturasAbertas ? Math.round((pdfsVisualizados / partiturasAbertas) * 100) : 0,
       conversao_download: partiturasAbertas ? Math.round((downloadsReais / partiturasAbertas) * 100) : 0
     },
-    funil: [
-      { etapa: 'Partituras abertas', total: partiturasAbertas },
-      { etapa: 'PDFs visualizados', total: pdfsVisualizados },
-      { etapa: 'Downloads reais', total: downloadsReais }
-    ],
+    ranking_musicos: emptyResults(rankingMusicos),
     top_partituras: emptyResults(topPartituras),
     top_partes: emptyResults(topPartes),
     insights
