@@ -21,6 +21,8 @@
     "db:migrate:remote": "wrangler d1 migrations apply DB --remote",
     "db:schema:test": "node scripts/generate-test-schema.cjs --check",
     "db:schema:generate": "node scripts/generate-test-schema.cjs",
+    "api:contract:check": "node scripts/check-route-contract.cjs",
+    "api:types:check": "npm run generate:api --prefix frontend && git diff --exit-code -- frontend/src/api-types.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "npx playwright test",
