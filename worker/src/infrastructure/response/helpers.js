@@ -19,6 +19,10 @@ export function errorResponse(message, status = 400, request) {
 
 // Obter JWT secret do ambiente
 export function getJwtSecret(env) {
-  // Usa variavel de ambiente ou gera baseado no database_id
-  return env.JWT_SECRET || `acervo-jwt-secret-${env.DB?.databaseId || 'default'}`;
+  const secret = env?.JWT_SECRET;
+  if (typeof secret !== 'string' || secret.trim() === '') {
+    throw new Error('JWT_SECRET não configurado');
+  }
+
+  return secret;
 }

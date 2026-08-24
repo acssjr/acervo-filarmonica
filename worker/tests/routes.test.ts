@@ -343,10 +343,12 @@ describe('Download view analytics', () => {
 describe('Rotas Admin', () => {
   let userToken: string;
   let adminToken: string;
+  let forgedAdminToken: string;
 
   beforeAll(async () => {
     userToken = await createTestToken(2, false); // usuário comum
     adminToken = await createTestToken(1, true);  // admin
+    forgedAdminToken = await createTestToken(2, true); // claim não eleva papel do banco
   });
 
   describe('GET /api/usuarios', () => {
@@ -359,6 +361,13 @@ describe('Rotas Admin', () => {
     it('retorna 403 com token de usuário comum', async () => {
       const response = await SELF.fetch('https://test.local/api/usuarios', {
         headers: { Authorization: `Bearer ${userToken}` },
+      });
+      expect(response.status).toBe(403);
+    });
+
+    it('ignora claim admin quando o usuário atual não é admin no banco', async () => {
+      const response = await SELF.fetch('https://test.local/api/usuarios', {
+        headers: { Authorization: `Bearer ${forgedAdminToken}` },
       });
       expect(response.status).toBe(403);
     });

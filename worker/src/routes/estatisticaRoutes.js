@@ -39,7 +39,7 @@ export function setupEstatisticaRoutes(router) {
   router.get('/api/instrumentos', getInstrumentos);
 
   // Rota de tracking (requer auth para vincular ao usuário)
-  router.post('/api/tracking/search', trackSearch, [trackingRateLimitMiddleware, authMiddleware]);
+  router.post('/api/tracking/search', trackSearch, [authMiddleware, trackingRateLimitMiddleware]);
   router.post('/api/tracking/events', async (request, env, _params, context) => {
     try {
       let body;
@@ -63,7 +63,7 @@ export function setupEstatisticaRoutes(router) {
       console.error('Erro ao registrar evento de tracking:', error);
       return errorResponse('Erro ao registrar evento de tracking', 500, request);
     }
-  }, [trackingRateLimitMiddleware, authMiddleware]);
+  }, [authMiddleware, trackingRateLimitMiddleware]);
 
   router.post('/api/tracking/session/end', async (request, env, _params, context) => {
     let body = {};
@@ -82,7 +82,7 @@ export function setupEstatisticaRoutes(router) {
 
     await endTrackingSession(env, sessionId, 'logout', context.user.id);
     return jsonResponse({ success: true }, 200, request);
-  }, [trackingRateLimitMiddleware, authMiddleware]);
+  }, [authMiddleware, trackingRateLimitMiddleware]);
 
   // Rotas admin
   router.get('/api/admin/estatisticas', getEstatisticasAdmin, [adminMiddleware]);

@@ -6,11 +6,33 @@ import {
   TRACKING_RATE_LIMIT_WINDOW_SECONDS
 } from '../../config/index.js';
 
+let missingBindingWarned = false;
+
+function missingRateLimitResult(env, remaining) {
+  const production = env?.ENVIRONMENT === 'production';
+
+  if (!missingBindingWarned) {
+    const level = production ? 'error' : 'warn';
+    console[level](`RATE_LIMIT não configurado; proteção ${production ? 'bloqueada em produção' : 'desativada fora de produção'}`);
+    missingBindingWarned = true;
+  }
+
+  if (production) {
+    return {
+      allowed: false,
+      remaining: 0,
+      retryAfter: RATE_LIMIT_WINDOW_SECONDS,
+      configurationError: true
+    };
+  }
+
+  return { allowed: true, remaining, degraded: true };
+}
+
 // Verificar rate limit
 export async function checkRateLimit(env, key) {
-  // Se nao tiver KV configurado, permite (para nao quebrar)
   if (!env.RATE_LIMIT) {
-    return { allowed: true, remaining: MAX_LOGIN_ATTEMPTS };
+    return missingRateLimitResult(env, MAX_LOGIN_ATTEMPTS);
   }
 
   const now = Date.now();
@@ -73,9 +95,8 @@ export async function resetRateLimit(env, key) {
 
 // Verificar rate limit para tracking (limites mais altos)
 export async function checkTrackingRateLimit(env, userId, ip) {
-  // Se nao tiver KV configurado, permite (para nao quebrar)
   if (!env.RATE_LIMIT) {
-    return { allowed: true, remaining: MAX_TRACKING_ATTEMPTS };
+    return missingRateLimitResult(env, MAX_TRACKING_ATTEMPTS);
   }
 
   // Prefere user ID se disponível, senão usa IP

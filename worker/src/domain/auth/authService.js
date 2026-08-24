@@ -25,10 +25,6 @@ export async function verifyUserFromJwt(request, env) {
       'SELECT * FROM usuarios WHERE id = ? AND ativo = 1'
     ).bind(payload.userId).first();
 
-    if (user) {
-      user._isAdmin = payload.isAdmin || false;
-    }
-
     return user;
   }
 
@@ -54,6 +50,8 @@ export async function verifyUserFromJwt(request, env) {
       if (user.pin_hash !== pin) return null;
     }
 
+    console.warn(`Autenticação legada utilizada pelo usuário ${user.id}`);
+    user._legacyAuth = true;
     return user;
   }
 
@@ -68,7 +66,7 @@ export async function verifyUserFromJwt(request, env) {
 export async function verifyAdmin(request, env) {
   const user = await verifyUserFromJwt(request, env);
   if (!user) return null;
-  if (user.admin !== 1 && !user._isAdmin) return null;
+  if (user.admin !== 1) return null;
   return user;
 }
 

@@ -7,6 +7,12 @@ import {
   stringToArrayBuffer,
 } from '../security/crypto.js';
 
+function assertJwtSecret(secret) {
+  if (typeof secret !== 'string' || secret.trim() === '') {
+    throw new Error('JWT_SECRET não configurado');
+  }
+}
+
 /**
  * Cria um JWT usando HMAC SHA-256
  * @param {Object} payload - Dados a serem incluídos no token
@@ -15,6 +21,7 @@ import {
  * @returns {Promise<string>} Token JWT assinado
  */
 export async function createJwt(payload, secret, expiryHours = JWT_EXPIRY_HOURS) {
+  assertJwtSecret(secret);
   const header = { alg: JWT_ALGORITHM, typ: 'JWT' };
 
   // Adiciona expiração
@@ -53,6 +60,7 @@ export async function createJwt(payload, secret, expiryHours = JWT_EXPIRY_HOURS)
  * @returns {Promise<Object|null>} Payload decodificado ou null se inválido
  */
 export async function verifyJwt(token, secret) {
+  assertJwtSecret(secret);
   try {
     const parts = token.split('.');
     if (parts.length !== 3) return null;

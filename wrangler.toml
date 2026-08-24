@@ -20,7 +20,7 @@ database_id = "2e8dc4fb-4f78-45fe-9e07-dcd05ea60d8c"
 binding = "BUCKET"
 bucket_name = "acervo-pdfs"
 
-# KV para rate limiting (opcional - worker funciona sem)
+# KV para rate limiting (obrigatório em produção)
 # Para criar: npx wrangler kv:namespace create RATE_LIMIT
 # [[kv_namespaces]]
 # binding = "RATE_LIMIT"
@@ -29,8 +29,8 @@ bucket_name = "acervo-pdfs"
 # Variáveis de ambiente
 [vars]
 ENVIRONMENT = "production"
-JWT_SECRET = "acervo-jwt-2e8dc4fb-4f78-45fe-filarmonica25marco"
 POSTHOG_HOST = "https://us.i.posthog.com"
+# JWT_SECRET is set as a secret via: npx wrangler secret put JWT_SECRET
 # POSTHOG_API_KEY is set as a secret via: npx wrangler secret put POSTHOG_API_KEY
 
 # ============================================================
