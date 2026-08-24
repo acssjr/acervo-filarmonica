@@ -1,5 +1,14 @@
 // worker/src/domain/partituras/partituraService.js
-import { jsonResponse, errorResponse } from '../../infrastructure/index.js';
+import {
+  STORAGE_PREFIXES,
+  MAX_PDF_BATCH_COUNT,
+  buildStorageKey,
+  deleteBestEffort,
+  errorResponse,
+  jsonResponse,
+  putWithDbCompensation,
+  readAndValidatePdf
+} from '../../infrastructure/index.js';
 import { registrarAtividade } from '../atividades/index.js';
 import { buildUpdateDetails, describeBoolean } from '../atividades/auditUtils.js';
 import { createPostHogClient, shutdownPostHog } from '../../infrastructure/posthog/posthogClient.js';
@@ -97,27 +106,39 @@ export async function createPartitura(request, env, admin) {
     return errorResponse(`Já existe uma partitura com o título "${duplicada.titulo}"`, 409, request);
   }
 
+  let arrayBuffer;
+  try {
+    arrayBuffer = await readAndValidatePdf(arquivo);
+  } catch (error) {
+    return errorResponse(error.message, 400, request);
+  }
+
   const timestamp = Date.now();
-  const nomeArquivo = `${timestamp}_${arquivo.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+  const nomeArquivo = buildStorageKey(
+    STORAGE_PREFIXES.partituras,
+    `${timestamp}_${arquivo.name}`
+  );
 
-  await env.BUCKET.put(nomeArquivo, arquivo.stream(), {
-    httpMetadata: { contentType: 'application/pdf' },
+  const result = await putWithDbCompensation({
+    bucket: env.BUCKET,
+    key: nomeArquivo,
+    value: arrayBuffer,
+    options: { httpMetadata: { contentType: 'application/pdf' } },
+    commit: () => env.DB.prepare(`
+      INSERT INTO partituras (titulo, compositor, arranjador, categoria_id, ano, descricao, arquivo_nome, arquivo_tamanho, destaque)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      titulo,
+      compositor,
+      arranjador || null,
+      categoria,
+      ano ? parseInt(ano) : null,
+      descricao || null,
+      nomeArquivo,
+      arquivo.size,
+      destaque
+    ).run()
   });
-
-  const result = await env.DB.prepare(`
-    INSERT INTO partituras (titulo, compositor, arranjador, categoria_id, ano, descricao, arquivo_nome, arquivo_tamanho, destaque)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).bind(
-    titulo,
-    compositor,
-    arranjador || null,
-    categoria,
-    ano ? parseInt(ano) : null,
-    descricao || null,
-    nomeArquivo,
-    arquivo.size,
-    destaque
-  ).run();
 
   // Registra atividade
   await registrarAtividade(env, 'nova_partitura', titulo, compositor, admin.id);
@@ -163,8 +184,11 @@ export async function uploadPastaPartitura(request, env, admin) {
     const ano = formData.get('ano');
     const totalArquivos = parseInt(formData.get('total_arquivos') || '0');
 
-    if (!titulo || !categoria || totalArquivos === 0) {
+    if (!titulo || !categoria || !Number.isInteger(totalArquivos) || totalArquivos <= 0) {
       return errorResponse('Campos obrigatórios: titulo, categoria, arquivos', 400, request);
+    }
+    if (totalArquivos > MAX_PDF_BATCH_COUNT) {
+      return errorResponse(`O lote pode conter no máximo ${MAX_PDF_BATCH_COUNT} arquivos`, 400, request);
     }
 
     // Verifica se já existe partitura com mesmo título (normalizado)
@@ -178,7 +202,28 @@ export async function uploadPastaPartitura(request, env, admin) {
       return errorResponse(`Já existe uma partitura com o título "${duplicada.titulo}"`, 409, request);
     }
 
-    // Cria a partitura principal
+    const timestamp = Date.now();
+    const arquivosValidados = [];
+
+    // Valida o lote inteiro antes de criar qualquer registro ou objeto.
+    for (let i = 0; i < totalArquivos; i++) {
+      const arquivo = formData.get(`arquivo_${i}`);
+      const instrumento = formData.get(`instrumento_${i}`);
+      if (!arquivo || !instrumento) {
+        return errorResponse(`Arquivo ou instrumento ausente na posição ${i + 1}`, 400, request);
+      }
+      try {
+        arquivosValidados.push({
+          arquivo,
+          instrumento: String(instrumento).trim(),
+          arrayBuffer: await readAndValidatePdf(arquivo),
+          index: i
+        });
+      } catch (error) {
+        return errorResponse(error.message, 400, request);
+      }
+    }
+
     const result = await env.DB.prepare(`
       INSERT INTO partituras (titulo, compositor, arranjador, categoria_id, ano, arquivo_nome, arquivo_tamanho, destaque)
       VALUES (?, ?, ?, ?, ?, ?, ?, 0)
@@ -193,41 +238,33 @@ export async function uploadPastaPartitura(request, env, admin) {
     ).run();
 
     const partituraId = result.meta.last_row_id;
-    const timestamp = Date.now();
-    let partesAdicionadas = 0;
+    const uploadedKeys = [];
 
-    // Processa cada arquivo
-    for (let i = 0; i < totalArquivos; i++) {
-      const arquivo = formData.get(`arquivo_${i}`);
-      const instrumento = formData.get(`instrumento_${i}`);
+    try {
+      const insertStatements = [];
+      for (const item of arquivosValidados) {
+        const nomeArquivoStorage = buildStorageKey(
+          STORAGE_PREFIXES.partes,
+          `${timestamp}_${partituraId}_${item.index}_${item.instrumento}.pdf`
+        );
 
-      if (!arquivo || !instrumento) continue;
-
-      const arrayBuffer = await arquivo.arrayBuffer();
-
-      // Validar magic bytes do PDF (%PDF-)
-      const bytes = new Uint8Array(arrayBuffer.slice(0, 5));
-      const isPdf = bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46 && bytes[4] === 0x2D;
-
-      if (!isPdf) {
-        // Se arquivo inválido, deleta a partitura criada e retorna erro
-        await env.DB.prepare('DELETE FROM partituras WHERE id = ?').bind(partituraId).run();
-        return errorResponse(`Arquivo "${arquivo.name}" não é um PDF válido`, 400, request);
+        await env.BUCKET.put(nomeArquivoStorage, item.arrayBuffer, {
+          httpMetadata: { contentType: 'application/pdf' }
+        });
+        uploadedKeys.push(nomeArquivoStorage);
+        insertStatements.push(env.DB.prepare(`
+          INSERT INTO partes (partitura_id, instrumento, arquivo_nome)
+          VALUES (?, ?, ?)
+        `).bind(partituraId, item.instrumento, nomeArquivoStorage));
       }
-
-      const nomeArquivoStorage = `${timestamp}_${partituraId}_${i}_${instrumento.replace(/[^a-zA-Z0-9.-]/g, '_')}.pdf`;
-
-      await env.BUCKET.put(nomeArquivoStorage, arrayBuffer, {
-        httpMetadata: { contentType: 'application/pdf' }
-      });
-
-      await env.DB.prepare(`
-        INSERT INTO partes (partitura_id, instrumento, arquivo_nome)
-        VALUES (?, ?, ?)
-      `).bind(partituraId, instrumento, nomeArquivoStorage).run();
-
-      partesAdicionadas++;
+      await env.DB.batch(insertStatements);
+    } catch (error) {
+      await Promise.all(uploadedKeys.map(key => deleteBestEffort(env.BUCKET, key)));
+      await env.DB.prepare('DELETE FROM partituras WHERE id = ?').bind(partituraId).run();
+      throw error;
     }
+
+    const partesAdicionadas = arquivosValidados.length;
 
     await registrarAtividade(env, 'nova_partitura', titulo, `${compositor} • ${partesAdicionadas} partes`, admin.id);
 
@@ -439,8 +476,11 @@ export async function corrigirBombardinosPartitura(partituraId, request, env, ad
     const formData = await request.formData();
     const totalArquivos = parseInt(formData.get('total_arquivos') || '0');
 
-    if (totalArquivos === 0) {
+    if (!Number.isInteger(totalArquivos) || totalArquivos <= 0) {
       return errorResponse('Nenhum arquivo enviado', 400, request);
+    }
+    if (totalArquivos > MAX_PDF_BATCH_COUNT) {
+      return errorResponse(`O lote pode conter no máximo ${MAX_PDF_BATCH_COUNT} arquivos`, 400, request);
     }
 
     const partitura = await env.DB.prepare(
@@ -460,13 +500,16 @@ export async function corrigirBombardinosPartitura(partituraId, request, env, ad
       if (!arquivo || !instrumento) {
         return errorResponse('Arquivo/instrumento ausente', 400, request);
       }
-      const arrayBuffer = await arquivo.arrayBuffer();
-      const bytes = new Uint8Array(arrayBuffer.slice(0, 5));
-      const isPdf = bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46 && bytes[4] === 0x2D;
-      if (!isPdf) {
-        return errorResponse(`Arquivo "${arquivo.name}" não é um PDF válido`, 400, request);
+      let arrayBuffer;
+      try {
+        arrayBuffer = await readAndValidatePdf(arquivo);
+      } catch (error) {
+        return errorResponse(error.message, 400, request);
       }
-      const nomeArquivoStorage = `${timestamp}_${partituraId}_${i}_${instrumento.replace(/[^a-zA-Z0-9.-]/g, '_')}.pdf`;
+      const nomeArquivoStorage = buildStorageKey(
+        STORAGE_PREFIXES.partes,
+        `${timestamp}_${partituraId}_${i}_${instrumento}.pdf`
+      );
       novosArquivos.push({ instrumento, arrayBuffer, nomeArquivoStorage });
     }
 
@@ -475,43 +518,40 @@ export async function corrigirBombardinosPartitura(partituraId, request, env, ad
       "SELECT id, arquivo_nome FROM partes WHERE partitura_id = ? AND instrumento LIKE 'Bombardino%'"
     ).bind(partituraId).all();
 
-    // 3. Deletar arquivos antigos do R2
-    for (const parte of (partesAntigas.results || [])) {
-      if (parte.arquivo_nome) {
-        try {
-          await env.BUCKET.delete(parte.arquivo_nome);
-        } catch {
-          // Continua mesmo se falhar
-        }
-      }
-    }
-
-    // 4. Deletar registros antigos do DB
-    await env.DB.prepare(
-      "DELETE FROM partes WHERE partitura_id = ? AND instrumento LIKE 'Bombardino%'"
-    ).bind(partituraId).run();
-
-    // 5. Upload dos novos arquivos (ja validados)
-    // Usar batch para atomicidade no DB
+    // Envia o novo conjunto primeiro. Se o D1 falhar, só os novos objetos são
+    // compensados; os registros e PDFs antigos permanecem intactos.
     const uploadedFiles = [];
-    const batch = [];
+    try {
+      for (const item of novosArquivos) {
+        await env.BUCKET.put(item.nomeArquivoStorage, item.arrayBuffer, {
+          httpMetadata: { contentType: 'application/pdf' }
+        });
+        uploadedFiles.push(item.nomeArquivoStorage);
+      }
 
-    for (const item of novosArquivos) {
-      await env.BUCKET.put(item.nomeArquivoStorage, item.arrayBuffer, {
-        httpMetadata: { contentType: 'application/pdf' }
-      });
-      uploadedFiles.push(item.nomeArquivoStorage);
-
-      const stmt = env.DB.prepare(
-        'INSERT INTO partes (partitura_id, instrumento, arquivo_nome) VALUES (?, ?, ?)'
-      ).bind(partituraId, item.instrumento, item.nomeArquivoStorage);
-      batch.push(stmt);
-    }
-
-    // Executar inserts em batch (atômico)
-    if (batch.length > 0) {
+      const batch = [
+        env.DB.prepare(`
+          UPDATE tracking_events SET parte_id = NULL
+          WHERE parte_id IN (
+            SELECT id FROM partes
+            WHERE partitura_id = ? AND instrumento LIKE 'Bombardino%'
+          )
+        `).bind(partituraId),
+        env.DB.prepare(
+          "DELETE FROM partes WHERE partitura_id = ? AND instrumento LIKE 'Bombardino%'"
+        ).bind(partituraId),
+        ...novosArquivos.map(item => env.DB.prepare(
+          'INSERT INTO partes (partitura_id, instrumento, arquivo_nome) VALUES (?, ?, ?)'
+        ).bind(partituraId, item.instrumento, item.nomeArquivoStorage))
+      ];
       await env.DB.batch(batch);
+    } catch (error) {
+      await Promise.all(uploadedFiles.map(key => deleteBestEffort(env.BUCKET, key)));
+      throw error;
     }
+
+    await Promise.all((partesAntigas.results || [])
+      .map(parte => deleteBestEffort(env.BUCKET, parte.arquivo_nome)));
 
     const partesAdicionadas = uploadedFiles.length;
     const partesRemovidas = (partesAntigas.results || []).length;

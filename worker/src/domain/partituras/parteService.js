@@ -1,5 +1,13 @@
 // worker/src/domain/partituras/parteService.js
-import { jsonResponse, errorResponse } from '../../infrastructure/index.js';
+import {
+  STORAGE_PREFIXES,
+  buildStorageKey,
+  errorResponse,
+  jsonResponse,
+  putWithDbCompensation,
+  readAndValidatePdf,
+  replaceStoredObject
+} from '../../infrastructure/index.js';
 import { registrarAtividade } from '../atividades/index.js';
 
 /**
@@ -75,27 +83,29 @@ export async function addParte(partituraId, request, env, admin) {
       return errorResponse('Partitura não encontrada', 404, request);
     }
 
-    const arrayBuffer = await arquivo.arrayBuffer();
-
-    // Validar magic bytes do PDF (%PDF-)
-    const bytes = new Uint8Array(arrayBuffer.slice(0, 5));
-    const isPdf = bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46 && bytes[4] === 0x2D;
-
-    if (!isPdf) {
-      return errorResponse('Arquivo não é um PDF válido', 400, request);
+    let arrayBuffer;
+    try {
+      arrayBuffer = await readAndValidatePdf(arquivo);
+    } catch (error) {
+      return errorResponse(error.message, 400, request);
     }
 
     const timestamp = Date.now();
-    const nomeArquivoStorage = `${timestamp}_${partituraId}_${instrumento.replace(/[^a-zA-Z0-9.-]/g, '_')}.pdf`;
+    const nomeArquivoStorage = buildStorageKey(
+      STORAGE_PREFIXES.partes,
+      `${timestamp}_${partituraId}_${instrumento}.pdf`
+    );
 
-    await env.BUCKET.put(nomeArquivoStorage, arrayBuffer, {
-      httpMetadata: { contentType: 'application/pdf' }
+    const result = await putWithDbCompensation({
+      bucket: env.BUCKET,
+      key: nomeArquivoStorage,
+      value: arrayBuffer,
+      options: { httpMetadata: { contentType: 'application/pdf' } },
+      commit: () => env.DB.prepare(`
+        INSERT INTO partes (partitura_id, instrumento, arquivo_nome)
+        VALUES (?, ?, ?)
+      `).bind(partituraId, instrumento, nomeArquivoStorage).run()
     });
-
-    const result = await env.DB.prepare(`
-      INSERT INTO partes (partitura_id, instrumento, arquivo_nome)
-      VALUES (?, ?, ?)
-    `).bind(partituraId, instrumento, nomeArquivoStorage).run();
 
     await registrarAtividade(env, 'nova_parte', partitura.titulo, instrumento, admin?.id ?? null);
 
@@ -130,30 +140,29 @@ export async function substituirParte(parteId, request, env, admin) {
       return errorResponse('Parte não encontrada', 404, request);
     }
 
-    const arrayBuffer = await arquivo.arrayBuffer();
-
-    // Validar magic bytes do PDF (%PDF-)
-    const bytes = new Uint8Array(arrayBuffer.slice(0, 5));
-    const isPdf = bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46 && bytes[4] === 0x2D;
-
-    if (!isPdf) {
-      return errorResponse('Arquivo não é um PDF válido', 400, request);
-    }
-
-    if (parte.arquivo_nome) {
-      await env.BUCKET.delete(parte.arquivo_nome);
+    let arrayBuffer;
+    try {
+      arrayBuffer = await readAndValidatePdf(arquivo);
+    } catch (error) {
+      return errorResponse(error.message, 400, request);
     }
 
     const timestamp = Date.now();
-    const nomeArquivoStorage = `${timestamp}_${parte.partitura_id}_${parte.instrumento.replace(/[^a-zA-Z0-9.-]/g, '_')}.pdf`;
+    const nomeArquivoStorage = buildStorageKey(
+      STORAGE_PREFIXES.partes,
+      `${timestamp}_${parte.partitura_id}_${parte.instrumento}.pdf`
+    );
 
-    await env.BUCKET.put(nomeArquivoStorage, arrayBuffer, {
-      httpMetadata: { contentType: 'application/pdf' }
+    await replaceStoredObject({
+      bucket: env.BUCKET,
+      oldKey: parte.arquivo_nome,
+      newKey: nomeArquivoStorage,
+      value: arrayBuffer,
+      options: { httpMetadata: { contentType: 'application/pdf' } },
+      commit: () => env.DB.prepare(`
+        UPDATE partes SET arquivo_nome = ?, criado_em = CURRENT_TIMESTAMP WHERE id = ?
+      `).bind(nomeArquivoStorage, parteId).run()
     });
-
-    await env.DB.prepare(`
-      UPDATE partes SET arquivo_nome = ?, criado_em = CURRENT_TIMESTAMP WHERE id = ?
-    `).bind(nomeArquivoStorage, parteId).run();
 
     await registrarAtividade(
       env,

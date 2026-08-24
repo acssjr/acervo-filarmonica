@@ -1,5 +1,13 @@
 // worker/src/domain/perfil/perfilService.js
-import { jsonResponse, errorResponse, getCorsHeaders } from '../../infrastructure/index.js';
+import {
+  STORAGE_PREFIXES,
+  buildStorageKey,
+  deleteBestEffort,
+  errorResponse,
+  getCorsHeaders,
+  jsonResponse,
+  replaceStoredObject
+} from '../../infrastructure/index.js';
 
 const PROFILE_IMAGE_PATTERN = /^perfil_\d+_\d+\.(?:jpe?g|png|gif|webp)$/i;
 
@@ -15,7 +23,8 @@ export async function serveFotoPerfil(request, env, rawFilename) {
     return errorResponse('Nome de arquivo inválido', 400, request);
   }
 
-  const image = await env.BUCKET.get(filename);
+  const currentKey = buildStorageKey(STORAGE_PREFIXES.perfil, filename);
+  const image = await env.BUCKET.get(currentKey) || await env.BUCKET.get(filename);
   if (!image) {
     return errorResponse('Foto não encontrada', 404, request);
   }
@@ -141,29 +150,30 @@ export async function uploadFotoPerfil(request, env, user) {
   else if (isWebp) ext = 'webp';
 
   const nomeArquivo = `perfil_${user.id}_${Date.now()}.${ext}`;
-
-  // Upload para R2
-  await env.BUCKET.put(nomeArquivo, arrayBuffer, {
-    httpMetadata: { contentType: foto.type },
-  });
-
-  // Deletar foto antiga se existir (extrai filename da URL completa)
-  if (user.foto_url) {
-    try {
-      const antigaNome = user.foto_url.split('/api/perfil/foto/').pop();
-      if (antigaNome) await env.BUCKET.delete(antigaNome);
-    } catch (e) {
-      // Ignora erro se arquivo não existir
-    }
-  }
+  const novaKey = buildStorageKey(STORAGE_PREFIXES.perfil, nomeArquivo);
+  const antigaNome = user.foto_url?.split('/api/perfil/foto/').pop();
+  const antigaKey = antigaNome
+    ? buildStorageKey(STORAGE_PREFIXES.perfil, antigaNome)
+    : null;
 
   // Salva URL completa para funcionar diretamente como src em <img>
   const origin = new URL(request.url).origin;
   const fotoUrl = `${origin}/api/perfil/foto/${nomeArquivo}`;
 
-  await env.DB.prepare(
-    'UPDATE usuarios SET foto_url = ? WHERE id = ?'
-  ).bind(fotoUrl, user.id).run();
+  await replaceStoredObject({
+    bucket: env.BUCKET,
+    oldKey: antigaKey,
+    newKey: novaKey,
+    value: arrayBuffer,
+    options: { httpMetadata: { contentType: foto.type } },
+    commit: () => env.DB.prepare(
+      'UPDATE usuarios SET foto_url = ? WHERE id = ?'
+    ).bind(fotoUrl, user.id).run()
+  });
+
+  // Fotos anteriores ao namespace `perfil/` continuam legíveis e são limpas
+  // somente depois do commit da nova URL.
+  if (antigaNome) await deleteBestEffort(env.BUCKET, antigaNome);
 
   return jsonResponse({
     success: true,
