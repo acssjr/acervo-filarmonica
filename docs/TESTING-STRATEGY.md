@@ -56,7 +56,7 @@ Para React + Workers, a distribuição ótima é:
 |--------|-----------|--------------|
 | Análise Estática | Base | TypeScript/ESLint, tipos compartilhados |
 | Unitários | Fina | Utilitários puros, validadores, parsers |
-| **Integração** | **MAIOR** | Vitest + `@cloudflare/vitest-pool-workers` |
+| **Integração** | **MAIOR** | Vitest + `@cloudflare/vitest-plugin` |
 | E2E | Topo | Playwright em ambiente Preview real |
 
 ### 2.3 Importância do Runtime: workerd vs Node.js
@@ -183,7 +183,7 @@ jobs:
     # Validação estática (TypeScript, ESLint)
 
   unit-integration:
-    # Vitest com @cloudflare/vitest-pool-workers
+    # Vitest com @cloudflare/vitest-plugin
     # Usa miniflare/workerd local
 
   deploy-preview:
@@ -244,7 +244,7 @@ describe('Worker Routing', () => {
 | Pact | Média | Alta | Alto | Não recomendado |
 
 **Recomendação:**
-> Emulação local (wrangler dev / vitest-pool-workers) para **90% dos testes**.
+> Emulação local (`wrangler dev` / `@cloudflare/vitest-plugin`) para **90% dos testes**.
 > E2E com infra real apenas para branch main e PRs críticos.
 
 ---
@@ -272,10 +272,10 @@ npm install openapi-msw
 1. Configurar MSW para validar contra `openapi.yaml`
 2. Mocks inválidos = testes falham
 
-### Fase 3: Médio Prazo - Vitest Pool Workers
+### Fase 3: Médio Prazo - integração Vitest para Workers
 
 ```bash
-npm install -D vitest @cloudflare/vitest-pool-workers
+npm install -D vitest @cloudflare/vitest-plugin
 ```
 
 1. Migrar testes de backend de Jest → Vitest

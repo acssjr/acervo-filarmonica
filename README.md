@@ -344,7 +344,7 @@ Push/PR -> Lint -> Jest (216+) -> E2E Mocked (8) -> Build -> Deploy
 
 ```bash
 # Terminal 1: Backend local (D1 + R2 locais)
-npm run api
+npm run api:local
 
 # Terminal 2: Frontend (proxy para localhost:8787)
 cd frontend && npm run dev
@@ -362,11 +362,14 @@ Isso cria as tabelas e insere usuários de teste para desenvolvimento local.
 
 | Comando | Descrição |
 |---------|-----------|
-| `npm run api` | Inicia backend local (porta 8787) |
+| `npm run api:local` | Inicia backend local (porta 8787) |
 | `npm run db:init` | Cria tabelas + seed inicial |
 | `npm run db:seed` | Apenas seed (se tabelas existem) |
 | `npm run db:reset` | Limpa dados e reaplica seed |
 | `npm test` | Roda testes unitários |
+| `npm run lint:worker` | Valida o código do Worker |
+| `npm run api:contract:check` | Confere rotas e contrato OpenAPI |
+| `npm run db:schema:test` | Confere migrações e schema de testes |
 | `npm run test:e2e` | Roda testes E2E |
 
 ### Scripts do Frontend
@@ -377,6 +380,8 @@ Isso cria as tabelas e insere usuários de teste para desenvolvimento local.
 | `cd frontend && npm run dev:prod` | Frontend local apontando para a API de produção |
 | `cd frontend && npm test` | Testes unitários do frontend |
 | `cd frontend && npm run lint` | ESLint do frontend |
+
+Para preparar ou publicar um ambiente Cloudflare, siga o [checklist de publicação](docs/DEPLOYMENT-CHECKLIST.md). Os comandos remotos não são necessários para desenvolvimento local.
 
 ---
 

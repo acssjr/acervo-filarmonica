@@ -4,6 +4,29 @@
 
 ---
 
+## [Não publicado] - estabilização do backend
+
+### Segurança
+- Autenticação falha de forma segura sem `JWT_SECRET` e revalida administradores ativos no D1.
+- Rate limiting por KV passa a ser obrigatório em produção.
+- Uploads, nomes de download e entradas de mutações recebem validação explícita.
+
+### Dados e armazenamento
+- Migrações D1 consolidadas em `database/migrations`, com schema de testes gerado e verificado.
+- Operações relacionadas usam batches atômicos no D1.
+- Escritas no R2 usam namespaces, substituição segura e compensação em falhas de banco.
+
+### Arquitetura e qualidade
+- Worker convergido para o entrypoint modular `worker/src/index.js`.
+- Contrato OpenAPI cobre todas as rotas e gera os tipos consumidos pelo frontend.
+- Analytics passou a ser assíncrono e tolerante a falhas.
+- Vitest, Wrangler, integração Cloudflare e dependências do frontend foram atualizados.
+- Home e biblioteca saíram do bundle inicial e são carregadas após a autenticação.
+
+### Operação
+- Documentação local separada de operações remotas.
+- Checklist de publicação, migrações, secrets, smoke tests e rollback adicionado.
+
 ## [1.5.0] - 29/11/2025 (Atual)
 
 ### Adicionado
