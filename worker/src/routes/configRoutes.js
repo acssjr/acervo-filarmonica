@@ -1,5 +1,5 @@
 // worker/src/routes/configRoutes.js
-import { jsonResponse, errorResponse } from '../infrastructure/response/helpers.js';
+import { errorResponse, jsonResponse } from '../infrastructure/index.js';
 import { adminMiddleware } from '../middleware/adminMiddleware.js';
 
 /**
@@ -68,16 +68,19 @@ export function setupConfigRoutes(router) {
       if (!Array.isArray(dias) || dias.some(d => !Number.isInteger(d) || d < 0 || d > 6)) {
         return errorResponse('Dias inválidos', 400, request);
       }
-
-      await env.DB.prepare(
-        "INSERT OR REPLACE INTO configuracoes (chave, valor, atualizado_em) VALUES ('dias_ensaio', ?, CURRENT_TIMESTAMP)"
-      ).bind(JSON.stringify(dias)).run();
-
-      if (hora !== undefined && hora >= 0 && hora <= 23) {
-        await env.DB.prepare(
-          "INSERT OR REPLACE INTO configuracoes (chave, valor, atualizado_em) VALUES ('hora_ensaio', ?, CURRENT_TIMESTAMP)"
-        ).bind(String(hora)).run();
+      if (hora !== undefined && (!Number.isInteger(hora) || hora < 0 || hora > 23)) {
+        return errorResponse('Hora inválida', 400, request);
       }
+
+      const statements = [env.DB.prepare(
+        "INSERT OR REPLACE INTO configuracoes (chave, valor, atualizado_em) VALUES ('dias_ensaio', ?, CURRENT_TIMESTAMP)"
+      ).bind(JSON.stringify(dias))];
+      if (hora !== undefined) {
+        statements.push(env.DB.prepare(
+          "INSERT OR REPLACE INTO configuracoes (chave, valor, atualizado_em) VALUES ('hora_ensaio', ?, CURRENT_TIMESTAMP)"
+        ).bind(String(hora)));
+      }
+      await env.DB.batch(statements);
 
       return jsonResponse({ dias, hora, mensagem: 'Dias de ensaio atualizados' }, 200, request);
     } catch (error) {

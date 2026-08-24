@@ -1,5 +1,13 @@
 // worker/src/domain/repertorios/repertorioService.js
-import { jsonResponse, errorResponse, getCorsHeaders } from '../../infrastructure/index.js';
+import {
+  errorResponse,
+  getCorsHeaders,
+  isIsoDate,
+  isUniqueConstraintError,
+  jsonResponse,
+  parsePositiveId,
+  validateOrderItems
+} from '../../infrastructure/index.js';
 import { registrarAtividade } from '../atividades/index.js';
 import { buildUpdateDetails, describeBoolean } from '../atividades/auditUtils.js';
 import { createPostHogClient, shutdownPostHog } from '../../infrastructure/posthog/posthogClient.js';
@@ -468,23 +476,11 @@ export async function createRepertorio(request, env, admin) {
   if (!nome || nome.trim() === '') {
     return errorResponse('Nome do repertório é obrigatório', 400, request);
   }
-
-  // Se criando como ativo, desativar os mais antigos se já houver 2 ou mais ativos
-  if (ativo) {
-    const ativos = await env.DB.prepare(
-      'SELECT id FROM repertorios WHERE ativo = 1 ORDER BY data_apresentacao DESC, data_criacao DESC'
-    ).all();
-    if (ativos.results.length >= 2) {
-      const idsParaDesativar = ativos.results.slice(1).map(r => r.id);
-      for (const idParaDesativar of idsParaDesativar) {
-        await env.DB.prepare(
-          'UPDATE repertorios SET ativo = 0 WHERE id = ?'
-        ).bind(idParaDesativar).run();
-      }
-    }
+  if (data_apresentacao && !isIsoDate(data_apresentacao)) {
+    return errorResponse('Data de apresentação inválida', 400, request);
   }
 
-  const result = await env.DB.prepare(`
+  const insert = env.DB.prepare(`
     INSERT INTO repertorios (nome, descricao, data_apresentacao, ativo, criado_por)
     VALUES (?, ?, ?, ?, ?)
   `).bind(
@@ -493,7 +489,19 @@ export async function createRepertorio(request, env, admin) {
     data_apresentacao || null,
     ativo ? 1 : 0,
     admin.id
-  ).run();
+  );
+  const statements = ativo
+    ? [env.DB.prepare(`
+        UPDATE repertorios SET ativo = 0
+        WHERE id IN (
+          SELECT id FROM repertorios WHERE ativo = 1
+          ORDER BY data_apresentacao DESC, data_criacao DESC
+          LIMIT -1 OFFSET 1
+        )
+      `), insert]
+    : [insert];
+  const batchResult = await env.DB.batch(statements);
+  const result = batchResult[batchResult.length - 1];
 
   await registrarAtividade(env, 'novo_repertorio', nome, null, admin.id);
 
@@ -534,31 +542,23 @@ export async function updateRepertorio(id, request, env, admin) {
   if (!existing) {
     return errorResponse('Repertório não encontrado', 404, request);
   }
-
-  // Se ativando este repertório, desativar os mais antigos se já houver 2 ou mais ativos
-  if (ativo && !existing.ativo) {
-    const ativos = await env.DB.prepare(
-      'SELECT id FROM repertorios WHERE ativo = 1 ORDER BY data_apresentacao DESC, data_criacao DESC'
-    ).all();
-    if (ativos.results.length >= 2) {
-      const idsParaDesativar = ativos.results.slice(1).map(r => r.id);
-      for (const idParaDesativar of idsParaDesativar) {
-        await env.DB.prepare(
-          'UPDATE repertorios SET ativo = 0 WHERE id = ?'
-        ).bind(idParaDesativar).run();
-      }
-    }
+  if (nome !== undefined && (!String(nome).trim())) {
+    return errorResponse('Nome do repertório é obrigatório', 400, request);
+  }
+  if (data_apresentacao !== undefined && data_apresentacao !== null
+      && data_apresentacao !== '' && !isIsoDate(data_apresentacao)) {
+    return errorResponse('Data de apresentação inválida', 400, request);
   }
 
   const updated = {
-    nome: nome?.trim() || existing.nome,
-    descricao: descricao?.trim() || existing.descricao,
-    data_apresentacao: data_apresentacao || existing.data_apresentacao,
+    nome: nome !== undefined ? String(nome).trim() : existing.nome,
+    descricao: descricao !== undefined ? (String(descricao).trim() || null) : existing.descricao,
+    data_apresentacao: data_apresentacao !== undefined ? (data_apresentacao || null) : existing.data_apresentacao,
     ativo: ativo !== undefined ? (ativo ? 1 : 0) : existing.ativo,
   };
   const detalhes = buildRepertorioUpdateDetails(existing, updated);
 
-  await env.DB.prepare(`
+  const updateStatement = env.DB.prepare(`
     UPDATE repertorios
     SET nome = ?, descricao = ?, data_apresentacao = ?, ativo = ?
     WHERE id = ?
@@ -568,7 +568,18 @@ export async function updateRepertorio(id, request, env, admin) {
     updated.data_apresentacao,
     updated.ativo,
     id
-  ).run();
+  );
+  const statements = ativo && !existing.ativo
+    ? [env.DB.prepare(`
+        UPDATE repertorios SET ativo = 0
+        WHERE id <> ? AND id IN (
+          SELECT id FROM repertorios WHERE ativo = 1
+          ORDER BY data_apresentacao DESC, data_criacao DESC
+          LIMIT -1 OFFSET 1
+        )
+      `).bind(id), updateStatement]
+    : [updateStatement];
+  await env.DB.batch(statements);
 
   await registrarAtividade(env, 'update_repertorio', updated.nome, detalhes, admin?.id ?? null);
 
@@ -590,14 +601,10 @@ export async function deleteRepertorio(id, request, env, admin) {
     return errorResponse('Repertório não encontrado', 404, request);
   }
 
-  // Deletar associações primeiro (cascade deveria fazer, mas garantir)
-  await env.DB.prepare(
-    'DELETE FROM repertorio_partituras WHERE repertorio_id = ?'
-  ).bind(id).run();
-
-  await env.DB.prepare(
-    'DELETE FROM repertorios WHERE id = ?'
-  ).bind(id).run();
+  await env.DB.batch([
+    env.DB.prepare('DELETE FROM repertorio_partituras WHERE repertorio_id = ?').bind(id),
+    env.DB.prepare('DELETE FROM repertorios WHERE id = ?').bind(id)
+  ]);
 
   await registrarAtividade(env, 'delete_repertorio', existing.nome, 'Repertório removido', admin?.id ?? null);
 
@@ -616,7 +623,8 @@ export async function addPartituraToRepertorio(repertorioId, request, env, admin
   const data = await request.json();
   const { partitura_id } = data;
 
-  if (!partitura_id) {
+  const partituraId = parsePositiveId(partitura_id);
+  if (!partituraId) {
     return errorResponse('partitura_id é obrigatório', 400, request);
   }
 
@@ -632,7 +640,7 @@ export async function addPartituraToRepertorio(repertorioId, request, env, admin
   // Verificar se partitura existe
   const partitura = await env.DB.prepare(
     'SELECT id, titulo FROM partituras WHERE id = ? AND ativo = 1'
-  ).bind(partitura_id).first();
+  ).bind(partituraId).first();
 
   if (!partitura) {
     return errorResponse('Partitura não encontrada', 404, request);
@@ -649,7 +657,7 @@ export async function addPartituraToRepertorio(repertorioId, request, env, admin
     await env.DB.prepare(`
       INSERT INTO repertorio_partituras (repertorio_id, partitura_id, ordem)
       VALUES (?, ?, ?)
-    `).bind(repertorioId, partitura_id, novaOrdem).run();
+    `).bind(repertorioId, partituraId, novaOrdem).run();
 
     await registrarAtividade(
       env,
@@ -658,12 +666,14 @@ export async function addPartituraToRepertorio(repertorioId, request, env, admin
       `Adicionada ao repertório: ${repertorio.nome}`,
       admin?.id ?? null
     );
-  } catch (e) {
-    // Já existe no repertório
-    return jsonResponse({
-      success: true,
-      message: 'Partitura já está no repertório'
-    }, 200, request);
+  } catch (error) {
+    if (isUniqueConstraintError(error)) {
+      return jsonResponse({
+        success: true,
+        message: 'Partitura já está no repertório'
+      }, 200, request);
+    }
+    throw error;
   }
 
   return jsonResponse({
@@ -711,15 +721,13 @@ export async function reorderPartiturasRepertorio(repertorioId, request, env, ad
   const data = await request.json();
   const { ordens } = data; // Array de { partitura_id, ordem }
 
-  if (!ordens || !Array.isArray(ordens)) {
-    return errorResponse('ordens deve ser um array', 400, request);
+  if (!validateOrderItems(ordens, 'partitura_id')) {
+    return errorResponse('ordens contém IDs ou posições inválidas', 400, request);
   }
 
-  for (const item of ordens) {
-    await env.DB.prepare(
+  await env.DB.batch(ordens.map(item => env.DB.prepare(
       'UPDATE repertorio_partituras SET ordem = ? WHERE repertorio_id = ? AND partitura_id = ?'
-    ).bind(item.ordem, repertorioId, item.partitura_id).run();
-  }
+    ).bind(item.ordem, repertorioId, item.partitura_id)));
 
   const repertorio = await env.DB.prepare(
     'SELECT nome FROM repertorios WHERE id = ?'
@@ -750,23 +758,18 @@ export async function duplicarRepertorio(id, request, env, admin) {
     return errorResponse('Repertório não encontrado', 404, request);
   }
 
-  // Criar cópia
-  const result = await env.DB.prepare(`
-    INSERT INTO repertorios (nome, descricao, ativo, criado_por)
-    VALUES (?, ?, 0, ?)
-  `).bind(
-    `${original.nome} (cópia)`,
-    original.descricao,
-    admin.id
-  ).run();
-
-  const novoId = result.meta.last_row_id;
-
-  // Copiar partituras
-  await env.DB.prepare(`
-    INSERT INTO repertorio_partituras (repertorio_id, partitura_id, ordem)
-    SELECT ?, partitura_id, ordem FROM repertorio_partituras WHERE repertorio_id = ?
-  `).bind(novoId, id).run();
+  const results = await env.DB.batch([
+    env.DB.prepare(`
+      INSERT INTO repertorios (nome, descricao, ativo, criado_por)
+      VALUES (?, ?, 0, ?)
+    `).bind(`${original.nome} (cópia)`, original.descricao, admin.id),
+    env.DB.prepare(`
+      INSERT INTO repertorio_partituras (repertorio_id, partitura_id, ordem)
+      SELECT last_insert_rowid(), partitura_id, ordem
+      FROM repertorio_partituras WHERE repertorio_id = ?
+    `).bind(id)
+  ]);
+  const novoId = results[0].meta.last_row_id;
 
   return jsonResponse({
     success: true,

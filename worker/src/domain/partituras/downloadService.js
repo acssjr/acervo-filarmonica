@@ -1,5 +1,5 @@
 // worker/src/domain/partituras/downloadService.js
-import { errorResponse, getCorsHeaders } from '../../infrastructure/index.js';
+import { errorResponse, getCorsHeaders, sanitizeHeaderFilename } from '../../infrastructure/index.js';
 import { registrarAtividade } from '../atividades/index.js';
 import { createPostHogClient, shutdownPostHog } from '../../infrastructure/posthog/posthogClient.js';
 
@@ -78,7 +78,7 @@ export async function downloadPartitura(id, request, env, user) {
     return new Response(arquivo.body, {
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `${disposition}; filename="${partitura.titulo}.pdf"`,
+        'Content-Disposition': `${disposition}; filename="${sanitizeHeaderFilename(`${partitura.titulo}.pdf`)}"`,
         ...getCorsHeaders(request, env),
       },
     });
@@ -171,7 +171,7 @@ export async function downloadParte(parteId, request, env, user) {
       }
     }
 
-    const nomeArquivo = `${parte.partitura_titulo} - ${parte.instrumento}.pdf`;
+    const nomeArquivo = sanitizeHeaderFilename(`${parte.partitura_titulo} - ${parte.instrumento}.pdf`);
 
     // Usa Content-Disposition: inline quando requisicao eh AJAX (X-Requested-With)
     // Isso evita que gerenciadores de download (IDM, etc) interceptem a requisicao

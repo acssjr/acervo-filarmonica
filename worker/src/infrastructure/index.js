@@ -14,3 +14,6 @@ export * from './response/index.js';
 
 // R2 storage safety and namespaces
 export * from './storage/index.js';
+
+// Request and response boundary validation
+export * from './validation/index.js';

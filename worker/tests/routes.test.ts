@@ -1352,6 +1352,87 @@ describe('CRUD de Repertórios', () => {
     // Pode ser 200 (encontrou) ou 404 (não há ativo)
     expect([200, 404]).toContain(response.status);
   });
+
+  it('rejeita IDs e datas inválidas antes de consultar ou gravar', async () => {
+    const invalidId = await SELF.fetch('https://test.local/api/repertorio/abc', {
+      headers: { Authorization: `Bearer ${adminToken}` },
+    });
+    expect(invalidId.status).toBe(400);
+
+    const invalidDate = await SELF.fetch('https://test.local/api/repertorios', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${adminToken}`,
+      },
+      body: JSON.stringify({ nome: 'Data impossível', data_apresentacao: '2026-02-30' }),
+    });
+    expect(invalidDate.status).toBe(400);
+  });
+
+  it('permite limpar descrição e data explicitamente', async () => {
+    const createResponse = await SELF.fetch('https://test.local/api/repertorios', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${adminToken}`,
+      },
+      body: JSON.stringify({
+        nome: 'Repertório para limpar campos',
+        descricao: 'Texto anterior',
+        data_apresentacao: '2026-08-24',
+      }),
+    });
+    const { id } = await createResponse.json() as { id: number };
+
+    const updateResponse = await SELF.fetch(`https://test.local/api/repertorio/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${adminToken}`,
+      },
+      body: JSON.stringify({ descricao: '', data_apresentacao: '' }),
+    });
+    expect(updateResponse.status).toBe(200);
+
+    const stored = await env.DB.prepare(
+      'SELECT descricao, data_apresentacao FROM repertorios WHERE id = ?'
+    ).bind(id).first() as { descricao: string | null; data_apresentacao: string | null };
+    expect(stored).toEqual({ descricao: null, data_apresentacao: null });
+  });
+
+  it('duplica repertório e associações no mesmo batch D1', async () => {
+    const partituraId = await env.DB.prepare(`
+      INSERT INTO partituras (titulo, compositor, categoria_id, arquivo_nome, ativo)
+      VALUES ('Partitura da duplicação', 'Compositor', 'dobrados', 'duplicacao.pdf', 1)
+      RETURNING id
+    `).first('id') as number;
+    const original = await env.DB.prepare(`
+      INSERT INTO repertorios (nome, descricao, ativo, criado_por)
+      VALUES ('Original para duplicar', 'Com associações', 0, 1)
+      RETURNING id
+    `).first('id') as number;
+    await env.DB.prepare(`
+      INSERT INTO repertorio_partituras (repertorio_id, partitura_id, ordem)
+      VALUES (?, ?, 0)
+    `).bind(original, partituraId).run();
+
+    const response = await SELF.fetch(`https://test.local/api/repertorio/${original}/duplicar`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${adminToken}` },
+    });
+    expect(response.status).toBe(201);
+    const { id } = await response.json() as { id: number };
+
+    const copy = await env.DB.prepare(`
+      SELECT r.nome, COUNT(rp.id) AS total
+      FROM repertorios r
+      LEFT JOIN repertorio_partituras rp ON rp.repertorio_id = r.id
+      WHERE r.id = ? GROUP BY r.id
+    `).bind(id).first() as { nome: string; total: number };
+    expect(copy.nome).toBe('Original para duplicar (cópia)');
+    expect(copy.total).toBe(1);
+  });
 });
 
 describe('CRUD de Avisos', () => {
