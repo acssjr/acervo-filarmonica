@@ -175,7 +175,7 @@ describe('Rotas Autenticadas', () => {
     it('registra evento autenticado', async () => {
       const partituraId = await env.DB.prepare(`
         INSERT INTO partituras (titulo, compositor, categoria_id, arquivo_nome, arquivo_tamanho, destaque, ativo)
-        VALUES ('Tracking Route Test', 'Compositor Teste', 1, 'tracking-route-test.pdf', 100, 0, 1)
+        VALUES ('Tracking Route Test', 'Compositor Teste', 'dobrados', 'tracking-route-test.pdf', 100, 0, 1)
         RETURNING id
       `).first('id') as number;
 
@@ -258,7 +258,7 @@ describe('Download view analytics', () => {
     await env.BUCKET.put(arquivoNome, new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2D]));
     const partituraId = await env.DB.prepare(`
       INSERT INTO partituras (titulo, compositor, categoria_id, arquivo_nome, arquivo_tamanho, downloads, destaque, ativo)
-      VALUES ('Teste View Parte', 'Mock', 1, ?, 5, 0, 0, 1) RETURNING id
+      VALUES ('Teste View Parte', 'Mock', 'dobrados', ?, 5, 0, 0, 1) RETURNING id
     `).bind(arquivoNome).first('id') as number;
     const parteId = await env.DB.prepare(`
       INSERT INTO partes (partitura_id, instrumento, arquivo_nome)
@@ -288,7 +288,7 @@ describe('Download view analytics', () => {
     await env.BUCKET.put(arquivoNome, new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2D]));
     const partituraId = await env.DB.prepare(`
       INSERT INTO partituras (titulo, compositor, categoria_id, arquivo_nome, arquivo_tamanho, downloads, destaque, ativo)
-      VALUES ('Teste View Partitura', 'Mock', 1, ?, 5, 0, 0, 1) RETURNING id
+      VALUES ('Teste View Partitura', 'Mock', 'dobrados', ?, 5, 0, 0, 1) RETURNING id
     `).bind(arquivoNome).first('id') as number;
 
     const response = await SELF.fetch(`https://test.local/api/download/${partituraId}?action=view`, {
@@ -314,7 +314,7 @@ describe('Download view analytics', () => {
     await env.BUCKET.put(arquivoNome, new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2D]));
     const partituraId = await env.DB.prepare(`
       INSERT INTO partituras (titulo, compositor, categoria_id, arquivo_nome, arquivo_tamanho, downloads, destaque, ativo)
-      VALUES ('Teste Download Parte Instrumento', 'Mock', 1, ?, 5, 0, 0, 1) RETURNING id
+      VALUES ('Teste Download Parte Instrumento', 'Mock', 'dobrados', ?, 5, 0, 0, 1) RETURNING id
     `).bind(arquivoNome).first('id') as number;
     const parteId = await env.DB.prepare(`
       INSERT INTO partes (partitura_id, instrumento, arquivo_nome)
@@ -733,7 +733,7 @@ describe('Rotas de Partes (BUG FIX)', () => {
 
       const partituraId = await env.DB.prepare(`
         INSERT INTO partituras (titulo, compositor, categoria_id, arquivo_nome, arquivo_tamanho, downloads, destaque, ativo)
-        VALUES ('Teste Delete Parte Tracking', 'Mock', 1, 'grade-delete-parte.pdf', 5, 0, 0, 1)
+        VALUES ('Teste Delete Parte Tracking', 'Mock', 'dobrados', 'grade-delete-parte.pdf', 5, 0, 0, 1)
         RETURNING id
       `).first('id') as number;
 
@@ -770,7 +770,7 @@ describe('Rotas de Partes (BUG FIX)', () => {
     it('remove o registro da parte mesmo se o arquivo já não existir no storage', async () => {
       const partituraId = await env.DB.prepare(`
         INSERT INTO partituras (titulo, compositor, categoria_id, arquivo_nome, arquivo_tamanho, downloads, destaque, ativo)
-        VALUES ('Teste Delete Parte Sem Arquivo', 'Mock', 1, 'grade-delete-parte-missing.pdf', 5, 0, 0, 1)
+        VALUES ('Teste Delete Parte Sem Arquivo', 'Mock', 'dobrados', 'grade-delete-parte-missing.pdf', 5, 0, 0, 1)
         RETURNING id
       `).first('id') as number;
 
@@ -836,7 +836,7 @@ describe('Rotas de Partes (BUG FIX)', () => {
       // Precisamos dar seed em uma partitura+parte falsa sem colocar o blob no storage. (Mock DB apenas)
       const partituraId = await env.DB.prepare(`
         INSERT INTO partituras (titulo, compositor, categoria_id, arquivo_nome, arquivo_tamanho, destaque, ativo)
-        VALUES ('Teste R2 Desaparecido', 'Mock', 1, 'mock.pdf', 0, 0, 1) RETURNING id
+        VALUES ('Teste R2 Desaparecido', 'Mock', 'dobrados', 'mock.pdf', 0, 0, 1) RETURNING id
       `).first('id');
 
       const parteId = await env.DB.prepare(`
@@ -1019,7 +1019,7 @@ describe('CRUD de Partituras - Update', () => {
     // Cria uma partitura de teste para o update
     const id = await env.DB.prepare(`
       INSERT INTO partituras (titulo, compositor, arranjador, categoria_id, arquivo_nome, arquivo_tamanho, destaque, ativo)
-      VALUES ('Partitura Teste Update', 'Compositor Teste', 'Arranjador Teste', 1, 'teste.pdf', 100, 0, 1) RETURNING id
+      VALUES ('Partitura Teste Update', 'Compositor Teste', 'Arranjador Teste', 'dobrados', 'teste.pdf', 100, 0, 1) RETURNING id
     `).first('id') as number;
     testPartituraId = id;
   });
@@ -1028,7 +1028,7 @@ describe('CRUD de Partituras - Update', () => {
     const response = await SELF.fetch(`https://test.local/api/partituras/${testPartituraId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ titulo: 'Novo Titulo', categoria_id: 1 }),
+      body: JSON.stringify({ titulo: 'Novo Titulo', categoria_id: 'dobrados' }),
     });
     expect([401, 403]).toContain(response.status);
   });
@@ -1040,7 +1040,7 @@ describe('CRUD de Partituras - Update', () => {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${userToken}`,
       },
-      body: JSON.stringify({ titulo: 'Novo Titulo', categoria_id: 1 }),
+      body: JSON.stringify({ titulo: 'Novo Titulo', categoria_id: 'dobrados' }),
     });
     expect(response.status).toBe(403);
   });
@@ -1059,7 +1059,7 @@ describe('CRUD de Partituras - Update', () => {
         titulo: 'Partitura Renomeada',
         compositor: 'Novo Compositor',
         arranjador: null,
-        categoria_id: 1,
+        categoria_id: 'dobrados',
         // NÃO envia ano, descricao - estes eram undefined e causavam 500
         destaque: 0,
         ativo: 1,
@@ -1103,7 +1103,7 @@ describe('CRUD de Partituras - Update', () => {
       },
       body: JSON.stringify({
         titulo: '',
-        categoria_id: 1,
+        categoria_id: 'dobrados',
       }),
     });
     expect(response.status).toBe(400);
@@ -1112,7 +1112,7 @@ describe('CRUD de Partituras - Update', () => {
   it('preserva compositor existente quando o campo nao e enviado', async () => {
     const partituraId = await env.DB.prepare(`
       INSERT INTO partituras (titulo, compositor, arranjador, categoria_id, arquivo_nome, arquivo_tamanho, destaque, ativo)
-      VALUES ('Partitura Preserva Compositor', 'Compositor Preservado', NULL, 1, 'preserva.pdf', 100, 0, 1) RETURNING id
+      VALUES ('Partitura Preserva Compositor', 'Compositor Preservado', NULL, 'dobrados', 'preserva.pdf', 100, 0, 1) RETURNING id
     `).first('id') as number;
 
     const response = await SELF.fetch(`https://test.local/api/partituras/${partituraId}`, {
@@ -1123,7 +1123,7 @@ describe('CRUD de Partituras - Update', () => {
       },
       body: JSON.stringify({
         titulo: 'Partitura Preserva Compositor Atualizada',
-        categoria_id: 1,
+        categoria_id: 'dobrados',
         destaque: 0,
       }),
     });
@@ -1138,11 +1138,11 @@ describe('CRUD de Partituras - Update', () => {
   it('rejeita titulo duplicado ao atualizar partitura', async () => {
     const originalId = await env.DB.prepare(`
       INSERT INTO partituras (titulo, compositor, categoria_id, arquivo_nome, arquivo_tamanho, destaque, ativo)
-      VALUES ('Titulo Duplicado Analytics', 'Compositor A', 1, 'duplicada-a.pdf', 100, 0, 1) RETURNING id
+      VALUES ('Titulo Duplicado Analytics', 'Compositor A', 'dobrados', 'duplicada-a.pdf', 100, 0, 1) RETURNING id
     `).first('id') as number;
     const alvoId = await env.DB.prepare(`
       INSERT INTO partituras (titulo, compositor, categoria_id, arquivo_nome, arquivo_tamanho, destaque, ativo)
-      VALUES ('Titulo Temporario Analytics', 'Compositor B', 1, 'duplicada-b.pdf', 100, 0, 1) RETURNING id
+      VALUES ('Titulo Temporario Analytics', 'Compositor B', 'dobrados', 'duplicada-b.pdf', 100, 0, 1) RETURNING id
     `).first('id') as number;
 
     const response = await SELF.fetch(`https://test.local/api/partituras/${alvoId}`, {
@@ -1154,7 +1154,7 @@ describe('CRUD de Partituras - Update', () => {
       body: JSON.stringify({
         titulo: 'Titulo Duplicado Analytics',
         compositor: 'Compositor B',
-        categoria_id: 1,
+        categoria_id: 'dobrados',
         destaque: 0,
       }),
     });
@@ -1181,7 +1181,7 @@ describe('CRUD de Partituras - Update', () => {
   it('remove partitura com historico de download e tracking sem erro interno', async () => {
     const partituraId = await env.DB.prepare(`
       INSERT INTO partituras (titulo, compositor, categoria_id, arquivo_nome, arquivo_tamanho, destaque, ativo)
-      VALUES ('Partitura Remocao Com Historico', 'Compositor Historico', 1, 'remocao-historico.pdf', 100, 0, 1) RETURNING id
+      VALUES ('Partitura Remocao Com Historico', 'Compositor Historico', 'dobrados', 'remocao-historico.pdf', 100, 0, 1) RETURNING id
     `).first('id') as number;
 
     await env.DB.prepare(`

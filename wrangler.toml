@@ -14,6 +14,7 @@ workers_dev = true
 binding = "DB"
 database_name = "acervo-db"
 database_id = "2e8dc4fb-4f78-45fe-9e07-dcd05ea60d8c"
+migrations_dir = "database/migrations"
 
 # Bucket R2 para PDFs
 [[r2_buckets]]

@@ -59,6 +59,7 @@ CREATE TABLE IF NOT EXISTS usuarios (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT UNIQUE NOT NULL,
     nome TEXT NOT NULL,
+    nome_exibicao TEXT,
     pin_hash TEXT NOT NULL,
     pin_salt TEXT,  -- Salt para PBKDF2 (NULL = formato legado plaintext, será migrado no login)
     admin INTEGER DEFAULT 0,
@@ -244,3 +245,103 @@ CREATE TABLE IF NOT EXISTS logs_buscas (
 
 CREATE INDEX IF NOT EXISTS idx_logs_buscas_data ON logs_buscas(data DESC);
 CREATE INDEX IF NOT EXISTS idx_logs_buscas_termo ON logs_buscas(termo);
+
+-- Repertórios de apresentação
+CREATE TABLE IF NOT EXISTS repertorios (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nome TEXT NOT NULL,
+    descricao TEXT,
+    ativo INTEGER DEFAULT 0,
+    data_criacao DATETIME DEFAULT CURRENT_TIMESTAMP,
+    data_apresentacao DATE,
+    criado_por INTEGER,
+    FOREIGN KEY (criado_por) REFERENCES usuarios(id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_repertorios_ativo ON repertorios(ativo);
+CREATE INDEX IF NOT EXISTS idx_repertorios_data ON repertorios(data_apresentacao);
+
+CREATE TABLE IF NOT EXISTS repertorio_partituras (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    repertorio_id INTEGER NOT NULL,
+    partitura_id INTEGER NOT NULL,
+    ordem INTEGER DEFAULT 0,
+    adicionado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (repertorio_id) REFERENCES repertorios(id) ON DELETE CASCADE,
+    FOREIGN KEY (partitura_id) REFERENCES partituras(id) ON DELETE CASCADE,
+    UNIQUE(repertorio_id, partitura_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_repertorio_partituras_repertorio ON repertorio_partituras(repertorio_id);
+CREATE INDEX IF NOT EXISTS idx_repertorio_partituras_partitura ON repertorio_partituras(partitura_id);
+
+-- Configurações globais
+CREATE TABLE IF NOT EXISTS configuracoes (
+    chave TEXT PRIMARY KEY,
+    valor TEXT NOT NULL,
+    atualizado_em DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+INSERT OR IGNORE INTO configuracoes (chave, valor) VALUES
+    ('modo_recesso', 'false'),
+    ('dias_ensaio', '[1,3]'),
+    ('hora_ensaio', '19');
+
+CREATE TABLE IF NOT EXISTS ensaios_config (
+    data_ensaio DATE PRIMARY KEY,
+    youtube_url TEXT,
+    criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+    atualizado_em DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Sessões e eventos de uso do acervo
+CREATE TABLE IF NOT EXISTS tracking_sessions (
+    id TEXT PRIMARY KEY,
+    usuario_id INTEGER NOT NULL,
+    inicio_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+    fim_em DATETIME,
+    fim_motivo TEXT,
+    ultimo_evento_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_tracking_sessions_usuario_inicio
+    ON tracking_sessions(usuario_id, inicio_em DESC);
+CREATE INDEX IF NOT EXISTS idx_tracking_sessions_ultimo_evento
+    ON tracking_sessions(ultimo_evento_em DESC);
+
+CREATE TABLE IF NOT EXISTS tracking_events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    session_id TEXT,
+    usuario_id INTEGER NOT NULL,
+    tipo TEXT NOT NULL,
+    origem TEXT,
+    partitura_id INTEGER,
+    parte_id INTEGER,
+    repertorio_id INTEGER,
+    termo_original TEXT,
+    termo_normalizado TEXT,
+    resultados_count INTEGER,
+    metadata_json TEXT,
+    criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (session_id) REFERENCES tracking_sessions(id),
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id),
+    FOREIGN KEY (partitura_id) REFERENCES partituras(id),
+    FOREIGN KEY (parte_id) REFERENCES partes(id),
+    FOREIGN KEY (repertorio_id) REFERENCES repertorios(id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_tracking_events_criado
+    ON tracking_events(criado_em DESC);
+CREATE INDEX IF NOT EXISTS idx_tracking_events_usuario_criado
+    ON tracking_events(usuario_id, criado_em DESC);
+CREATE INDEX IF NOT EXISTS idx_tracking_events_session
+    ON tracking_events(session_id, criado_em ASC);
+CREATE INDEX IF NOT EXISTS idx_tracking_events_tipo_criado
+    ON tracking_events(tipo, criado_em DESC);
+CREATE INDEX IF NOT EXISTS idx_tracking_events_partitura_criado
+    ON tracking_events(partitura_id, criado_em DESC);
+CREATE INDEX IF NOT EXISTS idx_tracking_events_parte_criado
+    ON tracking_events(parte_id, criado_em DESC);
+
+CREATE INDEX IF NOT EXISTS idx_logs_download_usuario ON logs_download(usuario_id);

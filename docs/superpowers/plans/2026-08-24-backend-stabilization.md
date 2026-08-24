@@ -33,8 +33,9 @@
 ### Task 2: Establish a canonical D1 bootstrap and migration path
 
 **Files:**
-- Create: `database/migrations/012_reconcile_schema.sql`
-- Create: `scripts/db-bootstrap.cjs`
+- Create: `database/migrations/0001_baseline.sql`
+- Create: `database/migrations/0002_logs_download_instrument_text.sql`
+- Create: `scripts/generate-test-schema.cjs`
 - Modify: `package.json`
 - Modify: `database/schema.sql`
 - Modify: `worker/tests/setup.ts`
@@ -42,10 +43,11 @@
 - Modify: `INSTALL.md`
 
 - [ ] Inventory the production schema implied by migrations and service queries.
-- [ ] Add a reconciliation migration for missing indexes/objects using idempotent SQL supported by SQLite.
+- [ ] Archive the pre-Wrangler SQL history and establish a complete baseline confirmed against the remote schema.
+- [ ] Rebuild `logs_download` so its historical instrument label is no longer constrained as an instrument ID.
 - [ ] Replace misleading scripts with `wrangler d1 migrations apply` commands for local and remote targets; keep remote commands explicit.
 - [ ] Make reset local-only and cover every application table in foreign-key-safe order.
-- [ ] Make test setup load the canonical schema plus reconciliation definitions rather than redefine tables independently.
+- [ ] Generate test setup statements from every active migration rather than redefine tables independently.
 - [ ] Add an integration test that constructs a fresh local schema and verifies tracking, repertories, configuration, ensaio config and display-name fields.
 - [ ] Run the focused bootstrap test and the complete Worker suite.
 
