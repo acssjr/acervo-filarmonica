@@ -47,19 +47,19 @@
   },
   "homepage": "https://github.com/acssjr/acervo-filarmonica#readme",
   "dependencies": {
-    "fflate": "^0.8.2",
+    "fflate": "^0.8.3",
     "pdf-lib": "^1.17.1",
-    "posthog-node": "^5.26.2"
+    "posthog-node": "^5.51.1"
   },
   "devDependencies": {
-    "@cloudflare/vitest-pool-workers": "^0.10.15",
+    "@cloudflare/vitest-plugin": "^1.0.0",
     "@eslint/js": "^9.39.2",
     "@playwright/test": "^1.57.0",
     "@types/node": "^24.10.1",
-    "@vitest/coverage-v8": "3.2",
+    "@vitest/coverage-v8": "^4.1.11",
     "eslint": "^9.39.2",
     "globals": "^16.5.0",
-    "vitest": "3.2",
-    "wrangler": "^4.65.0"
+    "vitest": "^4.1.11",
+    "wrangler": "^4.125.0"
   }
 }

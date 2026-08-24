@@ -28,12 +28,10 @@ import { useUserWalkthrough } from '@components/onboarding/useUserWalkthrough';
 // Login - carregado sempre (primeira tela)
 import LoginScreen from '@screens/LoginScreen';
 
-// ===== TELAS PRINCIPAIS (Eager Load) =====
-// Carregadas imediatamente - mais rápido para navegação
-import HomeScreen from '@screens/HomeScreen';
-import LibraryScreen from '@screens/LibraryScreen';
-
-// ===== TELAS SECUNDÁRIAS (Lazy Load com Prefetch) =====
+// ===== TELAS DA APLICAÇÃO (Lazy Load com Prefetch) =====
+// O login permanece no bundle inicial; o acervo é carregado após autenticação.
+const HomeScreen = lazy(() => import('@screens/HomeScreen'));
+const LibraryScreen = lazy(() => import('@screens/LibraryScreen'));
 const SearchScreen = lazy(() => import('@screens/SearchScreen'));
 const FavoritesScreen = lazy(() => import('@screens/FavoritesScreen'));
 const RepertorioScreen = lazy(() => import('@screens/RepertorioScreen'));

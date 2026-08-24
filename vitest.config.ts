@@ -1,22 +1,21 @@
-import { defineWorkersConfig } from '@cloudflare/vitest-pool-workers/config';
+import { cloudflareTest } from '@cloudflare/vitest-plugin';
+import { defineConfig } from 'vitest/config';
 
-export default defineWorkersConfig({
-  test: {
-    // Pool de workers - executa testes no runtime workerd real
-    poolOptions: {
-      workers: {
-        wrangler: { configPath: './wrangler.toml' },
-        miniflare: {
-          // Bindings disponíveis nos testes
-          d1Databases: ['DB'],
-          r2Buckets: ['BUCKET'],
-          bindings: {
-            JWT_SECRET: 'test-jwt-secret-for-testing',
-            ENVIRONMENT: 'test',
-          },
+export default defineConfig({
+  plugins: [
+    cloudflareTest({
+      wrangler: { configPath: './wrangler.toml' },
+      miniflare: {
+        d1Databases: ['DB'],
+        r2Buckets: ['BUCKET'],
+        bindings: {
+          JWT_SECRET: 'test-jwt-secret-for-testing',
+          ENVIRONMENT: 'test',
         },
       },
-    },
+    }),
+  ],
+  test: {
     // Setup file para inicializar banco
     setupFiles: ['./worker/tests/setup.ts'],
     // Configurações gerais
