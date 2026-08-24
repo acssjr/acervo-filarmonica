@@ -11,7 +11,7 @@ import {
 } from '../../infrastructure/index.js';
 import { registrarAtividade } from '../atividades/index.js';
 import { buildUpdateDetails, describeBoolean } from '../atividades/auditUtils.js';
-import { createPostHogClient, shutdownPostHog } from '../../infrastructure/posthog/posthogClient.js';
+import { capturePostHog } from '../../infrastructure/posthog/posthogClient.js';
 
 /**
  * Listar todas as partituras
@@ -144,9 +144,7 @@ export async function createPartitura(request, env, admin) {
   await registrarAtividade(env, 'nova_partitura', titulo, compositor, admin.id);
 
   // PostHog: capture partitura creation event
-  const posthog = createPostHogClient(env);
-  if (posthog) {
-    posthog.capture({
+  await capturePostHog(env, {
       distinctId: `user_${admin.id}`,
       event: 'partitura_created',
       properties: {
@@ -159,8 +157,6 @@ export async function createPartitura(request, env, admin) {
         upload_type: 'single',
       },
     });
-    await shutdownPostHog(posthog);
-  }
 
   return jsonResponse({
     success: true,
@@ -269,9 +265,7 @@ export async function uploadPastaPartitura(request, env, admin) {
     await registrarAtividade(env, 'nova_partitura', titulo, `${compositor} • ${partesAdicionadas} partes`, admin.id);
 
     // PostHog: capture folder upload event
-    const posthog = createPostHogClient(env);
-    if (posthog) {
-      posthog.capture({
+    await capturePostHog(env, {
         distinctId: `user_${admin.id}`,
         event: 'partitura_uploaded_with_parts',
         properties: {
@@ -283,8 +277,6 @@ export async function uploadPastaPartitura(request, env, admin) {
           upload_type: 'folder',
         },
       });
-      await shutdownPostHog(posthog);
-    }
 
     return jsonResponse({
       success: true,
@@ -328,20 +320,15 @@ export function getPartituraDeleteKeys(partitura, partes = []) {
   ].filter(Boolean);
 }
 
-async function capturePartituraDeleted(env, user, partituraId, titulo) {
-  const posthog = createPostHogClient(env);
-  if (!posthog) return;
-
-  posthog.capture({
+async function capturePartituraDeleted(env, user, partituraId, titulo, executionCtx = null) {
+  await capturePostHog(env, {
     distinctId: `user_${user.id}`,
     event: 'partitura_deleted',
     properties: {
       partitura_id: partituraId,
       titulo,
     },
-  });
-
-  await shutdownPostHog(posthog);
+  }, executionCtx);
 }
 
 function runAfterResponse(context, task) {
@@ -462,7 +449,7 @@ export async function deletePartitura(id, request, env, user, context = null) {
   await registrarAtividade(env, 'delete_partitura', partitura.titulo, 'Partitura removida permanentemente', user.id);
 
   await runAfterResponse(context, deleteBucketObjects(env.BUCKET, arquivosParaRemover));
-  await runAfterResponse(context, capturePartituraDeleted(env, user, id, partitura.titulo));
+  await capturePartituraDeleted(env, user, id, partitura.titulo, context?.executionCtx);
 
   return jsonResponse({ success: true, message: 'Partitura removida permanentemente!' }, 200, request);
 }

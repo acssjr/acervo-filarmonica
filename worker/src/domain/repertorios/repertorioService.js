@@ -10,7 +10,7 @@ import {
 } from '../../infrastructure/index.js';
 import { registrarAtividade } from '../atividades/index.js';
 import { buildUpdateDetails, describeBoolean } from '../atividades/auditUtils.js';
-import { createPostHogClient, shutdownPostHog } from '../../infrastructure/posthog/posthogClient.js';
+import { capturePostHog } from '../../infrastructure/posthog/posthogClient.js';
 
 // ============ LEITURA ============
 
@@ -506,9 +506,7 @@ export async function createRepertorio(request, env, admin) {
   await registrarAtividade(env, 'novo_repertorio', nome, null, admin.id);
 
   // PostHog: capture repertório creation event
-  const posthog = createPostHogClient(env);
-  if (posthog) {
-    posthog.capture({
+  await capturePostHog(env, {
       distinctId: `user_${admin.id}`,
       event: 'repertorio_created',
       properties: {
@@ -518,8 +516,6 @@ export async function createRepertorio(request, env, admin) {
         data_apresentacao: data_apresentacao || null,
       },
     });
-    await shutdownPostHog(posthog);
-  }
 
   return jsonResponse({
     success: true,
@@ -859,9 +855,7 @@ export async function downloadRepertorio(id, request, env, user) {
   }
 
   // PostHog: capture repertório download event
-  const posthog = createPostHogClient(env);
-  if (posthog) {
-    posthog.capture({
+  await capturePostHog(env, {
       distinctId: `user_${user.id}`,
       event: 'repertorio_downloaded',
       properties: {
@@ -872,8 +866,6 @@ export async function downloadRepertorio(id, request, env, user) {
         partes_count: partes.length,
       },
     });
-    await shutdownPostHog(posthog);
-  }
 
   // Gerar arquivo
   if (formato === 'zip') {

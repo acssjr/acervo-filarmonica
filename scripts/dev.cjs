@@ -7,6 +7,12 @@ const { spawn } = require('node:child_process');
 const path = require('node:path');
 
 const args = process.argv.slice(2);
+const validModes = new Set(['prod']);
+const invalidMode = args.find(arg => !validModes.has(arg));
+if (invalidMode) {
+  console.error(`Modo inválido: ${invalidMode}. Use "npm run dev" ou "npm run dev:prod".`);
+  process.exit(1);
+}
 
 if (args.includes('prod')) {
   console.log('\n🚀 Iniciando Frontend conectado à API de PRODUÇÃO...');

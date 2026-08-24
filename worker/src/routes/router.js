@@ -184,8 +184,18 @@ export class Router {
         return routeResult;
       }
 
-      // Executar handler da rota
-      const response = await route.handler(request, env, params, context);
+      // Expõe o contexto ao domínio sem mutar o objeto de bindings compartilhado.
+      // Infraestruturas best-effort, como telemetria, podem usar waitUntil.
+      const handlerEnv = executionCtx
+        ? new Proxy(env, {
+            get(target, property, receiver) {
+              if (property === '__executionCtx') return executionCtx;
+              return Reflect.get(target, property, receiver);
+            }
+          })
+        : env;
+
+      const response = await route.handler(request, handlerEnv, params, context);
 
       return response;
 

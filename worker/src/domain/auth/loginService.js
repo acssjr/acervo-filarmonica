@@ -13,7 +13,7 @@ import {
 import { registrarAtividade } from '../atividades/atividadeService.js';
 import { startTrackingSession } from '../analytics/sessionService.js';
 import { JWT_EXPIRY_HOURS, JWT_EXPIRY_HOURS_REMEMBER } from '../../config/index.js';
-import { createPostHogClient, shutdownPostHog } from '../../infrastructure/posthog/posthogClient.js';
+import { capturePostHog } from '../../infrastructure/posthog/posthogClient.js';
 
 /**
  * Verificar se usuário existe (para o tick verde no login)
@@ -159,10 +159,17 @@ export async function login(request, env) {
   const nomeExibido = user.username === 'admin' ? 'Administrador' : user.nome;
 
   // PostHog: identify user and capture login event
-  const posthog = createPostHogClient(env);
-  if (posthog) {
-    const distinctId = `user_${user.id}`;
-    posthog.identify({
+  const distinctId = `user_${user.id}`;
+  await capturePostHog(env, {
+    distinctId,
+    event: 'user_logged_in',
+    properties: {
+      username: user.username,
+      is_admin: user.admin === 1,
+      instrumento: instrumentoNome || null,
+      remember_me: !!rememberMe,
+    },
+  }, null, {
       distinctId,
       properties: {
         $set: {
@@ -176,18 +183,6 @@ export async function login(request, env) {
         },
       },
     });
-    posthog.capture({
-      distinctId,
-      event: 'user_logged_in',
-      properties: {
-        username: user.username,
-        is_admin: user.admin === 1,
-        instrumento: instrumentoNome || null,
-        remember_me: !!rememberMe,
-      },
-    });
-    await shutdownPostHog(posthog);
-  }
 
   return jsonResponse({
     success: true,
@@ -260,17 +255,13 @@ export async function changePin(request, env, user) {
   }, getJwtSecret(env));
 
   // PostHog: capture pin change event
-  const posthog = createPostHogClient(env);
-  if (posthog) {
-    posthog.capture({
+  await capturePostHog(env, {
       distinctId: `user_${user.id}`,
       event: 'user_pin_changed',
       properties: {
         username: user.username,
       },
     });
-    await shutdownPostHog(posthog);
-  }
 
   return jsonResponse({
     success: true,

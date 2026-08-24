@@ -39,3 +39,30 @@ export async function shutdownPostHog(client) {
     await client.shutdown();
   }
 }
+
+/**
+ * Captura telemetria sem permitir que o provedor afete a resposta da API.
+ * Quando há ExecutionContext, o flush continua depois que a resposta é liberada.
+ */
+export function capturePostHog(env, event, executionCtx = null, identify = null) {
+  const backgroundContext = executionCtx || env.__executionCtx || null;
+  const task = (async () => {
+    try {
+      const client = typeof env.POSTHOG_CLIENT_FACTORY === 'function'
+        ? env.POSTHOG_CLIENT_FACTORY()
+        : createPostHogClient(env);
+      if (!client) return;
+      if (identify) client.identify(identify);
+      client.capture(event);
+      await shutdownPostHog(client);
+    } catch (error) {
+      console.error('PostHog indisponível; evento ignorado:', error);
+    }
+  })();
+
+  if (backgroundContext?.waitUntil) {
+    backgroundContext.waitUntil(task);
+    return Promise.resolve();
+  }
+  return task;
+}

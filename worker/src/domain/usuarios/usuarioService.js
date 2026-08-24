@@ -1,6 +1,6 @@
 // worker/src/domain/usuarios/usuarioService.js
 import { jsonResponse, errorResponse, generateSalt, hashPin } from '../../infrastructure/index.js';
-import { createPostHogClient, shutdownPostHog } from '../../infrastructure/posthog/posthogClient.js';
+import { capturePostHog } from '../../infrastructure/posthog/posthogClient.js';
 
 /**
  * Listar todos os usuários (Admin)
@@ -86,9 +86,7 @@ export async function createUsuario(request, env) {
   ).run();
 
   // PostHog: capture user creation event
-  const posthog = createPostHogClient(env);
-  if (posthog) {
-    posthog.capture({
+  await capturePostHog(env, {
       distinctId: `user_${result.meta.last_row_id}`,
       event: 'usuario_created',
       properties: {
@@ -98,8 +96,6 @@ export async function createUsuario(request, env) {
         instrumento_id: instrumento_id || null,
       },
     });
-    await shutdownPostHog(posthog);
-  }
 
   return jsonResponse({
     success: true,
@@ -203,9 +199,7 @@ export async function deleteUsuario(id, request, env, admin) {
   ).bind(id).run();
 
   // PostHog: capture user deactivation event
-  const posthog = createPostHogClient(env);
-  if (posthog) {
-    posthog.capture({
+  await capturePostHog(env, {
       distinctId: `user_${admin.id}`,
       event: 'usuario_deactivated',
       properties: {
@@ -213,8 +207,6 @@ export async function deleteUsuario(id, request, env, admin) {
         target_username: targetUser?.username,
       },
     });
-    await shutdownPostHog(posthog);
-  }
 
   return jsonResponse({ success: true, message: 'Usuário desativado!' }, 200, request);
 }
