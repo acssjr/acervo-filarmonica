@@ -788,8 +788,11 @@ export async function downloadRepertorio(id, request, env, user) {
 
   // Usar instrumento do usuário se não especificado
   let targetInstrumento = instrumento;
-  if (!targetInstrumento && user.instrumento) {
-    targetInstrumento = user.instrumento;
+  if (!targetInstrumento && user.instrumento_id) {
+    const instrumentoUsuario = await env.DB.prepare(
+      'SELECT nome FROM instrumentos WHERE id = ?'
+    ).bind(user.instrumento_id).first();
+    targetInstrumento = instrumentoUsuario?.nome || null;
   }
 
   if (!targetInstrumento) {

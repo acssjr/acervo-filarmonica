@@ -5,16 +5,6 @@
 
 const { execSync } = require('child_process');
 const fs = require('fs');
-const readline = require('readline');
-
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout
-});
-
-function ask(question) {
-  return new Promise(resolve => rl.question(question, resolve));
-}
 
 function run(command, showOutput = true) {
   try {
@@ -77,14 +67,14 @@ async function main() {
   
   // Executar migrations
   console.log('\n📋 Criando tabelas no banco...\n');
-  run('npx wrangler d1 execute acervo-db --file=database/schema.sql');
+  run('npm run db:migrate:remote');
   
   console.log('\n✅ Setup concluído!\n');
   console.log('Próximos passos:');
-  console.log('1. npm run deploy       - Deploy da API');
-  console.log('2. npm run deploy:pages - Deploy do frontend\n');
-  
-  rl.close();
+  console.log('1. npx wrangler secret put JWT_SECRET - Configurar autenticação');
+  console.log('2. Configurar o binding RATE_LIMIT no wrangler.toml');
+  console.log('3. npm run deploy       - Deploy da API');
+  console.log('4. npm run deploy:pages - Deploy do frontend\n');
 }
 
 main().catch(error => {

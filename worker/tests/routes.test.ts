@@ -1495,6 +1495,21 @@ describe('Rotas de Perfil', () => {
 
     expect(response.status).toBe(200);
   });
+
+  it('GET /api/perfil/foto/:filename serve apenas fotos de perfil válidas', async () => {
+    const filename = 'perfil_2_123456.png';
+    await env.BUCKET.put(filename, new Uint8Array([0x89, 0x50, 0x4E, 0x47]), {
+      httpMetadata: { contentType: 'image/png' }
+    });
+
+    const response = await SELF.fetch(`https://test.local/api/perfil/foto/${filename}`);
+    expect(response.status).toBe(200);
+    expect(response.headers.get('Content-Type')).toBe('image/png');
+    await response.arrayBuffer();
+
+    const rejected = await SELF.fetch('https://test.local/api/perfil/foto/partitura.pdf');
+    expect(rejected.status).toBe(400);
+  });
 });
 
 // ============================================================

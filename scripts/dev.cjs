@@ -3,7 +3,8 @@
  * Permite iniciar o dev local ou conectar à produção
  */
 
-const { spawn } = require('child_process');
+const { spawn } = require('node:child_process');
+const path = require('node:path');
 
 const args = process.argv.slice(2);
 
@@ -22,22 +23,36 @@ if (args.includes('prod')) {
     process.exit(code || 0);
   });
 } else {
-  console.log('\n💻 Iniciando servidor local (Wrangler Pages Dev)...');
-  
-  // Executa wrangler pages dev frontend --d1=ACERVO_DB --r2=ACERVO_BUCKET
-  const child = spawn('npx', [
-    'wrangler',
-    'pages',
-    'dev',
-    'frontend',
-    '--d1=ACERVO_DB',
-    '--r2=ACERVO_BUCKET'
-  ], {
-    shell: true,
-    stdio: 'inherit'
-  });
+  console.log('\n💻 Iniciando Worker modular e frontend local...\n');
 
-  child.on('exit', (code) => {
-    process.exit(code || 0);
-  });
+  const root = path.resolve(__dirname, '..');
+  const children = [
+    spawn('npm', ['run', 'dev:worker'], {
+      cwd: root,
+      shell: true,
+      stdio: 'inherit'
+    }),
+    spawn('npm', ['run', 'dev'], {
+      cwd: path.join(root, 'frontend'),
+      shell: true,
+      stdio: 'inherit'
+    })
+  ];
+
+  let stopping = false;
+  const stopAll = (exitCode = 0) => {
+    if (stopping) return;
+    stopping = true;
+    for (const child of children) {
+      if (!child.killed) child.kill();
+    }
+    process.exit(exitCode);
+  };
+
+  for (const child of children) {
+    child.on('exit', (code) => stopAll(code || 0));
+  }
+
+  process.on('SIGINT', () => stopAll(0));
+  process.on('SIGTERM', () => stopAll(0));
 }

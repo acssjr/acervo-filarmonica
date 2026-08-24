@@ -1,5 +1,35 @@
 // worker/src/domain/perfil/perfilService.js
-import { jsonResponse, errorResponse } from '../../infrastructure/index.js';
+import { jsonResponse, errorResponse, getCorsHeaders } from '../../infrastructure/index.js';
+
+const PROFILE_IMAGE_PATTERN = /^perfil_\d+_\d+\.(?:jpe?g|png|gif|webp)$/i;
+
+export async function serveFotoPerfil(request, env, rawFilename) {
+  let filename;
+  try {
+    filename = decodeURIComponent(rawFilename);
+  } catch {
+    return errorResponse('Nome de arquivo inválido', 400, request);
+  }
+
+  if (!PROFILE_IMAGE_PATTERN.test(filename)) {
+    return errorResponse('Nome de arquivo inválido', 400, request);
+  }
+
+  const image = await env.BUCKET.get(filename);
+  if (!image) {
+    return errorResponse('Foto não encontrada', 404, request);
+  }
+
+  const headers = new Headers({
+    'Cache-Control': 'public, max-age=86400',
+    ...getCorsHeaders(request, env)
+  });
+  image.writeHttpMetadata?.(headers);
+  headers.set('Content-Type', headers.get('Content-Type') || 'application/octet-stream');
+  if (image.httpEtag) headers.set('ETag', image.httpEtag);
+
+  return new Response(image.body, { headers });
+}
 
 /**
  * Obter perfil do usuário logado
