@@ -26,6 +26,7 @@ const useLoginForm = ({ onClose }) => {
   const [userNotFound, setUserNotFound] = useState(false);
   const [checkingUser, setCheckingUser] = useState(false);
   const [userInfo, setUserInfo] = useState(null);
+  const [userCheckError, setUserCheckError] = useState('');
 
   // Refs
   const pinRefs = [useRef(null), useRef(null), useRef(null), useRef(null)];
@@ -47,6 +48,7 @@ const useLoginForm = ({ onClose }) => {
       setUserFound(false);
       setUserNotFound(false);
       setUserInfo(null);
+      setUserCheckError('');
       return;
     }
 
@@ -58,23 +60,38 @@ const useLoginForm = ({ onClose }) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: usernameToCheck })
       });
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        setUserFound(false);
+        setUserNotFound(false);
+        setUserInfo(null);
+        setUserCheckError(
+          response.status === 429
+            ? (data.error || 'Muitas tentativas. Aguarde um momento.')
+            : 'Não foi possível verificar agora. Tente novamente.'
+        );
+        return;
+      }
 
       if (data.exists) {
         setUserFound(true);
         setUserNotFound(false);
         setUserInfo({ name: data.nome, instrument: data.instrumento });
+        setUserCheckError('');
         setTimeout(() => pinRefs[0].current?.focus(), 100);
       } else {
         setUserFound(false);
         setUserNotFound(true);
         setUserInfo(null);
+        setUserCheckError('');
       }
     } catch (e) {
       console.error('Erro ao verificar usuario:', e);
       setUserFound(false);
       setUserNotFound(false);
       setUserInfo(null);
+      setUserCheckError('Não foi possível verificar agora. Tente novamente.');
     } finally {
       setCheckingUser(false);
     }
@@ -98,6 +115,7 @@ const useLoginForm = ({ onClose }) => {
     const normalized = value.toLowerCase().replace(/\s/g, '');
     setUsername(normalized);
     setError('');
+    setUserCheckError('');
 
     if (checkUserTimeout.current) {
       clearTimeout(checkUserTimeout.current);
@@ -107,6 +125,7 @@ const useLoginForm = ({ onClose }) => {
       setUserFound(false);
       setUserNotFound(false);
       setUserInfo(null);
+      setUserCheckError('');
       setCheckingUser(false);
       return;
     }
@@ -114,10 +133,10 @@ const useLoginForm = ({ onClose }) => {
     // Inicia loading imediatamente ao digitar
     setCheckingUser(true);
 
-    // Debounce reduzido para 150ms
+    // Evita uma consulta a cada tecla sem deixar a interface lenta.
     checkUserTimeout.current = setTimeout(() => {
       checkUserExists(normalized);
-    }, 150);
+    }, 300);
   }, [checkUserExists]);
 
   // Handler do PIN - autologin quando completo
@@ -210,7 +229,9 @@ const useLoginForm = ({ onClose }) => {
         }
       } catch (err) {
         console.error('Erro no login:', err);
-        setError('Usuário ou PIN incorreto');
+        const isOperationalError = err?.message?.includes('Muitas tentativas')
+          || err?.message?.includes('temporariamente indisponível');
+        setError(isOperationalError ? err.message : 'Usuário ou PIN incorreto');
         setPin(['', '', '', '']);
         // Delay para garantir que o PIN foi limpo antes de focar
         setTimeout(() => {
@@ -251,6 +272,7 @@ const useLoginForm = ({ onClose }) => {
     userNotFound,
     checkingUser,
     userInfo,
+    userCheckError,
     // Refs
     pinRefs,
     cardRef,

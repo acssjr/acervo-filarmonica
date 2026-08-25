@@ -3,6 +3,9 @@
 // Seguindo o guia: testes comportamentais com roles e acessibilidade
 
 import { describe, test, expect, jest, beforeEach, afterEach } from '@jest/globals';
+import { http, HttpResponse } from 'msw';
+import { server } from '../__tests__/mocks/server.js';
+import { API_BASE_URL } from '@constants/api';
 
 // ===== MOCKS DOS CONTEXTOS =====
 
@@ -198,6 +201,42 @@ describe('LoginScreen', () => {
         expect(screen.getByText(/Músico Teste/)).toBeInTheDocument();
       }, { timeout: 2000 });
     });
+
+    test('mostra limite excedido sem dizer que o usuario nao existe', async () => {
+      server.use(
+        http.post(`${API_BASE_URL}/api/check-user`, () => (
+          HttpResponse.json(
+            { exists: false, error: 'Muitas tentativas. Aguarde um momento.' },
+            { status: 429 }
+          )
+        ))
+      );
+      const user = userEvent.setup();
+      renderLogin();
+
+      await user.type(await screen.findByPlaceholderText('seuusuario'), 'antoniojunior');
+
+      expect(await screen.findByText('Muitas tentativas. Aguarde um momento.')).toBeInTheDocument();
+      expect(screen.queryByText('Não encontrado')).not.toBeInTheDocument();
+    });
+
+    test('mostra indisponibilidade sem dizer que o usuario nao existe', async () => {
+      server.use(
+        http.post(`${API_BASE_URL}/api/check-user`, () => (
+          HttpResponse.json(
+            { exists: false, error: 'Serviço temporariamente indisponível.' },
+            { status: 503 }
+          )
+        ))
+      );
+      const user = userEvent.setup();
+      renderLogin();
+
+      await user.type(await screen.findByPlaceholderText('seuusuario'), 'antoniojunior');
+
+      expect(await screen.findByText('Não foi possível verificar agora. Tente novamente.')).toBeInTheDocument();
+      expect(screen.queryByText('Não encontrado')).not.toBeInTheDocument();
+    });
   });
 
   describe('Campo PIN', () => {
@@ -298,6 +337,34 @@ describe('LoginScreen', () => {
       await waitFor(() => {
         expect(screen.getByText(/Usu[aá]rio ou PIN incorreto/)).toBeInTheDocument();
       }, { timeout: 3000 });
+    });
+
+    test('mostra indisponibilidade do login sem culpar usuario ou PIN', async () => {
+      server.use(
+        http.post(`${API_BASE_URL}/api/login`, () => (
+          HttpResponse.json(
+            { error: 'Serviço de autenticação temporariamente indisponível.' },
+            { status: 503 }
+          )
+        ))
+      );
+      const user = userEvent.setup({ delay: 20 });
+      renderLogin();
+
+      await user.type(await screen.findByPlaceholderText('seuusuario'), 'musico.teste');
+      await waitFor(() => {
+        expect(screen.getByText(/Músico Teste/)).toBeInTheDocument();
+      }, { timeout: 2000 });
+
+      const pinInputs = getPinInputs();
+      for (let index = 0; index < pinInputs.length; index += 1) {
+        await user.click(pinInputs[index]);
+        await user.type(pinInputs[index], String(index + 1));
+      }
+
+      expect(await screen.findByText('Serviço de autenticação temporariamente indisponível.'))
+        .toBeInTheDocument();
+      expect(screen.queryByText(/Usu[aá]rio ou PIN incorreto/)).not.toBeInTheDocument();
     });
 
     test('login com sucesso chama setUser e showToast', async () => {

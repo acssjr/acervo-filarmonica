@@ -17,6 +17,7 @@ const LoginScreen = ({ onClose, required = false }) => {
     userNotFound,
     checkingUser,
     userInfo,
+    userCheckError,
     pinRefs,
     cardRef,
     handleUsernameChange,
@@ -269,6 +270,11 @@ const LoginScreen = ({ onClose, required = false }) => {
                     <circle cx="12" cy="12" r="10" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" />
                   </svg>
                   Não encontrado
+                </span>
+              )}
+              {!checkingUser && userCheckError && (
+                <span style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#F59E0B', fontSize: '12px' }}>
+                  {userCheckError}
                 </span>
               )}
             </div>

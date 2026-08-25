@@ -31,7 +31,9 @@ const output = [
 ].join('\n');
 
 if (process.argv.includes('--check')) {
-  const current = fs.existsSync(outputPath) ? fs.readFileSync(outputPath, 'utf8') : '';
+  const current = fs.existsSync(outputPath)
+    ? fs.readFileSync(outputPath, 'utf8').replace(/\r\n/g, '\n')
+    : '';
   if (current !== output) {
     console.error('Schema de testes desatualizado. Execute: npm run db:schema:generate');
     process.exit(1);

@@ -11,6 +11,7 @@
 
 import { env, SELF } from 'cloudflare:test';
 import { describe, it, expect, beforeAll } from 'vitest';
+import { checkReadiness } from '../src/routes/healthRoutes.js';
 
 // Helper para criar token JWT de teste
 async function createTestToken(userId: number, isAdmin: boolean = false): Promise<string> {
@@ -47,7 +48,29 @@ describe('Health Check', () => {
     expect(response.status).toBe(200);
 
     const data = await response.json();
-    expect(data).toHaveProperty('status');
+    expect(data).toMatchObject({
+      status: 'ok',
+      checks: {
+        database: 'ok',
+        storage: 'configured',
+        rateLimit: 'configured',
+        authentication: 'configured'
+      }
+    });
+  });
+
+  it('sinaliza dependências obrigatórias ausentes sem expor valores', async () => {
+    const result = await checkReadiness({});
+
+    expect(result).toEqual({
+      ready: false,
+      checks: {
+        database: 'missing',
+        storage: 'missing',
+        rateLimit: 'missing',
+        authentication: 'missing'
+      }
+    });
   });
 });
 

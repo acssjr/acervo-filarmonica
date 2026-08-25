@@ -8,7 +8,7 @@ import {
 
 let missingBindingWarned = false;
 
-function missingRateLimitResult(env, remaining) {
+function missingRateLimitResult(env, remaining, retryAfter = RATE_LIMIT_WINDOW_SECONDS) {
   const production = env?.ENVIRONMENT === 'production';
 
   if (!missingBindingWarned) {
@@ -21,7 +21,7 @@ function missingRateLimitResult(env, remaining) {
     return {
       allowed: false,
       remaining: 0,
-      retryAfter: RATE_LIMIT_WINDOW_SECONDS,
+      retryAfter,
       configurationError: true
     };
   }
@@ -43,9 +43,12 @@ function rateLimitUnavailableResult(env, remaining, retryAfter) {
 }
 
 // Verificar rate limit
-export async function checkRateLimit(env, key) {
+export async function checkRateLimit(env, key, options = {}) {
+  const maxAttempts = options.maxAttempts ?? MAX_LOGIN_ATTEMPTS;
+  const windowSeconds = options.windowSeconds ?? RATE_LIMIT_WINDOW_SECONDS;
+
   if (!env.RATE_LIMIT) {
-    return missingRateLimitResult(env, MAX_LOGIN_ATTEMPTS);
+    return missingRateLimitResult(env, maxAttempts, windowSeconds);
   }
 
   const now = Date.now();
@@ -59,25 +62,25 @@ export async function checkRateLimit(env, key) {
       await env.RATE_LIMIT.put(windowKey, JSON.stringify({
         count: 1,
         firstAttempt: now
-      }), { expirationTtl: RATE_LIMIT_WINDOW_SECONDS });
+      }), { expirationTtl: windowSeconds });
 
-      return { allowed: true, remaining: MAX_LOGIN_ATTEMPTS - 1 };
+      return { allowed: true, remaining: maxAttempts - 1 };
     }
 
     // Verifica se janela expirou
-    if (now - data.firstAttempt > RATE_LIMIT_WINDOW_SECONDS * 1000) {
+    if (now - data.firstAttempt > windowSeconds * 1000) {
       // Nova janela
       await env.RATE_LIMIT.put(windowKey, JSON.stringify({
         count: 1,
         firstAttempt: now
-      }), { expirationTtl: RATE_LIMIT_WINDOW_SECONDS });
+      }), { expirationTtl: windowSeconds });
 
-      return { allowed: true, remaining: MAX_LOGIN_ATTEMPTS - 1 };
+      return { allowed: true, remaining: maxAttempts - 1 };
     }
 
     // Dentro da janela
-    if (data.count >= MAX_LOGIN_ATTEMPTS) {
-      const retryAfter = Math.ceil((data.firstAttempt + RATE_LIMIT_WINDOW_SECONDS * 1000 - now) / 1000);
+    if (data.count >= maxAttempts) {
+      const retryAfter = Math.ceil((data.firstAttempt + windowSeconds * 1000 - now) / 1000);
       return { allowed: false, remaining: 0, retryAfter };
     }
 
@@ -85,16 +88,16 @@ export async function checkRateLimit(env, key) {
     await env.RATE_LIMIT.put(windowKey, JSON.stringify({
       count: data.count + 1,
       firstAttempt: data.firstAttempt
-    }), { expirationTtl: RATE_LIMIT_WINDOW_SECONDS });
+    }), { expirationTtl: windowSeconds });
 
-    return { allowed: true, remaining: MAX_LOGIN_ATTEMPTS - data.count - 1 };
+    return { allowed: true, remaining: maxAttempts - data.count - 1 };
 
   } catch (e) {
     console.error('Erro no rate limiting:', e);
     return rateLimitUnavailableResult(
       env,
-      MAX_LOGIN_ATTEMPTS,
-      RATE_LIMIT_WINDOW_SECONDS
+      maxAttempts,
+      windowSeconds
     );
   }
 }

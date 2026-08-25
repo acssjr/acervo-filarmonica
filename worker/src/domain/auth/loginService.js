@@ -12,7 +12,12 @@ import {
 } from '../../infrastructure/index.js';
 import { registrarAtividade } from '../atividades/atividadeService.js';
 import { startTrackingSession } from '../analytics/sessionService.js';
-import { JWT_EXPIRY_HOURS, JWT_EXPIRY_HOURS_REMEMBER } from '../../config/index.js';
+import {
+  CHECK_USER_RATE_LIMIT_WINDOW_SECONDS,
+  JWT_EXPIRY_HOURS,
+  JWT_EXPIRY_HOURS_REMEMBER,
+  MAX_CHECK_USER_ATTEMPTS
+} from '../../config/index.js';
 import { capturePostHog } from '../../infrastructure/posthog/posthogClient.js';
 
 /**
@@ -24,12 +29,23 @@ import { capturePostHog } from '../../infrastructure/posthog/posthogClient.js';
 export async function checkUser(request, env) {
   const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
 
-  // Rate limiting - 10 tentativas por minuto (mais permissivo que login)
-  const rateLimit = await checkRateLimit(env, `checkuser:${ip}`);
+  // Limite próprio: a tela consulta enquanto o usuário digita.
+  const rateLimit = await checkRateLimit(env, `checkuser:${ip}`, {
+    maxAttempts: MAX_CHECK_USER_ATTEMPTS,
+    windowSeconds: CHECK_USER_RATE_LIMIT_WINDOW_SECONDS
+  });
   if (!rateLimit.allowed) {
+    if (rateLimit.configurationError) {
+      return jsonResponse({
+        exists: false,
+        error: 'Serviço de autenticação temporariamente indisponível.'
+      }, 503, request);
+    }
+
     return jsonResponse({
       exists: false,
-      error: 'Muitas tentativas. Aguarde um momento.'
+      error: 'Muitas tentativas. Aguarde um momento.',
+      retryAfter: rateLimit.retryAfter
     }, 429, request);
   }
 
@@ -82,6 +98,14 @@ export async function login(request, env) {
   // Rate limiting por IP
   const rateLimit = await checkRateLimit(env, `login:${ip}`);
   if (!rateLimit.allowed) {
+    if (rateLimit.configurationError) {
+      return errorResponse(
+        'Serviço de autenticação temporariamente indisponível.',
+        503,
+        request
+      );
+    }
+
     return jsonResponse({
       error: `Muitas tentativas. Tente novamente em ${rateLimit.retryAfter} segundos.`,
       retryAfter: rateLimit.retryAfter
