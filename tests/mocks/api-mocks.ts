@@ -123,7 +123,7 @@ export async function setupApiMocks(page: Page, options: {
       await route.fulfill({
         status: 401,
         contentType: 'application/json',
-        body: JSON.stringify({ error: 'PIN incorreto' })
+        body: JSON.stringify({ error: 'Usuário ou PIN inválido' })
       });
     }
   });
