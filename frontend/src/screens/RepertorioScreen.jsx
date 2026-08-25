@@ -2,7 +2,7 @@
 // Tela de repertório com download em lote
 // Músicos veem o repertório ativo e podem baixar suas partes
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@contexts/AuthContext';
 import { useUI } from '@contexts/UIContext';
@@ -140,10 +140,13 @@ export const DownloadModal = ({
   const [availabilityError, setAvailabilityError] = useState('');
   const [checkingAvailability, setCheckingAvailability] = useState(false);
   const [pendingFormat, setPendingFormat] = useState(null);
+  const availabilityRequestIdRef = useRef(0);
 
   const clearAvailability = () => {
+    availabilityRequestIdRef.current += 1;
     setAvailability(null);
     setAvailabilityError('');
+    setCheckingAvailability(false);
     setPendingFormat(null);
   };
 
@@ -185,26 +188,35 @@ export const DownloadModal = ({
   const allSelected = selectedIds.size === sheets.length;
 
   const handleDownload = async (formato) => {
+    const requestId = ++availabilityRequestIdRef.current;
+    const instrumentAtRequest = selectedInstrument;
+    const selectedIdsAtRequest = Array.from(selectedIds);
+
     setCheckingAvailability(true);
     setAvailabilityError('');
     setPendingFormat(formato);
 
     try {
       const result = await onCheckAvailability(
-        selectedInstrument,
-        Array.from(selectedIds)
+        instrumentAtRequest,
+        selectedIdsAtRequest
       );
+
+      if (requestId !== availabilityRequestIdRef.current) return;
 
       if (result.ausentes_count > 0) {
         setAvailability(result);
         return;
       }
 
-      await onDownload(formato, selectedInstrument, Array.from(selectedIds));
+      await onDownload(formato, instrumentAtRequest, selectedIdsAtRequest);
     } catch (error) {
+      if (requestId !== availabilityRequestIdRef.current) return;
       setAvailabilityError(error.message || 'Não foi possível conferir os arquivos.');
     } finally {
-      setCheckingAvailability(false);
+      if (requestId === availabilityRequestIdRef.current) {
+        setCheckingAvailability(false);
+      }
     }
   };
 

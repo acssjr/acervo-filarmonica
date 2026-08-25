@@ -125,6 +125,13 @@ describe('findPartesCorrespondentes', () => {
       expect(bb.map(p => p.instrumento)).toEqual(['Bombardino Bb']);
     });
 
+    it('preserva Bombardino Bb quando a tonalidade está colada ao número da voz', () => {
+      const partes = [{ id: 21, instrumento: 'Bombardino Bb1' }];
+
+      expect(findPartesCorrespondentes('Bombardino Bb', partes)).toEqual(partes);
+      expect(findPartesCorrespondentes('Bombardino C', partes)).toEqual([]);
+    });
+
     it('reconhece Sib como a variante Bb sem confundir com C', () => {
       const partes = [{ id: 20, instrumento: 'Bombardino Sib' }];
 

@@ -76,6 +76,9 @@ export async function addParte(partituraId, request, env, admin) {
       return errorResponse('Instrumento e arquivo são obrigatórios', 400, request);
     }
     const instrumento = canonicalizeInstrumentName(instrumentoInformado);
+    if (!instrumento) {
+      return errorResponse('Instrumento e arquivo são obrigatórios', 400, request);
+    }
 
     const partitura = await env.DB.prepare(
       'SELECT * FROM partituras WHERE id = ?'

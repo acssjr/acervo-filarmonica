@@ -56,7 +56,7 @@ const normalizeInstrumento = (nome) => {
     .trim();
 
   // No acervo, Bombardino sem tonalidade sempre significa Bombardino C.
-  if (/^bombardino(?:\s|$)/.test(normalized) && !/\s+(bb|eb|c|tc|bc)\b/.test(normalized)) {
+  if (/^bombardino(?:\s|$)/.test(normalized) && !/\s+(?:bb|eb|c|tc|bc)(?=\s|\d|$)/.test(normalized)) {
     normalized = normalized.replace(/^bombardino\b/, 'bombardino c');
   }
 
@@ -95,7 +95,7 @@ export const getParteTrackingEventType = (parteOrAction, actionOrInstrumento = '
  * Ex: "trompa f" -> "f", "trompete bb 1" -> "bb", "clarinete" -> null
  */
 const extractTonalidade = (nome) => {
-  const match = nome.match(/\s+(bb|eb|f|c)\b/i);
+  const match = nome.match(/\s+(bb|eb|tc|bc|f|c)(?=\s|\d|$)/i);
   return match ? match[1].toLowerCase() : null;
 };
 

@@ -212,6 +212,9 @@ export async function uploadPastaPartitura(request, env, admin) {
         return errorResponse(`Arquivo ou instrumento ausente na posição ${i + 1}`, 400, request);
       }
       const instrumento = canonicalizeInstrumentName(instrumentoInformado);
+      if (!instrumento) {
+        return errorResponse(`Arquivo ou instrumento ausente na posição ${i + 1}`, 400, request);
+      }
       try {
         const arrayBuffer = await readAndValidatePdf(arquivo);
         totalBytesValidados = accumulatePdfBatchBytes(totalBytesValidados, arrayBuffer);
@@ -495,6 +498,9 @@ export async function corrigirBombardinosPartitura(partituraId, request, env, ad
         return errorResponse('Arquivo/instrumento ausente', 400, request);
       }
       const instrumento = canonicalizeInstrumentName(instrumentoInformado);
+      if (!instrumento) {
+        return errorResponse('Arquivo/instrumento ausente', 400, request);
+      }
       let arrayBuffer;
       try {
         arrayBuffer = await readAndValidatePdf(arquivo);
