@@ -135,16 +135,19 @@ export async function deleteAsset(request, env) {
  */
 export async function serveAsset(key, request, env) {
     try {
+        const normalizedKey = normalizeAssetSubpath(key);
         const assetKey = key.startsWith(STORAGE_PREFIXES.assets)
             ? key
-            : `${STORAGE_PREFIXES.assets}${normalizeAssetSubpath(key)}`;
+            : `${STORAGE_PREFIXES.assets}${normalizedKey}`;
         if (!isAssetKey(assetKey)) {
             return errorResponse('Chave de asset inválida', 400, request);
         }
         // Novas gravações ficam isoladas em assets/. A segunda leitura mantém
-        // URLs históricas funcionando durante a migração, sem permitir delete/list.
-        const object = await env.BUCKET.get(assetKey)
-            || await env.BUCKET.get(key);
+        // somente URLs históricas de backgrounds, sem expor outros namespaces.
+        let object = await env.BUCKET.get(assetKey);
+        if (!object && normalizedKey.startsWith('backgrounds/')) {
+            object = await env.BUCKET.get(normalizedKey);
+        }
 
         if (!object) {
             return errorResponse('Arquivo não encontrado', 404, request);

@@ -2,6 +2,7 @@
 import {
   STORAGE_PREFIXES,
   MAX_PDF_BATCH_COUNT,
+  accumulatePdfBatchBytes,
   buildStorageKey,
   deleteBestEffort,
   errorResponse,
@@ -200,6 +201,7 @@ export async function uploadPastaPartitura(request, env, admin) {
 
     const timestamp = Date.now();
     const arquivosValidados = [];
+    let totalBytesValidados = 0;
 
     // Valida o lote inteiro antes de criar qualquer registro ou objeto.
     for (let i = 0; i < totalArquivos; i++) {
@@ -209,10 +211,12 @@ export async function uploadPastaPartitura(request, env, admin) {
         return errorResponse(`Arquivo ou instrumento ausente na posição ${i + 1}`, 400, request);
       }
       try {
+        const arrayBuffer = await readAndValidatePdf(arquivo);
+        totalBytesValidados = accumulatePdfBatchBytes(totalBytesValidados, arrayBuffer);
         arquivosValidados.push({
           arquivo,
           instrumento: String(instrumento).trim(),
-          arrayBuffer: await readAndValidatePdf(arquivo),
+          arrayBuffer,
           index: i
         });
       } catch (error) {
@@ -481,6 +485,7 @@ export async function corrigirBombardinosPartitura(partituraId, request, env, ad
     // 1. Pre-validar e armazenar buffers antes de deletar
     const timestamp = Date.now();
     const novosArquivos = [];
+    let totalBytesValidados = 0;
     for (let i = 0; i < totalArquivos; i++) {
       const arquivo = formData.get(`arquivo_${i}`);
       const instrumento = formData.get(`instrumento_${i}`);
@@ -490,6 +495,7 @@ export async function corrigirBombardinosPartitura(partituraId, request, env, ad
       let arrayBuffer;
       try {
         arrayBuffer = await readAndValidatePdf(arquivo);
+        totalBytesValidados = accumulatePdfBatchBytes(totalBytesValidados, arrayBuffer);
       } catch (error) {
         return errorResponse(error.message, 400, request);
       }

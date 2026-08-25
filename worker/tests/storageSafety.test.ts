@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   STORAGE_PREFIXES,
+  accumulatePdfBatchBytes,
   buildAssetKey,
   buildStorageKey,
   isAssetKey,
@@ -8,6 +9,7 @@ import {
   readAndValidatePdf,
   replaceStoredObject
 } from '../src/infrastructure/storage/index.js';
+import { serveAsset } from '../src/domain/assets/assetService.js';
 
 describe('segurança do armazenamento R2', () => {
   it('isola cada tipo de arquivo em seu namespace', () => {
@@ -29,6 +31,14 @@ describe('segurança do armazenamento R2', () => {
     const mimeInvalido = new File([new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d])], 'imagem.png', { type: 'image/png' });
     await expect(readAndValidatePdf(mimeInvalido)).rejects.toThrow('Tipo de arquivo inválido');
     await expect(readAndValidatePdf(pdf, 2)).rejects.toThrow('excede o limite');
+  });
+
+  it('limita o tamanho agregado de buffers PDF', () => {
+    const primeiroTotal = accumulatePdfBatchBytes(0, new ArrayBuffer(4), 6);
+
+    expect(primeiroTotal).toBe(4);
+    expect(() => accumulatePdfBatchBytes(primeiroTotal, new ArrayBuffer(3), 6))
+      .toThrow('tamanho total do lote excede');
   });
 
   it('remove o upload novo quando o commit no D1 falha', async () => {
@@ -83,5 +93,38 @@ describe('segurança do armazenamento R2', () => {
 
     expect(commit).not.toHaveBeenCalled();
     expect(bucket.delete).not.toHaveBeenCalled();
+  });
+
+  it('limita o fallback legado de assets à pasta de backgrounds', async () => {
+    const request = new Request('https://example.com/api/assets/partes/segredo.pdf');
+    const bucket = { get: vi.fn().mockResolvedValue(null) };
+
+    const response = await serveAsset('partes/segredo.pdf', request, { BUCKET: bucket });
+
+    expect(response.status).toBe(404);
+    expect(bucket.get).toHaveBeenCalledTimes(1);
+    expect(bucket.get).toHaveBeenCalledWith('assets/partes/segredo.pdf');
+  });
+
+  it('mantém a leitura de backgrounds legados sem namespace', async () => {
+    const request = new Request('https://example.com/api/assets/backgrounds/login.webp');
+    const legacyObject = {
+      body: 'imagem',
+      httpEtag: 'etag-legado',
+      writeHttpMetadata: vi.fn()
+    };
+    const bucket = {
+      get: vi.fn()
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(legacyObject)
+    };
+
+    const response = await serveAsset('backgrounds/login.webp', request, { BUCKET: bucket });
+
+    expect(response.status).toBe(200);
+    expect(bucket.get.mock.calls).toEqual([
+      ['assets/backgrounds/login.webp'],
+      ['backgrounds/login.webp']
+    ]);
   });
 });

@@ -38,4 +38,6 @@ npm audit --prefix frontend
 
 ## Comunicação de vulnerabilidades
 
-Não publique detalhes sensíveis em uma issue aberta. Envie o relato de forma privada aos mantenedores, incluindo impacto, forma de reprodução e versão afetada.
+Não publique detalhes sensíveis em uma issue aberta. Use o formulário privado de [novo aviso de segurança do GitHub](https://github.com/acssjr/acervo-filarmonica/security/advisories/new).
+
+Inclua impacto, forma de reprodução e versão afetada. O prazo esperado para a primeira resposta dos mantenedores é de até sete dias corridos.

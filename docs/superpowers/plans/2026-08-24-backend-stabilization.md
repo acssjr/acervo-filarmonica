@@ -1,186 +1,108 @@
-# Backend Stabilization Implementation Plan
+# Plano de implementação da estabilização do backend
 
-> **For agentic workers:** Execute inline in this branch. The user explicitly waived test-first/TDD; add regression tests immediately after each implementation batch and run the focused suite before continuing.
+> **Para agentes:** executar nesta branch. O usuário dispensou TDD; adicionar testes de regressão após cada lote e executar a suíte focada antes de continuar.
 
-**Goal:** Make the modular Worker the single reliable backend, secure authentication and configuration, reconcile D1 migrations, protect R2/D1 operations, align the API contract and CI, and remove known dependency and development hazards without changing product behavior.
+**Objetivo:** tornar o Worker modular o único backend confiável, proteger autenticação e configuração, reconciliar migrações D1, tornar operações R2/D1 recuperáveis, alinhar contrato da API e CI e remover riscos de dependências e desenvolvimento sem alterar o comportamento do produto.
 
-**Architecture:** Preserve the current React, Worker, D1 and R2 stack. Consolidate configuration and contracts around `worker/src/index.js`, introduce small infrastructure helpers for storage and background work, and migrate tooling toward one reproducible path.
+**Arquitetura:** preservar React, Cloudflare Workers, D1 e R2. Consolidar configuração e contratos em torno de `worker/src/index.js`, com pequenos auxiliares de infraestrutura para armazenamento e tarefas assíncronas.
 
-**Tech Stack:** JavaScript/TypeScript, React 18, Vite 5, Cloudflare Workers, D1, R2, Vitest Workers pool, Jest, OpenAPI, ESLint.
+**Tecnologias:** JavaScript/TypeScript, React 18, Vite, Cloudflare Workers, D1, R2, Vitest, Jest, OpenAPI e ESLint.
 
 ---
 
-### Task 1: Secure configuration and authorization
+## Tarefa 1: proteger configuração e autorização
 
-**Files:**
-- Modify: `wrangler.toml`
-- Modify: `worker/src/infrastructure/auth/jwt.js`
-- Modify: `worker/src/domain/auth/authService.js`
-- Modify: `worker/src/routes/estatisticaRoutes.js`
-- Modify: `worker/src/infrastructure/ratelimit/rateLimiter.js`
-- Modify: `worker/src/routes/healthRoutes.js`
-- Test: `worker/tests/routes.test.ts`
-- Test: `worker/tests/cors.test.ts`
+**Arquivos principais:** `wrangler.toml`, autenticação, autorização, rate limiting, rotas de estatísticas e saúde.
 
-- [ ] Remove the tracked JWT value from `wrangler.toml` and document `wrangler secret put JWT_SECRET` plus `.dev.vars` usage without adding a real secret.
-- [ ] Make JWT signing and verification fail with a controlled configuration error when no secret exists.
-- [ ] Remove token-role fallback from `verifyAdmin`; current D1 `usuarios.admin` is authoritative.
-- [ ] Reorder tracking middleware to authenticate before applying the user/IP rate key.
-- [ ] Make production rate-limit degradation visible without exposing internal binding details in the public health payload.
-- [ ] Add regression tests for demoted admins, missing secrets and authenticated tracking keys.
-- [ ] Run `npm test -- worker/tests/routes.test.ts worker/tests/cors.test.ts` and `npm run lint:worker`.
+- [ ] Remover qualquer JWT versionado e documentar `wrangler secret put JWT_SECRET`.
+- [ ] Falhar de forma controlada quando o segredo estiver ausente.
+- [ ] Tratar o campo `usuarios.admin` atual do D1 como fonte de autorização.
+- [ ] Autenticar o tracking antes de calcular sua chave de limite.
+- [ ] Tornar degradações de rate limiting visíveis sem expor bindings.
+- [ ] Cobrir administradores rebaixados, secrets ausentes e chaves autenticadas.
+- [ ] Executar testes focados e lint do Worker.
 
-### Task 2: Establish a canonical D1 bootstrap and migration path
+## Tarefa 2: estabelecer uma cadeia canônica de migrações D1
 
-**Files:**
-- Create: `database/migrations/0001_baseline.sql`
-- Create: `database/migrations/0002_logs_download_instrument_text.sql`
-- Create: `scripts/generate-test-schema.cjs`
-- Modify: `package.json`
-- Modify: `database/schema.sql`
-- Modify: `worker/tests/setup.ts`
-- Create: `worker/tests/databaseBootstrap.test.ts`
-- Modify: `INSTALL.md`
+**Arquivos principais:** `database/migrations`, gerador de schema, scripts npm, setup dos testes e instalação.
 
-- [ ] Inventory the production schema implied by migrations and service queries.
-- [ ] Archive the pre-Wrangler SQL history and establish a complete baseline confirmed against the remote schema.
-- [ ] Rebuild `logs_download` so its historical instrument label is no longer constrained as an instrument ID.
-- [ ] Replace misleading scripts with `wrangler d1 migrations apply` commands for local and remote targets; keep remote commands explicit.
-- [ ] Make reset local-only and cover every application table in foreign-key-safe order.
-- [ ] Generate test setup statements from every active migration rather than redefine tables independently.
-- [ ] Add an integration test that constructs a fresh local schema and verifies tracking, repertories, configuration, ensaio config and display-name fields.
-- [ ] Run the focused bootstrap test and the complete Worker suite.
+- [ ] Inventariar o schema exigido pelos serviços.
+- [ ] Criar baseline completo e arquivar o histórico SQL anterior.
+- [ ] Corrigir o tipo histórico do instrumento em `logs_download`.
+- [ ] Manter comandos locais e remotos explícitos.
+- [ ] Fazer reset somente local e em ordem segura para chaves estrangeiras.
+- [ ] Gerar o schema de testes a partir das migrações ativas.
+- [ ] Validar a construção de um banco vazio e executar toda a suíte do Worker.
 
-### Task 3: Converge on the modular Worker and restore route parity
+## Tarefa 3: convergir para o Worker modular
 
-**Files:**
-- Modify: `package.json`
-- Modify: `scripts/dev.cjs`
-- Modify: `scripts/setup.js` or replace with `scripts/setup.cjs`
-- Modify: `worker/src/routes/perfilRoutes.js`
-- Modify: `worker/src/domain/perfil/perfilService.js`
-- Modify: `worker/src/domain/repertorios/repertorioService.js`
-- Test: `worker/tests/routes.test.ts`
-- Create: `worker/tests/routeInventory.test.ts`
-- Document: `docs/ARCHITECTURE.md`
+**Arquivos principais:** scripts de desenvolvimento, rotas de perfil e repertório e documentação de arquitetura.
 
-- [ ] Point every dev/start script at the `wrangler.toml` modular entrypoint.
-- [ ] Remove the CommonJS/ESM mismatch in setup tooling.
-- [ ] Add `GET /api/perfil/foto/:filename` to the modular router with R2 metadata and cache headers.
-- [ ] Fix repertoire instrument fallback to use `instrumento_id` and its resolved instrument name.
-- [ ] Add an inventory test for known modular routes and document `worker/index.js` as deprecated pending deletion.
-- [ ] Run focused route tests, Worker lint and full Worker tests.
+- [ ] Apontar todos os scripts para o entrypoint definido no `wrangler.toml`.
+- [ ] Remover incompatibilidades CommonJS/ESM dos scripts.
+- [ ] Restaurar `GET /api/perfil/foto/:filename` no router modular.
+- [ ] Corrigir o fallback de instrumento do repertório.
+- [ ] Inventariar rotas conhecidas e marcar `worker/index.js` como legado.
+- [ ] Executar testes de rotas, lint e suíte completa.
 
-### Task 4: Make storage operations recoverable and namespace-safe
+## Tarefa 4: tornar o armazenamento recuperável e isolado
 
-**Files:**
-- Create: `worker/src/infrastructure/storage/storageKeys.js`
-- Create: `worker/src/infrastructure/storage/storageOperations.js`
-- Modify: `worker/src/infrastructure/index.js`
-- Modify: `worker/src/domain/partituras/parteService.js`
-- Modify: `worker/src/domain/partituras/partituraService.js`
-- Modify: `worker/src/domain/perfil/perfilService.js`
-- Modify: `worker/src/domain/assets/assetService.js`
-- Test: `worker/tests/routes.test.ts`
-- Create: `worker/tests/storageOperations.test.ts`
+**Arquivos principais:** infraestrutura de storage, serviços de partituras, perfil e assets.
 
-- [ ] Centralize safe names and prefixes for `partituras/`, `partes/`, `perfil/` and `assets/`.
-- [ ] Add upload-with-compensation helper that deletes a newly uploaded object when its D1 mutation fails.
-- [ ] Change replacements to upload new, update D1, then delete old; never delete old first.
-- [ ] Validate PDF signature, MIME, size and batch count before storing any upload.
-- [ ] Restrict asset list/delete operations to `assets/` and reject traversal or foreign prefixes.
-- [ ] Preserve reads for legacy unprefixed keys while all new writes use namespaces.
-- [ ] Add failure-injection tests for D1 errors after R2 upload and R2 errors during replacement.
-- [ ] Run storage tests, route tests and the full Worker suite.
+- [ ] Centralizar namespaces de `partituras/`, `partes/`, `perfil/` e `assets/`.
+- [ ] Remover uploads novos quando a mutação D1 correspondente falhar.
+- [ ] Substituir arquivos na ordem: upload novo, atualização D1, exclusão antiga.
+- [ ] Validar assinatura, MIME, tamanho e quantidade de PDFs.
+- [ ] Restringir listagem e exclusão de assets ao namespace permitido.
+- [ ] Preservar somente os fallbacks legados necessários para leitura.
+- [ ] Cobrir falhas injetadas de D1 e R2.
 
-### Task 5: Make repertoire changes atomic and validate inputs
+## Tarefa 5: validar entradas e agrupar mutações
 
-**Files:**
-- Create: `worker/src/infrastructure/validation/validators.js`
-- Modify: `worker/src/infrastructure/index.js`
-- Modify: `worker/src/domain/repertorios/repertorioService.js`
-- Modify: `worker/src/domain/presenca/presencaService.js`
-- Modify: `worker/src/domain/ensaio/ensaioService.js`
-- Modify: `worker/src/routes/configRoutes.js`
-- Modify: `worker/src/domain/partituras/downloadService.js`
-- Test: `worker/tests/routes.test.ts`
-- Create: `worker/tests/validators.test.ts`
+**Arquivos principais:** validadores, repertórios, presença, ensaios, configurações e downloads.
 
-- [ ] Add strict positive-ID, ISO-date, HTTP URL, pagination and safe-header helpers.
-- [ ] Use D1 batch for repertoire activation/deactivation, deletion, duplication and reorder operations.
-- [ ] Preserve explicit empty strings on allowed update fields instead of replacing them with old values.
-- [ ] Distinguish uniqueness conflicts from unrelated database failures.
-- [ ] Sanitize download filenames and validate date/URL inputs at route boundaries.
-- [ ] Add regression tests for partial repertoire failures and invalid inputs.
-- [ ] Run focused and full Worker verification.
+- [ ] Validar IDs positivos, datas ISO, URLs HTTP, paginação e cabeçalhos.
+- [ ] Usar `batch()` para operações relacionadas de repertório.
+- [ ] Preservar strings vazias permitidas em atualizações.
+- [ ] Distinguir conflitos de unicidade de outras falhas do banco.
+- [ ] Sanitizar nomes de download e validar dados nas fronteiras das rotas.
+- [ ] Executar testes focados e completos.
 
-### Task 6: Align OpenAPI, generated types and CI
+## Tarefa 6: alinhar OpenAPI, tipos e CI
 
-**Files:**
-- Modify: `worker/openapi.yaml`
-- Regenerate: `frontend/src/api-types.ts`
-- Modify: `frontend/src/services/api-client.ts`
-- Modify: `.github/workflows/ci.yml`
-- Modify: `frontend/package.json`
-- Create: `scripts/check-route-contract.cjs`
-- Modify: `package.json`
+**Arquivos principais:** `worker/openapi.yaml`, tipos gerados, cliente tipado e workflow de CI.
 
-- [ ] Add every active route and its relevant success/error response schema to OpenAPI.
-- [ ] Correct the storage import and typed request/response mismatches in `api-client.ts`.
-- [ ] Add a route-contract checker that reports router methods/paths absent from OpenAPI.
-- [ ] Add API generation drift check and frontend typecheck to CI.
-- [ ] Run API generation, route contract, typecheck, frontend lint, tests and build.
+- [ ] Documentar todas as rotas ativas e suas respostas relevantes.
+- [ ] Corrigir imports e tipos do cliente OpenAPI.
+- [ ] Conferir métodos e caminhos do router contra o contrato.
+- [ ] Detectar drift de geração e executar typecheck na CI.
+- [ ] Executar geração, contrato, lint, testes e build.
 
-### Task 7: Decouple analytics and improve safe development defaults
+## Tarefa 7: desacoplar analytics e tornar o desenvolvimento seguro
 
-**Files:**
-- Modify: `worker/src/infrastructure/posthog/posthogClient.js`
-- Modify: PostHog call sites under `worker/src/domain/`
-- Modify: `frontend/vite.config.js`
-- Modify: `scripts/dev.cjs`
-- Test: `worker/tests/routes.test.ts`
+- [ ] Enviar PostHog como tarefa best effort, usando `waitUntil()` quando disponível.
+- [ ] Impedir que falhas de analytics alterem respostas de login e CRUD.
+- [ ] Usar a API local por padrão no Vite e exigir escolha explícita para produção.
+- [ ] Cobrir falhas do provedor e executar build local.
 
-- [ ] Introduce one best-effort capture helper using execution-context `waitUntil` when available.
-- [ ] Ensure login and CRUD responses do not fail because PostHog is unavailable.
-- [ ] Default Vite proxy to local API and require an explicit target for production.
-- [ ] Add regression tests for analytics-provider failure.
-- [ ] Run Worker tests and frontend build in local-target mode.
+## Tarefa 8: atualizar dependências e carregamento
 
-### Task 8: Update vulnerable dependencies and reduce loading regressions
+- [ ] Atualizar dependências vulneráveis em grupos compatíveis.
+- [ ] Executar `npm audit` e registrar qualquer risco restante.
+- [ ] Remover imports estáticos que anulam lazy loading.
+- [ ] Manter módulos grandes fora do carregamento inicial quando possível.
+- [ ] Executar typecheck, lint, testes e build do frontend.
 
-**Files:**
-- Modify: `frontend/package.json`
-- Modify: `frontend/package-lock.json`
-- Modify: frontend lazy-loading imports identified by Vite
-- Modify: root lockfile only if required
+## Tarefa 9: verificar e documentar publicação controlada
 
-- [ ] Update `posthog-js`, `react-router-dom`, `protobufjs` chain and audited tooling to fixed compatible versions.
-- [ ] Run `npm audit --omit=dev` and record any remaining advisory with applicability.
-- [ ] Remove static imports that defeat existing lazy imports.
-- [ ] Keep PDF viewer, Lottie and large admin-only modules out of the initial route where possible without changing UX.
-- [ ] Run frontend typecheck, lint, 308+ tests and production build.
+- [ ] Documentar setup local, secrets, migrações e rollback.
+- [ ] Executar verificação completa, auditorias e `git diff --check`.
+- [ ] Fazer smoke tests locais sem tocar em D1 ou R2 remotos.
+- [ ] Inspecionar o diff para segredos e mudanças não relacionadas.
+- [ ] Interromper antes de qualquer migração, secret ou deploy remoto.
 
-### Task 9: Verify, document and prepare controlled deployment
+## Tarefa 10: preparar a modernização visual do frontend
 
-**Files:**
-- Modify: `README.md`
-- Modify: `INSTALL.md`
-- Modify: `SECURITY.md`
-- Create: `docs/DEPLOYMENT-CHECKLIST.md`
-- Modify: `docs/CHANGELOG.md`
-
-- [ ] Document local setup, secrets, migrations, one backend entrypoint and rollback procedure.
-- [ ] Run complete Worker and frontend verification, audits, route contract and `git diff --check`.
-- [ ] Run local HTTP smoke tests against Wrangler without touching remote D1/R2.
-- [ ] Review the diff for accidental secrets and unrelated changes.
-- [ ] Commit coherent implementation batches.
-- [ ] Stop before remote secret rotation, migration or deploy and request explicit confirmation.
-
-### Task 10: Frontend visual modernization follow-up
-
-**Files:**
-- Create after backend stabilization: `docs/superpowers/specs/2026-08-24-frontend-modernization-design.md`
-
-- [ ] Inventory every current screen, state and responsive flow after backend contracts are stable.
-- [ ] Present visual alternatives and obtain approval before changing the visual language.
-- [ ] Create a separate implementation plan that preserves all current product capabilities.
+- [ ] Inventariar telas, estados e fluxos responsivos.
+- [ ] Apresentar alternativas visuais antes de mudar a linguagem do produto.
+- [ ] Criar plano separado que preserve todas as capacidades existentes.

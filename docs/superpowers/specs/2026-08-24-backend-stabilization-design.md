@@ -1,48 +1,38 @@
-# Estabilizacao e Modernizacao Incremental do Acervo
+# Estabilização e modernização incremental do Acervo
 
 ## Contexto
 
-O Acervo Digital deixou de ser um unico HTML e evoluiu para uma aplicacao React com um Cloudflare Worker modular, D1, R2 e PostHog. Essa evolucao preservou o produto e criou limites uteis entre frontend, rotas, middlewares, servicos de dominio e infraestrutura.
+O Acervo Digital deixou de ser um único HTML e evoluiu para uma aplicação React com Cloudflare Worker modular, D1, R2 e PostHog. Essa evolução preservou o produto e criou limites úteis entre frontend, rotas, middlewares, serviços de domínio e infraestrutura.
 
-A migracao, porem, ficou incompleta. O backend monolitico antigo ainda existe e alguns scripts continuam apontando para ele, enquanto producao usa `worker/src/index.js`. O schema-base, as migrations e o schema manual dos testes tambem divergem. Essas fontes de verdade paralelas explicam regressos que nao aparecem na suite atual, como a URL de foto de perfil sem rota GET no Worker modular e o cliente OpenAPI que nao passa no typecheck.
+A migração, porém, ficou incompleta. O backend monolítico antigo ainda existe como referência histórica, enquanto produção usa `worker/src/index.js`. O schema-base, as migrações e o schema manual dos testes também divergiam. Essas fontes paralelas explicavam regressões que não apareciam na suíte, como a foto de perfil sem rota GET no Worker modular e o cliente OpenAPI fora do typecheck.
 
 ## Objetivo
 
-Estabilizar e modernizar o projeto por camadas, sem reescrita total e sem remover funcionalidades existentes, de forma que:
+Estabilizar o projeto por camadas, sem reescrita total e sem remover funcionalidades, de modo que:
 
-- o backend modular seja a unica implementacao executavel;
-- autenticacao e autorizacao usem configuracao segura e estado atual do banco;
-- um banco D1 vazio possa ser criado integralmente por migrations testadas;
-- operacoes que combinam D1 e R2 falhem sem perder o arquivo anterior ou deixar estado parcial evitavel;
+- o backend modular seja a única implementação executável;
+- autenticação e autorização usem configuração segura e o estado atual do banco;
+- um D1 vazio possa ser criado integralmente por migrações testadas;
+- operações D1/R2 falhem sem perder o arquivo anterior nem deixar estado parcial evitável;
 - rotas, OpenAPI, cliente frontend e CI descrevam o mesmo contrato;
-- analytics auxiliar nao transforme operacoes principais bem-sucedidas em erro;
-- dependencias possam ser atualizadas com verificacao de regressao;
-- o frontend possa ser modernizado depois que seus contratos estiverem estaveis.
+- analytics auxiliar nunca transforme uma operação principal bem-sucedida em erro;
+- dependências sejam atualizadas com verificação de regressão;
+- o frontend possa ser modernizado depois da estabilização dos contratos.
 
-## Fora de Escopo da Primeira Entrega
+## Fora do escopo da primeira entrega
 
-- publicar automaticamente em producao;
-- rotacionar secrets ou criar bindings na conta Cloudflare sem confirmacao imediata do usuario;
-- alterar conteudo, regras de negocio ou remover recursos sem teste de caracterizacao;
-- redesenhar visualmente o frontend antes da estabilizacao dos contratos;
-- trocar React, Vite, Cloudflare Workers, D1 ou R2 por outra stack;
-- reescrever todos os servicos de dominio apenas por uniformidade estetica.
+- publicar automaticamente em produção;
+- rotacionar secrets ou criar bindings sem confirmação imediata do usuário;
+- alterar regras de negócio ou remover recursos sem caracterização;
+- redesenhar o frontend antes da estabilização dos contratos;
+- trocar React, Vite, Workers, D1 ou R2 por outra stack;
+- refatorar serviços apenas por uniformidade estética.
 
-## Abordagens Consideradas
+## Abordagem escolhida
 
-### Reescrita completa
+Uma reescrita completa exigiria redescobrir regras reais de repertório, partes, presença, avisos, favoritos, analytics e administração. Correções pontuais manteriam fontes de verdade paralelas. A abordagem escolhida é a estabilização incremental por contratos: preservar o comportamento, caracterizar riscos e aplicar a menor mudança necessária em cada camada.
 
-Permitiria uma arquitetura uniforme, mas exigiria redescobrir regras reais de repertorio, partes, presenca, avisos, favoritos, analytics e administracao. O risco de perder comportamento validado e alto, por isso a abordagem foi rejeitada.
-
-### Correcoes pontuais
-
-Resolveria os sintomas mais visiveis, mas manteria as tres fontes de verdade do banco, os dois backends e o contrato OpenAPI abandonado. O custo de cada mudanca futura continuaria aumentando, por isso tambem foi rejeitada.
-
-### Estabilizacao incremental por contratos
-
-E a abordagem escolhida. Cada camada recebe primeiro testes de caracterizacao e regressao; depois recebe a menor mudanca necessaria. O projeto continua entregavel ao fim de cada etapa.
-
-## Arquitetura Alvo
+## Arquitetura-alvo
 
 ```text
 React + Vite
@@ -53,201 +43,140 @@ worker/src/index.js
     |
     +-- router e middlewares
     |     +-- CORS
-    |     +-- autenticacao
-    |     +-- autorizacao atual no D1
-    |     +-- rate limit
+    |     +-- autenticação
+    |     +-- autorização atual no D1
+    |     +-- rate limiting
     |
-    +-- servicos de dominio
-          +-- D1 via statements preparados e batch
-          +-- R2 via chaves com namespace e compensacao
+    +-- serviços de domínio
+          +-- D1 por statements preparados e batch
+          +-- R2 por chaves com namespace e compensação
           +-- PostHog como tarefa auxiliar
 ```
 
-`worker/index.js` deixa de ser executavel e passa, temporariamente, a servir apenas como referencia historica durante a comparacao de rotas. Depois que todos os contratos relevantes forem cobertos, ele sera removido ou movido para documentacao historica.
+`worker/index.js` deixa de ser executável e permanece apenas como referência histórica até que a comparação de contratos seja concluída.
 
-## Seguranca
+## Segurança
 
 ### Secrets
 
-`JWT_SECRET` nao permanecera em `wrangler.toml`. O repositorio passara a exigir o secret por binding no ambiente publicado e uma chave local em `.dev.vars`, arquivo ignorado pelo Git.
+`JWT_SECRET` não permanece em `wrangler.toml`. O ambiente publicado exige secret por binding; o desenvolvimento usa um valor exclusivamente local. Operações autenticadas falham de forma explícita sem configuração. A rotação é uma ação externa separada, pois encerra sessões existentes.
 
-O codigo deve falhar de forma explicita ao iniciar uma operacao autenticada sem secret configurado. A rotacao do valor publicado sera uma etapa externa separada, com aviso de que as sessoes existentes serao encerradas.
+### Rate limiting
 
-### Rate limit
+Produção exige o binding `RATE_LIMIT`. A ausência ou indisponibilidade do binding bloqueia operações protegidas. Fora de produção, o sistema pode operar em modo degradado com aviso claro.
 
-Producao devera possuir o binding `RATE_LIMIT`. A ausencia do binding nao pode ser silenciosa em producao. O modo local continuara utilizavel, mas exibira estado degradado de forma clara.
+O tracking autentica antes de calcular a chave, usando a identidade do usuário quando disponível e IP como fallback.
 
-O middleware de tracking deve autenticar antes de calcular a chave de limite para que usuarios autenticados sejam limitados por identidade, com IP apenas como fallback.
+### Autorização
 
-### Autorizacao
+O papel administrativo é lido do usuário atual no D1. Claims do JWT são metadados e não concedem permissão isoladamente. O bearer legado `username:pin` deve ser depreciado de forma observável antes de ser removido.
 
-O papel administrativo sera lido do usuario atual no D1. O claim do JWT podera ser mantido apenas como metadado, nunca como fonte adicional de permissao.
+## Banco e migrações
 
-O bearer legado `username:pin` sera instrumentado e depreciado antes de ser removido. O frontend atual continuara usando JWT.
+Há uma única cadeia ordenada compatível com `wrangler d1 migrations apply`:
 
-## Banco e Migrations
-
-Havera uma unica cadeia ordenada de migrations compativel com `wrangler d1 migrations apply`.
-
-Regras:
-
-- numeracao unica e crescente;
+- numeração única e crescente;
 - nenhuma coluna adicionada duas vezes;
-- schema final contendo repertorios, configuracoes, ensaios, nome de exibicao e tracking;
-- seed separado de estrutura;
-- `db:init`, `db:migrate` e `db:reset` operando sobre a cadeia real;
-- teste automatizado que cria D1 vazio, aplica todas as migrations e executa um login completo;
-- testes do Worker usando o schema produzido pelas migrations, nao uma lista SQL paralela mantida manualmente.
+- schema final completo para repertórios, configurações, ensaios, nomes e tracking;
+- seed separado da estrutura;
+- scripts locais e remotos explícitos;
+- setup dos testes gerado a partir das migrações ativas;
+- teste automatizado de bootstrap em D1 vazio.
 
-Para preservar bancos existentes, migrations antigas ja publicadas nao serao reescritas de forma que o historico do D1 fique invalido. Sera criada uma migration de reconciliacao idempotente e um baseline documentado para instalacoes novas.
+Migrações já publicadas não são reescritas de forma incompatível. Novos ajustes entram como migrações adicionais e idempotentes quando possível.
 
-## Consistencia D1 e R2
+## Consistência entre D1 e R2
 
-D1 e R2 nao compartilham uma transacao. A consistencia sera obtida por uma maquina de estados simples:
+D1 e R2 não compartilham transação. A consistência segue esta ordem:
 
-1. validar metadados, tamanho, quantidade e assinatura do arquivo;
-2. enviar o novo objeto para uma chave temporaria com namespace;
-3. executar alteracoes relacionadas no D1 com `batch()` quando houver mais de um statement;
-4. promover a nova referencia no banco;
-5. remover o arquivo anterior como tarefa posterior a resposta;
-6. remover o novo objeto temporario se o banco falhar.
+1. validar metadados, tamanho, quantidade e assinatura;
+2. enviar o novo objeto para chave segura com namespace;
+3. executar alterações relacionadas no D1 com `batch()`;
+4. confirmar a nova referência no banco;
+5. remover o objeto anterior após a confirmação;
+6. remover o objeto novo se o banco falhar.
 
-Substituicao nunca apaga o objeto anterior antes de o novo objeto e a referencia de banco estarem confirmados.
+Uma substituição nunca apaga o arquivo anterior antes da confirmação do novo objeto e da referência D1.
 
-Os namespaces minimos do bucket serao:
+Namespaces mínimos:
 
 - `partituras/`;
 - `partes/`;
 - `perfil/`;
 - `assets/`.
 
-O administrador de assets so podera listar e excluir chaves sob `assets/`.
+Listagem e exclusão administrativas de assets ficam restritas a `assets/`. Compatibilidade de leitura legada é limitada a prefixos públicos explicitamente permitidos.
 
-## Rotas e Contrato OpenAPI
+## Rotas e contrato OpenAPI
 
-Um teste de inventario comparara metodos e caminhos registrados no router com os caminhos documentados no OpenAPI. Rotas dinamicas serao normalizadas para a mesma sintaxe.
+Um verificador compara métodos e caminhos registrados no router com o OpenAPI. Rotas dinâmicas são normalizadas para a mesma sintaxe. O contrato cobre respostas relevantes, gera `frontend/src/api-types.ts` de forma reproduzível e participa do typecheck da CI.
 
-O contrato cobrira respostas de sucesso e erro usadas pelo cliente. A geracao de `frontend/src/api-types.ts` sera reproduzivel e o `typecheck` entrara na CI.
+O cliente tipado pode substituir o cliente JavaScript gradualmente, por domínio, evitando uma migração ampla sem cobertura.
 
-O cliente tipado sera corrigido antes de substituir o cliente JavaScript atual. A migracao de chamadas sera gradual, por dominio, para evitar uma troca ampla sem cobertura.
+## Validação de entrada
 
-Regressoes confirmadas, como `GET /api/perfil/foto/:filename` e o fallback de instrumento no download de repertorio, receberao testes que falham antes da correcao.
+A camada de validação cobre:
 
-## Validacao de Entrada
-
-Sera criada uma camada pequena de validadores reutilizaveis, sem introduzir um framework grande nesta etapa.
-
-Ela cobrira:
-
-- IDs inteiros positivos sem aceitar sufixos;
-- datas ISO validas;
-- URLs HTTP/HTTPS e allowlist quando houver embed;
-- strings obrigatorias, opcionais e deliberadamente limpaveis;
-- tamanho, quantidade, extensao, MIME e assinatura PDF;
+- IDs inteiros positivos;
+- datas ISO válidas;
+- URLs HTTP/HTTPS;
+- strings obrigatórias, opcionais e deliberadamente limpáveis;
+- tamanho individual e agregado, quantidade, extensão, MIME e assinatura de PDF;
 - nomes seguros para `Content-Disposition`;
-- limites de paginacao e upload.
+- limites de paginação e upload.
 
-Erros de validacao retornarao `400`; conflitos conhecidos, `409`; ausencia, `404`; falhas inesperadas, `500` sem detalhes internos.
+Erros de validação retornam `400`; conflitos conhecidos, `409`; ausência, `404`; falhas inesperadas, `500` sem detalhes internos.
 
-## Analytics e Trabalho Assincrono
+## Analytics e trabalho assíncrono
 
-Eventos PostHog serao best effort. A operacao principal deve produzir a resposta independentemente de falha no provedor de analytics.
+Eventos PostHog são best effort. Quando existe `ExecutionContext`, o envio é registrado com `waitUntil()`. Sem contexto, falhas são capturadas sem alterar a resposta de negócio. O cliente sempre tenta encerrar e liberar seu buffer, inclusive quando identificação ou captura falham.
 
-Quando houver `executionCtx`, o envio sera registrado com `waitUntil()`. Sem contexto, a falha sera capturada e registrada sem alterar a resposta de negocio.
+Tracking pertencente ao próprio produto e armazenado no D1 continua fazendo parte do contrato quando necessário, com tratamento explícito para indisponibilidade.
 
-O tracking que pertence ao proprio produto, armazenado no D1, continuara fazendo parte da operacao quando for necessario para o contrato, mas recebera tratamento explicito quando tabelas ou dados estiverem indisponiveis.
+## Dependências e desempenho
 
-## Dependencias e Desempenho
+Dependências são atualizadas em grupos pequenos e verificadas com testes, lint, typecheck, build e auditoria. Imports estáticos que anulam lazy loading são removidos, e módulos pesados ficam fora do carregamento inicial quando não são necessários.
 
-Dependencias serao atualizadas em grupos pequenos, priorizando:
+O ambiente de desenvolvimento usa API local por padrão e exige escolha explícita para apontar à produção.
 
-1. vulnerabilidade critica transitiva de `protobufjs`;
-2. cadeia de `posthog-js`;
-3. `react-router-dom`;
-4. ferramentas OpenAPI e demais dependencias auditadas.
+## Modernização do frontend
 
-Cada grupo devera passar por testes, lint, typecheck e build antes do proximo.
+A modernização visual é uma entrega posterior com especificação própria. Ela preserva telas, conteúdo e fluxos existentes. Antes do redesign, o inventário inclui navegação, login, home, busca, biblioteca, favoritos, repertórios, ensaios, perfil, notificações, administração, modais, visualização de PDF, compartilhamento, downloads e estados de carregamento, vazio, erro e offline.
 
-Depois da integridade:
+## Estratégia de testes
 
-- o download de repertorio deixara de executar uma consulta por partitura;
-- operacoes de ordenacao e ativacao de repertorio usarao batch;
-- chunks grandes serao carregados apenas nas telas que os utilizam;
-- imports estaticos que anulam lazy loading serao removidos;
-- o ambiente de desenvolvimento usara API local por padrao e exigira escolha explicita para producao.
+- caracterização do comportamento que precisa ser preservado;
+- regressões para defeitos confirmados;
+- integração do Worker modular com D1 e R2 locais;
+- bootstrap de migrações em banco vazio;
+- comparação router/OpenAPI e typecheck do cliente gerado;
+- suítes completas de Worker e frontend;
+- lint, build, auditorias e smoke test HTTP local.
 
-## Modernizacao do Frontend
+## Implantação
 
-A modernizacao visual sera tratada como uma entrega posterior e tera especificacao visual propria. Ela devera preservar todas as telas, recursos e fluxos existentes.
+O código é preparado em branch isolada. Nenhum deploy, migração remota, alteração de binding ou rotação de secret ocorre automaticamente.
 
-Antes de redesenhar, sera feito um inventario de:
+Antes de publicar:
 
-- navegacao desktop e mobile;
-- login;
-- home, busca, biblioteca e favoritos;
-- repertorio e ensaios;
-- perfil e notificacoes;
-- telas administrativas;
-- modais, PDF viewer, compartilhamento e downloads;
-- estados de carregamento, vazio, erro e offline.
-
-O novo visual sera aditivo e responsivo, sem reduzir a riqueza funcional do sistema atual.
-
-## Estrategia de Testes
-
-### Caracterizacao
-
-Antes de alterar comportamento, registrar o comportamento atual que precisa ser preservado.
-
-### Regressao
-
-Cada defeito confirmado recebe um teste que falha pela causa correta antes da implementacao.
-
-### Integracao
-
-- Worker modular com D1 e R2 locais;
-- migrations em banco vazio;
-- fluxo login, upload, substituicao, download e exclusao;
-- comparacao router/OpenAPI;
-- cliente gerado e typecheck.
-
-### Verificacao completa
-
-- testes Worker;
-- testes frontend;
-- lint Worker e frontend;
-- typecheck;
-- build sem apontar implicitamente para producao;
-- audit de dependencias;
-- smoke test HTTP local;
-- validacao manual responsiva das telas modificadas.
-
-## Implantacao
-
-O codigo sera preparado em branch isolada. Nenhum deploy, migration remota, alteracao de binding ou rotacao de secret sera executado automaticamente.
-
-Antes da publicacao:
-
-1. gerar backup/export do D1 remoto;
-2. listar migrations pendentes;
+1. criar backup ou exportação do D1 remoto;
+2. revisar migrações pendentes;
 3. configurar KV e secrets;
-4. aplicar migrations de forma controlada;
+4. aplicar migrações de forma controlada;
 5. publicar o Worker modular;
-6. executar smoke tests autenticados e publicos;
+6. executar smoke tests públicos e autenticados;
 7. publicar o frontend;
 8. observar erros, login, downloads e uploads;
-9. manter procedimento de rollback documentado.
+9. manter rollback documentado.
 
-## Criterios de Conclusao
+## Critérios de conclusão
 
-- apenas um backend executavel e documentado;
-- segredo ausente do repositorio e preparado para rotacao;
-- rate limit configuravel e verificavel;
-- autorizacao administrativa baseada no D1 atual;
-- banco vazio criado por migrations e capaz de autenticar;
-- nenhum upload substitui ou apaga dados sem compensacao;
-- bucket separado logicamente por namespace;
+- um único backend executável e documentado;
+- secrets fora do repositório;
+- rate limiting verificável e seguro em produção;
+- autorização administrativa baseada no D1 atual;
+- banco vazio criado por migrações e capaz de autenticar;
+- uploads recuperáveis e namespaces isolados;
 - router, OpenAPI, cliente e CI alinhados;
-- testes, lint, typecheck e build aprovados;
-- dependencias criticas corrigidas ou justificadas por inaplicabilidade;
-- deploy remoto ainda condicionado a confirmacao explicita.
+- testes, lint, typecheck, build e auditorias aprovados;
+- deploy remoto condicionado à confirmação explícita.

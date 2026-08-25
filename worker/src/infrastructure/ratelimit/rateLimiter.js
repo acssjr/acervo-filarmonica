@@ -29,6 +29,19 @@ function missingRateLimitResult(env, remaining) {
   return { allowed: true, remaining, degraded: true };
 }
 
+function rateLimitUnavailableResult(env, remaining, retryAfter) {
+  if (env?.ENVIRONMENT === 'production') {
+    return {
+      allowed: false,
+      remaining: 0,
+      retryAfter,
+      configurationError: true
+    };
+  }
+
+  return { allowed: true, remaining, degraded: true };
+}
+
 // Verificar rate limit
 export async function checkRateLimit(env, key) {
   if (!env.RATE_LIMIT) {
@@ -78,7 +91,11 @@ export async function checkRateLimit(env, key) {
 
   } catch (e) {
     console.error('Erro no rate limiting:', e);
-    return { allowed: true, remaining: MAX_LOGIN_ATTEMPTS }; // Em caso de erro, permite
+    return rateLimitUnavailableResult(
+      env,
+      MAX_LOGIN_ATTEMPTS,
+      RATE_LIMIT_WINDOW_SECONDS
+    );
   }
 }
 
@@ -146,6 +163,10 @@ export async function checkTrackingRateLimit(env, userId, ip) {
 
   } catch (e) {
     console.error('Erro no tracking rate limiting:', e);
-    return { allowed: true, remaining: MAX_TRACKING_ATTEMPTS }; // Em caso de erro, permite
+    return rateLimitUnavailableResult(
+      env,
+      MAX_TRACKING_ATTEMPTS,
+      TRACKING_RATE_LIMIT_WINDOW_SECONDS
+    );
   }
 }

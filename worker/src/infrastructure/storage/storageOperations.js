@@ -1,5 +1,14 @@
 export const MAX_PDF_SIZE = 25 * 1024 * 1024;
 export const MAX_PDF_BATCH_COUNT = 100;
+export const MAX_PDF_BATCH_BYTES = 64 * 1024 * 1024;
+
+export function accumulatePdfBatchBytes(currentBytes, arrayBuffer, maxBytes = MAX_PDF_BATCH_BYTES) {
+  const totalBytes = currentBytes + arrayBuffer.byteLength;
+  if (totalBytes > maxBytes) {
+    throw new Error(`O tamanho total do lote excede ${Math.floor(maxBytes / 1024 / 1024)} MB`);
+  }
+  return totalBytes;
+}
 
 export function isPdfBuffer(arrayBuffer) {
   const bytes = new Uint8Array(arrayBuffer.slice(0, 5));

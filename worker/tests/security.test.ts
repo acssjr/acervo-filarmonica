@@ -42,4 +42,38 @@ describe('configuração de segurança', () => {
     expect(result.allowed).toBe(true);
     expect(storedKey).toBe('ratelimit:tracking:user:42');
   });
+
+  it('bloqueia login em produção quando o KV falha', async () => {
+    const kv = {
+      get: vi.fn().mockRejectedValue(new Error('KV offline')),
+      put: vi.fn()
+    };
+
+    const result = await checkRateLimit({ ENVIRONMENT: 'production', RATE_LIMIT: kv }, 'login:127.0.0.1');
+
+    expect(result).toMatchObject({
+      allowed: false,
+      remaining: 0,
+      configurationError: true
+    });
+  });
+
+  it('bloqueia tracking em produção quando a escrita no KV falha', async () => {
+    const kv = {
+      get: vi.fn().mockResolvedValue(null),
+      put: vi.fn().mockRejectedValue(new Error('KV offline'))
+    };
+
+    const result = await checkTrackingRateLimit(
+      { ENVIRONMENT: 'production', RATE_LIMIT: kv },
+      42,
+      '203.0.113.10'
+    );
+
+    expect(result).toMatchObject({
+      allowed: false,
+      remaining: 0,
+      configurationError: true
+    });
+  });
 });

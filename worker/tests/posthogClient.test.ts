@@ -3,12 +3,26 @@ import { capturePostHog } from '../src/infrastructure/posthog/posthogClient.js';
 
 describe('telemetria best-effort', () => {
   it('absorve falhas do provedor', async () => {
+    const shutdown = vi.fn();
     const env = {
       POSTHOG_CLIENT_FACTORY: () => ({
         capture: () => { throw new Error('provider offline'); },
-        shutdown: vi.fn()
+        shutdown
       })
     };
+    await expect(capturePostHog(env, { event: 'teste', distinctId: '1' }))
+      .resolves.toBeUndefined();
+    expect(shutdown).toHaveBeenCalledTimes(1);
+  });
+
+  it('absorve falhas no encerramento do cliente', async () => {
+    const env = {
+      POSTHOG_CLIENT_FACTORY: () => ({
+        capture: vi.fn(),
+        shutdown: vi.fn().mockRejectedValue(new Error('flush offline'))
+      })
+    };
+
     await expect(capturePostHog(env, { event: 'teste', distinctId: '1' }))
       .resolves.toBeUndefined();
   });

@@ -47,16 +47,22 @@ export async function shutdownPostHog(client) {
 export function capturePostHog(env, event, executionCtx = null, identify = null) {
   const backgroundContext = executionCtx || env.__executionCtx || null;
   const task = (async () => {
+    let client = null;
     try {
-      const client = typeof env.POSTHOG_CLIENT_FACTORY === 'function'
+      client = typeof env.POSTHOG_CLIENT_FACTORY === 'function'
         ? env.POSTHOG_CLIENT_FACTORY()
         : createPostHogClient(env);
       if (!client) return;
       if (identify) client.identify(identify);
       client.capture(event);
-      await shutdownPostHog(client);
     } catch (error) {
       console.error('PostHog indisponível; evento ignorado:', error);
+    } finally {
+      try {
+        await shutdownPostHog(client);
+      } catch (shutdownError) {
+        console.error('Falha ao encerrar cliente PostHog:', shutdownError);
+      }
     }
   })();
 
