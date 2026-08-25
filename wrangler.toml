@@ -22,10 +22,9 @@ binding = "BUCKET"
 bucket_name = "acervo-pdfs"
 
 # KV para rate limiting (obrigatório em produção)
-# Para criar: npx wrangler kv:namespace create RATE_LIMIT
-# [[kv_namespaces]]
-# binding = "RATE_LIMIT"
-# id = "<seu-kv-namespace-id>"
+[[kv_namespaces]]
+binding = "RATE_LIMIT"
+id = "cd7f42b389d045d59d034b448076a7b1"
 
 # Variáveis de ambiente
 [vars]
