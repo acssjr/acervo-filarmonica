@@ -959,6 +959,31 @@ describe('API Service', () => {
       expect(result.inRepertorio).toBe(true);
     });
 
+    it('getRepertorioDownloadAvailability() consulta instrumento e seleção', async () => {
+      global.fetch = createMockFetch({
+        data: { total: 3, disponiveis_count: 2, ausentes_count: 1 }
+      });
+
+      await API.getRepertorioDownloadAvailability(
+        5,
+        'Bombardino C',
+        [1, 2, 3]
+      );
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/repertorio/5/disponibilidade-download'),
+        expect.anything()
+      );
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('instrumento=Bombardino+C'),
+        expect.anything()
+      );
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('partituras=1%2C2%2C3'),
+        expect.anything()
+      );
+    });
+
     it('getRepertorioDownloadUrl() retorna URL sem instrumento', () => {
       const url = API.getRepertorioDownloadUrl(5);
 

@@ -11,6 +11,11 @@ import {
 import { registrarAtividade } from '../atividades/index.js';
 import { buildUpdateDetails, describeBoolean } from '../atividades/auditUtils.js';
 import { capturePostHog } from '../../infrastructure/posthog/posthogClient.js';
+import {
+  areInstrumentTonalitiesCompatible,
+  canonicalizeInstrumentName,
+  isBombardinoInstrument
+} from '../instrumentos/instrumentUtils.js';
 
 // ============ LEITURA ============
 
@@ -267,7 +272,7 @@ function getOrdemInstrumento(instrumento) {
  * Ex: "sax baritono" → "Sax Barítono"
  */
 function normalizeInstrumentName(name) {
-  let normalized = name
+  let normalized = canonicalizeInstrumentName(name)
     .replace(/\./g, '') // Remove pontos
     .replace(/\s+/g, ' ') // Normaliza espaços
     .trim()
@@ -457,8 +462,17 @@ export async function getRepertorioInstrumentos(id, request, env) {
     filteredInstruments.push(item.normalized);
   }
 
+  // Bombardino nunca é apresentado de forma ambígua. Mesmo que o repertório
+  // possua apenas uma tonalidade, ambas ficam disponíveis para que a ausência
+  // seja informada explicitamente antes do download.
+  const hasBombardino = normalized.some(item => isBombardinoInstrument(item.original));
+  const instrumentsForDisplay = filteredInstruments.filter(item => !isBombardinoInstrument(item));
+  if (hasBombardino) {
+    instrumentsForDisplay.push('Bombardino C', 'Bombardino Bb');
+  }
+
   // Ordenar
-  const instrumentos = filteredInstruments
+  const instrumentos = [...new Set(instrumentsForDisplay)]
     .sort((a, b) => getOrdemInstrumento(a).localeCompare(getOrdemInstrumento(b)));
 
   return jsonResponse(instrumentos, 200, request);
@@ -776,26 +790,52 @@ export async function duplicarRepertorio(id, request, env, admin) {
 
 // ============ DOWNLOAD EM LOTE ============
 
-/**
- * Download do repertório em lote (PDF ou ZIP)
- */
-export async function downloadRepertorio(id, request, env, user) {
+async function resolveDownloadInstrument(request, env, user) {
   const url = new URL(request.url);
   const instrumento = url.searchParams.get('instrumento');
-  const formato = url.searchParams.get('formato') || 'pdf';
-  const partiturasParam = url.searchParams.get('partituras'); // IDs separados por vírgula
 
   // Usar instrumento do usuário se não especificado
   let targetInstrumento = instrumento;
-  if (!targetInstrumento && user.instrumento_id) {
+  if (!targetInstrumento && user?.instrumento_id) {
     const instrumentoUsuario = await env.DB.prepare(
       'SELECT nome FROM instrumentos WHERE id = ?'
     ).bind(user.instrumento_id).first();
     targetInstrumento = instrumentoUsuario?.nome || null;
   }
 
+  return targetInstrumento ? canonicalizeInstrumentName(targetInstrumento) : null;
+}
+
+function filterSelectedScores(partituras, partiturasParam) {
+  if (!partiturasParam) return partituras;
+
+  const selectedIds = partiturasParam
+    .split(',')
+    .map(value => Number.parseInt(value, 10))
+    .filter(Number.isInteger);
+
+  if (!selectedIds.length) return partituras;
+  const selectedSet = new Set(selectedIds);
+  return partituras.filter(partitura => selectedSet.has(partitura.id));
+}
+
+async function storedPartExists(env, parte) {
+  if (!parte?.arquivo_nome) return false;
+
+  try {
+    return Boolean(await env.BUCKET.head(parte.arquivo_nome));
+  } catch (error) {
+    console.error(`Erro ao verificar ${parte.arquivo_nome}:`, error);
+    return false;
+  }
+}
+
+async function prepareRepertorioDownload(id, request, env, user) {
+  const url = new URL(request.url);
+  const targetInstrumento = await resolveDownloadInstrument(request, env, user);
+
   if (!targetInstrumento) {
-    return errorResponse('Instrumento não especificado', 400, request);
+    return { error: errorResponse('Instrumento não especificado', 400, request) };
   }
 
   // Buscar repertório
@@ -804,7 +844,7 @@ export async function downloadRepertorio(id, request, env, user) {
   ).bind(id).first();
 
   if (!repertorio) {
-    return errorResponse('Repertório não encontrado', 404, request);
+    return { error: errorResponse('Repertório não encontrado', 404, request) };
   }
 
   // Buscar partituras do repertório
@@ -817,36 +857,109 @@ export async function downloadRepertorio(id, request, env, user) {
   `).bind(id).all();
 
   if (!partituras.results.length) {
-    return errorResponse('Repertório vazio', 404, request);
+    return { error: errorResponse('Repertório vazio', 404, request) };
   }
 
   // Filtrar partituras selecionadas (se especificado)
-  let partiturasFiltradas = partituras.results;
-  if (partiturasParam) {
-    const selectedIds = partiturasParam.split(',').map(id => parseInt(id, 10)).filter(id => !isNaN(id));
-    if (selectedIds.length > 0) {
-      partiturasFiltradas = partituras.results.filter(p => selectedIds.includes(p.id));
-    }
-  }
+  const partiturasFiltradas = filterSelectedScores(
+    partituras.results,
+    url.searchParams.get('partituras')
+  );
 
   if (!partiturasFiltradas.length) {
-    return errorResponse('Nenhuma partitura selecionada encontrada', 404, request);
+    return { error: errorResponse('Nenhuma partitura selecionada encontrada', 404, request) };
   }
 
-  // Buscar partes correspondentes ao instrumento
-  const partes = [];
+  const disponiveis = [];
+  const ausentes = [];
+
   for (const partitura of partiturasFiltradas) {
     const parte = await findMatchingPart(env, partitura.id, targetInstrumento);
-    if (parte) {
-      partes.push({
-        ...parte,
-        partitura_titulo: partitura.titulo,
-        ordem: partitura.ordem
+    if (!parte) {
+      ausentes.push({
+        id: partitura.id,
+        titulo: partitura.titulo,
+        ordem: partitura.ordem,
+        motivo: 'parte_ausente'
       });
+      continue;
     }
+
+    if (!await storedPartExists(env, parte)) {
+      ausentes.push({
+        id: partitura.id,
+        titulo: partitura.titulo,
+        ordem: partitura.ordem,
+        motivo: 'arquivo_ausente',
+        parte_id: parte.id,
+        instrumento: canonicalizeInstrumentName(parte.instrumento)
+      });
+      continue;
+    }
+
+    disponiveis.push({
+      ...parte,
+      instrumento: canonicalizeInstrumentName(parte.instrumento),
+      partitura_titulo: partitura.titulo,
+      ordem: partitura.ordem
+    });
   }
 
-  if (partes.length === 0) {
+  return {
+    repertorio,
+    targetInstrumento,
+    total: partiturasFiltradas.length,
+    disponiveis,
+    ausentes
+  };
+}
+
+function publicDownloadAvailability(selection) {
+  return {
+    instrumento: selection.targetInstrumento,
+    total: selection.total,
+    disponiveis_count: selection.disponiveis.length,
+    ausentes_count: selection.ausentes.length,
+    completo: selection.ausentes.length === 0,
+    disponiveis: selection.disponiveis.map(parte => ({
+      id: parte.partitura_id,
+      titulo: parte.partitura_titulo,
+      ordem: parte.ordem,
+      parte_id: parte.id,
+      instrumento: parte.instrumento
+    })),
+    ausentes: selection.ausentes
+  };
+}
+
+/**
+ * Informa o que será incluído no download antes de gerar o arquivo.
+ */
+export async function getRepertorioDownloadAvailability(id, request, env, user) {
+  const selection = await prepareRepertorioDownload(id, request, env, user);
+  if (selection.error) return selection.error;
+
+  return jsonResponse(publicDownloadAvailability(selection), 200, request);
+}
+
+/**
+ * Download do repertório em lote (PDF ou ZIP).
+ * Partes de outra tonalidade nunca substituem a solicitada.
+ */
+export async function downloadRepertorio(id, request, env, user) {
+  const url = new URL(request.url);
+  const formato = url.searchParams.get('formato') || 'pdf';
+  const selection = await prepareRepertorioDownload(id, request, env, user);
+  if (selection.error) return selection.error;
+
+  const {
+    repertorio,
+    targetInstrumento,
+    disponiveis,
+    ausentes
+  } = selection;
+
+  if (disponiveis.length === 0) {
     return errorResponse(
       `Nenhuma parte encontrada para ${targetInstrumento}`,
       404,
@@ -863,15 +976,16 @@ export async function downloadRepertorio(id, request, env, user) {
         repertorio_nome: repertorio.nome,
         instrumento: targetInstrumento,
         formato,
-        partes_count: partes.length,
+        partes_count: disponiveis.length,
+        partes_ausentes_count: ausentes.length,
       },
     });
 
   // Gerar arquivo
   if (formato === 'zip') {
-    return await generateZipDownload(env, partes, repertorio, targetInstrumento, request);
+    return await generateZipDownload(env, disponiveis, repertorio, targetInstrumento, request);
   } else {
-    return await generatePdfDownload(env, partes, repertorio, targetInstrumento, request);
+    return await generatePdfDownload(env, disponiveis, repertorio, targetInstrumento, request);
   }
 }
 
@@ -963,9 +1077,10 @@ function isComboPartMatch(parteNome, instrumentoBuscado) {
   // Verifica se algum dos instrumentos da combinação corresponde
   for (const p of partes) {
     const pBase = getInstrumentBase(p).split(' ')[0];
-    if (pBase === instrumentoBase) return true;
-    if (INSTRUMENT_SYNONYMS[pBase]?.includes(instrumentoBase)) return true;
-    if (INSTRUMENT_SYNONYMS[instrumentoBase]?.includes(pBase)) return true;
+    const compatible = areInstrumentTonalitiesCompatible(instrumentoBuscado, p);
+    if (pBase === instrumentoBase && compatible) return true;
+    if (INSTRUMENT_SYNONYMS[pBase]?.includes(instrumentoBase) && compatible) return true;
+    if (INSTRUMENT_SYNONYMS[instrumentoBase]?.includes(pBase) && compatible) return true;
   }
 
   return false;
@@ -1001,8 +1116,11 @@ function removeVoiceNumber(name) {
  *    a) Busca "Sax Alto" exato
  *    b) Fallback: primeira voz disponível ("Sax Alto 1")
  * 5. Fallback para sinônimos (ex: Flauta -> Flautim)
+ *
+ * Para Bombardino, a tonalidade é sempre obrigatória na comparação. O nome
+ * legado "Bombardino" é interpretado como Bombardino C e nunca como Bb.
  */
-async function findMatchingPart(env, partituraId, instrumento) {
+export async function findMatchingPart(env, partituraId, instrumento) {
   // Buscar todas as partes desta partitura
   const partes = await env.DB.prepare(`
     SELECT * FROM partes WHERE partitura_id = ?
@@ -1010,22 +1128,23 @@ async function findMatchingPart(env, partituraId, instrumento) {
 
   if (!partes.results.length) return null;
 
-  const instrLower = instrumento.toLowerCase();
-  const instrNormalized = normalizeInstrumentName(instrumento);
+  const requestedInstrument = canonicalizeInstrumentName(instrumento);
+  const instrLower = requestedInstrument.toLowerCase();
+  const instrNormalized = normalizeInstrumentName(requestedInstrument);
   const instrNormalizedLower = instrNormalized.toLowerCase();
-  const instrBase = getInstrumentBase(instrumento).split(' ')[0];
-  const voiceNumber = getVoiceNumber(instrumento);
-  const instrWithoutVoice = removeVoiceNumber(instrumento).toLowerCase();
+  const instrBase = getInstrumentBase(requestedInstrument).split(' ')[0];
+  const voiceNumber = getVoiceNumber(requestedInstrument);
+  const instrWithoutVoice = removeVoiceNumber(requestedInstrument).toLowerCase();
 
   // 1. Match exato (case-insensitive)
   let parte = partes.results.find(p =>
-    p.instrumento.toLowerCase() === instrLower ||
+    canonicalizeInstrumentName(p.instrumento).toLowerCase() === instrLower ||
     normalizeInstrumentName(p.instrumento).toLowerCase() === instrNormalizedLower
   );
   if (parte) return parte;
 
   // 2. Match em partes combinadas (ex: "Flauta/Flautim" para busca de "Flauta")
-  const comboMatch = partes.results.find(p => isComboPartMatch(p.instrumento, instrumento));
+  const comboMatch = partes.results.find(p => isComboPartMatch(p.instrumento, requestedInstrument));
   if (comboMatch) return comboMatch;
 
   // 3. Se buscou voz específica (ex: "Sax Alto 2")
@@ -1040,7 +1159,8 @@ async function findMatchingPart(env, partituraId, instrumento) {
       return pVoice === null &&
         (pWithoutVoice === instrWithoutVoice ||
          pNorm === removeVoiceNumber(instrNormalized).toLowerCase() ||
-         isSameInstrumentFamily(instrumento, p.instrumento));
+         (isSameInstrumentFamily(requestedInstrument, p.instrumento) &&
+          areInstrumentTonalitiesCompatible(requestedInstrument, p.instrumento)));
     });
 
     if (genericMatch) return genericMatch;
@@ -1049,21 +1169,25 @@ async function findMatchingPart(env, partituraId, instrumento) {
     for (let v = voiceNumber - 1; v >= 1; v--) {
       const prevVoiceMatch = partes.results.find(p => {
         const pVoice = getVoiceNumber(p.instrumento);
-        return pVoice === v && isSameInstrumentFamily(instrumento, p.instrumento);
+        return pVoice === v &&
+          isSameInstrumentFamily(requestedInstrument, p.instrumento) &&
+          areInstrumentTonalitiesCompatible(requestedInstrument, p.instrumento);
       });
       if (prevVoiceMatch) return prevVoiceMatch;
     }
 
     // 3c. Se não encontrou nenhuma voz anterior, pega qualquer voz da família
     const anyVoiceMatch = partes.results.find(p =>
-      isSameInstrumentFamily(instrumento, p.instrumento)
+      isSameInstrumentFamily(requestedInstrument, p.instrumento) &&
+      areInstrumentTonalitiesCompatible(requestedInstrument, p.instrumento)
     );
     if (anyVoiceMatch) return anyVoiceMatch;
   }
 
   // 4. Se buscou instrumento genérico ou com tonalidade (sem número de voz)
   const familyMatches = partes.results.filter(p =>
-    isSameInstrumentFamily(instrumento, p.instrumento)
+    isSameInstrumentFamily(requestedInstrument, p.instrumento) &&
+    areInstrumentTonalitiesCompatible(requestedInstrument, p.instrumento)
   );
 
   if (familyMatches.length > 0) {
@@ -1090,7 +1214,8 @@ async function findMatchingPart(env, partituraId, instrumento) {
     for (const synonym of synonyms) {
       const synonymMatch = partes.results.find(p => {
         const pBase = getInstrumentBase(p.instrumento).split(' ')[0];
-        return pBase === synonym;
+        return pBase === synonym &&
+          areInstrumentTonalitiesCompatible(requestedInstrument, p.instrumento);
       });
       if (synonymMatch) return synonymMatch;
     }
@@ -1120,6 +1245,14 @@ async function generatePdfDownload(env, partes, repertorio, instrumento, request
     } catch (e) {
       console.error(`Erro ao processar ${parte.arquivo_nome}:`, e);
     }
+  }
+
+  if (mergedPdf.getPageCount() === 0) {
+    return errorResponse(
+      `Os arquivos de ${instrumento} não estão disponíveis no momento`,
+      404,
+      request
+    );
   }
 
   const mergedBytes = await mergedPdf.save();
@@ -1158,6 +1291,14 @@ async function generateZipDownload(env, partes, repertorio, instrumento, request
     } catch (e) {
       console.error(`Erro ao processar ${parte.arquivo_nome}:`, e);
     }
+  }
+
+  if (Object.keys(files).length === 0) {
+    return errorResponse(
+      `Os arquivos de ${instrumento} não estão disponíveis no momento`,
+      404,
+      request
+    );
   }
 
   const zipData = zipSync(files);

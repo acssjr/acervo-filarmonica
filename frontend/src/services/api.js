@@ -574,6 +574,16 @@ export const API = {
     return this.request(`/api/repertorio/${id}/instrumentos`);
   },
 
+  async getRepertorioDownloadAvailability(id, instrumento, partituraIds = null) {
+    const params = new URLSearchParams();
+    if (instrumento) params.set('instrumento', instrumento);
+    if (partituraIds?.length) params.set('partituras', partituraIds.join(','));
+
+    return this.request(
+      `/api/repertorio/${id}/disponibilidade-download?${params.toString()}`
+    );
+  },
+
   async getRepertorios() {
     return this.request('/api/repertorios');
   },

@@ -33,7 +33,7 @@ export const DEFAULT_INSTRUMENTS = [
   { id: 26, nome: 'Trombone' },
   { id: 27, nome: 'Trombone 1' },
   { id: 28, nome: 'Trombone 2' },
-  { id: 29, nome: 'Bombardino' },
+  { id: 29, nome: 'Bombardino C' },
   { id: 30, nome: 'Bombardino Bb' },
   { id: 31, nome: 'Baixo Eb' },
   { id: 32, nome: 'Baixo Bb' },

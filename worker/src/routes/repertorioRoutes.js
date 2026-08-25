@@ -12,6 +12,7 @@ import {
   duplicarRepertorio,
   isPartituraInRepertorioAtivo,
   downloadRepertorio,
+  getRepertorioDownloadAvailability,
   getRepertorioInstrumentos
 } from '../domain/repertorios/repertorioService.js';
 import { authMiddleware, adminMiddleware } from '../middleware/index.js';
@@ -46,6 +47,13 @@ export function setupRepertorioRoutes(router) {
     const id = routeId(params.id, request);
     if (id instanceof Response) return id;
     return await downloadRepertorio(id, request, env, context.user);
+  }, [authMiddleware]);
+
+  // GET /api/repertorio/:id/disponibilidade-download - Conferir partes e arquivos
+  router.get('/api/repertorio/:id/disponibilidade-download', async (request, env, params, context) => {
+    const id = routeId(params.id, request);
+    if (id instanceof Response) return id;
+    return await getRepertorioDownloadAvailability(id, request, env, context.user);
   }, [authMiddleware]);
 
   // GET /api/repertorio/:id/instrumentos - Listar instrumentos disponíveis no repertório

@@ -389,6 +389,54 @@ components:
         total:
           type: integer
 
+    RepertorioDownloadItem:
+      type: object
+      required: [id, titulo, ordem]
+      properties:
+        id:
+          type: integer
+        titulo:
+          type: string
+        ordem:
+          type: integer
+        parte_id:
+          type: integer
+        instrumento:
+          type: string
+        motivo:
+          type: string
+          enum: [parte_ausente, arquivo_ausente]
+
+    RepertorioDownloadAvailability:
+      type: object
+      required:
+        - instrumento
+        - total
+        - disponiveis_count
+        - ausentes_count
+        - completo
+        - disponiveis
+        - ausentes
+      properties:
+        instrumento:
+          type: string
+        total:
+          type: integer
+        disponiveis_count:
+          type: integer
+        ausentes_count:
+          type: integer
+        completo:
+          type: boolean
+        disponiveis:
+          type: array
+          items:
+            $ref: '#/components/schemas/RepertorioDownloadItem'
+        ausentes:
+          type: array
+          items:
+            $ref: '#/components/schemas/RepertorioDownloadItem'
+
     AddPartituraToRepertorio:
       type: object
       properties:
@@ -1431,6 +1479,48 @@ paths:
               schema:
                 type: string
                 format: binary
+
+  /api/repertorio/{id}/disponibilidade-download:
+    get:
+      tags: [Repertorio]
+      summary: Conferir partes disponíveis antes do download
+      operationId: getRepertorioDownloadAvailability
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: instrumento
+          in: query
+          schema:
+            type: string
+        - name: partituras
+          in: query
+          description: IDs de partituras separados por vírgula
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Disponibilidade das partes e arquivos solicitados
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RepertorioDownloadAvailability'
+        '400':
+          description: Instrumento não especificado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Repertório ou seleção não encontrados
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /api/repertorio/{id}/instrumentos:
     get:

@@ -13,6 +13,7 @@ import {
 import { registrarAtividade } from '../atividades/index.js';
 import { buildUpdateDetails, describeBoolean } from '../atividades/auditUtils.js';
 import { capturePostHog } from '../../infrastructure/posthog/posthogClient.js';
+import { canonicalizeInstrumentName } from '../instrumentos/instrumentUtils.js';
 
 /**
  * Listar todas as partituras
@@ -206,16 +207,17 @@ export async function uploadPastaPartitura(request, env, admin) {
     // Valida o lote inteiro antes de criar qualquer registro ou objeto.
     for (let i = 0; i < totalArquivos; i++) {
       const arquivo = formData.get(`arquivo_${i}`);
-      const instrumento = formData.get(`instrumento_${i}`);
-      if (!arquivo || !instrumento) {
+      const instrumentoInformado = formData.get(`instrumento_${i}`);
+      if (!arquivo || !instrumentoInformado) {
         return errorResponse(`Arquivo ou instrumento ausente na posição ${i + 1}`, 400, request);
       }
+      const instrumento = canonicalizeInstrumentName(instrumentoInformado);
       try {
         const arrayBuffer = await readAndValidatePdf(arquivo);
         totalBytesValidados = accumulatePdfBatchBytes(totalBytesValidados, arrayBuffer);
         arquivosValidados.push({
           arquivo,
-          instrumento: String(instrumento).trim(),
+          instrumento,
           arrayBuffer,
           index: i
         });
@@ -488,10 +490,11 @@ export async function corrigirBombardinosPartitura(partituraId, request, env, ad
     let totalBytesValidados = 0;
     for (let i = 0; i < totalArquivos; i++) {
       const arquivo = formData.get(`arquivo_${i}`);
-      const instrumento = formData.get(`instrumento_${i}`);
-      if (!arquivo || !instrumento) {
+      const instrumentoInformado = formData.get(`instrumento_${i}`);
+      if (!arquivo || !instrumentoInformado) {
         return errorResponse('Arquivo/instrumento ausente', 400, request);
       }
+      const instrumento = canonicalizeInstrumentName(instrumentoInformado);
       let arrayBuffer;
       try {
         arrayBuffer = await readAndValidatePdf(arquivo);

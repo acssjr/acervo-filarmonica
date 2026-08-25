@@ -44,12 +44,23 @@ const saveBlob = (blob, filename) => {
  * Converte variantes como "Saxofone Alto" -> "sax alto"
  */
 const normalizeInstrumento = (nome) => {
-  return nome.toLowerCase()
+  let normalized = nome.toLowerCase()
     .replace(/\./g, '') // Remove pontos: "Sax." -> "Sax"
     .replace(/saxofone/g, 'sax') // Normaliza Saxofone -> Sax
     .replace(/clarineta/g, 'clarinete') // Variante
+    .replace(/^(euphonium|euf[oô]nio)\b/g, 'bombardino')
+    .replace(/b♭/g, 'bb')
+    .replace(/\bsi\s*b(?:emol)?\b/g, 'bb')
+    .replace(/\bd[oó]\b/g, 'c')
     .replace(/\s+/g, ' ') // Colapsa espacos
     .trim();
+
+  // No acervo, Bombardino sem tonalidade sempre significa Bombardino C.
+  if (/^bombardino(?:\s|$)/.test(normalized) && !/\s+(bb|eb|c|tc|bc)\b/.test(normalized)) {
+    normalized = normalized.replace(/^bombardino\b/, 'bombardino c');
+  }
+
+  return normalized;
 };
 
 const GRADE_INSTRUMENT_ALIASES = new Set([

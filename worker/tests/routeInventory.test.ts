@@ -18,6 +18,7 @@ describe('inventário do Worker modular', () => {
       'GET /api/partituras',
       'GET /api/perfil/foto/:filename',
       'GET /api/repertorio/:id/download',
+      'GET /api/repertorio/:id/disponibilidade-download',
       'GET /api/admin/analytics/dashboard'
     ]) {
       expect(keys.has(route), `rota ausente: ${route}`).toBe(true);

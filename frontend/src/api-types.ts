@@ -527,6 +527,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/repertorio/{id}/disponibilidade-download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Conferir partes disponíveis antes do download */
+        get: operations["getRepertorioDownloadAvailability"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/repertorio/{id}/instrumentos": {
         parameters: {
             query?: never;
@@ -1269,6 +1286,24 @@ export interface components {
         RepertorioInstrumento: {
             instrumento?: string;
             total?: number;
+        };
+        RepertorioDownloadItem: {
+            id: number;
+            titulo: string;
+            ordem: number;
+            parte_id?: number;
+            instrumento?: string;
+            /** @enum {string} */
+            motivo?: "parte_ausente" | "arquivo_ausente";
+        };
+        RepertorioDownloadAvailability: {
+            instrumento: string;
+            total: number;
+            disponiveis_count: number;
+            ausentes_count: number;
+            completo: boolean;
+            disponiveis: components["schemas"]["RepertorioDownloadItem"][];
+            ausentes: components["schemas"]["RepertorioDownloadItem"][];
         };
         AddPartituraToRepertorio: {
             partitura_id: number;
@@ -2362,6 +2397,50 @@ export interface operations {
                 };
                 content: {
                     "application/zip": string;
+                };
+            };
+        };
+    };
+    getRepertorioDownloadAvailability: {
+        parameters: {
+            query?: {
+                instrumento?: string;
+                /** @description IDs de partituras separados por vírgula */
+                partituras?: string;
+            };
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Disponibilidade das partes e arquivos solicitados */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RepertorioDownloadAvailability"];
+                };
+            };
+            /** @description Instrumento não especificado */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Repertório ou seleção não encontrados */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
