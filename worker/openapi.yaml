@@ -60,6 +60,33 @@ components:
         message:
           type: string
 
+    HealthResponse:
+      type: object
+      required: [status, checks, timestamp]
+      properties:
+        status:
+          type: string
+          enum: [ok, unavailable]
+        checks:
+          type: object
+          required: [database, storage, rateLimit, authentication]
+          properties:
+            database:
+              type: string
+              enum: [ok, missing, unavailable]
+            storage:
+              type: string
+              enum: [configured, missing]
+            rateLimit:
+              type: string
+              enum: [configured, missing]
+            authentication:
+              type: string
+              enum: [configured, missing]
+        timestamp:
+          type: string
+          format: date-time
+
     # Auth
     LoginRequest:
       type: object
@@ -462,15 +489,17 @@ paths:
       operationId: healthCheck
       responses:
         '200':
-          description: API está funcionando
+          description: API pronta para receber tráfego
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: ok
+                $ref: '#/components/schemas/HealthResponse'
+        '503':
+          description: Dependência obrigatória ausente ou indisponível
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
 
   # ==================== AUTH ====================
   /api/login:
@@ -493,6 +522,24 @@ paths:
                 $ref: '#/components/schemas/LoginResponse'
         '401':
           description: Credenciais inválidas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: Limite de tentativas excedido
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [error, retryAfter]
+                properties:
+                  error:
+                    type: string
+                  retryAfter:
+                    type: integer
+        '503':
+          description: Serviço de autenticação indisponível
           content:
             application/json:
               schema:
@@ -520,6 +567,34 @@ paths:
                   exists:
                     type: boolean
                   nome:
+                    type: string
+                  instrumento:
+                    type: string
+        '429':
+          description: Limite de consultas excedido
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [exists, error]
+                properties:
+                  exists:
+                    type: boolean
+                  error:
+                    type: string
+                  retryAfter:
+                    type: integer
+        '503':
+          description: Serviço de autenticação indisponível
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [exists, error]
+                properties:
+                  exists:
+                    type: boolean
+                  error:
                     type: string
 
   /api/change-pin:

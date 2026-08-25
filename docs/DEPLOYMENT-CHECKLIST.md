@@ -33,7 +33,7 @@ No painel ou no `wrangler.toml`, confirme:
 
 - D1 `DB` aponta para `acervo-db` correto.
 - R2 `BUCKET` aponta para `acervo-pdfs` correto.
-- KV `RATE_LIMIT` está configurado e ligado ao Worker.
+- A migration do contador de login foi aplicada e os bindings nativos `LOGIN_RATE_LIMITER`, `CHECK_USER_RATE_LIMITER` e `TRACKING_RATE_LIMITER` estão ligados ao Worker.
 - `JWT_SECRET` existe como secret do Worker.
 - `POSTHOG_API_KEY` existe somente se analytics estiver habilitado.
 

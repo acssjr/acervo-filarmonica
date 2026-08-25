@@ -6,6 +6,7 @@ import {
   generateSalt,
   checkRateLimit,
   resetRateLimit,
+  checkUserRateLimit,
   jsonResponse,
   errorResponse,
   getJwtSecret
@@ -24,24 +25,37 @@ import { capturePostHog } from '../../infrastructure/posthog/posthogClient.js';
 export async function checkUser(request, env) {
   const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
 
-  // Rate limiting - 10 tentativas por minuto (mais permissivo que login)
-  const rateLimit = await checkRateLimit(env, `checkuser:${ip}`);
+  // Limite próprio: a tela consulta enquanto o usuário digita.
+  const rateLimit = await checkUserRateLimit(env, `checkuser:${ip}`);
   if (!rateLimit.allowed) {
+    if (rateLimit.configurationError) {
+      return jsonResponse({
+        exists: false,
+        error: 'Serviço de autenticação temporariamente indisponível.'
+      }, 503, request);
+    }
+
     return jsonResponse({
       exists: false,
-      error: 'Muitas tentativas. Aguarde um momento.'
+      error: 'Muitas tentativas. Aguarde um momento.',
+      retryAfter: rateLimit.retryAfter
     }, 429, request);
   }
 
   const { username } = await request.json();
 
-  if (!username || username.length < 2) {
+  if (typeof username !== 'string' || username.length < 2 || username.length > 64) {
+    return jsonResponse({ exists: false }, 200, request);
+  }
+
+  const normalizedUsername = username.trim().toLowerCase();
+  if (normalizedUsername.length < 2) {
     return jsonResponse({ exists: false }, 200, request);
   }
 
   const user = await env.DB.prepare(
     'SELECT username, nome, instrumento_id FROM usuarios WHERE username = ? AND ativo = 1'
-  ).bind(username.toLowerCase()).first();
+  ).bind(normalizedUsername).first();
 
   if (!user) {
     return jsonResponse({ exists: false }, 200, request);
@@ -75,13 +89,28 @@ export async function login(request, env) {
   const { username, pin, rememberMe } = await request.json();
 
   // Validação básica
-  if (!username || !pin) {
+  if (typeof username !== 'string' || !pin) {
     return errorResponse('Usuário e PIN são obrigatórios', 400, request);
   }
 
-  // Rate limiting por IP
-  const rateLimit = await checkRateLimit(env, `login:${ip}`);
+  const normalizedUsername = username.trim().toLowerCase();
+  if (!normalizedUsername || normalizedUsername.length > 64) {
+    return errorResponse('Usuário inválido', 400, request);
+  }
+
+  // Limite por conta e IP: evita que músicos diferentes no mesmo Wi-Fi
+  // consumam a cota uns dos outros.
+  const rateLimitKey = `login:${ip}:${normalizedUsername}`;
+  const rateLimit = await checkRateLimit(env, rateLimitKey, `login:${ip}`);
   if (!rateLimit.allowed) {
+    if (rateLimit.configurationError) {
+      return errorResponse(
+        'Serviço de autenticação temporariamente indisponível.',
+        503,
+        request
+      );
+    }
+
     return jsonResponse({
       error: `Muitas tentativas. Tente novamente em ${rateLimit.retryAfter} segundos.`,
       retryAfter: rateLimit.retryAfter
@@ -91,7 +120,7 @@ export async function login(request, env) {
   // Busca usuário
   const user = await env.DB.prepare(
     'SELECT id, username, nome, admin, instrumento_id, foto_url, pin_hash, pin_salt FROM usuarios WHERE username = ? AND ativo = 1'
-  ).bind(username.toLowerCase()).first();
+  ).bind(normalizedUsername).first();
 
   if (!user) {
     return errorResponse('Usuário ou PIN inválido', 401, request);
@@ -124,8 +153,8 @@ export async function login(request, env) {
     return errorResponse('Usuário ou PIN inválido', 401, request);
   }
 
-  // Login bem-sucedido - reseta rate limit
-  await resetRateLimit(env, `login:${ip}`);
+  // Tentativas válidas não devem manter a conta bloqueada.
+  await resetRateLimit(env, rateLimitKey);
 
   // Atualiza último acesso
   await env.DB.prepare(

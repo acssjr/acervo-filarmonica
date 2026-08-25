@@ -1139,6 +1139,22 @@ export interface components {
             success?: boolean;
             message?: string;
         };
+        HealthResponse: {
+            /** @enum {string} */
+            status: "ok" | "unavailable";
+            checks: {
+                /** @enum {string} */
+                database: "ok" | "missing" | "unavailable";
+                /** @enum {string} */
+                storage: "configured" | "missing";
+                /** @enum {string} */
+                rateLimit: "configured" | "missing";
+                /** @enum {string} */
+                authentication: "configured" | "missing";
+            };
+            /** Format: date-time */
+            timestamp: string;
+        };
         LoginRequest: {
             username: string;
             pin: string;
@@ -1329,16 +1345,22 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description API está funcionando */
+            /** @description API pronta para receber tráfego */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        /** @example ok */
-                        status?: string;
-                    };
+                    "application/json": components["schemas"]["HealthResponse"];
+                };
+            };
+            /** @description Dependência obrigatória ausente ou indisponível */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HealthResponse"];
                 };
             };
         };
@@ -1374,6 +1396,27 @@ export interface operations {
                     "application/json": components["schemas"]["Error"];
                 };
             };
+            /** @description Limite de tentativas excedido */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        error: string;
+                        retryAfter: number;
+                    };
+                };
+            };
+            /** @description Serviço de autenticação indisponível */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
         };
     };
     checkUser: {
@@ -1398,6 +1441,32 @@ export interface operations {
                     "application/json": {
                         exists?: boolean;
                         nome?: string;
+                        instrumento?: string;
+                    };
+                };
+            };
+            /** @description Limite de consultas excedido */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        exists: boolean;
+                        error: string;
+                        retryAfter?: number;
+                    };
+                };
+            };
+            /** @description Serviço de autenticação indisponível */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        exists: boolean;
+                        error: string;
                     };
                 };
             };

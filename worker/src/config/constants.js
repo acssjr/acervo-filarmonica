@@ -22,6 +22,8 @@ export const PBKDF2_KEY_LENGTH = 256;
 // Rate limiting
 export const MAX_LOGIN_ATTEMPTS = 5;
 export const RATE_LIMIT_WINDOW_SECONDS = 300; // 5 minutos
+export const MAX_CHECK_USER_ATTEMPTS = 30;
+export const CHECK_USER_RATE_LIMIT_WINDOW_SECONDS = 60; // 1 minuto
 
 // Tracking rate limiting
 export const MAX_TRACKING_ATTEMPTS = 100;

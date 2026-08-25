@@ -4,7 +4,7 @@
 
 - JWT assinado com segredo obrigatório; produção falha de forma segura se `JWT_SECRET` não estiver configurado.
 - Autorização administrativa validada contra o usuário ativo no D1, sem confiar apenas nas claims do token.
-- Rate limiting obrigatório em produção por binding KV `RATE_LIMIT`.
+- Rate limiting obrigatório em produção: contador atômico no D1 para falhas por conta e IP, contenção ampla por IP com `LOGIN_RATE_LIMITER` e bindings nativos separados para consulta de usuário e telemetria.
 - Uploads administrativos validados por tipo, tamanho e estrutura do arquivo.
 - Objetos no R2 usam namespaces e mutações coordenadas com o D1 para reduzir arquivos órfãos e estados parciais.
 - Respostas de download usam nomes de arquivo sanitizados.
@@ -23,7 +23,7 @@ Use um `JWT_SECRET` aleatório, longo e exclusivo. Rotacionar esse segredo encer
 
 O valor conhecido presente no script `api:local` assina somente sessões do emulador local e não é um segredo de produção.
 
-O namespace KV `RATE_LIMIT` precisa estar ligado ao Worker antes da publicação. A ausência desse binding bloqueia requisições em produção por decisão de segurança.
+Os três bindings nativos são declarados no `wrangler.toml`; o contador preciso de login usa a tabela criada pela migration `0004_login_rate_limits.sql`. A ausência de qualquer dependência bloqueia a operação protegida em produção por decisão de segurança.
 
 ## Dependências
 

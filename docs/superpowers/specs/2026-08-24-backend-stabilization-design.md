@@ -63,7 +63,7 @@ worker/src/index.js
 
 ### Rate limiting
 
-Produção exige o binding `RATE_LIMIT`. A ausência ou indisponibilidade do binding bloqueia operações protegidas. Fora de produção, o sistema pode operar em modo degradado com aviso claro.
+Produção exige o contador atômico de login no D1 e os bindings nativos de rate limiting declarados no `wrangler.toml`. A ausência ou indisponibilidade do recurso correspondente bloqueia a operação protegida. Fora de produção, o sistema pode operar em modo degradado com aviso claro.
 
 O tracking autentica antes de calcular a chave, usando a identidade do usuário quando disponível e IP como fallback.
 
