@@ -1,5 +1,12 @@
 // worker/src/domain/assets/assetService.js
-import { jsonResponse, errorResponse } from '../../infrastructure/index.js';
+import {
+    STORAGE_PREFIXES,
+    buildAssetKey,
+    errorResponse,
+    isAssetKey,
+    jsonResponse,
+    normalizeAssetSubpath
+} from '../../infrastructure/index.js';
 
 /**
  * Listar arquivos no bucket R2 filtrados por prefixo
@@ -9,7 +16,8 @@ import { jsonResponse, errorResponse } from '../../infrastructure/index.js';
 export async function listAssets(request, env) {
     try {
         const url = new URL(request.url);
-        const prefix = url.searchParams.get('prefix') || '';
+        const requestedPrefix = normalizeAssetSubpath(url.searchParams.get('prefix') || '');
+        const prefix = `${STORAGE_PREFIXES.assets}${requestedPrefix}${requestedPrefix ? '/' : ''}`;
         const cursor = url.searchParams.get('cursor') || undefined;
 
         // Listar objetos no bucket
@@ -17,7 +25,13 @@ export async function listAssets(request, env) {
         if (cursor) {
             options.cursor = cursor;
         }
-        const listed = await env.BUCKET.list(options);
+        let listed = await env.BUCKET.list(options);
+
+        // Compatibilidade de leitura para backgrounds gravados antes do namespace.
+        // A exceção é limitada à pasta pública conhecida e não habilita exclusão.
+        if (!cursor && requestedPrefix === 'backgrounds' && listed.objects.length === 0) {
+            listed = await env.BUCKET.list({ prefix: 'backgrounds/' });
+        }
 
         const assets = listed.objects.map(obj => ({
             key: obj.key,
@@ -25,7 +39,9 @@ export async function listAssets(request, env) {
             uploaded: obj.uploaded,
             httpMetadata: obj.httpMetadata,
             customMetadata: obj.customMetadata,
-            url: `/api/assets/${obj.key}`
+            url: `/api/assets/${obj.key.startsWith(STORAGE_PREFIXES.assets)
+                ? obj.key.slice(STORAGE_PREFIXES.assets.length)
+                : obj.key}`
         }));
 
         const response = {
@@ -60,33 +76,9 @@ export async function uploadAsset(request, env) {
             return errorResponse('Nenhum arquivo enviado', 400, request);
         }
 
-        // Validar e sanitizar folder e filename para evitar path traversal
-        const validatePathComponent = (value, fieldName) => {
-            if (!value) return value;
-            // Rejeitar path traversal attempts
-            if (value.includes('..') || value.includes('/') || value.includes('\\')) {
-                throw new Error(`${fieldName} inválido: contém caracteres não permitidos`);
-            }
-            // Remover caracteres potencialmente perigosos
-            return value.replace(/[<>:"|?*]/g, '_');
-        };
-
-        try {
-            folder = validatePathComponent(folder, 'folder');
-        } catch (err) {
-            return errorResponse(err.message, 400, request);
-        }
-
         const arrayBuffer = await file.arrayBuffer();
         let fileName = customName || file.name;
-        
-        try {
-            fileName = validatePathComponent(fileName, 'name');
-        } catch (err) {
-            return errorResponse(err.message, 400, request);
-        }
-        
-        const key = `${folder}/${fileName}`;
+        const key = buildAssetKey(folder, fileName);
 
         // Fazer upload para o R2
         await env.BUCKET.put(key, arrayBuffer, {
@@ -122,6 +114,10 @@ export async function deleteAsset(request, env) {
             return errorResponse('Chave do arquivo não fornecida', 400, request);
         }
 
+        if (!isAssetKey(key)) {
+            return errorResponse('Chave fora do namespace de assets', 400, request);
+        }
+
         await env.BUCKET.delete(key);
 
         return jsonResponse({ success: true, message: 'Arquivo excluído com sucesso!' }, 200, request);
@@ -139,7 +135,19 @@ export async function deleteAsset(request, env) {
  */
 export async function serveAsset(key, request, env) {
     try {
-        const object = await env.BUCKET.get(key);
+        const normalizedKey = normalizeAssetSubpath(key);
+        const assetKey = key.startsWith(STORAGE_PREFIXES.assets)
+            ? key
+            : `${STORAGE_PREFIXES.assets}${normalizedKey}`;
+        if (!isAssetKey(assetKey)) {
+            return errorResponse('Chave de asset inválida', 400, request);
+        }
+        // Novas gravações ficam isoladas em assets/. A segunda leitura mantém
+        // somente URLs históricas de backgrounds, sem expor outros namespaces.
+        let object = await env.BUCKET.get(assetKey);
+        if (!object && normalizedKey.startsWith('backgrounds/')) {
+            object = await env.BUCKET.get(normalizedKey);
+        }
 
         if (!object) {
             return errorResponse('Arquivo não encontrado', 404, request);

@@ -52,6 +52,9 @@ jobs:
       - name: Run ESLint (Worker)
         run: npm run lint:worker
 
+      - name: Check route and OpenAPI contract
+        run: npm run api:contract:check
+
       # Lint do Frontend
       - name: Install frontend dependencies
         run: npm ci
@@ -59,6 +62,13 @@ jobs:
 
       - name: Run ESLint (Frontend)
         run: npm run lint
+        working-directory: frontend
+
+      - name: Check generated API types
+        run: npm run api:types:check
+
+      - name: Typecheck frontend API client
+        run: npm run typecheck
         working-directory: frontend
 
   # ===== TESTES DE INTEGRACAO DO WORKER (Vitest + workerd) =====
@@ -83,6 +93,9 @@ jobs:
 
       - name: Run Vitest (workerd runtime)
         run: npm test
+
+      - name: Check generated D1 test schema
+        run: npm run db:schema:test
 
   # ===== TESTES UNITARIOS (Jest) =====
   unit-tests:

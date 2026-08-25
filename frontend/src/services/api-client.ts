@@ -9,7 +9,15 @@
 
 import createClient from 'openapi-fetch';
 import type { paths } from '../api-types';
-import { Storage } from '../utils/storage';
+import { Storage } from './storage.js';
+
+function createApiError(error: unknown, fallback: string): Error {
+  if (error && typeof error === 'object' && 'error' in error
+      && typeof error.error === 'string') {
+    return new Error(error.error);
+  }
+  return new Error(fallback);
+}
 
 // Detecta ambiente
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8787';
@@ -49,7 +57,7 @@ export const ApiTyped = {
     const { data, error } = await api.POST('/api/login', {
       body: { username, pin },
     });
-    if (error) throw new Error(error.error || 'Erro ao fazer login');
+    if (error) throw createApiError(error, 'Erro ao fazer login');
     return data;
   },
 
@@ -57,7 +65,7 @@ export const ApiTyped = {
     const { data, error } = await api.POST('/api/check-user', {
       body: { username },
     });
-    if (error) throw new Error(error.error || 'Erro ao verificar usuário');
+    if (error) throw createApiError(error, 'Erro ao verificar usuário');
     return data;
   },
 
@@ -65,7 +73,7 @@ export const ApiTyped = {
     const { data, error } = await api.POST('/api/change-pin', {
       body: { pin_atual: pinAtual, pin_novo: pinNovo },
     });
-    if (error) throw new Error(error.error || 'Erro ao alterar PIN');
+    if (error) throw createApiError(error, 'Erro ao alterar PIN');
     return data;
   },
 
@@ -74,7 +82,7 @@ export const ApiTyped = {
     const { data, error } = await api.GET('/api/partituras', {
       params: { query: params },
     });
-    if (error) throw new Error(error.error || 'Erro ao carregar partituras');
+    if (error) throw createApiError(error, 'Erro ao carregar partituras');
     return data;
   },
 
@@ -82,7 +90,7 @@ export const ApiTyped = {
     const { data, error } = await api.GET('/api/partituras/{id}', {
       params: { path: { id } },
     });
-    if (error) throw new Error(error.error || 'Partitura não encontrada');
+    if (error) throw createApiError(error, 'Partitura não encontrada');
     return data;
   },
 
@@ -99,7 +107,7 @@ export const ApiTyped = {
       params: { path: { id } },
       body: dados,
     });
-    if (error) throw new Error(error.error || 'Erro ao atualizar partitura');
+    if (error) throw createApiError(error, 'Erro ao atualizar partitura');
     return data;
   },
 
@@ -107,7 +115,7 @@ export const ApiTyped = {
     const { data, error } = await api.DELETE('/api/partituras/{id}', {
       params: { path: { id } },
     });
-    if (error) throw new Error(error.error || 'Erro ao deletar partitura');
+    if (error) throw createApiError(error, 'Erro ao deletar partitura');
     return data;
   },
 
@@ -116,7 +124,7 @@ export const ApiTyped = {
     const { data, error } = await api.GET('/api/partituras/{id}/partes', {
       params: { path: { id: partituraId } },
     });
-    if (error) throw new Error(error.error || 'Erro ao carregar partes');
+    if (error) throw createApiError(error, 'Erro ao carregar partes');
     return data;
   },
 
@@ -140,7 +148,7 @@ export const ApiTyped = {
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.error || 'Erro ao substituir parte');
+      throw createApiError(error, 'Erro ao substituir parte');
     }
 
     return response.json();
@@ -154,14 +162,14 @@ export const ApiTyped = {
     const { data, error } = await api.DELETE('/api/partes/{id}', {
       params: { path: { id: parteId } },
     });
-    if (error) throw new Error(error.error || 'Erro ao deletar parte');
+    if (error) throw createApiError(error, 'Erro ao deletar parte');
     return data;
   },
 
   // ==================== CATEGORIAS ====================
   async getCategorias() {
     const { data, error } = await api.GET('/api/categorias');
-    if (error) throw new Error(error.error || 'Erro ao carregar categorias');
+    if (error) throw createApiError(error, 'Erro ao carregar categorias');
     return data;
   },
 
@@ -169,7 +177,7 @@ export const ApiTyped = {
     const { data, error } = await api.POST('/api/categorias', {
       body: dados,
     });
-    if (error) throw new Error(error.error || 'Erro ao criar categoria');
+    if (error) throw createApiError(error, 'Erro ao criar categoria');
     return data;
   },
 
@@ -178,7 +186,7 @@ export const ApiTyped = {
       params: { path: { id } },
       body: dados,
     });
-    if (error) throw new Error(error.error || 'Erro ao atualizar categoria');
+    if (error) throw createApiError(error, 'Erro ao atualizar categoria');
     return data;
   },
 
@@ -186,7 +194,7 @@ export const ApiTyped = {
     const { data, error } = await api.DELETE('/api/categorias/{id}', {
       params: { path: { id } },
     });
-    if (error) throw new Error(error.error || 'Erro ao deletar categoria');
+    if (error) throw createApiError(error, 'Erro ao deletar categoria');
     return data;
   },
 
@@ -194,20 +202,20 @@ export const ApiTyped = {
     const { data, error } = await api.POST('/api/categorias/reorder', {
       body: { ordem },
     });
-    if (error) throw new Error(error.error || 'Erro ao reordenar categorias');
+    if (error) throw createApiError(error, 'Erro ao reordenar categorias');
     return data;
   },
 
   // ==================== FAVORITOS ====================
   async getFavoritos() {
     const { data, error } = await api.GET('/api/favoritos');
-    if (error) throw new Error(error.error || 'Erro ao carregar favoritos');
+    if (error) throw createApiError(error, 'Erro ao carregar favoritos');
     return data;
   },
 
   async getFavoritosIds() {
     const { data, error } = await api.GET('/api/favoritos/ids');
-    if (error) throw new Error(error.error || 'Erro ao carregar IDs dos favoritos');
+    if (error) throw createApiError(error, 'Erro ao carregar IDs dos favoritos');
     return data;
   },
 
@@ -215,7 +223,7 @@ export const ApiTyped = {
     const { data, error } = await api.POST('/api/favoritos/{id}', {
       params: { path: { id: partituraId } },
     });
-    if (error) throw new Error(error.error || 'Erro ao adicionar favorito');
+    if (error) throw createApiError(error, 'Erro ao adicionar favorito');
     return data;
   },
 
@@ -223,46 +231,46 @@ export const ApiTyped = {
     const { data, error } = await api.DELETE('/api/favoritos/{id}', {
       params: { path: { id: partituraId } },
     });
-    if (error) throw new Error(error.error || 'Erro ao remover favorito');
+    if (error) throw createApiError(error, 'Erro ao remover favorito');
     return data;
   },
 
   // ==================== ATIVIDADES ====================
   async getAtividades() {
     const { data, error } = await api.GET('/api/atividades');
-    if (error) throw new Error(error.error || 'Erro ao carregar atividades');
+    if (error) throw createApiError(error, 'Erro ao carregar atividades');
     return data;
   },
 
   async getMinhasAtividades() {
     const { data, error } = await api.GET('/api/minhas-atividades');
-    if (error) throw new Error(error.error || 'Erro ao carregar minhas atividades');
+    if (error) throw createApiError(error, 'Erro ao carregar minhas atividades');
     return data;
   },
 
   // ==================== ESTATISTICAS ====================
   async getEstatisticas() {
     const { data, error } = await api.GET('/api/estatisticas');
-    if (error) throw new Error(error.error || 'Erro ao carregar estatísticas');
+    if (error) throw createApiError(error, 'Erro ao carregar estatísticas');
     return data;
   },
 
   async getInstrumentos() {
     const { data, error } = await api.GET('/api/instrumentos');
-    if (error) throw new Error(error.error || 'Erro ao carregar instrumentos');
+    if (error) throw createApiError(error, 'Erro ao carregar instrumentos');
     return data;
   },
 
   async getEstatisticasAdmin() {
     const { data, error } = await api.GET('/api/admin/estatisticas');
-    if (error) throw new Error(error.error || 'Erro ao carregar estatísticas admin');
+    if (error) throw createApiError(error, 'Erro ao carregar estatísticas admin');
     return data;
   },
 
   // ==================== USUARIOS (ADMIN) ====================
   async getUsuarios() {
     const { data, error } = await api.GET('/api/usuarios');
-    if (error) throw new Error(error.error || 'Erro ao carregar usuários');
+    if (error) throw createApiError(error, 'Erro ao carregar usuários');
     return data;
   },
 
@@ -270,7 +278,7 @@ export const ApiTyped = {
     const { data, error } = await api.GET('/api/usuarios/{id}', {
       params: { path: { id } },
     });
-    if (error) throw new Error(error.error || 'Usuário não encontrado');
+    if (error) throw createApiError(error, 'Usuário não encontrado');
     return data;
   },
 
@@ -284,7 +292,7 @@ export const ApiTyped = {
     const { data, error } = await api.POST('/api/usuarios', {
       body: dados,
     });
-    if (error) throw new Error(error.error || 'Erro ao criar usuário');
+    if (error) throw createApiError(error, 'Erro ao criar usuário');
     return data;
   },
 
@@ -297,7 +305,7 @@ export const ApiTyped = {
       params: { path: { id } },
       body: dados,
     });
-    if (error) throw new Error(error.error || 'Erro ao atualizar usuário');
+    if (error) throw createApiError(error, 'Erro ao atualizar usuário');
     return data;
   },
 
@@ -305,14 +313,14 @@ export const ApiTyped = {
     const { data, error } = await api.DELETE('/api/usuarios/{id}', {
       params: { path: { id } },
     });
-    if (error) throw new Error(error.error || 'Erro ao deletar usuário');
+    if (error) throw createApiError(error, 'Erro ao deletar usuário');
     return data;
   },
 
   // ==================== PERFIL ====================
   async getPerfil() {
     const { data, error } = await api.GET('/api/perfil');
-    if (error) throw new Error(error.error || 'Erro ao carregar perfil');
+    if (error) throw createApiError(error, 'Erro ao carregar perfil');
     return data;
   },
 
@@ -320,7 +328,7 @@ export const ApiTyped = {
     const { data, error } = await api.PUT('/api/perfil', {
       body: dados,
     });
-    if (error) throw new Error(error.error || 'Erro ao atualizar perfil');
+    if (error) throw createApiError(error, 'Erro ao atualizar perfil');
     return data;
   },
 
@@ -329,7 +337,7 @@ export const ApiTyped = {
     const { data, error } = await api.GET('/api/repertorio/ativo', {
       params: { query: { all } },
     });
-    if (error) throw new Error(error.error || 'Nenhum repertório ativo');
+    if (error) throw createApiError(error, 'Nenhum repertório ativo');
     return data;
   },
 
@@ -337,7 +345,7 @@ export const ApiTyped = {
     const { data, error } = await api.GET('/api/repertorio/{id}', {
       params: { path: { id } },
     });
-    if (error) throw new Error(error.error || 'Repertório não encontrado');
+    if (error) throw createApiError(error, 'Repertório não encontrado');
     return data;
   },
 
@@ -345,7 +353,7 @@ export const ApiTyped = {
     const { data, error } = await api.GET('/api/repertorio/{id}/instrumentos', {
       params: { path: { id } },
     });
-    if (error) throw new Error(error.error || 'Erro ao carregar instrumentos do repertório');
+    if (error) throw createApiError(error, 'Erro ao carregar instrumentos do repertório');
     return data;
   },
 
@@ -359,7 +367,7 @@ export const ApiTyped = {
 
   async listRepertorios() {
     const { data, error } = await api.GET('/api/repertorios');
-    if (error) throw new Error(error.error || 'Erro ao listar repertórios');
+    if (error) throw createApiError(error, 'Erro ao listar repertórios');
     return data;
   },
 
@@ -367,7 +375,7 @@ export const ApiTyped = {
     const { data, error } = await api.POST('/api/repertorios', {
       body: dados,
     });
-    if (error) throw new Error(error.error || 'Erro ao criar repertório');
+    if (error) throw createApiError(error, 'Erro ao criar repertório');
     return data;
   },
 
@@ -376,7 +384,7 @@ export const ApiTyped = {
       params: { path: { id } },
       body: dados,
     });
-    if (error) throw new Error(error.error || 'Erro ao atualizar repertório');
+    if (error) throw createApiError(error, 'Erro ao atualizar repertório');
     return data;
   },
 
@@ -384,7 +392,7 @@ export const ApiTyped = {
     const { data, error } = await api.DELETE('/api/repertorio/{id}', {
       params: { path: { id } },
     });
-    if (error) throw new Error(error.error || 'Erro ao deletar repertório');
+    if (error) throw createApiError(error, 'Erro ao deletar repertório');
     return data;
   },
 
@@ -393,7 +401,7 @@ export const ApiTyped = {
       params: { path: { id: repertorioId } },
       body: { partitura_id: partituraId },
     });
-    if (error) throw new Error(error.error || 'Erro ao adicionar partitura ao repertório');
+    if (error) throw createApiError(error, 'Erro ao adicionar partitura ao repertório');
     return data;
   },
 
@@ -401,7 +409,7 @@ export const ApiTyped = {
     const { data, error } = await api.DELETE('/api/repertorio/{repertorioId}/partituras/{partituraId}', {
       params: { path: { repertorioId, partituraId } },
     });
-    if (error) throw new Error(error.error || 'Erro ao remover partitura do repertório');
+    if (error) throw createApiError(error, 'Erro ao remover partitura do repertório');
     return data;
   },
 
@@ -410,7 +418,7 @@ export const ApiTyped = {
       params: { path: { id: repertorioId } },
       body: { ordem },
     });
-    if (error) throw new Error(error.error || 'Erro ao reordenar partituras');
+    if (error) throw createApiError(error, 'Erro ao reordenar partituras');
     return data;
   },
 
@@ -418,7 +426,7 @@ export const ApiTyped = {
     const { data, error } = await api.POST('/api/repertorio/{id}/duplicar', {
       params: { path: { id } },
     });
-    if (error) throw new Error(error.error || 'Erro ao duplicar repertório');
+    if (error) throw createApiError(error, 'Erro ao duplicar repertório');
     return data;
   },
 };

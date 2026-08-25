@@ -3,7 +3,11 @@
 
 import { authMiddleware, adminMiddleware } from '../middleware/index.js';
 import * as PresencaService from '../domain/presenca/presencaService.js';
-import { jsonResponse, errorResponse } from '../infrastructure/response/helpers.js';
+import { errorResponse, isIsoDate, jsonResponse, parsePositiveId } from '../infrastructure/index.js';
+
+function validateDate(value, request) {
+  return isIsoDate(value) ? null : errorResponse('Data de ensaio inválida', 400, request);
+}
 
 /**
  * Configura rotas de presença
@@ -44,6 +48,8 @@ export function setupPresencaRoutes(router) {
       if (!data_ensaio) {
         return errorResponse('Data do ensaio é obrigatória', 400, request);
       }
+      const dateError = validateDate(data_ensaio, request);
+      if (dateError) return dateError;
 
       if (!usuarios_ids || !Array.isArray(usuarios_ids) || usuarios_ids.length === 0) {
         return errorResponse('Lista de usuários é obrigatória', 400, request);
@@ -61,7 +67,7 @@ export function setupPresencaRoutes(router) {
       console.error('Erro ao registrar presenças:', error);
 
       // Se erro de validação (data futura), retornar 400
-      if (error.message.includes('Data não pode ser futura')) {
+      if (error.message.includes('Data') || error.message.includes('usuários')) {
         return errorResponse(error.message, 400, request);
       }
 
@@ -83,6 +89,8 @@ export function setupPresencaRoutes(router) {
   // GET /api/presenca/:data - Detalhe de um ensaio específico (admin apenas)
   router.get('/api/presenca/:data', async (request, env, params, _context) => {
     try {
+      const dateError = validateDate(params.data, request);
+      if (dateError) return dateError;
       const resultado = await PresencaService.getDetalheEnsaio(env, params.data);
       return jsonResponse(resultado, 200, request);
     } catch (error) {
@@ -94,8 +102,10 @@ export function setupPresencaRoutes(router) {
   // DELETE /api/presenca/:data/usuario/:usuarioId - Remover presença individual (admin apenas)
   router.delete('/api/presenca/:data/usuario/:usuarioId', async (request, env, params, _context) => {
     try {
-      const usuarioId = parseInt(params.usuarioId, 10);
-      if (!Number.isInteger(usuarioId)) {
+      const dateError = validateDate(params.data, request);
+      if (dateError) return dateError;
+      const usuarioId = parsePositiveId(params.usuarioId);
+      if (!usuarioId) {
         return errorResponse('ID de usuário inválido', 400, request);
       }
       const resultado = await PresencaService.removerPresenca(env, params.data, usuarioId);
@@ -112,6 +122,8 @@ export function setupPresencaRoutes(router) {
   // DELETE /api/presenca/:data - Excluir ensaio completo (admin apenas)
   router.delete('/api/presenca/:data', async (request, env, params, _context) => {
     try {
+      const dateError = validateDate(params.data, request);
+      if (dateError) return dateError;
       const resultado = await PresencaService.excluirEnsaio(env, params.data);
       return jsonResponse(resultado, 200, request);
     } catch (error) {

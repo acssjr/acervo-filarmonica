@@ -1,53 +1,43 @@
-# Security Policy
+# Política de segurança
 
-## Dependency Risk Assessment
+## Controles implementados
 
-### browser-image-compression (Supply-Chain Risk)
+- JWT assinado com segredo obrigatório; produção falha de forma segura se `JWT_SECRET` não estiver configurado.
+- Autorização administrativa validada contra o usuário ativo no D1, sem confiar apenas nas claims do token.
+- Rate limiting obrigatório em produção por binding KV `RATE_LIMIT`.
+- Uploads administrativos validados por tipo, tamanho e estrutura do arquivo.
+- Objetos no R2 usam namespaces e mutações coordenadas com o D1 para reduzir arquivos órfãos e estados parciais.
+- Respostas de download usam nomes de arquivo sanitizados.
+- Analytics é assíncrono e não altera o resultado da requisição principal.
 
-**Package:** `browser-image-compression@2.0.2`
-**License:** MIT
-**Status:** ⚠️ **LOW MAINTENANCE RISK**
+## Segredos e configuração de produção
 
-#### Risk Analysis
+Nunca grave segredos em `wrangler.toml`, arquivos `.env`, logs ou commits. Configure-os com o Wrangler:
 
-| Factor | Status | Details |
-|--------|--------|---------|
-| Last Update | March 2023 | 3+ years inactive |
-| Maintenance | Low | No active development |
-| Security Patches | Delayed | Potential delayed fixes |
-| Snyk Rating | Low-maintenance | Flagged for supply-chain risk |
-
-#### Mitigation Measures
-
-1. **Locked Version**: Version pinned in `package-lock.json`
-2. **Code Review**: Package source reviewed - pure client-side image compression
-3. **Scope Limited**: Used only in admin asset upload feature
-4. **No Transitive Risk**: Minimal dependencies, no known CVEs at time of audit
-5. **Monitoring**: `npm audit` runs in CI pipeline
-
-#### Audit Results
-
-```bash
-$ npm audit
-# Moderate and high severity vulnerabilities detected in dev dependencies
-# No direct vulnerabilities in browser-image-compression
+```powershell
+npx wrangler secret put JWT_SECRET
+npx wrangler secret put POSTHOG_API_KEY
 ```
 
-#### Action Plan
+Use um `JWT_SECRET` aleatório, longo e exclusivo. Rotacionar esse segredo encerra todas as sessões existentes, portanto a operação deve ser planejada.
 
-| Priority | Action | Timeline |
-|----------|--------|----------|
-| P2 | Evaluate alternatives (e.g., `compressorjs`, custom WASM) | Next quarter |
-| P3 | Document acceptance in release notes | Before release |
-| Ongoing | Monitor Snyk/npm audit alerts | Continuous |
+O valor conhecido presente no script `api:local` assina somente sessões do emulador local e não é um segredo de produção.
 
-#### Compensating Controls
+O namespace KV `RATE_LIMIT` precisa estar ligado ao Worker antes da publicação. A ausência desse binding bloqueia requisições em produção por decisão de segurança.
 
-- Image processing happens client-side only (no server exposure)
-- Input validation on file type and size before compression
-- Admin-only feature (authenticated users only)
-- Regular dependency audits via CI/CD
+## Dependências
 
-## Reporting Security Issues
+Os projetos raiz e frontend usam lockfiles e devem ser instalados com `npm ci` em CI. Execute antes de cada publicação:
 
-Please report security vulnerabilities to the maintainers privately.
+```powershell
+npm audit
+npm audit --prefix frontend
+```
+
+`browser-image-compression` é usado somente no navegador, no fluxo autenticado de upload administrativo. Por ter baixa frequência de manutenção, deve continuar sob revisão periódica e pode ser substituído se surgir alternativa compatível e mantida.
+
+## Comunicação de vulnerabilidades
+
+Não publique detalhes sensíveis em uma issue aberta. Use o formulário privado de [novo aviso de segurança do GitHub](https://github.com/acssjr/acervo-filarmonica/security/advisories/new).
+
+Inclua impacto, forma de reprodução e versão afetada. O prazo esperado para a primeira resposta dos mantenedores é de até sete dias corridos.

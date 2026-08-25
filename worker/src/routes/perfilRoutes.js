@@ -2,6 +2,7 @@
 import { authMiddleware } from '../middleware/index.js';
 import {
   getPerfil,
+  serveFotoPerfil,
   updatePerfil,
   uploadFotoPerfil
 } from '../domain/perfil/index.js';
@@ -11,6 +12,10 @@ import {
  * @param {Router} router - Instância do router
  */
 export function setupPerfilRoutes(router) {
+  router.get('/api/perfil/foto/:filename', (req, env, params) => {
+    return serveFotoPerfil(req, env, params.filename);
+  });
+
   // Todas as rotas requerem autenticação
   router.get('/api/perfil', (req, env, params, context) => {
     // User já foi verificado pelo middleware e está em context.user

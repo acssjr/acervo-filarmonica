@@ -1,7 +1,7 @@
 // worker/src/domain/partituras/downloadService.js
-import { errorResponse, getCorsHeaders } from '../../infrastructure/index.js';
+import { errorResponse, getCorsHeaders, sanitizeHeaderFilename } from '../../infrastructure/index.js';
 import { registrarAtividade } from '../atividades/index.js';
-import { createPostHogClient, shutdownPostHog } from '../../infrastructure/posthog/posthogClient.js';
+import { capturePostHog } from '../../infrastructure/posthog/posthogClient.js';
 
 /**
  * Download de partitura - REQUER AUTENTICAÇÃO
@@ -54,9 +54,7 @@ export async function downloadPartitura(id, request, env, user) {
 
     if (!isAdmin) {
       try {
-        const posthog = createPostHogClient(env);
-        if (posthog) {
-          posthog.capture({
+        await capturePostHog(env, {
             distinctId: `user_${user.id}`,
             event: 'partitura_downloaded',
             properties: {
@@ -66,8 +64,6 @@ export async function downloadPartitura(id, request, env, user) {
               is_view: isView,
             },
           });
-          await shutdownPostHog(posthog);
-        }
       } catch (e) {
         console.error('PostHog capture failed:', e);
       }
@@ -78,7 +74,7 @@ export async function downloadPartitura(id, request, env, user) {
     return new Response(arquivo.body, {
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `${disposition}; filename="${partitura.titulo}.pdf"`,
+        'Content-Disposition': `${disposition}; filename="${sanitizeHeaderFilename(`${partitura.titulo}.pdf`)}"`,
         ...getCorsHeaders(request, env),
       },
     });
@@ -151,9 +147,7 @@ export async function downloadParte(parteId, request, env, user) {
     // PostHog: capture individual parte download event (skip admin previews)
     if (!isAdmin) {
       try {
-        const posthog = createPostHogClient(env);
-        if (posthog) {
-          posthog.capture({
+        await capturePostHog(env, {
             distinctId: `user_${user.id}`,
             event: 'parte_downloaded',
             properties: {
@@ -164,14 +158,12 @@ export async function downloadParte(parteId, request, env, user) {
               is_view: isView,
             },
           });
-          await shutdownPostHog(posthog);
-        }
       } catch (e) {
         console.error('PostHog capture failed:', e);
       }
     }
 
-    const nomeArquivo = `${parte.partitura_titulo} - ${parte.instrumento}.pdf`;
+    const nomeArquivo = sanitizeHeaderFilename(`${parte.partitura_titulo} - ${parte.instrumento}.pdf`);
 
     // Usa Content-Disposition: inline quando requisicao eh AJAX (X-Requested-With)
     // Isso evita que gerenciadores de download (IDM, etc) interceptem a requisicao

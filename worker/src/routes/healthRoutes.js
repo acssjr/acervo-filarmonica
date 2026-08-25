@@ -10,16 +10,10 @@ const APP_VERSION = '3.1.0';
  */
 export function setupHealthRoutes(router) {
   // GET /api/health - Health check
-  router.get('/api/health', async (request, env) => {
+  router.get('/api/health', async (request) => {
     return jsonResponse({
       status: 'ok',
-      timestamp: new Date().toISOString(),
-      security: {
-        jwt: true,
-        pbkdf2: true,
-        cors: 'whitelist',
-        rateLimit: !!env.RATE_LIMIT
-      }
+      timestamp: new Date().toISOString()
     }, 200, request);
   });
 

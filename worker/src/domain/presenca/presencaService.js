@@ -1,7 +1,6 @@
 // ===== PRESENCA SERVICE =====
 // Lógica de negócio para controle de presença em ensaios
-
-
+import { isIsoDate, parsePositiveId } from '../../infrastructure/index.js';
 
 /**
  * Calcula o streak (sequência consecutiva) de presenças de um usuário
@@ -255,6 +254,9 @@ export async function getEstatisticasPerfil(env, usuarioId, criado_em) {
  * @returns {Promise<Object>} - Resultado da operação
  */
 export async function registrarPresencas(env, dataEnsaio, usuariosIds, adminId) {
+  if (!isIsoDate(dataEnsaio)) {
+    throw new Error('Data de ensaio inválida');
+  }
   // Validar data não é futura
   const hoje = new Date().toISOString().split('T')[0];
   if (dataEnsaio > hoje) {
@@ -266,32 +268,22 @@ export async function registrarPresencas(env, dataEnsaio, usuariosIds, adminId) 
     throw new Error('Nenhum usuário selecionado');
   }
 
-  let registradas = 0;
-  const erros = [];
+  const ids = [...new Set(usuariosIds.map(parsePositiveId))];
+  if (ids.includes(null) || ids.length === 0) {
+    throw new Error('Lista de usuários inválida');
+  }
 
-  // Inserir cada presença (UNIQUE constraint previne duplicatas)
-  for (const usuarioId of usuariosIds) {
-    try {
-      await env.DB.prepare(`
+  const results = await env.DB.batch(ids.map(usuarioId => env.DB.prepare(`
         INSERT INTO presencas (usuario_id, data_ensaio, criado_por)
         VALUES (?, ?, ?)
-      `).bind(usuarioId, dataEnsaio, adminId).run();
-
-      registradas++;
-    } catch (error) {
-      // Se erro é de UNIQUE constraint, ignorar (já existe)
-      if (error.message.includes('UNIQUE constraint failed')) {
-        continue; // Presença já registrada, não é erro
-      }
-      erros.push({ usuario_id: usuarioId, erro: error.message });
-    }
-  }
+        ON CONFLICT(usuario_id, data_ensaio) DO NOTHING
+      `).bind(usuarioId, dataEnsaio, adminId)));
+  const registradas = results.reduce((total, result) => total + (result.meta?.changes || 0), 0);
 
   return {
     sucesso: true,
     registradas,
     data_ensaio: dataEnsaio,
-    erros: erros.length > 0 ? erros : undefined
   };
 }
 

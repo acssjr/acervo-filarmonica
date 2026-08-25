@@ -176,6 +176,16 @@ components:
       required:
         - nome
 
+    CategoriaUpdate:
+      type: object
+      properties:
+        nome:
+          type: string
+        emoji:
+          type: string
+        cor:
+          type: string
+
     CategoriaReorder:
       type: object
       properties:
@@ -919,7 +929,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CategoriaCreate'
+              $ref: '#/components/schemas/CategoriaUpdate'
       responses:
         '200':
           description: Categoria atualizada
@@ -1613,3 +1623,378 @@ paths:
                     type: integer
                   message:
                     type: string
+
+  /api/version:
+    get:
+      tags: [Health]
+      operationId: getVersion
+      responses:
+        '200':
+          description: Versão atual
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+
+  /api/perfil/foto/{filename}:
+    get:
+      tags: [Perfil]
+      operationId: getFotoPerfil
+      parameters:
+        - { name: filename, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Imagem do perfil
+          content:
+            image/jpeg: { schema: { type: string, format: binary } }
+        '400': { description: Nome inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '404': { description: Foto não encontrada, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+
+  /api/partes/{id}/renomear:
+    put:
+      tags: [Partes]
+      operationId: renomearParte
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [instrumento]
+              properties: { instrumento: { type: string } }
+      responses:
+        '200': { description: Parte renomeada, content: { application/json: { schema: { $ref: '#/components/schemas/Success' } } } }
+        '400': { description: Entrada inválida, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '401': { description: Não autenticado, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+
+  /api/partituras/{id}/corrigir-bombardinos:
+    post:
+      tags: [Partituras]
+      operationId: corrigirBombardinos
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          multipart/form-data: { schema: { type: object, additionalProperties: true } }
+      responses:
+        '200': { description: Partes corrigidas, content: { application/json: { schema: { $ref: '#/components/schemas/Success' } } } }
+        '400': { description: Lote inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+
+  /api/tracking/events:
+    post:
+      tags: [Estatisticas]
+      operationId: registrarTrackingEvent
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, additionalProperties: true } } }
+      responses:
+        '200': { description: Evento registrado, content: { application/json: { schema: { $ref: '#/components/schemas/Success' } } } }
+        '400': { description: Evento inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '401': { description: Não autenticado, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+
+  /api/tracking/search:
+    post:
+      tags: [Estatisticas]
+      operationId: registrarBusca
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, additionalProperties: true } } }
+      responses:
+        '200': { description: Busca registrada, content: { application/json: { schema: { $ref: '#/components/schemas/Success' } } } }
+        '400': { description: Entrada inválida, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+
+  /api/tracking/session/end:
+    post:
+      tags: [Estatisticas]
+      operationId: encerrarTrackingSession
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        content: { application/json: { schema: { type: object, additionalProperties: true } } }
+      responses:
+        '200': { description: Sessão encerrada, content: { application/json: { schema: { $ref: '#/components/schemas/Success' } } } }
+
+  /api/admin/analytics/dashboard:
+    get:
+      tags: [Estatisticas]
+      operationId: getAnalyticsDashboard
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - { name: section, in: query, schema: { type: string } }
+        - { name: period, in: query, schema: { type: string } }
+      responses:
+        '200': { description: Dashboard analítico, content: { application/json: { schema: { type: object, additionalProperties: true } } } }
+        '401': { description: Não autenticado, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+
+  /api/assets/list/backgrounds:
+    get:
+      tags: [Health]
+      operationId: listBackgroundAssets
+      responses:
+        '200': { description: Backgrounds públicos, content: { application/json: { schema: { type: object, additionalProperties: true } } } }
+
+  /api/assets/{folder}/{filename}:
+    get:
+      tags: [Health]
+      operationId: getPublicAsset
+      parameters:
+        - { name: folder, in: path, required: true, schema: { type: string } }
+        - { name: filename, in: path, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Conteúdo do asset, content: { application/octet-stream: { schema: { type: string, format: binary } } } }
+        '404': { description: Asset não encontrado, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+
+  /api/admin/assets/list:
+    get:
+      tags: [Usuarios]
+      operationId: listAdminAssets
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - { name: prefix, in: query, schema: { type: string } }
+        - { name: cursor, in: query, schema: { type: string } }
+      responses:
+        '200': { description: Assets gerenciáveis, content: { application/json: { schema: { type: object, additionalProperties: true } } } }
+
+  /api/admin/assets/upload:
+    post:
+      tags: [Usuarios]
+      operationId: uploadAdminAsset
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content: { multipart/form-data: { schema: { type: object, additionalProperties: true } } }
+      responses:
+        '201': { description: Asset enviado, content: { application/json: { schema: { $ref: '#/components/schemas/Success' } } } }
+        '400': { description: Arquivo inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+
+  /api/admin/assets:
+    delete:
+      tags: [Usuarios]
+      operationId: deleteAdminAsset
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - { name: key, in: query, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Asset excluído, content: { application/json: { schema: { $ref: '#/components/schemas/Success' } } } }
+        '400': { description: Chave inválida, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+
+  /api/admin/avisos:
+    get:
+      tags: [Usuarios]
+      operationId: listAvisos
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200': { description: Lista de avisos, content: { application/json: { schema: { type: array, items: { type: object, additionalProperties: true } } } } }
+    post:
+      tags: [Usuarios]
+      operationId: createAviso
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, additionalProperties: true } } }
+      responses:
+        '201': { description: Aviso criado, content: { application/json: { schema: { $ref: '#/components/schemas/Success' } } } }
+
+  /api/admin/avisos/{id}:
+    put:
+      tags: [Usuarios]
+      operationId: updateAviso
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, additionalProperties: true } } }
+      responses:
+        '200': { description: Aviso atualizado, content: { application/json: { schema: { $ref: '#/components/schemas/Success' } } } }
+    delete:
+      tags: [Usuarios]
+      operationId: deleteAviso
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: Aviso excluído, content: { application/json: { schema: { $ref: '#/components/schemas/Success' } } } }
+
+  /api/avisos/nao-lidos:
+    get:
+      tags: [Atividades]
+      operationId: getAvisosNaoLidos
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200': { description: Avisos não lidos, content: { application/json: { schema: { type: array, items: { type: object, additionalProperties: true } } } } }
+
+  /api/avisos/{id}/lido:
+    post:
+      tags: [Atividades]
+      operationId: marcarAvisoLido
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: Aviso marcado como lido, content: { application/json: { schema: { $ref: '#/components/schemas/Success' } } } }
+
+  /api/config/recesso:
+    get:
+      tags: [Health]
+      operationId: getModoRecesso
+      responses:
+        '200': { description: Estado do recesso, content: { application/json: { schema: { type: object, properties: { ativo: { type: boolean } } } } } }
+    put:
+      tags: [Health]
+      operationId: updateModoRecesso
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [ativo], properties: { ativo: { type: boolean } } } } }
+      responses:
+        '200': { description: Recesso atualizado, content: { application/json: { schema: { type: object, additionalProperties: true } } } }
+
+  /api/config/dias-ensaio:
+    get:
+      tags: [Health]
+      operationId: getDiasEnsaio
+      responses:
+        '200': { description: Calendário de ensaios, content: { application/json: { schema: { type: object, additionalProperties: true } } } }
+    put:
+      tags: [Health]
+      operationId: updateDiasEnsaio
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, additionalProperties: true } } }
+      responses:
+        '200': { description: Calendário atualizado, content: { application/json: { schema: { type: object, additionalProperties: true } } } }
+        '400': { description: Calendário inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+
+  /api/presenca/minhas/stats:
+    get:
+      tags: [Estatisticas]
+      operationId: getMinhasEstatisticasPresenca
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200': { description: Estatísticas de presença, content: { application/json: { schema: { type: object, additionalProperties: true } } } }
+
+  /api/presenca/minhas:
+    get:
+      tags: [Estatisticas]
+      operationId: getMinhasPresencas
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200': { description: Histórico de presença, content: { application/json: { schema: { type: object, additionalProperties: true } } } }
+
+  /api/presenca:
+    post:
+      tags: [Estatisticas]
+      operationId: registrarPresencas
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, additionalProperties: true } } }
+      responses:
+        '200': { description: Presenças registradas, content: { application/json: { schema: { type: object, additionalProperties: true } } } }
+        '400': { description: Dados inválidos, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+
+  /api/presenca/todas:
+    get:
+      tags: [Estatisticas]
+      operationId: getTodasPresencas
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200': { description: Ensaios com presença, content: { application/json: { schema: { type: object, additionalProperties: true } } } }
+
+  /api/presenca/{data}:
+    get:
+      tags: [Estatisticas]
+      operationId: getDetalhePresenca
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - { name: data, in: path, required: true, schema: { type: string, format: date } }
+      responses:
+        '200': { description: Detalhe do ensaio, content: { application/json: { schema: { type: object, additionalProperties: true } } } }
+        '400': { description: Data inválida, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    delete:
+      tags: [Estatisticas]
+      operationId: deleteEnsaioPresenca
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - { name: data, in: path, required: true, schema: { type: string, format: date } }
+      responses:
+        '200': { description: Ensaio excluído, content: { application/json: { schema: { type: object, additionalProperties: true } } } }
+
+  /api/presenca/{data}/usuario/{usuarioId}:
+    delete:
+      tags: [Estatisticas]
+      operationId: deletePresencaUsuario
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - { name: data, in: path, required: true, schema: { type: string, format: date } }
+        - { name: usuarioId, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: Presença removida, content: { application/json: { schema: { type: object, additionalProperties: true } } } }
+        '404': { description: Presença não encontrada, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+
+  /api/ensaios/{data}/partituras:
+    get:
+      tags: [Repertorio]
+      operationId: getPartiturasEnsaio
+      parameters:
+        - { name: data, in: path, required: true, schema: { type: string, format: date } }
+      responses:
+        '200': { description: Partituras do ensaio, content: { application/json: { schema: { type: object, additionalProperties: true } } } }
+        '400': { description: Data inválida, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    post:
+      tags: [Repertorio]
+      operationId: addPartituraEnsaio
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - { name: data, in: path, required: true, schema: { type: string, format: date } }
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [partitura_id], properties: { partitura_id: { type: integer } } } } }
+      responses:
+        '200': { description: Partitura adicionada, content: { application/json: { schema: { type: object, additionalProperties: true } } } }
+
+  /api/ensaios/{data}/partituras/{partituraId}:
+    delete:
+      tags: [Repertorio]
+      operationId: deletePartituraEnsaio
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - { name: data, in: path, required: true, schema: { type: string, format: date } }
+        - { name: partituraId, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: Partitura removida, content: { application/json: { schema: { type: object, additionalProperties: true } } } }
+
+  /api/ensaios/{data}/partituras/reorder:
+    put:
+      tags: [Repertorio]
+      operationId: reorderPartiturasEnsaio
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - { name: data, in: path, required: true, schema: { type: string, format: date } }
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, additionalProperties: true } } }
+      responses:
+        '200': { description: Ordem atualizada, content: { application/json: { schema: { type: object, additionalProperties: true } } } }
+        '400': { description: Ordem inválida, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+
+  /api/ensaios/{data}/config:
+    patch:
+      tags: [Repertorio]
+      operationId: updateEnsaioConfig
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - { name: data, in: path, required: true, schema: { type: string, format: date } }
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, properties: { youtube_url: { type: string, format: uri, nullable: true } } } } }
+      responses:
+        '200': { description: Configuração atualizada, content: { application/json: { schema: { type: object, additionalProperties: true } } } }
+        '400': { description: Data ou URL inválida, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }

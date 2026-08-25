@@ -1,4 +1,4 @@
-/// <reference types="@cloudflare/vitest-pool-workers" />
+/// <reference types="@cloudflare/vitest-plugin" />
 
 declare module 'cloudflare:test' {
   interface ProvidedEnv {

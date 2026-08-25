@@ -1,5 +1,6 @@
 // ===== ENSAIO SERVICE =====
 // Lógica de negócio para gestão de partituras tocadas em ensaios
+import { normalizeHttpUrl, validateOrderItems } from '../../infrastructure/index.js';
 
 /**
  * Retorna todas as partituras tocadas em um ensaio específico
@@ -71,14 +72,14 @@ export async function removePartituraEnsaio(env, dataEnsaio, partituraId) {
  * @returns {Promise<Object>} - Resultado da operação
  */
 export async function reorderPartiturasEnsaio(env, dataEnsaio, ordens) {
-  // Atualizar ordem de cada partitura
-  for (const item of ordens) {
-    await env.DB.prepare(`
+  if (!validateOrderItems(ordens)) {
+    throw new Error('Ordem de partituras inválida');
+  }
+  await env.DB.batch(ordens.map(item => env.DB.prepare(`
       UPDATE ensaios_partituras
       SET ordem = ?
       WHERE id = ? AND data_ensaio = ?
-    `).bind(item.ordem, item.id, dataEnsaio).run();
-  }
+    `).bind(item.ordem, item.id, dataEnsaio)));
 
   return { sucesso: true };
 }
@@ -91,13 +92,14 @@ export async function reorderPartiturasEnsaio(env, dataEnsaio, ordens) {
  * @returns {Promise<Object>} - Resultado da operação
  */
 export async function updateEnsaioConfig(env, dataEnsaio, youtubeUrl) {
+  const normalizedUrl = normalizeHttpUrl(youtubeUrl);
   await env.DB.prepare(`
     INSERT INTO ensaios_config (data_ensaio, youtube_url, atualizado_em)
     VALUES (?, ?, datetime('now'))
     ON CONFLICT(data_ensaio) DO UPDATE SET
       youtube_url = excluded.youtube_url,
       atualizado_em = datetime('now')
-  `).bind(dataEnsaio, youtubeUrl || null).run();
+  `).bind(dataEnsaio, normalizedUrl).run();
 
   return { sucesso: true };
 }

@@ -175,7 +175,7 @@ describe('Rotas Autenticadas', () => {
     it('registra evento autenticado', async () => {
       const partituraId = await env.DB.prepare(`
         INSERT INTO partituras (titulo, compositor, categoria_id, arquivo_nome, arquivo_tamanho, destaque, ativo)
-        VALUES ('Tracking Route Test', 'Compositor Teste', 1, 'tracking-route-test.pdf', 100, 0, 1)
+        VALUES ('Tracking Route Test', 'Compositor Teste', 'dobrados', 'tracking-route-test.pdf', 100, 0, 1)
         RETURNING id
       `).first('id') as number;
 
@@ -258,7 +258,7 @@ describe('Download view analytics', () => {
     await env.BUCKET.put(arquivoNome, new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2D]));
     const partituraId = await env.DB.prepare(`
       INSERT INTO partituras (titulo, compositor, categoria_id, arquivo_nome, arquivo_tamanho, downloads, destaque, ativo)
-      VALUES ('Teste View Parte', 'Mock', 1, ?, 5, 0, 0, 1) RETURNING id
+      VALUES ('Teste View Parte', 'Mock', 'dobrados', ?, 5, 0, 0, 1) RETURNING id
     `).bind(arquivoNome).first('id') as number;
     const parteId = await env.DB.prepare(`
       INSERT INTO partes (partitura_id, instrumento, arquivo_nome)
@@ -288,7 +288,7 @@ describe('Download view analytics', () => {
     await env.BUCKET.put(arquivoNome, new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2D]));
     const partituraId = await env.DB.prepare(`
       INSERT INTO partituras (titulo, compositor, categoria_id, arquivo_nome, arquivo_tamanho, downloads, destaque, ativo)
-      VALUES ('Teste View Partitura', 'Mock', 1, ?, 5, 0, 0, 1) RETURNING id
+      VALUES ('Teste View Partitura', 'Mock', 'dobrados', ?, 5, 0, 0, 1) RETURNING id
     `).bind(arquivoNome).first('id') as number;
 
     const response = await SELF.fetch(`https://test.local/api/download/${partituraId}?action=view`, {
@@ -314,7 +314,7 @@ describe('Download view analytics', () => {
     await env.BUCKET.put(arquivoNome, new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2D]));
     const partituraId = await env.DB.prepare(`
       INSERT INTO partituras (titulo, compositor, categoria_id, arquivo_nome, arquivo_tamanho, downloads, destaque, ativo)
-      VALUES ('Teste Download Parte Instrumento', 'Mock', 1, ?, 5, 0, 0, 1) RETURNING id
+      VALUES ('Teste Download Parte Instrumento', 'Mock', 'dobrados', ?, 5, 0, 0, 1) RETURNING id
     `).bind(arquivoNome).first('id') as number;
     const parteId = await env.DB.prepare(`
       INSERT INTO partes (partitura_id, instrumento, arquivo_nome)
@@ -343,10 +343,12 @@ describe('Download view analytics', () => {
 describe('Rotas Admin', () => {
   let userToken: string;
   let adminToken: string;
+  let forgedAdminToken: string;
 
   beforeAll(async () => {
     userToken = await createTestToken(2, false); // usuário comum
     adminToken = await createTestToken(1, true);  // admin
+    forgedAdminToken = await createTestToken(2, true); // claim não eleva papel do banco
   });
 
   describe('GET /api/usuarios', () => {
@@ -359,6 +361,13 @@ describe('Rotas Admin', () => {
     it('retorna 403 com token de usuário comum', async () => {
       const response = await SELF.fetch('https://test.local/api/usuarios', {
         headers: { Authorization: `Bearer ${userToken}` },
+      });
+      expect(response.status).toBe(403);
+    });
+
+    it('ignora claim admin quando o usuário atual não é admin no banco', async () => {
+      const response = await SELF.fetch('https://test.local/api/usuarios', {
+        headers: { Authorization: `Bearer ${forgedAdminToken}` },
       });
       expect(response.status).toBe(403);
     });
@@ -724,7 +733,7 @@ describe('Rotas de Partes (BUG FIX)', () => {
 
       const partituraId = await env.DB.prepare(`
         INSERT INTO partituras (titulo, compositor, categoria_id, arquivo_nome, arquivo_tamanho, downloads, destaque, ativo)
-        VALUES ('Teste Delete Parte Tracking', 'Mock', 1, 'grade-delete-parte.pdf', 5, 0, 0, 1)
+        VALUES ('Teste Delete Parte Tracking', 'Mock', 'dobrados', 'grade-delete-parte.pdf', 5, 0, 0, 1)
         RETURNING id
       `).first('id') as number;
 
@@ -761,7 +770,7 @@ describe('Rotas de Partes (BUG FIX)', () => {
     it('remove o registro da parte mesmo se o arquivo já não existir no storage', async () => {
       const partituraId = await env.DB.prepare(`
         INSERT INTO partituras (titulo, compositor, categoria_id, arquivo_nome, arquivo_tamanho, downloads, destaque, ativo)
-        VALUES ('Teste Delete Parte Sem Arquivo', 'Mock', 1, 'grade-delete-parte-missing.pdf', 5, 0, 0, 1)
+        VALUES ('Teste Delete Parte Sem Arquivo', 'Mock', 'dobrados', 'grade-delete-parte-missing.pdf', 5, 0, 0, 1)
         RETURNING id
       `).first('id') as number;
 
@@ -827,7 +836,7 @@ describe('Rotas de Partes (BUG FIX)', () => {
       // Precisamos dar seed em uma partitura+parte falsa sem colocar o blob no storage. (Mock DB apenas)
       const partituraId = await env.DB.prepare(`
         INSERT INTO partituras (titulo, compositor, categoria_id, arquivo_nome, arquivo_tamanho, destaque, ativo)
-        VALUES ('Teste R2 Desaparecido', 'Mock', 1, 'mock.pdf', 0, 0, 1) RETURNING id
+        VALUES ('Teste R2 Desaparecido', 'Mock', 'dobrados', 'mock.pdf', 0, 0, 1) RETURNING id
       `).first('id');
 
       const parteId = await env.DB.prepare(`
@@ -1010,7 +1019,7 @@ describe('CRUD de Partituras - Update', () => {
     // Cria uma partitura de teste para o update
     const id = await env.DB.prepare(`
       INSERT INTO partituras (titulo, compositor, arranjador, categoria_id, arquivo_nome, arquivo_tamanho, destaque, ativo)
-      VALUES ('Partitura Teste Update', 'Compositor Teste', 'Arranjador Teste', 1, 'teste.pdf', 100, 0, 1) RETURNING id
+      VALUES ('Partitura Teste Update', 'Compositor Teste', 'Arranjador Teste', 'dobrados', 'teste.pdf', 100, 0, 1) RETURNING id
     `).first('id') as number;
     testPartituraId = id;
   });
@@ -1019,7 +1028,7 @@ describe('CRUD de Partituras - Update', () => {
     const response = await SELF.fetch(`https://test.local/api/partituras/${testPartituraId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ titulo: 'Novo Titulo', categoria_id: 1 }),
+      body: JSON.stringify({ titulo: 'Novo Titulo', categoria_id: 'dobrados' }),
     });
     expect([401, 403]).toContain(response.status);
   });
@@ -1031,7 +1040,7 @@ describe('CRUD de Partituras - Update', () => {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${userToken}`,
       },
-      body: JSON.stringify({ titulo: 'Novo Titulo', categoria_id: 1 }),
+      body: JSON.stringify({ titulo: 'Novo Titulo', categoria_id: 'dobrados' }),
     });
     expect(response.status).toBe(403);
   });
@@ -1050,7 +1059,7 @@ describe('CRUD de Partituras - Update', () => {
         titulo: 'Partitura Renomeada',
         compositor: 'Novo Compositor',
         arranjador: null,
-        categoria_id: 1,
+        categoria_id: 'dobrados',
         // NÃO envia ano, descricao - estes eram undefined e causavam 500
         destaque: 0,
         ativo: 1,
@@ -1094,7 +1103,7 @@ describe('CRUD de Partituras - Update', () => {
       },
       body: JSON.stringify({
         titulo: '',
-        categoria_id: 1,
+        categoria_id: 'dobrados',
       }),
     });
     expect(response.status).toBe(400);
@@ -1103,7 +1112,7 @@ describe('CRUD de Partituras - Update', () => {
   it('preserva compositor existente quando o campo nao e enviado', async () => {
     const partituraId = await env.DB.prepare(`
       INSERT INTO partituras (titulo, compositor, arranjador, categoria_id, arquivo_nome, arquivo_tamanho, destaque, ativo)
-      VALUES ('Partitura Preserva Compositor', 'Compositor Preservado', NULL, 1, 'preserva.pdf', 100, 0, 1) RETURNING id
+      VALUES ('Partitura Preserva Compositor', 'Compositor Preservado', NULL, 'dobrados', 'preserva.pdf', 100, 0, 1) RETURNING id
     `).first('id') as number;
 
     const response = await SELF.fetch(`https://test.local/api/partituras/${partituraId}`, {
@@ -1114,7 +1123,7 @@ describe('CRUD de Partituras - Update', () => {
       },
       body: JSON.stringify({
         titulo: 'Partitura Preserva Compositor Atualizada',
-        categoria_id: 1,
+        categoria_id: 'dobrados',
         destaque: 0,
       }),
     });
@@ -1129,11 +1138,11 @@ describe('CRUD de Partituras - Update', () => {
   it('rejeita titulo duplicado ao atualizar partitura', async () => {
     const originalId = await env.DB.prepare(`
       INSERT INTO partituras (titulo, compositor, categoria_id, arquivo_nome, arquivo_tamanho, destaque, ativo)
-      VALUES ('Titulo Duplicado Analytics', 'Compositor A', 1, 'duplicada-a.pdf', 100, 0, 1) RETURNING id
+      VALUES ('Titulo Duplicado Analytics', 'Compositor A', 'dobrados', 'duplicada-a.pdf', 100, 0, 1) RETURNING id
     `).first('id') as number;
     const alvoId = await env.DB.prepare(`
       INSERT INTO partituras (titulo, compositor, categoria_id, arquivo_nome, arquivo_tamanho, destaque, ativo)
-      VALUES ('Titulo Temporario Analytics', 'Compositor B', 1, 'duplicada-b.pdf', 100, 0, 1) RETURNING id
+      VALUES ('Titulo Temporario Analytics', 'Compositor B', 'dobrados', 'duplicada-b.pdf', 100, 0, 1) RETURNING id
     `).first('id') as number;
 
     const response = await SELF.fetch(`https://test.local/api/partituras/${alvoId}`, {
@@ -1145,7 +1154,7 @@ describe('CRUD de Partituras - Update', () => {
       body: JSON.stringify({
         titulo: 'Titulo Duplicado Analytics',
         compositor: 'Compositor B',
-        categoria_id: 1,
+        categoria_id: 'dobrados',
         destaque: 0,
       }),
     });
@@ -1172,7 +1181,7 @@ describe('CRUD de Partituras - Update', () => {
   it('remove partitura com historico de download e tracking sem erro interno', async () => {
     const partituraId = await env.DB.prepare(`
       INSERT INTO partituras (titulo, compositor, categoria_id, arquivo_nome, arquivo_tamanho, destaque, ativo)
-      VALUES ('Partitura Remocao Com Historico', 'Compositor Historico', 1, 'remocao-historico.pdf', 100, 0, 1) RETURNING id
+      VALUES ('Partitura Remocao Com Historico', 'Compositor Historico', 'dobrados', 'remocao-historico.pdf', 100, 0, 1) RETURNING id
     `).first('id') as number;
 
     await env.DB.prepare(`
@@ -1343,6 +1352,87 @@ describe('CRUD de Repertórios', () => {
     // Pode ser 200 (encontrou) ou 404 (não há ativo)
     expect([200, 404]).toContain(response.status);
   });
+
+  it('rejeita IDs e datas inválidas antes de consultar ou gravar', async () => {
+    const invalidId = await SELF.fetch('https://test.local/api/repertorio/abc', {
+      headers: { Authorization: `Bearer ${adminToken}` },
+    });
+    expect(invalidId.status).toBe(400);
+
+    const invalidDate = await SELF.fetch('https://test.local/api/repertorios', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${adminToken}`,
+      },
+      body: JSON.stringify({ nome: 'Data impossível', data_apresentacao: '2026-02-30' }),
+    });
+    expect(invalidDate.status).toBe(400);
+  });
+
+  it('permite limpar descrição e data explicitamente', async () => {
+    const createResponse = await SELF.fetch('https://test.local/api/repertorios', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${adminToken}`,
+      },
+      body: JSON.stringify({
+        nome: 'Repertório para limpar campos',
+        descricao: 'Texto anterior',
+        data_apresentacao: '2026-08-24',
+      }),
+    });
+    const { id } = await createResponse.json() as { id: number };
+
+    const updateResponse = await SELF.fetch(`https://test.local/api/repertorio/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${adminToken}`,
+      },
+      body: JSON.stringify({ descricao: '', data_apresentacao: '' }),
+    });
+    expect(updateResponse.status).toBe(200);
+
+    const stored = await env.DB.prepare(
+      'SELECT descricao, data_apresentacao FROM repertorios WHERE id = ?'
+    ).bind(id).first() as { descricao: string | null; data_apresentacao: string | null };
+    expect(stored).toEqual({ descricao: null, data_apresentacao: null });
+  });
+
+  it('duplica repertório e associações no mesmo batch D1', async () => {
+    const partituraId = await env.DB.prepare(`
+      INSERT INTO partituras (titulo, compositor, categoria_id, arquivo_nome, ativo)
+      VALUES ('Partitura da duplicação', 'Compositor', 'dobrados', 'duplicacao.pdf', 1)
+      RETURNING id
+    `).first('id') as number;
+    const original = await env.DB.prepare(`
+      INSERT INTO repertorios (nome, descricao, ativo, criado_por)
+      VALUES ('Original para duplicar', 'Com associações', 0, 1)
+      RETURNING id
+    `).first('id') as number;
+    await env.DB.prepare(`
+      INSERT INTO repertorio_partituras (repertorio_id, partitura_id, ordem)
+      VALUES (?, ?, 0)
+    `).bind(original, partituraId).run();
+
+    const response = await SELF.fetch(`https://test.local/api/repertorio/${original}/duplicar`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${adminToken}` },
+    });
+    expect(response.status).toBe(201);
+    const { id } = await response.json() as { id: number };
+
+    const copy = await env.DB.prepare(`
+      SELECT r.nome, COUNT(rp.id) AS total
+      FROM repertorios r
+      LEFT JOIN repertorio_partituras rp ON rp.repertorio_id = r.id
+      WHERE r.id = ? GROUP BY r.id
+    `).bind(id).first() as { nome: string; total: number };
+    expect(copy.nome).toBe('Original para duplicar (cópia)');
+    expect(copy.total).toBe(1);
+  });
 });
 
 describe('CRUD de Avisos', () => {
@@ -1485,6 +1575,21 @@ describe('Rotas de Perfil', () => {
     });
 
     expect(response.status).toBe(200);
+  });
+
+  it('GET /api/perfil/foto/:filename serve apenas fotos de perfil válidas', async () => {
+    const filename = 'perfil_2_123456.png';
+    await env.BUCKET.put(filename, new Uint8Array([0x89, 0x50, 0x4E, 0x47]), {
+      httpMetadata: { contentType: 'image/png' }
+    });
+
+    const response = await SELF.fetch(`https://test.local/api/perfil/foto/${filename}`);
+    expect(response.status).toBe(200);
+    expect(response.headers.get('Content-Type')).toBe('image/png');
+    await response.arrayBuffer();
+
+    const rejected = await SELF.fetch('https://test.local/api/perfil/foto/partitura.pdf');
+    expect(rejected.status).toBe(400);
   });
 });
 

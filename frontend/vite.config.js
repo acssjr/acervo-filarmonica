@@ -2,13 +2,17 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
 
-// Ambiente: 'local' usa wrangler dev (porta 8787), 'prod' usa API de produção
-// NOTA: Mude para 'local' quando tiver o worker rodando localmente
-const API_TARGET = process.env.VITE_API_TARGET || 'prod'
+// Desenvolvimento e builds usam o Worker local por padrão. Produção só pode
+// ser selecionada explicitamente com VITE_API_TARGET=prod.
+const API_TARGET = process.env.VITE_API_TARGET || 'local'
 
 const apiTargets = {
   local: 'http://localhost:8787',
   prod: 'https://acervo-filarmonica-api.acssjr.workers.dev'
+}
+
+if (!Object.hasOwn(apiTargets, API_TARGET)) {
+  throw new Error(`VITE_API_TARGET inválido: ${API_TARGET}. Use "local" ou "prod".`)
 }
 
 if (API_TARGET === 'prod') {
