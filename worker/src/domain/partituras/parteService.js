@@ -9,6 +9,7 @@ import {
   replaceStoredObject
 } from '../../infrastructure/index.js';
 import { registrarAtividade } from '../atividades/index.js';
+import { canonicalizeInstrumentName } from '../instrumentos/instrumentUtils.js';
 
 /**
  * Listar partes de uma partitura
@@ -68,10 +69,14 @@ async function getParteComPartitura(env, parteId) {
 export async function addParte(partituraId, request, env, admin) {
   try {
     const formData = await request.formData();
-    const instrumento = formData.get('instrumento');
+    const instrumentoInformado = formData.get('instrumento');
     const arquivo = formData.get('arquivo');
 
-    if (!instrumento || !arquivo) {
+    if (!instrumentoInformado || !arquivo) {
+      return errorResponse('Instrumento e arquivo são obrigatórios', 400, request);
+    }
+    const instrumento = canonicalizeInstrumentName(instrumentoInformado);
+    if (!instrumento) {
       return errorResponse('Instrumento e arquivo são obrigatórios', 400, request);
     }
 
@@ -186,11 +191,12 @@ export async function substituirParte(parteId, request, env, admin) {
 export async function renomearParte(parteId, request, env, admin) {
   try {
     const data = await request.json();
-    const { instrumento } = data;
+    const { instrumento: instrumentoInformado } = data;
 
-    if (!instrumento || !instrumento.trim()) {
+    if (!instrumentoInformado || !instrumentoInformado.trim()) {
       return errorResponse('Nome do instrumento é obrigatório', 400, request);
     }
+    const instrumento = canonicalizeInstrumentName(instrumentoInformado);
 
     const parte = await getParteComPartitura(env, parteId);
 
@@ -200,19 +206,19 @@ export async function renomearParte(parteId, request, env, admin) {
 
     await env.DB.prepare(
       'UPDATE partes SET instrumento = ? WHERE id = ?'
-    ).bind(instrumento.trim(), parteId).run();
+    ).bind(instrumento, parteId).run();
 
     await registrarAtividade(
       env,
       'update_parte',
       parte.partitura_titulo,
-      `Instrumento renomeado: "${parte.instrumento}" -> "${instrumento.trim()}"`,
+      `Instrumento renomeado: "${parte.instrumento}" -> "${instrumento}"`,
       admin?.id ?? null
     );
 
     return jsonResponse({
       success: true,
-      message: `Instrumento alterado para "${instrumento.trim()}"!`
+      message: `Instrumento alterado para "${instrumento}"!`
     }, 200, request);
 
   } catch (error) {

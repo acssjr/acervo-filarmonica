@@ -16,6 +16,7 @@ const mockPartes = [
   { id: 8, instrumento: 'Saxofone Alto Eb' },
   { id: 9, instrumento: 'Saxofone Tenor Bb' },
   { id: 10, instrumento: 'Bombardino Bb' },
+  { id: 15, instrumento: 'Bombardino C' },
   { id: 11, instrumento: 'Tuba Bb' },
   { id: 12, instrumento: 'Bateria' },
   { id: 13, instrumento: 'Flauta' },
@@ -109,11 +110,33 @@ describe('findPartesCorrespondentes', () => {
       expect(result.some(p => p.instrumento.includes('Tenor'))).toBe(true);
     });
 
-    it('encontra Bombardino quando busca por Bombardino', () => {
+    it('interpreta Bombardino sem tonalidade como Bombardino C', () => {
       const result = findPartesCorrespondentes('Bombardino', mockPartes);
 
       expect(result).toHaveLength(1);
-      expect(result[0].instrumento).toBe('Bombardino Bb');
+      expect(result[0].instrumento).toBe('Bombardino C');
+    });
+
+    it('não mistura Bombardino C e Bombardino Bb', () => {
+      const c = findPartesCorrespondentes('Bombardino C', mockPartes);
+      const bb = findPartesCorrespondentes('Bombardino Bb', mockPartes);
+
+      expect(c.map(p => p.instrumento)).toEqual(['Bombardino C']);
+      expect(bb.map(p => p.instrumento)).toEqual(['Bombardino Bb']);
+    });
+
+    it('preserva Bombardino Bb quando a tonalidade está colada ao número da voz', () => {
+      const partes = [{ id: 21, instrumento: 'Bombardino Bb1' }];
+
+      expect(findPartesCorrespondentes('Bombardino Bb', partes)).toEqual(partes);
+      expect(findPartesCorrespondentes('Bombardino C', partes)).toEqual([]);
+    });
+
+    it('reconhece Sib como a variante Bb sem confundir com C', () => {
+      const partes = [{ id: 20, instrumento: 'Bombardino Sib' }];
+
+      expect(findPartesCorrespondentes('Bombardino Bb', partes)).toEqual(partes);
+      expect(findPartesCorrespondentes('Bombardino C', partes)).toEqual([]);
     });
   });
 

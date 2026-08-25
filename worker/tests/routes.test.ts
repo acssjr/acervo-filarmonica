@@ -905,6 +905,100 @@ describe('Atividades de notificações', () => {
   });
 });
 
+describe('Validação de instrumentos em uploads', () => {
+  let adminToken: string;
+
+  beforeAll(async () => {
+    adminToken = await createTestToken(1, true);
+  });
+
+  const arquivoPdf = () => new File(
+    [new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2D, 0x31, 0x2E, 0x34])],
+    'parte.pdf',
+    { type: 'application/pdf' }
+  );
+
+  it('rejeita instrumento composto apenas por espaços ao adicionar uma parte', async () => {
+    const partituraId = await env.DB.prepare(`
+      INSERT INTO partituras (titulo, compositor, categoria_id, arquivo_nome, arquivo_tamanho, destaque, ativo)
+      VALUES ('Parte com Instrumento Vazio', 'Compositor Teste', 'dobrados', 'teste.pdf', 100, 0, 1)
+      RETURNING id
+    `).first('id') as number;
+    const formData = new FormData();
+    formData.append('instrumento', '   ');
+    formData.append('arquivo', arquivoPdf());
+
+    const response = await SELF.fetch(`https://test.local/api/partituras/${partituraId}/partes`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${adminToken}` },
+      body: formData,
+    });
+
+    expect(response.status).toBe(400);
+    const parteCriada = await env.DB.prepare(
+      'SELECT id FROM partes WHERE partitura_id = ?'
+    ).bind(partituraId).first();
+    expect(parteCriada).toBeNull();
+  });
+
+  it('rejeita instrumento composto apenas por espaços no upload em lote', async () => {
+    const titulo = 'Upload em Lote com Instrumento Vazio';
+    const formData = new FormData();
+    formData.append('titulo', titulo);
+    formData.append('categoria', 'dobrados');
+    formData.append('total_arquivos', '1');
+    formData.append('instrumento_0', '   ');
+    formData.append('arquivo_0', arquivoPdf());
+
+    const response = await SELF.fetch('https://test.local/api/partituras/upload-pasta', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${adminToken}` },
+      body: formData,
+    });
+
+    expect(response.status).toBe(400);
+    const partituraCriada = await env.DB.prepare(
+      'SELECT id FROM partituras WHERE titulo = ?'
+    ).bind(titulo).first();
+    expect(partituraCriada).toBeNull();
+  });
+
+  it('preserva partes existentes ao rejeitar instrumento vazio na correção de Bombardinos', async () => {
+    const partituraId = await env.DB.prepare(`
+      INSERT INTO partituras (titulo, compositor, categoria_id, arquivo_nome, arquivo_tamanho, destaque, ativo)
+      VALUES ('Correção com Instrumento Vazio', 'Compositor Teste', 'dobrados', 'teste.pdf', 100, 0, 1)
+      RETURNING id
+    `).first('id') as number;
+    const parteId = await env.DB.prepare(`
+      INSERT INTO partes (partitura_id, instrumento, arquivo_nome)
+      VALUES (?, 'Bombardino C', 'bombardino-c-existente.pdf')
+      RETURNING id
+    `).bind(partituraId).first('id') as number;
+    const formData = new FormData();
+    formData.append('total_arquivos', '1');
+    formData.append('instrumento_0', '   ');
+    formData.append('arquivo_0', arquivoPdf());
+
+    const response = await SELF.fetch(
+      `https://test.local/api/partituras/${partituraId}/corrigir-bombardinos`,
+      {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${adminToken}` },
+        body: formData,
+      }
+    );
+
+    expect(response.status).toBe(400);
+    const partePreservada = await env.DB.prepare(
+      'SELECT instrumento, arquivo_nome FROM partes WHERE id = ?'
+    ).bind(parteId).first() as { instrumento: string; arquivo_nome: string } | null;
+    expect(partePreservada).toEqual({
+      instrumento: 'Bombardino C',
+      arquivo_nome: 'bombardino-c-existente.pdf',
+    });
+  });
+});
+
 describe('Métodos HTTP incorretos', () => {
   it('DELETE em /api/partituras (sem ID) retorna 404', async () => {
     const response = await SELF.fetch('https://test.local/api/partituras', {

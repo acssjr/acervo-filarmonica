@@ -2,7 +2,7 @@
 // Tela de repertório com download em lote
 // Músicos veem o repertório ativo e podem baixar suas partes
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@contexts/AuthContext';
 import { useUI } from '@contexts/UIContext';
@@ -122,19 +122,33 @@ const RepertorioSkeleton = () => (
 
 // ============ MODAL DE DOWNLOAD ============
 // Usa o mesmo padrão do SheetDetailModal (compacto, no estilo bottom-sheet)
-const DownloadModal = ({
+export const DownloadModal = ({
   isOpen,
   onClose,
   sheets,
   instruments,
   userInstrument,
   downloading,
+  onCheckAvailability,
   onDownload
 }) => {
   const [selectedInstrument, setSelectedInstrument] = useState(userInstrument || '');
   const [selectedIds, setSelectedIds] = useState(new Set(sheets.map(s => s.id)));
   const [showInstrumentPicker, setShowInstrumentPicker] = useState(false);
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
+  const [availability, setAvailability] = useState(null);
+  const [availabilityError, setAvailabilityError] = useState('');
+  const [checkingAvailability, setCheckingAvailability] = useState(false);
+  const [pendingFormat, setPendingFormat] = useState(null);
+  const availabilityRequestIdRef = useRef(0);
+
+  const clearAvailability = () => {
+    availabilityRequestIdRef.current += 1;
+    setAvailability(null);
+    setAvailabilityError('');
+    setCheckingAvailability(false);
+    setPendingFormat(null);
+  };
 
   // Detectar desktop
   useEffect(() => {
@@ -149,10 +163,12 @@ const DownloadModal = ({
       setSelectedInstrument(''); // Começa sem instrumento selecionado para mostrar os dois botões
       setSelectedIds(new Set(sheets.map(s => s.id)));
       setShowInstrumentPicker(false);
+      clearAvailability();
     }
   }, [isOpen, sheets]);
 
   const toggleSelection = (id) => {
+    clearAvailability();
     setSelectedIds(prev => {
       const newSet = new Set(prev);
       if (newSet.has(id)) newSet.delete(id);
@@ -161,15 +177,61 @@ const DownloadModal = ({
     });
   };
 
-  const selectAll = () => setSelectedIds(new Set(sheets.map(s => s.id)));
-  const deselectAll = () => setSelectedIds(new Set());
+  const selectAll = () => {
+    clearAvailability();
+    setSelectedIds(new Set(sheets.map(s => s.id)));
+  };
+  const deselectAll = () => {
+    clearAvailability();
+    setSelectedIds(new Set());
+  };
   const allSelected = selectedIds.size === sheets.length;
 
-  const handleDownload = (formato) => {
-    onDownload(formato, selectedInstrument, Array.from(selectedIds));
+  const handleDownload = async (formato) => {
+    const requestId = ++availabilityRequestIdRef.current;
+    const instrumentAtRequest = selectedInstrument;
+    const selectedIdsAtRequest = Array.from(selectedIds);
+
+    setCheckingAvailability(true);
+    setAvailabilityError('');
+    setPendingFormat(formato);
+
+    try {
+      const result = await onCheckAvailability(
+        instrumentAtRequest,
+        selectedIdsAtRequest
+      );
+
+      if (requestId !== availabilityRequestIdRef.current) return;
+
+      if (result.ausentes_count > 0) {
+        setAvailability(result);
+        return;
+      }
+
+      await onDownload(formato, instrumentAtRequest, selectedIdsAtRequest);
+    } catch (error) {
+      if (requestId !== availabilityRequestIdRef.current) return;
+      setAvailabilityError(error.message || 'Não foi possível conferir os arquivos.');
+    } finally {
+      if (requestId === availabilityRequestIdRef.current) {
+        setCheckingAvailability(false);
+      }
+    }
+  };
+
+  const handleConfirmedDownload = async () => {
+    if (!availability || !pendingFormat || availability.disponiveis_count === 0) return;
+
+    await onDownload(
+      pendingFormat,
+      selectedInstrument,
+      availability.disponiveis.map(item => item.id)
+    );
   };
 
   const handleSelectInstrument = (inst) => {
+    clearAvailability();
     setSelectedInstrument(inst);
     setShowInstrumentPicker(false);
   };
@@ -587,11 +649,87 @@ const DownloadModal = ({
                 })}
               </div>
 
+              {availabilityError && (
+                <div style={{
+                  padding: '10px 12px',
+                  marginBottom: '12px',
+                  borderRadius: '10px',
+                  background: 'rgba(231, 76, 60, 0.12)',
+                  border: '1px solid rgba(231, 76, 60, 0.3)',
+                  color: '#e74c3c',
+                  fontSize: '12px'
+                }}>
+                  {availabilityError}
+                </div>
+              )}
+
+              {availability && (
+                <div style={{
+                  padding: '12px',
+                  marginBottom: '12px',
+                  borderRadius: '10px',
+                  background: 'rgba(241, 196, 15, 0.10)',
+                  border: '1px solid rgba(241, 196, 15, 0.3)'
+                }}>
+                  <p style={{
+                    margin: '0 0 6px',
+                    color: '#f1c40f',
+                    fontSize: '13px',
+                    fontWeight: '700'
+                  }}>
+                    {availability.disponiveis_count} de {availability.total} partituras disponíveis
+                  </p>
+                  <p style={{
+                    margin: '0 0 8px',
+                    color: 'var(--text-muted)',
+                    fontSize: '11px',
+                    lineHeight: 1.4
+                  }}>
+                    As partituras abaixo não têm uma parte correta de {availability.instrumento} e não serão substituídas por outra tonalidade.
+                  </p>
+                  <div style={{ maxHeight: '110px', overflowY: 'auto', marginBottom: '10px' }}>
+                    {availability.ausentes.map(item => (
+                      <div key={item.id} style={{
+                        color: 'var(--text-primary)',
+                        fontSize: '11px',
+                        padding: '3px 0'
+                      }}>
+                        {item.ordem}. {item.titulo}
+                        <span style={{ color: 'var(--text-muted)' }}>
+                          {item.motivo === 'arquivo_ausente' ? ' (arquivo indisponível)' : ' (parte não cadastrada)'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                  {availability.disponiveis_count > 0 && (
+                    <button
+                      onClick={handleConfirmedDownload}
+                      disabled={downloading}
+                      style={{
+                        width: '100%',
+                        padding: '10px',
+                        borderRadius: '8px',
+                        background: '#D4AF37',
+                        border: 'none',
+                        color: '#fff',
+                        fontSize: '12px',
+                        fontWeight: '700',
+                        cursor: downloading ? 'wait' : 'pointer'
+                      }}
+                    >
+                      {downloading
+                        ? 'Preparando...'
+                        : `${pendingFormat === 'print' ? 'Imprimir' : 'Baixar'} somente as ${availability.disponiveis_count} disponíveis`}
+                    </button>
+                  )}
+                </div>
+              )}
+
               {/* Botões de download */}
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              {!availability && <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                 <button
                   onClick={() => handleDownload('pdf')}
-                  disabled={selectedIds.size === 0 || downloading}
+                  disabled={selectedIds.size === 0 || downloading || checkingAvailability}
                   style={{
                     flex: '1 1 45%',
                     padding: '12px',
@@ -609,7 +747,7 @@ const DownloadModal = ({
                     boxShadow: selectedIds.size > 0 ? '0 4px 12px rgba(212, 175, 55, 0.3)' : 'none'
                   }}
                 >
-                  {downloading ? (
+                  {downloading || checkingAvailability ? (
                     <div style={{
                       width: '16px',
                       height: '16px',
@@ -626,7 +764,7 @@ const DownloadModal = ({
 
                 <button
                   onClick={() => handleDownload('zip')}
-                  disabled={selectedIds.size === 0 || downloading}
+                  disabled={selectedIds.size === 0 || downloading || checkingAvailability}
                   style={{
                     flex: '1 1 45%',
                     padding: '12px',
@@ -650,7 +788,7 @@ const DownloadModal = ({
 
                 <button
                   onClick={() => handleDownload('print')}
-                  disabled={selectedIds.size === 0 || downloading}
+                  disabled={selectedIds.size === 0 || downloading || checkingAvailability}
                   style={{
                     flex: '1 1 100%',
                     padding: '12px',
@@ -671,7 +809,7 @@ const DownloadModal = ({
                   <div style={{ width: '16px', height: '16px' }}><Icons.Printer /></div>
                   Imprimir Tudo
                 </button>
-              </div>
+              </div>}
             </>
           )}
         </div>
@@ -761,6 +899,19 @@ const RepertorioScreen = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showDownloadModal]);
+
+  // Handler de download
+  const handleCheckAvailability = async (instrumento, partituraIds) => {
+    if (!repertorio || !instrumento) {
+      throw new Error('Selecione um instrumento.');
+    }
+
+    return API.getRepertorioDownloadAvailability(
+      repertorio.id,
+      instrumento,
+      partituraIds
+    );
+  };
 
   // Handler de download
   const handleDownload = async (formato, instrumento, partituraIds) => {
@@ -1231,6 +1382,7 @@ const RepertorioScreen = () => {
         instruments={repertorioInstrumentos}
         userInstrument={user?.instrumento}
         downloading={downloading}
+        onCheckAvailability={handleCheckAvailability}
         onDownload={handleDownload}
       />
     </div>

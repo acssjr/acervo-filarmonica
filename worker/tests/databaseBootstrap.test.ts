@@ -6,7 +6,8 @@ describe('baseline do banco', () => {
   it('executa todas as migrations ativas em ordem', () => {
     expect(SCHEMA_MIGRATIONS).toEqual([
       '0001_baseline.sql',
-      '0002_logs_download_instrument_text.sql'
+      '0002_logs_download_instrument_text.sql',
+      '0003_fix_bombardino_tonalidades.sql'
     ]);
   });
 
@@ -34,5 +35,18 @@ describe('baseline do banco', () => {
     const columns = await env.DB.prepare('PRAGMA table_info(usuarios)').all<{ name: string }>();
 
     expect(columns.results.map((column) => column.name)).toContain('nome_exibicao');
+  });
+
+  it('mantém Bombardino C e Bombardino Bb como opções distintas', async () => {
+    const result = await env.DB.prepare(`
+      SELECT id, nome FROM instrumentos
+      WHERE id IN ('bombardino', 'bombardino-bb')
+      ORDER BY ordem
+    `).all<{ id: string; nome: string }>();
+
+    expect(result.results).toEqual([
+      { id: 'bombardino', nome: 'Bombardino C' },
+      { id: 'bombardino-bb', nome: 'Bombardino Bb' }
+    ]);
   });
 });
