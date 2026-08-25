@@ -1,5 +1,5 @@
 // Gerado por scripts/generate-test-schema.cjs. Não edite manualmente.
-export const SCHEMA_MIGRATIONS = ["0001_baseline.sql","0002_logs_download_instrument_text.sql","0003_fix_bombardino_tonalidades.sql"];
+export const SCHEMA_MIGRATIONS = ["0001_baseline.sql","0002_logs_download_instrument_text.sql","0003_fix_bombardino_tonalidades.sql","0004_login_rate_limits.sql"];
 export const SCHEMA_STATEMENTS = [
   "CREATE TABLE IF NOT EXISTS categorias (\n    id TEXT PRIMARY KEY,\n    nome TEXT NOT NULL,\n    emoji TEXT NOT NULL,\n    cor TEXT NOT NULL,\n    descricao TEXT,\n    ordem INTEGER DEFAULT 0\n)",
   "INSERT OR IGNORE INTO categorias (id, nome, emoji, cor, descricao, ordem) VALUES\n    ('dobrados', 'Dobrados', '🎺', '#e74c3c', 'Marchas militares brasileiras', 1),\n    ('marchas', 'Marchas', '🥁', '#3498db', 'Marchas tradicionais', 2),\n    ('marchas-funebres', 'Marchas Fúnebres', '✝️', '#555555', 'Marchas fúnebres', 3),\n    ('marchas-religiosas', 'Marchas Religiosas', '⛪', '#8B4513', 'Marchas religiosas e processionais', 4),\n    ('fantasias', 'Fantasias', '✨', '#27ae60', 'Fantasias e suítes', 5),\n    ('polacas', 'Polacas', '👑', '#e67e22', 'Polacas e polonaises', 6),\n    ('boleros', 'Boleros', '☀️', '#e91e63', 'Boleros espanhóis', 7),\n    ('valsas', 'Valsas', '💃', '#9b59b6', 'Valsas clássicas e brasileiras', 8),\n    ('arranjos', 'Arranjos', '🎛️', '#00bcd4', 'Arranjos diversos', 9),\n    ('hinos', 'Hinos', '🏴', '#ffc107', 'Hinos em geral', 10),\n    ('hinos-civicos', 'Hinos Cívicos', '🏛️', '#2196F3', 'Hinos cívicos e patrióticos', 11),\n    ('hinos-religiosos', 'Hinos Religiosos', '⛪', '#795548', 'Hinos sacros e religiosos', 12),\n    ('preludios', 'Prelúdios', '✨', '#673AB7', 'Prelúdios e aberturas', 13)",
@@ -64,5 +64,7 @@ export const SCHEMA_STATEMENTS = [
   "INSERT OR IGNORE INTO instrumentos (id, nome, familia, ordem)\nVALUES ('bombardino-bb', 'Bombardino Bb', 'Metais', 19)",
   "UPDATE partes\nSET instrumento = 'Bombardino C'\nWHERE id IN (78, 118, 869, 1336, 1488)\n  AND instrumento = 'Bombardino'",
   "UPDATE partes\nSET instrumento = 'Bombardino Bb'\nWHERE id IN (207, 1202, 1221, 1262, 1302, 1326)\n  AND instrumento = 'Bombardino'",
-  "UPDATE partes\nSET instrumento = 'Bombardino C'\nWHERE id IN (1604, 1889)\n  AND instrumento = 'Bombardino Bb'"
+  "UPDATE partes\nSET instrumento = 'Bombardino C'\nWHERE id IN (1604, 1889)\n  AND instrumento = 'Bombardino Bb'",
+  "CREATE TABLE IF NOT EXISTS login_rate_limits (\n    chave TEXT PRIMARY KEY,\n    tentativas INTEGER NOT NULL DEFAULT 0,\n    janela_inicio INTEGER NOT NULL,\n    atualizado_em DATETIME DEFAULT CURRENT_TIMESTAMP\n)",
+  "CREATE INDEX IF NOT EXISTS idx_login_rate_limits_atualizado\n    ON login_rate_limits(atualizado_em)"
 ];

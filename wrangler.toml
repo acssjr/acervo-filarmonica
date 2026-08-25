@@ -21,10 +21,27 @@ migrations_dir = "database/migrations"
 binding = "BUCKET"
 bucket_name = "acervo-pdfs"
 
-# KV para rate limiting (obrigatório em produção)
-[[kv_namespaces]]
-binding = "RATE_LIMIT"
-id = "cd7f42b389d045d59d034b448076a7b1"
+# Rate limiting nativo do Cloudflare Workers
+[[ratelimits]]
+name = "LOGIN_RATE_LIMITER"
+namespace_id = "25032601"
+  [ratelimits.simple]
+  limit = 60
+  period = 60
+
+[[ratelimits]]
+name = "CHECK_USER_RATE_LIMITER"
+namespace_id = "25032602"
+  [ratelimits.simple]
+  limit = 30
+  period = 60
+
+[[ratelimits]]
+name = "TRACKING_RATE_LIMITER"
+namespace_id = "25032603"
+  [ratelimits.simple]
+  limit = 100
+  period = 60
 
 # Variáveis de ambiente
 [vars]

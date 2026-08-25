@@ -531,7 +531,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                type: object
+                required: [error, retryAfter]
+                properties:
+                  error:
+                    type: string
+                  retryAfter:
+                    type: integer
         '503':
           description: Serviço de autenticação indisponível
           content:

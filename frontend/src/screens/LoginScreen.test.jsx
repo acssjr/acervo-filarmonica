@@ -237,6 +237,41 @@ describe('LoginScreen', () => {
       expect(await screen.findByText('Não foi possível verificar agora. Tente novamente.')).toBeInTheDocument();
       expect(screen.queryByText('Não encontrado')).not.toBeInTheDocument();
     });
+
+    test('ignora resposta atrasada de um nome anterior', async () => {
+      let releaseOldRequest;
+      server.use(
+        http.post(`${API_BASE_URL}/api/check-user`, async ({ request }) => {
+          const { username } = await request.json();
+          if (username === 'usuarioantigo') {
+            return new Promise(resolve => {
+              releaseOldRequest = () => resolve(HttpResponse.json({ exists: false }));
+            });
+          }
+
+          return HttpResponse.json({
+            exists: true,
+            nome: 'Músico Teste',
+            instrumento: 'Trompete'
+          });
+        })
+      );
+      const user = userEvent.setup();
+      renderLogin();
+      const usernameInput = await screen.findByPlaceholderText('seuusuario');
+
+      await user.type(usernameInput, 'usuarioantigo');
+      await waitFor(() => expect(releaseOldRequest).toBeDefined(), { timeout: 2000 });
+      await user.clear(usernameInput);
+      await user.type(usernameInput, 'musico.teste');
+
+      expect(await screen.findByText(/Músico Teste/)).toBeInTheDocument();
+      releaseOldRequest();
+      await new Promise(resolve => setTimeout(resolve, 50));
+
+      expect(screen.getByText(/Músico Teste/)).toBeInTheDocument();
+      expect(screen.queryByText('Não encontrado')).not.toBeInTheDocument();
+    });
   });
 
   describe('Campo PIN', () => {
@@ -363,6 +398,29 @@ describe('LoginScreen', () => {
       }
 
       expect(await screen.findByText('Serviço de autenticação temporariamente indisponível.'))
+        .toBeInTheDocument();
+      expect(screen.queryByText(/Usu[aá]rio ou PIN incorreto/)).not.toBeInTheDocument();
+    });
+
+    test('mostra falha de rede no login sem culpar usuario ou PIN', async () => {
+      server.use(
+        http.post(`${API_BASE_URL}/api/login`, () => HttpResponse.error())
+      );
+      const user = userEvent.setup({ delay: 20 });
+      renderLogin();
+
+      await user.type(await screen.findByPlaceholderText('seuusuario'), 'musico.teste');
+      await waitFor(() => {
+        expect(screen.getByText(/Músico Teste/)).toBeInTheDocument();
+      }, { timeout: 2000 });
+
+      const pinInputs = getPinInputs();
+      for (let index = 0; index < pinInputs.length; index += 1) {
+        await user.click(pinInputs[index]);
+        await user.type(pinInputs[index], String(index + 1));
+      }
+
+      expect(await screen.findByText('Não foi possível entrar agora. Tente novamente.'))
         .toBeInTheDocument();
       expect(screen.queryByText(/Usu[aá]rio ou PIN incorreto/)).not.toBeInTheDocument();
     });

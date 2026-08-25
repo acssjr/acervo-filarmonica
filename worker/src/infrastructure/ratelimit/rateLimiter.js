@@ -1,175 +1,138 @@
 // worker/src/infrastructure/ratelimit/rateLimiter.js
 import {
+  CHECK_USER_RATE_LIMIT_WINDOW_SECONDS,
   MAX_LOGIN_ATTEMPTS,
-  MAX_TRACKING_ATTEMPTS,
   RATE_LIMIT_WINDOW_SECONDS,
   TRACKING_RATE_LIMIT_WINDOW_SECONDS
 } from '../../config/index.js';
 
-let missingBindingWarned = false;
+const CHECK_USER_BINDING = 'CHECK_USER_RATE_LIMITER';
+const LOGIN_BINDING = 'LOGIN_RATE_LIMITER';
+const TRACKING_BINDING = 'TRACKING_RATE_LIMITER';
+const LOGIN_GLOBAL_WINDOW_SECONDS = 60;
 
-function missingRateLimitResult(env, remaining, retryAfter = RATE_LIMIT_WINDOW_SECONDS) {
+const warnedBindings = new Set();
+
+function unavailableResult(env, bindingName, retryAfter) {
   const production = env?.ENVIRONMENT === 'production';
 
-  if (!missingBindingWarned) {
+  if (!warnedBindings.has(bindingName)) {
     const level = production ? 'error' : 'warn';
-    console[level](`RATE_LIMIT não configurado; proteção ${production ? 'bloqueada em produção' : 'desativada fora de produção'}`);
-    missingBindingWarned = true;
+    console[level](`${bindingName} não configurado; proteção ${production ? 'bloqueada em produção' : 'desativada fora de produção'}`);
+    warnedBindings.add(bindingName);
   }
 
   if (production) {
     return {
       allowed: false,
-      remaining: 0,
       retryAfter,
       configurationError: true
     };
   }
 
-  return { allowed: true, remaining, degraded: true };
+  return { allowed: true, degraded: true };
 }
 
-function rateLimitUnavailableResult(env, remaining, retryAfter) {
-  if (env?.ENVIRONMENT === 'production') {
-    return {
-      allowed: false,
-      remaining: 0,
-      retryAfter,
-      configurationError: true
-    };
+async function checkBinding(env, bindingName, key, retryAfter) {
+  const limiter = env?.[bindingName];
+  if (!limiter || typeof limiter.limit !== 'function') {
+    return unavailableResult(env, bindingName, retryAfter);
   }
-
-  return { allowed: true, remaining, degraded: true };
-}
-
-// Verificar rate limit
-export async function checkRateLimit(env, key, options = {}) {
-  const maxAttempts = options.maxAttempts ?? MAX_LOGIN_ATTEMPTS;
-  const windowSeconds = options.windowSeconds ?? RATE_LIMIT_WINDOW_SECONDS;
-
-  if (!env.RATE_LIMIT) {
-    return missingRateLimitResult(env, maxAttempts, windowSeconds);
-  }
-
-  const now = Date.now();
-  const windowKey = `ratelimit:${key}`;
 
   try {
-    const data = await env.RATE_LIMIT.get(windowKey, { type: 'json' });
-
-    if (!data) {
-      // Primeira tentativa
-      await env.RATE_LIMIT.put(windowKey, JSON.stringify({
-        count: 1,
-        firstAttempt: now
-      }), { expirationTtl: windowSeconds });
-
-      return { allowed: true, remaining: maxAttempts - 1 };
-    }
-
-    // Verifica se janela expirou
-    if (now - data.firstAttempt > windowSeconds * 1000) {
-      // Nova janela
-      await env.RATE_LIMIT.put(windowKey, JSON.stringify({
-        count: 1,
-        firstAttempt: now
-      }), { expirationTtl: windowSeconds });
-
-      return { allowed: true, remaining: maxAttempts - 1 };
-    }
-
-    // Dentro da janela
-    if (data.count >= maxAttempts) {
-      const retryAfter = Math.ceil((data.firstAttempt + windowSeconds * 1000 - now) / 1000);
-      return { allowed: false, remaining: 0, retryAfter };
-    }
-
-    // Incrementa contador
-    await env.RATE_LIMIT.put(windowKey, JSON.stringify({
-      count: data.count + 1,
-      firstAttempt: data.firstAttempt
-    }), { expirationTtl: windowSeconds });
-
-    return { allowed: true, remaining: maxAttempts - data.count - 1 };
-
-  } catch (e) {
-    console.error('Erro no rate limiting:', e);
-    return rateLimitUnavailableResult(
-      env,
-      maxAttempts,
-      windowSeconds
-    );
+    const result = await limiter.limit({ key });
+    return result.success
+      ? { allowed: true }
+      : { allowed: false, retryAfter };
+  } catch (error) {
+    console.error(`Erro no rate limiting ${bindingName}:`, error);
+    return unavailableResult(env, bindingName, retryAfter);
   }
 }
 
-// Resetar rate limit (apos login bem sucedido)
+export async function checkRateLimit(env, key, globalKey = key) {
+  const globalLimit = await checkBinding(
+    env,
+    LOGIN_BINDING,
+    globalKey,
+    LOGIN_GLOBAL_WINDOW_SECONDS
+  );
+  if (!globalLimit.allowed) return globalLimit;
+
+  if (!env?.DB) {
+    return unavailableResult(env, 'DB_LOGIN_RATE_LIMIT', RATE_LIMIT_WINDOW_SECONDS);
+  }
+
+  const now = Math.floor(Date.now() / 1000);
+  const expiredBefore = now - RATE_LIMIT_WINDOW_SECONDS;
+
+  try {
+    // Impede crescimento permanente da tabela por nomes aleatórios.
+    await env.DB.prepare(`
+      DELETE FROM login_rate_limits
+      WHERE atualizado_em < datetime('now', '-5 minutes')
+    `).run();
+
+    const result = await env.DB.prepare(`
+      INSERT INTO login_rate_limits (chave, tentativas, janela_inicio, atualizado_em)
+      VALUES (?, 1, ?, CURRENT_TIMESTAMP)
+      ON CONFLICT(chave) DO UPDATE SET
+        tentativas = CASE
+          WHEN login_rate_limits.janela_inicio <= ? THEN 1
+          ELSE login_rate_limits.tentativas + 1
+        END,
+        janela_inicio = CASE
+          WHEN login_rate_limits.janela_inicio <= ? THEN excluded.janela_inicio
+          ELSE login_rate_limits.janela_inicio
+        END,
+        atualizado_em = CURRENT_TIMESTAMP
+      RETURNING tentativas, janela_inicio
+    `).bind(key, now, expiredBefore, expiredBefore).first();
+
+    if (!result) {
+      return unavailableResult(env, 'DB_LOGIN_RATE_LIMIT', RATE_LIMIT_WINDOW_SECONDS);
+    }
+
+    const allowed = result.tentativas <= MAX_LOGIN_ATTEMPTS;
+    const retryAfter = Math.max(
+      1,
+      Number(result.janela_inicio) + RATE_LIMIT_WINDOW_SECONDS - now
+    );
+
+    return allowed ? { allowed: true } : { allowed: false, retryAfter };
+  } catch (error) {
+    console.error('Erro no rate limiting de login:', error);
+    return unavailableResult(env, 'DB_LOGIN_RATE_LIMIT', RATE_LIMIT_WINDOW_SECONDS);
+  }
+}
+
 export async function resetRateLimit(env, key) {
-  if (!env.RATE_LIMIT) return;
+  if (!env?.DB) return;
 
   try {
-    await env.RATE_LIMIT.delete(`ratelimit:${key}`);
-  } catch (e) {
-    // Ignora erro
+    await env.DB.prepare('DELETE FROM login_rate_limits WHERE chave = ?')
+      .bind(key)
+      .run();
+  } catch (error) {
+    console.error('Erro ao limpar rate limiting de login:', error);
   }
 }
 
-// Verificar rate limit para tracking (limites mais altos)
-export async function checkTrackingRateLimit(env, userId, ip) {
-  if (!env.RATE_LIMIT) {
-    return missingRateLimitResult(env, MAX_TRACKING_ATTEMPTS);
-  }
+export function checkUserRateLimit(env, key) {
+  return checkBinding(
+    env,
+    CHECK_USER_BINDING,
+    key,
+    CHECK_USER_RATE_LIMIT_WINDOW_SECONDS
+  );
+}
 
-  // Prefere user ID se disponível, senão usa IP
+export function checkTrackingRateLimit(env, userId, ip) {
   const identifier = userId ? `user:${userId}` : `ip:${ip}`;
-  const key = `tracking:${identifier}`;
-
-  const now = Date.now();
-  const windowKey = `ratelimit:${key}`;
-
-  try {
-    const data = await env.RATE_LIMIT.get(windowKey, { type: 'json' });
-
-    if (!data) {
-      // Primeira tentativa
-      await env.RATE_LIMIT.put(windowKey, JSON.stringify({
-        count: 1,
-        firstAttempt: now
-      }), { expirationTtl: TRACKING_RATE_LIMIT_WINDOW_SECONDS });
-
-      return { allowed: true, remaining: MAX_TRACKING_ATTEMPTS - 1 };
-    }
-
-    // Verifica se janela expirou
-    if (now - data.firstAttempt > TRACKING_RATE_LIMIT_WINDOW_SECONDS * 1000) {
-      // Nova janela
-      await env.RATE_LIMIT.put(windowKey, JSON.stringify({
-        count: 1,
-        firstAttempt: now
-      }), { expirationTtl: TRACKING_RATE_LIMIT_WINDOW_SECONDS });
-
-      return { allowed: true, remaining: MAX_TRACKING_ATTEMPTS - 1 };
-    }
-
-    // Dentro da janela
-    if (data.count >= MAX_TRACKING_ATTEMPTS) {
-      const retryAfter = Math.ceil((data.firstAttempt + TRACKING_RATE_LIMIT_WINDOW_SECONDS * 1000 - now) / 1000);
-      return { allowed: false, remaining: 0, retryAfter };
-    }
-
-    // Incrementa contador
-    await env.RATE_LIMIT.put(windowKey, JSON.stringify({
-      count: data.count + 1,
-      firstAttempt: data.firstAttempt
-    }), { expirationTtl: TRACKING_RATE_LIMIT_WINDOW_SECONDS });
-
-    return { allowed: true, remaining: MAX_TRACKING_ATTEMPTS - data.count - 1 };
-
-  } catch (e) {
-    console.error('Erro no tracking rate limiting:', e);
-    return rateLimitUnavailableResult(
-      env,
-      MAX_TRACKING_ATTEMPTS,
-      TRACKING_RATE_LIMIT_WINDOW_SECONDS
-    );
-  }
+  return checkBinding(
+    env,
+    TRACKING_BINDING,
+    `tracking:${identifier}`,
+    TRACKING_RATE_LIMIT_WINDOW_SECONDS
+  );
 }

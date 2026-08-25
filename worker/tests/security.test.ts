@@ -1,11 +1,18 @@
 import { describe, expect, it, vi } from 'vitest';
+import { env as testEnv } from 'cloudflare:test';
 import { createJwt } from '../src/infrastructure/auth/jwt.js';
 import { getJwtSecret } from '../src/infrastructure/response/helpers.js';
 import { checkUser, login } from '../src/domain/auth/loginService.js';
 import {
   checkRateLimit,
-  checkTrackingRateLimit
+  resetRateLimit,
+  checkTrackingRateLimit,
+  checkUserRateLimit
 } from '../src/infrastructure/ratelimit/rateLimiter.js';
+
+function limiter(success = true) {
+  return { limit: vi.fn().mockResolvedValue({ success }) };
+}
 
 describe('configuração de segurança', () => {
   it('não cria fallback previsível quando JWT_SECRET está ausente', async () => {
@@ -13,13 +20,13 @@ describe('configuração de segurança', () => {
     await expect(createJwt({ userId: 1 }, '')).rejects.toThrow('JWT_SECRET não configurado');
   });
 
-  it('bloqueia autenticação em produção sem rate limit configurado', async () => {
+  it('bloqueia autenticação em produção sem o limitador de login', async () => {
     const result = await checkRateLimit({ ENVIRONMENT: 'production' }, 'login:127.0.0.1');
 
     expect(result).toMatchObject({
       allowed: false,
-      remaining: 0,
-      configurationError: true
+      configurationError: true,
+      retryAfter: 60
     });
   });
 
@@ -29,31 +36,36 @@ describe('configuração de segurança', () => {
     expect(result).toMatchObject({ allowed: true, degraded: true });
   });
 
-  it('aplica limite e janela personalizados sem alterar o limite do login', async () => {
-    let stored: { count: number; firstAttempt: number } | null = null;
-    const kv = {
-      get: vi.fn().mockImplementation(async () => stored),
-      put: vi.fn().mockImplementation(async (_key: string, value: string) => {
-        stored = JSON.parse(value);
-      })
+  it('mantém cinco tentativas de login por cinco minutos e separa a consulta de usuário', async () => {
+    const loginLimiter = limiter();
+    const userLimiter = limiter(false);
+    const key = `login:test:${crypto.randomUUID()}`;
+    const env = {
+      DB: testEnv.DB,
+      LOGIN_RATE_LIMITER: loginLimiter,
+      CHECK_USER_RATE_LIMITER: userLimiter
     };
 
-    const env = { ENVIRONMENT: 'production', RATE_LIMIT: kv };
-    const options = { maxAttempts: 2, windowSeconds: 60 };
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      expect((await checkRateLimit(env, key)).allowed).toBe(true);
+    }
+    expect(await checkRateLimit(env, key)).toMatchObject({
+      allowed: false,
+      retryAfter: 300
+    });
+    expect((await checkUserRateLimit(env, 'checkuser:ip'))).toMatchObject({
+      allowed: false,
+      retryAfter: 60
+    });
+    expect(userLimiter.limit).toHaveBeenCalledWith({ key: 'checkuser:ip' });
+    expect(loginLimiter.limit).toHaveBeenCalledWith({ key });
 
-    expect((await checkRateLimit(env, 'checkuser:test', options)).allowed).toBe(true);
-    expect((await checkRateLimit(env, 'checkuser:test', options)).allowed).toBe(true);
-    const blocked = await checkRateLimit(env, 'checkuser:test', options);
-
-    expect(blocked).toMatchObject({ allowed: false, remaining: 0 });
-    expect(kv.put).toHaveBeenCalledWith(
-      'ratelimit:checkuser:test',
-      expect.any(String),
-      { expirationTtl: 60 }
-    );
+    await resetRateLimit(env, key);
+    expect((await checkRateLimit(env, key)).allowed).toBe(true);
+    await resetRateLimit(env, key);
   });
 
-  it('retorna 503 na consulta de usuário quando o rate limit não está configurado', async () => {
+  it('retorna 503 na consulta de usuário quando o limitador não está configurado', async () => {
     const request = new Request('https://test.local/api/check-user', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -68,7 +80,7 @@ describe('configuração de segurança', () => {
     expect(body.error).toContain('temporariamente indisponível');
   });
 
-  it('retorna 503 no login quando o rate limit não está configurado', async () => {
+  it('retorna 503 no login quando o limitador não está configurado', async () => {
     const request = new Request('https://test.local/api/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -82,52 +94,64 @@ describe('configuração de segurança', () => {
     expect(body.error).toContain('temporariamente indisponível');
   });
 
+  it('rejeita username excessivo antes de criar contador no banco', async () => {
+    const request = new Request('https://test.local/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: 'a'.repeat(65), pin: '1234' })
+    });
+
+    const response = await login(request, { ENVIRONMENT: 'production' });
+
+    expect(response.status).toBe(400);
+  });
+
   it('prefere a identidade autenticada ao IP no limite de tracking', async () => {
-    let storedKey = '';
-    const kv = {
-      get: vi.fn().mockResolvedValue(null),
-      put: vi.fn().mockImplementation(async (key: string) => {
-        storedKey = key;
+    const trackingLimiter = limiter();
+    const result = await checkTrackingRateLimit(
+      { TRACKING_RATE_LIMITER: trackingLimiter },
+      42,
+      '203.0.113.10'
+    );
+
+    expect(result.allowed).toBe(true);
+    expect(trackingLimiter.limit).toHaveBeenCalledWith({ key: 'tracking:user:42' });
+  });
+
+  it('bloqueia login em produção quando o contador no banco falha', async () => {
+    const failingDb = {
+      prepare: vi.fn().mockImplementation(() => {
+        throw new Error('database offline');
       })
     };
 
-    const result = await checkTrackingRateLimit({ RATE_LIMIT: kv }, 42, '203.0.113.10');
-
-    expect(result.allowed).toBe(true);
-    expect(storedKey).toBe('ratelimit:tracking:user:42');
-  });
-
-  it('bloqueia login em produção quando o KV falha', async () => {
-    const kv = {
-      get: vi.fn().mockRejectedValue(new Error('KV offline')),
-      put: vi.fn()
-    };
-
-    const result = await checkRateLimit({ ENVIRONMENT: 'production', RATE_LIMIT: kv }, 'login:127.0.0.1');
+    const result = await checkRateLimit(
+      { ENVIRONMENT: 'production', DB: failingDb, LOGIN_RATE_LIMITER: limiter() },
+      'login:127.0.0.1'
+    );
 
     expect(result).toMatchObject({
       allowed: false,
-      remaining: 0,
-      configurationError: true
+      configurationError: true,
+      retryAfter: 300
     });
   });
 
-  it('bloqueia tracking em produção quando a escrita no KV falha', async () => {
-    const kv = {
-      get: vi.fn().mockResolvedValue(null),
-      put: vi.fn().mockRejectedValue(new Error('KV offline'))
+  it('bloqueia tracking em produção quando o binding falha', async () => {
+    const failingLimiter = {
+      limit: vi.fn().mockRejectedValue(new Error('rate limiter offline'))
     };
 
     const result = await checkTrackingRateLimit(
-      { ENVIRONMENT: 'production', RATE_LIMIT: kv },
+      { ENVIRONMENT: 'production', TRACKING_RATE_LIMITER: failingLimiter },
       42,
       '203.0.113.10'
     );
 
     expect(result).toMatchObject({
       allowed: false,
-      remaining: 0,
-      configurationError: true
+      configurationError: true,
+      retryAfter: 60
     });
   });
 });

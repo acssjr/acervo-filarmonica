@@ -8,7 +8,12 @@ export async function checkReadiness(env) {
   const checks = {
     database: 'ok',
     storage: env?.BUCKET ? 'configured' : 'missing',
-    rateLimit: env?.RATE_LIMIT ? 'configured' : 'missing',
+    rateLimit: env?.DB
+      && env?.LOGIN_RATE_LIMITER
+      && env?.CHECK_USER_RATE_LIMITER
+      && env?.TRACKING_RATE_LIMITER
+      ? 'configured'
+      : 'missing',
     authentication: typeof env?.JWT_SECRET === 'string' && env.JWT_SECRET.trim()
       ? 'configured'
       : 'missing'
@@ -18,9 +23,10 @@ export async function checkReadiness(env) {
     checks.database = 'missing';
   } else {
     try {
-      await env.DB.prepare('SELECT 1 AS ready').first();
+      await env.DB.prepare('SELECT 1 FROM login_rate_limits LIMIT 1').first();
     } catch {
       checks.database = 'unavailable';
+      checks.rateLimit = 'unavailable';
     }
   }
 

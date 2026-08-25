@@ -4,7 +4,7 @@
 
 **Goal:** Corrigir o rate limit da consulta de usuário, as mensagens de erro do login, o health check e a comparação de esquema no Windows.
 
-**Architecture:** O rate limiter aceitará limites opcionais por consumidor, preservando os padrões atuais do login. A rota de consulta traduzirá falha de configuração em `503`; o frontend distinguirá respostas por status; o health check fará uma verificação de prontidão sem expor segredos.
+**Architecture:** Um contador atômico no D1 preservará a janela de 5 tentativas de login por 5 minutos; três bindings nativos do Cloudflare Workers conterão abuso geral e aplicarão limites independentes à consulta de usuário e ao tracking. A rota de consulta traduzirá falha de configuração em `503`; o frontend distinguirá respostas por status e descartará respostas obsoletas; o health check fará uma verificação de prontidão sem expor segredos.
 
 **Tech Stack:** Cloudflare Workers, KV, D1, React, Jest, Vitest e Node.js.
 
@@ -19,7 +19,7 @@
 - Test: `worker/tests/security.test.ts`
 
 - [ ] Adicionar constantes de 30 consultas por 60 segundos.
-- [ ] Permitir que `checkRateLimit` receba `maxAttempts` e `windowSeconds` opcionais.
+- [ ] Configurar o contador atômico de login e bindings nativos independentes para contenção geral, consulta de usuário e tracking.
 - [ ] Usar o limite próprio em `checkUser` e responder `503` para erro de configuração.
 - [ ] Cobrir limites padrão, personalizado e falha de configuração.
 
@@ -42,7 +42,7 @@
 - Test: `worker/tests/routes.test.ts`
 
 - [ ] Verificar `SELECT 1` no D1.
-- [ ] Verificar a presença de `BUCKET`, `RATE_LIMIT` e `JWT_SECRET`.
+- [ ] Verificar a presença de `BUCKET`, `DB`, da tabela de login, dos três bindings nativos e de `JWT_SECRET`.
 - [ ] Retornar `200/status ok` quando pronto e `503/status unavailable` quando incompleto.
 - [ ] Não retornar identificadores nem valores de segredos.
 

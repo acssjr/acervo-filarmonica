@@ -1402,7 +1402,10 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Error"];
+                    "application/json": {
+                        error: string;
+                        retryAfter: number;
+                    };
                 };
             };
             /** @description Serviço de autenticação indisponível */

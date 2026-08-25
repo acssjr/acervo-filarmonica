@@ -7,7 +7,8 @@ describe('baseline do banco', () => {
     expect(SCHEMA_MIGRATIONS).toEqual([
       '0001_baseline.sql',
       '0002_logs_download_instrument_text.sql',
-      '0003_fix_bombardino_tonalidades.sql'
+      '0003_fix_bombardino_tonalidades.sql',
+      '0004_login_rate_limits.sql'
     ]);
   });
 

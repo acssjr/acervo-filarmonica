@@ -72,6 +72,29 @@ describe('Health Check', () => {
       }
     });
   });
+
+  it('fica indisponível quando a tabela obrigatória de login não existe', async () => {
+    const missingTableDb = {
+      prepare: () => ({
+        first: () => Promise.reject(new Error('no such table: login_rate_limits'))
+      })
+    };
+
+    const result = await checkReadiness({
+      DB: missingTableDb,
+      BUCKET: {},
+      LOGIN_RATE_LIMITER: {},
+      CHECK_USER_RATE_LIMITER: {},
+      TRACKING_RATE_LIMITER: {},
+      JWT_SECRET: 'test-secret'
+    });
+
+    expect(result.ready).toBe(false);
+    expect(result.checks).toMatchObject({
+      database: 'unavailable',
+      rateLimit: 'unavailable'
+    });
+  });
 });
 
 describe('Rotas Públicas', () => {

@@ -32,6 +32,7 @@ const useLoginForm = ({ onClose }) => {
   const pinRefs = [useRef(null), useRef(null), useRef(null), useRef(null)];
   const cardRef = useRef(null);
   const checkUserTimeout = useRef(null);
+  const checkUserRequestId = useRef(0);
 
   // Scroll suave para o card quando teclado abre (mobile)
   const scrollToCard = useCallback(() => {
@@ -52,6 +53,7 @@ const useLoginForm = ({ onClose }) => {
       return;
     }
 
+    const requestId = ++checkUserRequestId.current;
     setCheckingUser(true);
 
     try {
@@ -61,6 +63,8 @@ const useLoginForm = ({ onClose }) => {
         body: JSON.stringify({ username: usernameToCheck })
       });
       const data = await response.json().catch(() => ({}));
+
+      if (requestId !== checkUserRequestId.current) return;
 
       if (!response.ok) {
         setUserFound(false);
@@ -87,13 +91,16 @@ const useLoginForm = ({ onClose }) => {
         setUserCheckError('');
       }
     } catch (e) {
+      if (requestId !== checkUserRequestId.current) return;
       console.error('Erro ao verificar usuario:', e);
       setUserFound(false);
       setUserNotFound(false);
       setUserInfo(null);
       setUserCheckError('Não foi possível verificar agora. Tente novamente.');
     } finally {
-      setCheckingUser(false);
+      if (requestId === checkUserRequestId.current) {
+        setCheckingUser(false);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- pinRefs é ref estável
   }, []);
@@ -116,6 +123,7 @@ const useLoginForm = ({ onClose }) => {
     setUsername(normalized);
     setError('');
     setUserCheckError('');
+    checkUserRequestId.current += 1;
 
     if (checkUserTimeout.current) {
       clearTimeout(checkUserTimeout.current);
@@ -229,9 +237,14 @@ const useLoginForm = ({ onClose }) => {
         }
       } catch (err) {
         console.error('Erro no login:', err);
-        const isOperationalError = err?.message?.includes('Muitas tentativas')
-          || err?.message?.includes('temporariamente indisponível');
-        setError(isOperationalError ? err.message : 'Usuário ou PIN incorreto');
+        const message = err?.message || '';
+        const invalidCredentials = message.includes('Usuário ou PIN')
+          || message.includes('Credenciais inválidas');
+        const operationalMessage = message.includes('Muitas tentativas')
+          || message.includes('temporariamente indisponível')
+          ? message
+          : 'Não foi possível entrar agora. Tente novamente.';
+        setError(invalidCredentials ? 'Usuário ou PIN incorreto' : operationalMessage);
         setPin(['', '', '', '']);
         // Delay para garantir que o PIN foi limpo antes de focar
         setTimeout(() => {

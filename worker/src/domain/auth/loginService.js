@@ -6,18 +6,14 @@ import {
   generateSalt,
   checkRateLimit,
   resetRateLimit,
+  checkUserRateLimit,
   jsonResponse,
   errorResponse,
   getJwtSecret
 } from '../../infrastructure/index.js';
 import { registrarAtividade } from '../atividades/atividadeService.js';
 import { startTrackingSession } from '../analytics/sessionService.js';
-import {
-  CHECK_USER_RATE_LIMIT_WINDOW_SECONDS,
-  JWT_EXPIRY_HOURS,
-  JWT_EXPIRY_HOURS_REMEMBER,
-  MAX_CHECK_USER_ATTEMPTS
-} from '../../config/index.js';
+import { JWT_EXPIRY_HOURS, JWT_EXPIRY_HOURS_REMEMBER } from '../../config/index.js';
 import { capturePostHog } from '../../infrastructure/posthog/posthogClient.js';
 
 /**
@@ -30,10 +26,7 @@ export async function checkUser(request, env) {
   const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
 
   // Limite próprio: a tela consulta enquanto o usuário digita.
-  const rateLimit = await checkRateLimit(env, `checkuser:${ip}`, {
-    maxAttempts: MAX_CHECK_USER_ATTEMPTS,
-    windowSeconds: CHECK_USER_RATE_LIMIT_WINDOW_SECONDS
-  });
+  const rateLimit = await checkUserRateLimit(env, `checkuser:${ip}`);
   if (!rateLimit.allowed) {
     if (rateLimit.configurationError) {
       return jsonResponse({
@@ -51,13 +44,18 @@ export async function checkUser(request, env) {
 
   const { username } = await request.json();
 
-  if (!username || username.length < 2) {
+  if (typeof username !== 'string' || username.length < 2 || username.length > 64) {
+    return jsonResponse({ exists: false }, 200, request);
+  }
+
+  const normalizedUsername = username.trim().toLowerCase();
+  if (normalizedUsername.length < 2) {
     return jsonResponse({ exists: false }, 200, request);
   }
 
   const user = await env.DB.prepare(
     'SELECT username, nome, instrumento_id FROM usuarios WHERE username = ? AND ativo = 1'
-  ).bind(username.toLowerCase()).first();
+  ).bind(normalizedUsername).first();
 
   if (!user) {
     return jsonResponse({ exists: false }, 200, request);
@@ -91,12 +89,19 @@ export async function login(request, env) {
   const { username, pin, rememberMe } = await request.json();
 
   // Validação básica
-  if (!username || !pin) {
+  if (typeof username !== 'string' || !pin) {
     return errorResponse('Usuário e PIN são obrigatórios', 400, request);
   }
 
-  // Rate limiting por IP
-  const rateLimit = await checkRateLimit(env, `login:${ip}`);
+  const normalizedUsername = username.trim().toLowerCase();
+  if (!normalizedUsername || normalizedUsername.length > 64) {
+    return errorResponse('Usuário inválido', 400, request);
+  }
+
+  // Limite por conta e IP: evita que músicos diferentes no mesmo Wi-Fi
+  // consumam a cota uns dos outros.
+  const rateLimitKey = `login:${ip}:${normalizedUsername}`;
+  const rateLimit = await checkRateLimit(env, rateLimitKey, `login:${ip}`);
   if (!rateLimit.allowed) {
     if (rateLimit.configurationError) {
       return errorResponse(
@@ -115,7 +120,7 @@ export async function login(request, env) {
   // Busca usuário
   const user = await env.DB.prepare(
     'SELECT id, username, nome, admin, instrumento_id, foto_url, pin_hash, pin_salt FROM usuarios WHERE username = ? AND ativo = 1'
-  ).bind(username.toLowerCase()).first();
+  ).bind(normalizedUsername).first();
 
   if (!user) {
     return errorResponse('Usuário ou PIN inválido', 401, request);
@@ -148,8 +153,8 @@ export async function login(request, env) {
     return errorResponse('Usuário ou PIN inválido', 401, request);
   }
 
-  // Login bem-sucedido - reseta rate limit
-  await resetRateLimit(env, `login:${ip}`);
+  // Tentativas válidas não devem manter a conta bloqueada.
+  await resetRateLimit(env, rateLimitKey);
 
   // Atualiza último acesso
   await env.DB.prepare(

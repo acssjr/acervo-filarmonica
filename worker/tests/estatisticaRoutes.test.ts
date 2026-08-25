@@ -1,17 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
-import { MAX_TRACKING_ATTEMPTS } from '../src/config/index.js';
 import { trackingRateLimitMiddleware } from '../src/routes/estatisticaRoutes.js';
 
 describe('trackingRateLimitMiddleware', () => {
   it('blocks tracking requests when the rate limit window is exhausted', async () => {
     const next = vi.fn();
     const env = {
-      RATE_LIMIT: {
-        get: vi.fn().mockResolvedValue({
-          count: MAX_TRACKING_ATTEMPTS,
-          firstAttempt: Date.now()
-        }),
-        put: vi.fn()
+      TRACKING_RATE_LIMITER: {
+        limit: vi.fn().mockResolvedValue({ success: false })
       }
     } as any;
 
