@@ -1,8 +1,18 @@
 // Changelog completo para o app do usuário (ProfileScreen)
 export const PROFILE_CHANGELOG = [
   {
-    version: '3.1.0',
+    version: '3.2.0',
     isCurrent: true,
+    items: [
+      { bold: 'Compartilhar:', text: 'Envie uma partitura como arquivo ou link com preview personalizado' },
+      { bold: 'Repertório:', text: 'Até dois repertórios ativos, com filtros e acesso mais rápido' },
+      { bold: 'Bombardino:', text: 'Partes C e Bb agora ficam separadas em todos os downloads' },
+      { bold: 'Login:', text: 'Mensagens mais claras e proteção reforçada contra excesso de tentativas' },
+      { bold: 'Estabilidade:', text: 'Verificações adicionais no acervo, nos arquivos e na publicação do sistema' }
+    ]
+  },
+  {
+    version: '3.1.0',
     items: [
       { bold: 'Agenda:', text: 'Contador do músico agora alterna entre próximo ensaio e próxima apresentação com transição suave' },
       { bold: 'Ensaios:', text: 'Modal de detalhes abre com folha estável, fundo mais leve e carregamento sem “salto” visual' },
@@ -185,7 +195,7 @@ export const PROFILE_ABOUT_CONFIG = {
   subtitle: 'Sociedade Filarmônica 25 de Março',
   maxWidth: 420,
   infoCards: [
-    { label: 'Versão', value: '3.1.0' },
+    { label: 'Versão', value: '3.2.0' },
     { label: 'Tecnologias', value: 'React • GSAP • Workers' },
     { label: 'Por', value: 'Antonio Jr.', isHighlighted: true }
   ],

@@ -1,8 +1,18 @@
 // Changelog para o painel administrativo (AdminConfig)
 export const ADMIN_CHANGELOG = [
   {
-    version: '3.1.0',
+    version: '3.2.0',
     isCurrent: true,
+    items: [
+      { bold: 'Compartilhamento:', text: 'Links de partituras com preview social gerado automaticamente' },
+      { bold: 'Repertório:', text: 'Dois repertórios ativos e download com conferência real das partes' },
+      { bold: 'Bombardino:', text: 'C e Bb separados sem substituição silenciosa entre tonalidades' },
+      { bold: 'Backend:', text: 'Contratos, validações, armazenamento e operações D1 mais seguros' },
+      { bold: 'Deploy:', text: 'Validação dos rate limiters e da saúde da API após a publicação' }
+    ]
+  },
+  {
+    version: '3.1.0',
     items: [
       { bold: 'Músico:', text: 'Countdown rotativo entre próximo ensaio e apresentação' },
       { bold: 'Notificações:', text: 'Atualização imediata após uploads e novas partes' },
@@ -81,7 +91,7 @@ export const ADMIN_ABOUT_CONFIG = {
   subtitle: 'Painel Administrativo',
   maxWidth: 480,
   infoCards: [
-    { label: 'Versão', value: '3.1.0' },
+    { label: 'Versão', value: '3.2.0' },
     { label: 'Backend', value: 'Cloudflare Workers' },
     { label: 'Dev', value: 'Antonio Jr.', isHighlighted: true }
   ],

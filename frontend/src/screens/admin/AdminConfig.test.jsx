@@ -62,7 +62,7 @@ jest.unstable_mockModule('@components/modals', () => ({
     subtitle: '',
     maxWidth: '600px',
     footerText: '',
-    infoCards: [{ value: '3.1.0' }]
+    infoCards: [{ value: '3.2.0' }]
   }
 }));
 

@@ -1,580 +1,213 @@
 # Changelog
 
-Todas as mudancas notaveis neste projeto serao documentadas neste arquivo.
+Todas as mudanças relevantes do Acervo Digital são registradas neste arquivo.
 
-O formato e baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/),
-e este projeto adere ao [Versionamento Semantico](https://semver.org/lang/pt-BR/).
+O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e o projeto usa [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
----
+## [Não publicado]
 
-## [2.9.1] - 2026-01-03
-### Migração de Domínio
-**Objetivo:** Alterar todos os domínios de `partituras25.com` para `partituras.app`.
+## [3.2.0] - 2026-08-27
+
+### Adicionado
+
+- Compartilhamento de partituras por link, com Web Share API e cópia para a área de transferência como alternativa.
+- Preview social dinâmico de cada obra com título, gênero e compositor, gerado por Cloudflare Pages Functions.
+- Retorno automático à partitura depois do login ao abrir um link compartilhado.
+- Suporte a até dois repertórios ativos, com duplicação, ordenação e filtros administrativos.
+- Acesso rápido aos ensaios pela navegação e às partituras favoritas pela tela inicial.
+- Contrato OpenAPI completo para as rotas do Worker e tipos gerados para o frontend.
+- Health check de prontidão para banco, armazenamento, autenticação e rate limiters.
 
 ### Alterado
-- **wrangler.toml**: Rotas customizadas apontando para `api.partituras.app`
-- **worker**: `ALLOWED_ORIGINS` atualizado para aceitar `https://partituras.app`
-- **frontend**: `API_BASE_URL` alterado para `https://api.partituras.app`
-- **Docs**: README, CLAUDE.md e especificações atualizadas.
 
----
+- Backend estabilizado sobre o entrypoint modular `worker/src/index.js`, com validações, operações atômicas no D1 e armazenamento R2 recuperável.
+- Analytics reorganizado para registrar sessões e eventos com menor impacto no fluxo principal.
+- Home e biblioteca passaram a ser carregadas sob demanda depois da autenticação.
+- Pipeline atualizado para Node.js 22, Wrangler fixado pelo lockfile, compilação das Pages Functions e verificação da saúde da API após o deploy.
+- Exclusão de partes passou a preservar a integridade do histórico de downloads.
 
-## [2.9.0] - 2025-12-18
-### Melhorias de UI e Scroll do Carrossel
-- Remoção de `layoutId` para evitar animações indesejadas
-- Correção do scroll infinito no carrossel de destaques
+### Corrigido
 
----
+- Bombardino C e Bombardino Bb passaram a ser tratados como instrumentos distintos em upload, renomeação e downloads individuais ou de repertório.
+- Nomes genéricos `Bombardino` e `Euphonium` passaram a representar Bombardino C, sem substituição silenciosa entre tonalidades.
+- Download de repertório passou a conferir os PDFs no R2, listar obras ausentes e exigir confirmação antes de gerar pacote parcial.
+- Autenticação passou a falhar de forma segura quando uma dependência obrigatória não está disponível.
+- Limite de login passou a usar contador atômico por IP e usuário, com cinco tentativas por cinco minutos e limpeza após acesso válido.
+- Consulta de usuário passou a ignorar respostas antigas e a distinguir conta inexistente, excesso de tentativas, indisponibilidade e falha de rede.
+- Deploy do Worker deixou de aceitar configuração sem os três rate limiters obrigatórios.
+- Deploy automático deixou de tentar executar migrations D1 com o token restrito de publicação.
+
+### Migrações
+
+- `0002_logs_download_instrument_text.sql`: preserva o instrumento como rótulo histórico nos logs de download.
+- `0003_fix_bombardino_tonalidades.sql`: cria Bombardino Bb e corrige as partes auditadas de Bombardino C e Bb.
+- `0004_login_rate_limits.sql`: cria o contador atômico de tentativas de login.
+
+## [3.1.0] - 2026-04-03
+
+### Adicionado
+
+- Contador alternado entre próximo ensaio e próxima apresentação.
+- Foto de perfil persistida no servidor e nome de exibição visível para outros usuários.
+- Busca expandida no celular e acesso direto ao compositor selecionado.
+- Histórico de ensaios com detalhes e estatísticas de presença.
+
+### Alterado
+
+- Telas de login, navegação, notificações, ensaios e administração receberam nova direção visual e melhor adaptação ao celular.
+- Notificações passaram a atualizar imediatamente após uploads e novas partes.
+
+### Corrigido
+
+- Inicialização do frontend deixou de depender de configurações não críticas.
+- Busca no celular passou a abrir corretamente a partitura escolhida.
+- Modais de ensaio, perfil e calendário ficaram estáveis em diferentes tamanhos de tela.
+
+## [3.0.0] - 2026-03-09
+
+### Adicionado
+
+- Compartilhamento de repertório como cartão de imagem.
+- Tracking de sessões, buscas, downloads e atividades.
+- Painel administrativo de analytics.
+
+### Alterado
+
+- Repertório e gestão de ensaios receberam novos fluxos administrativos.
+- Nome de exibição passou a ser persistido no banco.
+
+## [2.9.2] - 2026-02-15
+
+### Adicionado
+
+- Dashboard de analytics com indicadores, tendências, distribuição e atividade recente.
+- Rastreamento de downloads por usuário e buscas sem resultado.
+
+### Corrigido
+
+- Datas dos registros e nomes com problemas de codificação.
+- Estatísticas de presença deixaram de contabilizar o maestro como músico.
+
+## [2.9.1] - 2026-02-14
+
+### Adicionado
+
+- Numeração sequencial dos ensaios no Livro de Registros.
+- Campo de convidado no controle de presença.
+
+### Alterado
+
+- Domínio oficial migrado para `acervo.filarmonica25demarco.com`.
+
+### Corrigido
+
+- Datas do calendário, posicionamento de modais e visualização de fotos no celular.
+
+## [2.9.0] - 2025-12-25
+
+### Adicionado
+
+- Carrinho para baixar várias partituras.
+- Compartilhamento de arquivo pelo WhatsApp.
+- Modo recesso e tutorial de primeiro acesso.
+
+### Alterado
+
+- Visualizador de PDF recebeu gesto de zoom e limite ampliado.
+- Busca passou a exigir correspondência de todas as palavras.
+- Aplicação recebeu ícones e configuração para instalação como PWA.
+
+## [2.8.0] - 2025-12-14
+
+### Adicionado
+
+- Download e impressão de repertório por instrumento.
+- Seleção ou criação de repertório ao adicionar uma obra.
+
+### Corrigido
+
+- Lista de instrumentos passou a refletir as partes realmente cadastradas.
+
+## [2.7.0] - 2025-12-11
+
+### Adicionado
+
+- Transições entre páginas e modais.
+- Opção “Lembrar meu acesso” com sessão de 30 dias.
+- Detecção proativa de sessão expirada.
+
+### Corrigido
+
+- Detecção de categoria, duplicatas, partes protegidas e comportamento de scroll em modais.
 
 ## [2.6.0] - 2025-12-09
 
-### Arquitetura Modular do Backend e Novo Dominio
-
-**Objetivo:** Refatorar o worker monolitico de 2014 linhas para arquitetura hexagonal modular e migrar para o novo dominio partituras25.com.
-
 ### Adicionado
 
-- **Arquitetura Hexagonal do Backend** (PR #26, #27)
-  - Refatoracao completa do `worker/index.js` (2014 linhas → ~50 arquivos modulares)
-  - Camada **Config**: constantes centralizadas (ALLOWED_ORIGINS, JWT_EXPIRY, PBKDF2_ITERATIONS)
-  - Camada **Infrastructure**: CORS, JWT, Hashing PBKDF2, Rate Limiting, Response Helpers
-  - Camada **Domain**: Services separados por responsabilidade
-  - Camada **Middleware**: Pipeline de CORS, Auth e Admin
-  - Camada **Routes**: Router customizado com suporte a path params e middleware
-
-- **Router Class Customizado** (`worker/src/routes/router.js`)
-  - Suporte a path params (`/api/partituras/:id`)
-  - Middleware pipeline (global e por rota)
-  - CORS preflight automatico
-  - Error handling centralizado
-
-- **Domain Services**
-  - `authService.js`: verifyUserFromJwt, verifyAdmin, verifyUser
-  - `loginService.js`: checkUser, login, changePin
-  - `atividadeService.js`: registrarAtividade, getAtividades
-  - `favoritoService.js`: getFavoritos, addFavorito, removeFavorito
-  - `categoriaService.js`: CRUD de categorias
-  - `estatisticaService.js`: estatisticas e instrumentos
-  - `usuarioService.js`: CRUD de usuarios (admin)
-  - `perfilService.js`: perfil do usuario
-  - `partituraService.js`, `parteService.js`, `downloadService.js`: partituras
-
-- **Novo Dominio** (PR #24)
-  - Frontend: `partituras25.com`
-  - API: `api.partituras25.com`
-  - Rotas customizadas no Cloudflare Workers
-  - CORS atualizado para novos dominios
-
-- **CLAUDE.md** - Instrucoes de desenvolvimento local
+- Backend modular por domínios, infraestrutura, middleware e rotas.
+- Router com parâmetros de caminho e pipeline de middleware.
+- Importação de várias obras e upload por arrastar pastas.
+- Skeletons e feedback de progresso durante uploads.
 
 ### Alterado
 
-- **wrangler.toml**: Entry point alterado para `worker/src/index.js`
-- **Frontend**: API_BASE_URL atualizado para `api.partituras25.com`
-
-### Estrutura de Arquivos Criada
-
-```
-worker/src/
-├── index.js                    # Entry point
-├── config/                     # Constantes centralizadas
-├── infrastructure/             # CORS, JWT, Hashing, RateLimit, Response
-├── domain/                     # Auth, Atividades, Favoritos, Categorias, Estatisticas, Usuarios, Perfil, Partituras
-├── middleware/                 # CORS, Auth, Admin middlewares
-└── routes/                     # Router class + arquivos de rotas
-```
-
----
-
-## [2.5.1] - 2025-12-08
-
-### Modal de Edicao e Melhorias na Importacao (PR #25)
-
-**Objetivo:** Permitir edicao de partituras existentes e melhorar a experiencia de importacao em lote.
-
-### Adicionado
-
-- **Modal de Edicao de Partituras**
-  - Editar titulo, compositor, arranjador, categoria, ano, descricao
-  - Botao de edicao ao lado do botao deletar
-  - Validacao de campos obrigatorios
-
-- **Melhorias na Importacao em Lote**
-  - Edicao de categoria/titulo/compositor antes do upload
-  - Mensagem simplificada para duplicatas ("Ja existe no acervo")
-  - Deteccao melhorada de instrumentos (caixa-clara, partes I e II)
-
-- **seed-local.sql** - Dados de teste para desenvolvimento local
-
-### Arquivos Modificados
-
-| Arquivo | Alteracao |
-|---------|-----------|
-| `AdminPartituras.jsx` | +407 linhas (modal de edicao) |
-| `ImportacaoLoteModal.jsx` | +646 linhas (edicao pre-upload) |
-| `instrumentParser.js` | +404 linhas (deteccao melhorada) |
-
----
+- Entry point do Worker movido para `worker/src/index.js`.
+- Contextos do frontend separados por autenticação, dados, interface e notificações.
 
 ## [2.5.0] - 2025-12-07
 
-### Skeleton Loading e Correcao de Acentuacao (PR #23)
-
-**Objetivo:** Melhorar feedback visual durante carregamento e corrigir acentuacao em portugues.
-
 ### Adicionado
 
-- **Componente Skeleton.jsx** (260 linhas)
-  - Variantes: text, circular, rectangular, rounded
-  - Animacao shimmer suave
-
-- **Animacoes CSS**
-  - `@keyframes shimmer` - efeito de loading
-  - `@keyframes fadeInUp` - entrada de elementos
-  - `@keyframes slideInFromBottom` - transicao de paginas
+- Edição de metadados e visualização de PDF no painel administrativo.
+- Importação em lote com revisão antes do envio.
+- Reconhecimento ampliado de instrumentos e categorias.
 
 ### Corrigido
 
-- **Acentuacao em Portugues**
-  - "Musico" → "Músico"
-  - "Ultimo" → "Último"
-  - "Acoes Rapidas" → "Ações Rápidas"
-  - "generos" → "gêneros"
-  - "Pagina" → "Página"
-
----
-
-## [2.4.2] - 2025-12-07
-
-### Melhorias Visuais nas Sidebars (PR #22)
-
-**Objetivo:** Sincronizar visual das sidebars e corrigir bugs de UX.
-
-### Adicionado
-
-- Hover em itens de navegacao das sidebars
-- Retangulo escuro no menu admin
-
-### Corrigido
-
-- Foco do PIN apos erro de login (delay 100ms)
-- Tutorial: salvar preferencia ao pular/finalizar
-- Alinhamento do header de saudacao com "Em Destaque"
-
----
-
-## [2.4.1] - 2025-12-07
-
-### Deteccao de Categorias e Animacoes Lottie (PR #21)
-
-**Objetivo:** Melhorar deteccao automatica de categorias e adicionar feedback visual animado.
-
-### Adicionado
-
-- **Animacoes Lottie** (scan, success, error, warning, upload)
-- **Deteccao de Duplicatas** no batch import
-- **Novas Categorias**: marcha-religiosa, hino-civico
-
-### Alterado
-
-- Ordenacao de termos por comprimento (detecta categorias compostas)
-- Normalizacao de acentos melhorada
-
----
+- Acentuação da interface e detecção de instrumentos com hífen.
 
 ## [2.4.0] - 2025-12-06
 
-### Importacao em Lote de Partituras (PR #20)
-
-**Objetivo:** Permitir upload de multiplas pastas de partituras de uma vez.
-
 ### Adicionado
 
-- **ImportacaoLoteModal.jsx** (1079 linhas)
-  - 6 estados: selecao, analise, feedback, revisao, upload, conclusao
-  - Upload em chunks com progresso
-
-- **batchParser.js** (336 linhas) - Analise em lote de pastas
-- **instrumentParser.js** (255 linhas) - 150+ variacoes de instrumentos
-- **metadataParser.js** (263 linhas) - Deteccao de categoria multi-camada
-- **uploadBatch.js** (283 linhas) - Upload com retry automatico
-- **LottieAnimation.jsx** (190 linhas) - Wrapper para animacoes
-
----
-
-## [2.3.3] - 2025-12-06
-
-### Protecao do Super Admin e Melhorias na Gestao de Musicos
-
-**Objetivo:** Proteger o administrador master e melhorar a experiencia de gerenciamento de musicos.
-
-### Adicionado
-
-- **Protecao Total do Super Admin (@admin)**
-  - Invisivel na lista de musicos
-  - Nao pode ser editado por outros admins
-  - Backend protege alteracoes (403 Forbidden)
-
-- **Badge "Admin"** na lista de musicos
-- **Animacao de Loading** (equalizer) no login
-
-### Corrigido
-
-- Bug de zeros aparecendo nos nomes (`!!user.admin`)
-
-### Arquivos Modificados
-
-| Arquivo | Alteração |
-|---------|-----------|
-| `worker/index.js` | Proteção do super admin em `checkUser`, `login`, `updateUsuario` |
-| `screens/admin/AdminMusicos.jsx` | Filtro para ocultar super admin, badge Admin, fix `!!user.admin` |
-| `screens/admin/AdminConfig.jsx` | Removida seção de manutenção |
-| `screens/LoginScreen.jsx` | Animação de equalizer no loading |
-| `styles/animations.css` | `@keyframes equalizer` |
-| `services/api.js` | Endpoints de manutenção (mantidos) |
-
-### Segurança
-
-- Super admin (`@admin`) é a única conta que pode se auto-editar
-- Tentativas de outros admins editarem o super admin retornam erro 403
-- Nome real do super admin nunca é exposto via API
-
----
-
-## [2.3.3] - 2025-12-06
-
-### Admin Toggle e Melhorias de Login
-
-**Objetivo:** Permitir que administradores alternem entre o modo usuário e admin sem precisar deslogar.
-
-### Adicionado
-
-- **Toggle Admin (Desktop e Mobile)**
-  - Novo componente `AdminToggle.jsx` com ícone de chave SVG
-  - Visível apenas para usuários com `isAdmin: true`
-  - Clique alterna instantaneamente entre `/` (acervo) e `/admin` (painel)
-  - Cores diferenciadas:
-    - Modo usuário: fundo vinho (`#722F37`) com ícone dourado
-    - Modo admin: fundo dourado (`#D4AF37`) com ícone escuro
-  - Ícone rotaciona 45° ao entrar no modo admin
-  - Animações suaves de fade-out/fade-in durante transição
-
-- **Ícone Key em icons.jsx**
-  - SVG de chave para o toggle admin
-  - Estilo consistente com demais ícones (stroke, viewBox 24x24)
-
-- **Animações CSS para transição admin**
-  - `@keyframes adminFadeOut` - fade + scale down (0.15s)
-  - `@keyframes adminFadeIn` - fade + scale up (0.2s)
-  - Classes: `body.admin-transition-out`, `body.admin-transition-in`
-  - Respeita `prefers-reduced-motion`
-
-### Corrigido
-
-- **Verificação de usuário no login mais precisa**
-  - Debounce aumentado de 150ms para 400ms
-  - Mínimo de caracteres para verificar: 2 → 3
-  - Loading indicator aparece apenas após 200ms de delay
-  - Evita "Não encontrado" enquanto usuário ainda digita
-
-### Arquivos Modificados
-
-| Arquivo | Alteração |
-|---------|-----------|
-| `components/common/AdminToggle.jsx` | Novo componente |
-| `components/common/HeaderActions.jsx` | Adicionado `<AdminToggle />` |
-| `components/layout/DesktopHeader.jsx` | Adicionado `<AdminToggle />` |
-| `constants/icons.jsx` | Adicionado ícone `Key` |
-| `styles/animations.css` | Animações de transição admin |
-| `hooks/useLoginForm.js` | Debounce e validação melhorados |
-
-### Próximos Passos
-
-- Marcar usuários "Antonio Júnior" e "Antonio Neves" como `admin: true` no banco D1
-- Testar toggle em desktop e mobile com usuário admin
-
----
-
-## [2.3.2] - 2025-12-06
-
-### Carrossel de Compositores e Melhorias de UX
-
-**Objetivo:** Redesenhar a seção de compositores no mobile com carrossel elegante e corrigir bugs de scroll.
-
-### Adicionado
-
-- **Carrossel de Compositores (Mobile)**
-  - Novo componente `ComposerCarousel.jsx` com design hero cards
-  - Glassmorphism com backdrop-filter blur no overlay de texto
-  - Fotos dos compositores com zoom-out para melhor visualização
-  - Auto-scroll com animação marquee (mesma do FeaturedSheets)
-  - Badge "Destaque" no primeiro compositor
-  - Indicador "Arraste →" antes da primeira interação
-  - Exibe top 3 compositores priorizando: Estevam Moura, Tertuliano Santos, Amando Nobre
-
-### Corrigido
-
-- **Scroll da tela de Compositores**
-  - Página abria com scroll no meio ao navegar do carrossel
-  - Adicionado `window.scrollTo(0, 0)` no mount do ComposersScreen
-
-- **Efeito de overscroll (bounce/rubber-band)**
-  - Restaurado `overscrollBehaviorX: 'contain'` no ComposerCarousel
-  - Aplicado também no FeaturedSheets para consistência
-  - Efeito de "esticar e voltar" ao arrastar além do limite
-
-### Alterado
-
-- **HomeScreen.jsx**
-  - Removida a grid de compositores (layout antigo bugado)
-  - Adicionado `ComposerCarousel` renderizado apenas no mobile (`useIsMobile`)
-
-- **ComposerCarousel.jsx** - Especificações visuais:
-  - Cards: 220px x 140px com borderRadius 14px
-  - Foto com `inset: -10%` para efeito zoom-out
-  - `backgroundPosition: center 30%` para enquadrar rostos
-  - Padding lateral: 20px
-  - Gap entre cards: 12px
-
----
-
-## [2.3.1] - 2025-12-06
-
-### Busca com Transliteração e Melhorias de UX
-
-**Objetivo:** Permitir busca de partituras com grafias antigas portuguesas e melhorar experiência do usuário.
-
-### Adicionado
-
-- **Transliteração de Grafias Antigas**
-  - Busca por "ninfas" agora encontra "Nymphas" (grafia antiga)
-  - Suporte a conversões: ph→f, th→t, y→i, rh→r, etc.
-  - Regras de duplicação: ll→l, nn→n, pp→p, ss→s, tt→t, cc→c, ff→f
-  - Aplicado em `DesktopHeader.jsx` e `SearchScreen.jsx`
-
-- **Seção de Compositores na Home (Mobile)**
-  - Grid 2x3 com os 6 compositores mais populares
-  - Avatar com inicial e contagem de partituras
-  - Botão "Ver Todos" direcionando para `/compositores`
-
-- **Botão de Logout no Admin**
-  - Adicionado na sidebar do painel administrativo
-  - Ícone vermelho com hover effect
-  - Redireciona para `/login` após logout
-
-### Corrigido
-
-- **Dois botões X na barra de busca**
-  - Alterado `type="search"` para `type="text"` em todos os inputs de busca
-  - CSS adicionado para esconder botão X nativo do WebKit/Edge
-  - Arquivos: `SearchBar.jsx`, `DesktopHeader.jsx`, `SearchScreen.jsx`, `base.css`
-
-### Alterado
-
-- **base.css** - Regras CSS para ocultar controles nativos de input search:
-  ```css
-  input::-webkit-search-cancel-button,
-  input::-webkit-search-decoration,
-  input::-ms-clear,
-  input::-ms-reveal {
-    display: none;
-    -webkit-appearance: none;
-  }
-  ```
-
----
+- Proteção do superadministrador e identificação visual de administradores.
+- Alternância entre modo músico e administrador.
+- Carrossel e página de compositores.
+- Busca com transliteração de grafias antigas.
 
 ## [2.3.0] - 2025-12-06
 
-### Testes Automatizados e CI/CD
-
-**Objetivo:** Implementar infraestrutura completa de testes para garantir qualidade do codigo em cada deploy.
-
 ### Adicionado
 
-- **Testes Unitarios (Jest + Testing Library)**
-  - 215 testes cobrindo componentes criticos
-  - MSW (Mock Service Worker) para interceptar requisicoes de API
-  - Cobertura: LoginScreen 100%, AdminDashboard 82%, Hooks 60%+
-
-- **Testes E2E (Playwright)**
-  - 8 testes com mocks (rodam no CI automaticamente)
-  - 8 testes com backend real (rodam localmente/manual)
-  - Mocks em `tests/mocks/api-mocks.ts`
-  - Scripts: `npm run test:e2e`, `test:e2e:ui`, `test:e2e:headed`
-
-- **CI/CD (GitHub Actions)**
-  - Pipeline automatico em cada push/PR
-  - Jobs: Jest → E2E Mocked → Build
-  - Testes com backend real disponiveis via workflow_dispatch
-  - Upload de artefatos (coverage, build, playwright report)
-
-- **Arquivos de Teste Criados**
-  - `frontend/src/screens/LoginScreen.test.jsx` - 18 testes
-  - `frontend/src/screens/admin/AdminDashboard.test.jsx` - 20 testes
-  - `frontend/src/__tests__/mocks/handlers.js` - MSW handlers
-  - `tests/login.spec.ts` - E2E com backend real
-  - `tests/login-mocked.spec.ts` - E2E com mocks
-  - `tests/mocks/api-mocks.ts` - Mocks do Playwright
-  - `.github/workflows/ci.yml` - Pipeline CI/CD
-
-### Configurado
-
-- **Jest** com suporte a ESM modules (`jest.unstable_mockModule`)
-- **Playwright** com webServer automatico (inicia Vite)
-- **MSW** interceptando URLs relativas e absolutas
-
-### Fluxo de CI
-
-```
-Push/PR
-   ↓
-┌─────────────────┐    ┌─────────────────┐
-│   Jest (215)    │    │  E2E Mocked (8) │
-│   ~17 segundos  │    │   ~4 segundos   │
-└────────┬────────┘    └────────┬────────┘
-         │                      │
-         └──────────┬───────────┘
-                    ↓
-            ┌───────────────┐
-            │     Build     │
-            │   Vite prod   │
-            └───────────────┘
-```
-
-### Comandos Disponiveis
-
-```bash
-# Testes unitarios
-cd frontend && npm test                    # Roda todos
-cd frontend && npm test -- LoginScreen     # Roda arquivo especifico
-cd frontend && npm run test:coverage       # Com cobertura
-
-# Testes E2E
-npm run test:e2e                           # Headless
-npm run test:e2e:headed                    # Visual
-npm run test:e2e:ui                        # Interface interativa
-```
-
----
+- Testes unitários e de ponta a ponta.
+- Pipeline de integração contínua com lint, testes e build.
+- Notificações reais de novas partituras.
 
 ## [2.2.0] - 2025-12-05
 
-### Arquitetura - Split de React Contexts
-
-**Problema resolvido:** O `AppContext` monolitico tinha 19+ estados, causando re-renders desnecessarios em toda a aplicacao quando qualquer estado mudava.
-
-### Adicionado
-
-- **AuthContext** (`frontend/src/contexts/AuthContext.jsx`)
-  - Estados: `user`, `isAuthenticated`
-  - Acoes: `setUser`, `logout`
-  - Hook: `useAuth()`
-
-- **UIContext** (`frontend/src/contexts/UIContext.jsx`)
-  - Estados: `theme`, `themeMode`, `toast`, `selectedSheet`, `showNotifications`
-  - Acoes: `setThemeMode`, `showToast`, `clearToast`, `setSelectedSheet`, `setShowNotifications`
-  - Hook: `useUI()`
-
-- **DataContext** (`frontend/src/contexts/DataContext.jsx`)
-  - Estados: `sheets`, `favorites`, `categories`, `selectedCategory`, `selectedComposer`, `isLoading`
-  - Acoes: `setSheets`, `setFavorites`, `toggleFavorite`, `setSelectedCategory`, `setSelectedComposer`
-  - Hook: `useData()`
-
-- **NotificationContext** (`frontend/src/contexts/NotificationContext.jsx`)
-  - Estados: `notifications`, `unreadCount`
-  - Acoes: `addNotification`, `markNotificationAsRead`, `markAllNotificationsAsRead`
-  - Hook: `useNotifications()`
-
 ### Alterado
 
-- **main.jsx** - Providers aninhados na ordem correta:
-  ```
-  AuthProvider > DataProvider > UIProvider > NotificationProvider > App
-  ```
-
-- **~30 componentes migrados** de `useApp()` para hooks especificos:
-
-  | Componente | Hooks utilizados |
-  |------------|------------------|
-  | App.jsx | useAuth, useUI, useData |
-  | LoginScreen.jsx | useAuth, useUI, useData |
-  | HomeScreen.jsx | useAuth, useData |
-  | ProfileScreen.jsx | useAuth, useUI |
-  | LibraryScreen.jsx | useAuth, useData, useUI |
-  | SearchScreen.jsx | useData |
-  | FavoritesScreen.jsx | useData |
-  | GenresScreen.jsx | useData |
-  | ComposersScreen.jsx | useData |
-  | AdminApp.jsx | useAuth, useUI |
-  | AdminConfig.jsx | useAuth, useUI |
-  | AdminDashboard.jsx | useAuth |
-  | AdminPartituras.jsx | useUI |
-  | AdminCategorias.jsx | useUI |
-  | AdminMusicos.jsx | useUI |
-  | BottomNav.jsx | useUI |
-  | DesktopLayout.jsx | useUI |
-  | DesktopHeader.jsx | useUI, useData, useNotifications |
-  | DesktopSidebar.jsx | useUI, useData |
-  | SheetDetailModal.jsx | useAuth, useUI, useData |
-  | NotificationsPanel.jsx | useUI, useData, useNotifications |
-  | ChangePinModal.jsx | useUI |
-  | HeaderActions.jsx | useUI, useNotifications |
-  | HomeHeader.jsx | useUI |
-  | ThemeSelector.jsx | useUI |
-  | FileCard.jsx | useUI |
-  | FeaturedCard.jsx | useUI |
-  | FeaturedSheets.jsx | useUI |
-  | CategoryCard.jsx | useUI |
-  | useAppNavigation.js | useData |
-
-### Removido
-
-- **AppContext.jsx** - Context monolitico removido completamente
-- **useApp()** - Hook legado removido
-
-### Beneficios
-
-1. **Performance**: Mudancas em `theme` nao causam re-render em componentes que so usam `sheets`
-2. **Manutencao**: Responsabilidades claramente separadas por dominio
-3. **Testabilidade**: Contexts menores sao mais faceis de mockar em testes
-4. **Bundle**: Possibilidade futura de code-splitting por contexto
-
----
+- Estado global dividido em contextos menores para reduzir renderizações e facilitar testes.
 
 ## [2.0.0] - 2025-12-04
 
-### Seguranca
+### Adicionado
 
-- JWT com expiracao de 24h
-- PBKDF2 para hash de senhas (100k iteracoes)
-- Rate limiting no endpoint de login
-- CORS restrito com whitelist de dominios
-- Token expiration callback automatico
-- Logout centralizado
+- Upload de pasta com várias partes.
+- Detecção automática de instrumentos.
+- Gestão de partes, favoritos sincronizados e painel administrativo.
+- Autenticação JWT, PIN com PBKDF2, CORS restrito e rate limiting.
 
-### Acessibilidade
+## [1.0.0] - 2025-11-29
 
-- Contraste WCAG (cor #9A9A9A para texto muted)
-- aria-label nos botoes de favorito/download
-- React.memo com comparacao customizada no FileCard
+### Adicionado
 
-### Interface
+- Primeira versão integrada da aplicação React.
+- Login por usuário e PIN, catálogo, busca, favoritos, temas e perfil.
+- Layouts próprios para celular e desktop.
 
-- Toggle de tema no header admin
-- Redirecionamento automatico para admin quando apropriado
+## [0.1.0] - 2025-11-28
 
----
+### Adicionado
 
-## Proximas Etapas (Planejado)
-
-- [ ] Rate limiting em `/api/check-user`
-- [ ] Remover admin hardcoded do schema.sql
-- [ ] Lazy loading nas screens (React.lazy + Suspense)
-- [ ] Debounce em persistencia localStorage
-- [ ] Error Boundaries
-- [x] ~~Modularizacao do backend (worker 2014 linhas)~~ (v2.6.0 - Arquitetura Hexagonal)
-- [x] ~~Testes unitarios basicos~~ (v2.3.0 - 215 testes)
-- [x] ~~CI/CD automatizado~~ (v2.3.0 - GitHub Actions)
-- [ ] Aumentar cobertura de testes (Contexts, Utils)
-- [ ] Refatorar componentes frontend monoliticos (AdminPartituras 1155 linhas)
+- Protótipo inicial do catálogo em uma única página HTML.

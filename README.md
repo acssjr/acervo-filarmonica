@@ -2,638 +2,204 @@
 
 # Acervo Digital da Filarmônica 25 de Março
 
-### Sistema de gerenciamento e distribuição de partituras digitais
+Sistema web para organizar, consultar e distribuir o acervo de partituras da Sociedade Filarmônica 25 de Março, de Feira de Santana, Bahia.
 
-*Sociedade Filarmônica 25 de Março - Feira de Santana, BA - Desde 1868*
-
-<br/>
-
-[![Versão](https://img.shields.io/badge/versão-3.1.0-722F37?style=for-the-badge&labelColor=D4AF37)](https://github.com/acssjr/acervo-filarmonica)
+[![Versão](https://img.shields.io/badge/versão-3.2.0-722F37?style=for-the-badge&labelColor=D4AF37)](https://github.com/acssjr/acervo-filarmonica/blob/main/CHANGELOG.md)
 [![Status](https://img.shields.io/badge/status-em%20produção-success?style=for-the-badge)](https://acervo.filarmonica25demarco.com)
-[![CI](https://img.shields.io/github/actions/workflow/status/acssjr/acervo-filarmonica/ci.yml?style=for-the-badge&label=CI&logo=github)](https://github.com/acssjr/acervo-filarmonica/actions)
+[![CI](https://img.shields.io/github/actions/workflow/status/acssjr/acervo-filarmonica/ci.yml?branch=main&style=for-the-badge&label=CI&logo=github)](https://github.com/acssjr/acervo-filarmonica/actions/workflows/ci.yml)
 
-<br/>
-
-[**Acessar Sistema**](https://acervo.filarmonica25demarco.com)
-
-<br/>
+[Acessar o Acervo](https://acervo.filarmonica25demarco.com) · [Instalação](INSTALL.md) · [Arquitetura](docs/ARCHITECTURE.md) · [Changelog](CHANGELOG.md) · [Segurança](SECURITY.md)
 
 </div>
 
----
+## Sobre o projeto
 
-## Sobre o Projeto
+O Acervo Digital substitui a procura manual por pastas e arquivos dispersos por um catálogo acessível no celular e no computador. Músicos encontram a parte do próprio instrumento; maestro e administradores organizam repertórios, ensaios, presenças, usuários e o acervo completo.
 
-O Acervo Digital da Filarmônica 25 de Março é um sistema web desenvolvido para digitalizar e facilitar o acesso ao extenso acervo de partituras da banda mais antiga da Bahia, fundada em 1868.
+O projeto começou como uma página HTML única e evoluiu para uma aplicação React com backend modular no Cloudflare Workers, banco D1 e armazenamento de PDFs no R2.
 
-O sistema permite que músicos acessem suas partituras de qualquer lugar, baixem arquivos no formato correto para seu instrumento, acompanhem novidades do repertório, revisem o histórico de ensaios e recebam atualizações relevantes do acervo em tempo real.
+## O que o sistema oferece
 
----
+### Para músicos
 
-## Funcionalidades
+- busca por título, compositor e grafias antigas, com experiência própria para celular;
+- biblioteca por gênero, compositor, favoritos e partituras em destaque;
+- visualização, impressão e download da parte do instrumento cadastrado ou de outro instrumento;
+- repertórios ativos, histórico de ensaios, avisos e estatísticas pessoais de presença;
+- perfil com foto, nome de exibição, alteração de PIN e temas claro, escuro ou automático;
+- compartilhamento de partitura como arquivo ou link, com texto pronto e preview social personalizado;
+- sessão de 24 horas ou 30 dias quando “Lembrar meu acesso” está ativado.
 
-<table>
-<tr>
-<td width="33%" valign="top">
+### Para maestro e administradores
 
-### Para Músicos
-- Interface responsiva (mobile/desktop)
-- Download de partituras por instrumento
-- Busca inteligente com transliteração (grafias antigas)
-- Overlay de busca expandido no mobile
-- Sistema de favoritos
-- Perfil com foto persistida no servidor, conquistas e alteração de PIN
-- Temas claro/escuro/automático
-- Notificações de novidades com atualização imediata após uploads
-- Carrossel de compositores em destaque
-- Histórico de ensaios com modal detalhado
-- Contador rotativo entre próximo ensaio e próxima apresentação
-- Skeleton loading para melhor UX
-- **Transições suaves entre páginas e modais**
-- **"Lembrar meu acesso" com token de 30 dias**
+- acesso à grade e a todas as partes disponíveis de cada obra;
+- criação, duplicação, ordenação e manutenção de até dois repertórios ativos;
+- download ou impressão do repertório por instrumento, com conferência prévia de disponibilidade;
+- upload de uma pasta completa e importação em lote de várias obras;
+- reconhecimento e normalização de instrumentos, categorias e metadados nos nomes dos arquivos;
+- substituição, renomeação e exclusão segura de partes;
+- gestão de músicos, ensaios, presença, avisos, fundos visuais e configurações;
+- painel de analytics e histórico de atividades administrativas.
 
-</td>
-<td width="33%" valign="top">
+## Regras importantes do acervo
 
-### Para Maestro
-- Acesso à Grade completa de cada obra
-- Download de todas as partes de uma partitura
-- Visualização do acervo total
-- Destaque automático de partituras recentes
+### Bombardino C e Bombardino Bb
 
-</td>
-<td width="33%" valign="top">
+As duas tonalidades são tratadas como instrumentos diferentes em todo o fluxo. Um arquivo identificado apenas como `Bombardino` ou `Euphonium` é normalizado como **Bombardino C**, conforme a convenção do acervo.
 
-### Para Administradores
-- **Drag & drop de pastas direto na tela**
-- Upload de pasta completa (todas as partes)
-- **Importação em lote** (dezenas de partituras de uma vez)
-- Detecção automática de **100+ instrumentos**
-- Detecção automática de **13 categorias**
-- Correção automática de encoding (UTF-8/Latin-1)
-- **Detecção de duplicatas** (impede partituras repetidas)
-- Gerenciamento individual de partes (substituir/deletar)
-- Modal de edição de partituras
-- Visualização de PDF inline com zoom
-- **Frases engraçadas animadas durante upload**
-- Gestão de músicos com badges visuais
-- **Dashboard de Analytics Premium** (KPIs, tendências e engajamento)
-- Livro de registros com numeração sequencial dos ensaios
-- **Rastreamento de busca e downloads por usuário**
-- Reset de PIN de usuários
-- Toggle admin/usuário para testes
-- Proteção do super admin
+Nos downloads de repertório:
 
-</td>
-</tr>
-</table>
+- Bombardino C nunca recebe uma parte de Bombardino Bb como substituta;
+- Bombardino Bb nunca recebe uma parte de Bombardino C como substituta;
+- o sistema verifica o cadastro no D1 e a existência real do PDF no R2;
+- obras sem a parte pedida são listadas antes do download;
+- um pacote parcial só é gerado depois da confirmação do usuário.
 
----
+### Arquivos e metadados
 
-## Inteligência do Sistema
+O D1 guarda usuários, obras, partes, repertórios, ensaios e demais metadados. Os PDFs e imagens ficam no R2. Essa separação evita transformar o banco relacional em armazenamento de arquivos e permite validar cada camada de forma independente.
 
-### 🎯 Detecção Automática de Instrumentos
+### Links compartilhados
 
-O sistema possui um **parser inteligente** que reconhece **100+ variações** de nomes de instrumentos, incluindo:
+Cada partitura pode gerar uma URL própria em `/acervo/:categoria/:id`. O link exige login para abrir a obra no sistema, mas fornece aos aplicativos de mensagem um cartão Open Graph dinâmico com título, gênero e compositor. Quando o compartilhamento nativo não está disponível, o link é copiado para a área de transferência.
 
-<table>
-<tr>
-<td width="50%">
+## Arquitetura
 
-**Madeiras**
-```
-Flautim, Flauta, Requinta, Oboe, Fagote
-Clarinete Bb (1, 2, 3), Clarinete Baixo
+```text
+Navegador / celular
+        │
+        ├── Cloudflare Pages ── React + Vite
+        │          └─────────── Pages Functions (preview dos links)
+        │
+        └── Cloudflare Worker ─ API /api
+                    ├────────── D1 (dados e migrações)
+                    ├────────── R2 (PDFs e imagens)
+                    └────────── PostHog (analytics opcional)
 ```
 
-**Saxofones**
-```
-Soprano, Alto (1, 2), Tenor (1, 2), Baritono
-Sax Horn Eb
-```
+O backend executável é `worker/src/index.js`. Ele organiza as regras por domínio e mantém separadas as camadas de rotas, middleware, infraestrutura e negócio. O contrato HTTP está em `worker/openapi.yaml`, e os tipos consumidos pelo frontend são gerados a partir dele.
 
-**Metais Agudos**
-```
-Trompete Bb (1, 2, 3)
-Trompa F/Eb (1, 2, 3, 4)
-```
+Fontes de verdade:
 
-</td>
-<td width="50%">
+| Assunto | Local |
+|---|---|
+| Backend | `worker/src/` |
+| Frontend | `frontend/src/` |
+| Migrações D1 | `database/migrations/` |
+| Contrato da API | `worker/openapi.yaml` |
+| Configuração do Worker | `wrangler.toml` |
+| Configuração do Pages | `frontend/wrangler.jsonc` |
 
-**Metais Graves**
-```
-Barítono Bb/TC/BC (1, 2)
-Trombone (1, 2, 3)
-Bombardino, Eufônio
-Baixo Eb/Bb, Tuba
-```
+Veja mais detalhes em [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
-**Percussão**
-```
-Caixa, Bombo, Pratos
-Tímpano, Triângulo, Glockenspiel
-Zabumba, Jam Block
-```
+## Tecnologias
 
-**Regência**
-```
-Grade, Score, Conductor, Maestro
-```
+| Camada | Tecnologias principais |
+|---|---|
+| Interface | React 18, Vite, React Router, GSAP, Framer Motion |
+| API | Cloudflare Workers, JavaScript modular, OpenAPI |
+| Dados | Cloudflare D1 (SQLite) |
+| Arquivos | Cloudflare R2 |
+| Hospedagem | Cloudflare Pages e Pages Functions |
+| Testes | Vitest com `workerd`, Jest, Testing Library e Playwright |
+| Qualidade | ESLint, TypeScript para o cliente da API, GitHub Actions e Semgrep |
 
-</td>
-</tr>
-</table>
+## Segurança e disponibilidade
 
-#### Formatos Reconhecidos
+- autenticação por JWT com segredo obrigatório em produção;
+- PIN protegido com PBKDF2 e salt individual;
+- autorização administrativa revalidada no banco;
+- limites separados para login, consulta de usuário e tracking;
+- contador atômico de tentativas de login no D1;
+- validação de entradas, nomes de arquivos e operações administrativas;
+- health check de prontidão para D1, R2, JWT e rate limiters;
+- CORS restrito aos domínios permitidos;
+- operações relacionadas agrupadas no D1 e compensação em falhas de armazenamento.
 
-O parser entende **qualquer formato** de nomenclatura:
+Detalhes e orientações para reportar vulnerabilidades estão em [SECURITY.md](SECURITY.md).
 
-| Entrada | Resultado |
-|---------|-----------|
-| `01 - Clarinete Bb 1.pdf` | Clarinete Bb 1 |
-| `15 III Trompete Bb.pdf` | Trompete Bb 3 |
-| `1º Trompete.pdf` | Trompete Bb 1 |
-| `I e II Clarinetes in Bb.pdf` | Clarinete Bb 1 e 2 |
-| `Caixa-clara.pdf` | Caixa |
-| `Euphonium (bombardino).pdf` | Bombardino |
-| `BarÃ­tono.pdf` | Barítono *(corrige encoding)* |
+## Desenvolvimento local
 
-### 📁 Detecção Automática de Categorias
+### Requisitos
 
-Sistema **multi-camada** com níveis de confiança:
+- Node.js 22;
+- npm;
+- conta Cloudflare apenas para operações remotas.
 
-```
-📂 Repertório/
-   📂 Dobrados/           ← 95% confiança (estrutura de pastas)
-      📂 Dois Corações/
-         📄 Grade.pdf
-         📄 Clarinetes.pdf
-```
+### Instalação
 
-| Camada | Fonte | Confiança |
-|--------|-------|:---------:|
-| 1ª | Estrutura de pastas (pasta-pai) | 95% |
-| 2ª | Nome da pasta (`Título - Categoria - Compositor`) | 85% |
-| 3ª | Palavra-chave no título | 75% |
-
-**Categorias detectadas:** Dobrado, Marcha, Marcha Fúnebre, Marcha Religiosa, Valsa, Fantasia, Polaca, Bolero, Hino, Hino Cívico, Hino Religioso, Prelúdio, Arranjo
-
-### 📦 Importação em Lote
-
-Importe **dezenas de partituras** de uma vez arrastando uma pasta com subpastas:
-
-```
-📂 Minha Coleção/
-   📂 Dois Corações - Dobrado - Estevam Moura/
-   📂 Saudades - Valsa - Autor Desconhecido/
-   📂 Hino Nacional - Hino Cívico/
-   ...
-```
-
-**Recursos:**
-- Extração automática de título, categoria, compositor e arranjador
-- Preview de todas as partituras antes do upload
-- Edição individual de metadados
-- Barra de progresso com **frases engraçadas** animadas
-- Processamento paralelo otimizado
-
-### 🔍 Busca com Transliteração
-
-O sistema entende **grafias antigas e modernas**:
-
-| Busca | Encontra |
-|-------|----------|
-| `nymphas` | ninfas |
-| `philarmonica` | filarmônica |
-| `symphonia` | sinfonia |
-| `João` | Joao |
-
-### 🖱️ Drag & Drop Inteligente
-
-Arraste pastas diretamente para a tela do admin:
-
-| O que você arrasta | O que acontece |
-|-------------------|----------------|
-| 📁 Pasta com PDFs | Abre **Upload de Pasta** (1 partitura) |
-| 📁 Pasta com subpastas | Abre **Importação em Lote** (N partituras) |
-
-### 🔐 Sistema de Autenticação
-
-| Opção | Duração | Uso Recomendado |
-|-------|:-------:|-----------------|
-| Login normal | 24h | Computadores compartilhados |
-| "Lembrar meu acesso" | 30 dias | Dispositivo pessoal |
-
-O sistema detecta automaticamente tokens expirados e redireciona para login.
-
-### 🎨 Temas Visuais
-
-| Tema | Descrição |
-|------|-----------|
-| ☀️ Claro | Fundo claro, ideal para ambientes iluminados |
-| 🌙 Escuro | Fundo escuro, ideal para leitura noturna |
-| 🔄 Automático | Segue a preferência do sistema operacional |
-
----
-
-## Stack Tecnológica
-
-<div align="center">
-
-| Camada | Tecnologia | Descrição |
-|:------:|:----------:|:---------:|
-| ![React](https://img.shields.io/badge/-React_18-61DAFB?style=flat-square&logo=react&logoColor=black) | **Frontend** | Interface SPA com Vite |
-| ![Cloudflare](https://img.shields.io/badge/-Workers-F38020?style=flat-square&logo=cloudflare&logoColor=white) | **Backend** | API Serverless Edge |
-| ![D1](https://img.shields.io/badge/-D1_SQLite-F38020?style=flat-square&logo=cloudflare&logoColor=white) | **Database** | Banco distribuído |
-| ![R2](https://img.shields.io/badge/-R2_Storage-F38020?style=flat-square&logo=cloudflare&logoColor=white) | **Storage** | Arquivos PDF |
-| ![Pages](https://img.shields.io/badge/-Pages-F38020?style=flat-square&logo=cloudflare&logoColor=white) | **Hosting** | CDN Global |
-
-</div>
-
----
-
-## Arquitetura do Backend
-
-O backend segue uma **Arquitetura Hexagonal (Monolito Modular)** para facilitar manutenção e escalabilidade:
-
-```
-worker/src/
-├── index.js                    # Entry point
-├── config/                     # Constantes e configurações
-│   ├── constants.js
-│   └── index.js
-├── infrastructure/             # Camada de infraestrutura
-│   ├── security/               # CORS, crypto helpers
-│   ├── auth/                   # JWT, hashing PBKDF2
-│   ├── ratelimit/              # Rate limiting
-│   ├── response/               # Response helpers
-│   └── index.js
-├── domain/                     # Lógica de negócio
-│   ├── auth/                   # Autenticação (login, rememberMe)
-│   ├── atividades/             # Registro de atividades
-│   ├── categorias/             # Categorias de partituras
-│   ├── estatisticas/           # Estatísticas e instrumentos
-│   ├── favoritos/              # Sistema de favoritos
-│   ├── partituras/             # CRUD de partituras
-│   ├── perfil/                 # Perfil do usuário
-│   └── usuarios/               # Gestão de usuários (admin)
-├── middleware/                 # Middleware pipeline
-│   ├── corsMiddleware.js
-│   ├── authMiddleware.js
-│   ├── adminMiddleware.js
-│   └── index.js
-└── routes/                     # Rotas da API
-    ├── router.js               # Router com path params
-    ├── healthRoutes.js
-    ├── authRoutes.js
-    ├── favoritoRoutes.js
-    ├── atividadeRoutes.js
-    ├── categoriaRoutes.js
-    ├── estatisticaRoutes.js
-    ├── usuarioRoutes.js
-    ├── perfilRoutes.js
-    ├── partituraRoutes.js
-    └── index.js
-```
-
----
-
-## Segurança
-
-| Recurso | Implementação |
-|---------|---------------|
-| **Autenticação** | JWT com expiração configurável (24h ou 30 dias) |
-| **Senhas** | PBKDF2 (100k iterações) |
-| **Rate Limiting** | Proteção contra brute-force |
-| **CORS** | Whitelist de domínios |
-| **Sessão** | Logout automático ao expirar + detecção proativa |
-| **Super Admin** | Proteção total - invisível e imutável |
-
----
-
-## Qualidade de Código
-
-O projeto possui infraestrutura completa de testes automatizados:
-
-- **216+ testes unitários** com Jest e Testing Library
-- **16 testes E2E** com Playwright (8 mocked + 8 com backend real)
-- **CI/CD automatizado** via GitHub Actions
-- **ESLint** para padronização de código
-- **Husky + lint-staged** para validação pré-commit
-
-Pipeline automático em cada push:
-```
-Push/PR -> Lint -> Jest (216+) -> E2E Mocked (8) -> Build -> Deploy
-```
-
----
-
-## URLs do Sistema
-
-| Ambiente | Frontend | API |
-|----------|----------|-----|
-| **Produção** | https://acervo.filarmonica25demarco.com | https://acervo-filarmonica-api.acssjr.workers.dev |
-| **Local** | http://localhost:5173 | http://localhost:8787 |
-
----
-
-## Desenvolvimento Local
-
-### Comandos Principais
-
-```bash
-# Terminal 1: Backend local (D1 + R2 locais)
-npm run api:local
-
-# Terminal 2: Frontend (proxy para localhost:8787)
-cd frontend && npm run dev
-```
-
-### Primeiro uso (inicializar banco local)
-
-```bash
+```powershell
+git clone https://github.com/acssjr/acervo-filarmonica.git
+cd acervo-filarmonica
+npm ci
+npm ci --prefix frontend
 npm run db:init
 ```
 
-Isso cria as tabelas e insere usuários de teste para desenvolvimento local.
-
-### Scripts Disponíveis
+Inicie a API e o frontend em terminais separados:
 
-| Comando | Descrição |
-|---------|-----------|
-| `npm run api:local` | Inicia backend local (porta 8787) |
-| `npm run db:init` | Cria tabelas + seed inicial |
-| `npm run db:seed` | Apenas seed (se tabelas existem) |
-| `npm run db:reset` | Limpa dados e reaplica seed |
-| `npm test` | Roda testes unitários |
-| `npm run lint:worker` | Valida o código do Worker |
-| `npm run api:contract:check` | Confere rotas e contrato OpenAPI |
-| `npm run db:schema:test` | Confere migrações e schema de testes |
-| `npm run test:e2e` | Roda testes E2E |
+```powershell
+npm run api:local
+```
 
-### Scripts do Frontend
+```powershell
+npm run dev --prefix frontend
+```
 
-| Comando | Descrição |
-|---------|-----------|
-| `cd frontend && npm run dev` | Frontend apontando para a API local |
-| `cd frontend && npm run dev:prod` | Frontend local apontando para a API de produção |
-| `cd frontend && npm test` | Testes unitários do frontend |
-| `cd frontend && npm run lint` | ESLint do frontend |
+| Serviço | Endereço local |
+|---|---|
+| Frontend | `http://localhost:5173` |
+| API | `http://localhost:8787` |
+| Saúde da API | `http://localhost:8787/api/health` |
 
-Para preparar ou publicar um ambiente Cloudflare, siga o [checklist de publicação](docs/DEPLOYMENT-CHECKLIST.md). Os comandos remotos não são necessários para desenvolvimento local.
+O seed local cria somente usuários de desenvolvimento. Ele nunca deve ser aplicado em produção. Consulte o passo a passo completo em [INSTALL.md](INSTALL.md).
 
----
+## Comandos principais
 
-## Changelog
+| Comando | Finalidade |
+|---|---|
+| `npm run api:local` | Inicia o Worker com D1 e R2 locais |
+| `npm run db:init` | Aplica migrações e insere o seed local |
+| `npm run db:migrate:local` | Aplica migrações no D1 local |
+| `npm run db:schema:test` | Confere o schema usado nos testes |
+| `npm run api:contract:check` | Confere a paridade entre rotas e OpenAPI |
+| `npm run api:types:check` | Confere os tipos gerados para o frontend |
+| `npm test` | Executa os testes do Worker |
+| `npm run lint:worker` | Valida Worker e Pages Functions |
+| `npm test --prefix frontend -- --runInBand` | Executa os testes do frontend |
+| `npm run lint --prefix frontend` | Valida o frontend |
+| `npm run typecheck --prefix frontend` | Valida o cliente tipado da API |
+| `npm run build --prefix frontend` | Gera o frontend de produção |
 
-<details open>
-<summary><b>v3.1.0</b> - 03 de Abril de 2026</summary>
-
-**Experiência do Músico**
-- **Agenda rotativa:** o contador da home alterna entre próximo ensaio e próxima apresentação
-- **Ensaios:** modal de detalhes com abertura estável, fundo suavizado e carregamento sem reposicionamento visível
-- **Perfil:** foto persistida no servidor, nome de exibição estável e conquistas renderizadas corretamente
-- **Compositores:** cards em destaque agora levam diretamente para o compositor clicado
+## Publicação
 
-**Comunicação e Descoberta**
-- **Notificações:** painel redesenhado, acentuação corrigida e atualização imediata após novos uploads
-- **Busca mobile:** overlay dedicado para acelerar a navegação no acervo e nas descobertas da home
+O push para `main` executa lint, testes, validações de contrato, build e deploy no Cloudflare. Migrações remotas **não são aplicadas automaticamente** pelo CI: o token de publicação segue o princípio do menor privilégio.
 
-</details>
+Quando houver migration pendente, a ordem segura é:
 
-<details>
-<summary><b>v2.9.2</b> - 15 de Fevereiro de 2026</summary>
+1. revisar e aplicar a migration no D1 com credencial autorizada;
+2. publicar o Worker;
+3. confirmar `/api/health` e os fluxos essenciais;
+4. publicar o frontend;
+5. observar logs e registrar o resultado.
 
-**Analytics & Insights**
-- **Dashboard Premium:** Nova interface com cards de KPI, gráficos de linha (tendências) e pizza (distribuição por naipe)
-- **Atividade Recente:** Feed detalhado com nomes de músicos e ações realizadas
-- **Rastreamento Avançado:** Logs de downloads vinculados a usuários e auditoria de buscas sem resultado
-- **Filtros Inteligentes:** Estatísticas de presença agora filtram automaticamente o maestro para precisão dos dados de músicos
+Siga sempre o [checklist de publicação](docs/DEPLOYMENT-CHECKLIST.md). Não execute seed, reset ou migration remota apenas para desenvolver localmente.
 
-**Melhorias Técnicas**
-- **Wrangler:** Atualização para v4.65.0
-- **Fix:** Correção de fuso horário em datas de acesso e logs de atividade
-- **Fix:** Correção de encoding em nomes de músicos no banco de dados
+## Documentação
 
-</details>
+| Documento | Conteúdo |
+|---|---|
+| [INSTALL.md](INSTALL.md) | Instalação e desenvolvimento local |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Fluxo da aplicação e fontes de verdade |
+| [docs/TESTING-STRATEGY.md](docs/TESTING-STRATEGY.md) | Estratégia e camadas de testes |
+| [docs/DEPLOYMENT-CHECKLIST.md](docs/DEPLOYMENT-CHECKLIST.md) | Migrações, publicação, smoke tests e rollback |
+| [SECURITY.md](SECURITY.md) | Modelo de segurança e reporte responsável |
+| [CHANGELOG.md](CHANGELOG.md) | Histórico das versões |
 
-<details>
-<summary><b>v2.9.1</b> - 14 de Fevereiro de 2026</summary>
+## Versão atual
 
-**Livro de Registros**
-- Sistema de **numeração sequencial** de ensaios (#N) para melhor organização histórica
-- Visualização do número do ensaio no modal e na lista administrativa
+Este repositório está na versão **3.2.0**, lançada em 27 de agosto de 2026. O projeto segue [Versionamento Semântico](https://semver.org/lang/pt-BR/) e mantém as mudanças relevantes no [changelog](CHANGELOG.md).
 
-**Correções Críticas de UI/UX**
-- **Calendário:** Correção de fuso horário (datas não "pulam" mais) e visual mais limpo
-- **Modais:** Sistema "blindado" via Portal que não quebra com zoom e trava o scroll do fundo
-- **Mobile:** Ajustes na visualização de avatares e fotos de músicos
-- **Domínio:** Migração definitiva para `acervo.filarmonica25demarco.com`
+## Autoria
 
-</details>
-
-<details>
-<summary><b>v2.9.0</b> - 25 de Dezembro de 2025</summary>
-
-**Novas Funcionalidades**
-- **Compartilhamento via WhatsApp:** Envie partituras diretamente do app
-- **Carrinho de Download:** Selecione várias partituras e baixe todas de uma vez
-- **Modo Recesso:** Substitui o contador de ensaios por aviso de "EM RECESSO"
-- **Onboarding:** Tutorial interativo para novos usuários
-
-**Melhorias Técnicas**
-- **PDF Viewer:** Pinch-to-zoom suave e aumento do zoom máximo
-- **PWA:** Ícones e favicon para instalação como app nativo
-- **Busca:** Lógica "match all words" para resultados mais precisos
-- **Performance:** Otimizações de renderização e transições de página
-
-</details>
-
-<details>
-<summary><b>v2.8.0</b> - 14 de Dezembro de 2025</summary>
-
-**Sistema de Repertório**
-- Download em lote: baixe todas as partituras do repertório em PDF único ou ZIP
-- Impressão direta: imprima todo o repertório de uma vez
-- Lista de instrumentos corrigida: agora mostra todos os instrumentos reais das partituras (ex: "Bombardino C" e "Bombardino Bb")
-
-**Melhorias de UX**
-- Animações de hover nos botões administrativos (escala + sombra)
-- Botão de repertório com UI otimista (resposta instantânea, reverte em caso de erro)
-- Modal para selecionar/criar repertório ao adicionar partitura
-
-</details>
-
-<details>
-<summary><b>v2.7.1</b> - 11 de Dezembro de 2025</summary>
-
-**Melhorias na Detecção**
-- Fix: detecção automática de categoria no upload individual usando análise multi-camada
-- Detecção de duplicatas no backend (impede partituras com mesmo título)
-- Correção de acentuação em todo o README
-
-</details>
-
-<details>
-<summary><b>v2.7.0</b> - 11 de Dezembro de 2025</summary>
-
-**Transições e Animações**
-- Hook `useAnimatedVisibility` para gerenciar animações de entrada/saída
-- Animações CSS para modais: backdrop blur, scale in/out, slide down
-- Transição de página suave baseada na rota atual
-- Frases engraçadas animadas durante upload em lote
-
-**Autenticação Melhorada**
-- "Lembrar meu acesso" agora gera token de 30 dias
-- Login normal continua com token de 24 horas
-- Detecção proativa de tokens expirados (limpa auth em qualquer 401)
-- Estabilidade de sessão entre deploys
-
-**Correções**
-- Fix: scroll lock robusto em modais (Safari/desktop)
-- Fix: erro 401 ao buscar partes da partitura
-- Fix: teste flaky de login no CI
-
-</details>
-
-<details>
-<summary><b>v2.6.1</b> - 9-10 de Dezembro de 2025</summary>
-
-**Drag & Drop de Pastas**
-- Arraste pastas diretamente para a tela do admin
-- Overlay visual com instruções durante arraste
-- Detecção automática: pasta simples → Upload, subpastas → Lote
-
-**Melhorias no Upload**
-- Modal redesenhado com header/footer fixos
-- Grid compacto para partes detectadas
-- Suporte a pré-carregamento de arquivos
-
-**Sincronização**
-- Categorias e instrumentos sincronizados com banco de dados
-- Fallback local quando API indisponível
-- Migration para corrigir categorias em produção
-
-</details>
-
-<details>
-<summary><b>v2.6.0</b> - 8-9 de Dezembro de 2025</summary>
-
-**Arquitetura Modular do Backend**
-- Refatoração completa do worker monolítico (2014 linhas → ~50 arquivos)
-- Arquitetura Hexagonal com separação Infrastructure/Domain
-- Router customizado com suporte a path params e middleware pipeline
-- Domain Services separados por responsabilidade
-
-**Novo Domínio**
-- Migração para `acervo.filarmonica25demarco.com` (Anteriormente `partituras.app`)
-- Configuração de subdomínio via Cloudflare
-
-**Melhorias de UX**
-- Skeleton loading em todas as telas
-- Correção de acentuação em português
-- Melhorias visuais nas sidebars
-- Animações Lottie no admin
-
-**Admin**
-- Modal de edição de partituras
-- Importação em lote melhorada
-- Detecção automática de categorias
-
-</details>
-
-<details>
-<summary><b>v2.5.0</b> - 7 de Dezembro de 2025</summary>
-
-**Melhorias de UX no Painel Admin**
-- Visualização de PDF inline com zoom (Ctrl+Scroll)
-- Contador de partes por partitura
-- Hover individual nos botões de ação (substituir/deletar)
-- Efeito visual de scale nos botões
-- Fechamento do PDF ao clicar no backdrop
-
-**Upload**
-- Modal redesenhado com SVGs e animações
-- Correção de detecção de instrumentos com hífen (ex: Caixa-Clara)
-- Correção de race condition entre tutorial e modal
-
-**Qualidade**
-- Correção de bugs no carregamento de PDF
-- Testes Playwright corrigidos
-
-</details>
-
-<details>
-<summary><b>v2.4.0</b> - 6 de Dezembro de 2025</summary>
-
-- **Super Admin:** Proteção total do @admin (invisível, imutável)
-- **Badges:** Identificação visual de admins na lista
-- **Equalizer:** Animação de loading no login
-- **Constants:** Centralização de cores, mensagens e configs
-
-</details>
-
-<details>
-<summary><b>v2.3.x</b> - 5 de Dezembro de 2025</summary>
-
-- **Admin Toggle:** Alternar entre modo usuário/admin sem logout
-- **Carrossel:** Compositores em destaque na home (mobile)
-- **Busca:** Transliteração de grafias antigas
-- **Testes:** 215 testes unitários + 16 E2E
-- **CI/CD:** Pipeline automatizado com GitHub Actions
-
-</details>
-
-<details>
-<summary><b>v2.2.0</b> - 4 de Dezembro de 2025</summary>
-
-- **Arquitetura:** Contexts separados (Auth, UI, Data, Notifications)
-- **Performance:** Re-renders isolados por domínio
-- 30+ componentes migrados para nova arquitetura
-
-</details>
-
-<details>
-<summary><b>Versões anteriores</b></summary>
-
-**v2.1.0** - 3 de Dezembro de 2025
-- JWT 24h, PBKDF2, Rate limiting, Redirect admin
-
-**v2.0.0** - 2 de Dezembro de 2025
-- Upload pasta, detecção instrumentos, gerenciamento partes
-
-**v1.5.0** - 1 de Dezembro de 2025
-- Modal "Sobre", validação PIN, melhorias mobile
-
-**v1.4.0** - 30 de Novembro de 2025
-- Perfil com foto, alteração PIN, seletor de tema
-
-**v1.0.0** - 28 de Novembro de 2025
-- Versão inicial
-
-</details>
-
----
-
-<div align="center">
-
-### Desenvolvido por
-
-**Antonio Junior**
-
-*Para a Sociedade Filarmônica 25 de Março*
-
-<br/>
-
-[![GitHub](https://img.shields.io/badge/-GitHub-181717?style=for-the-badge&logo=github)](https://github.com/acssjr)
-
----
-
-<sub>Projeto privado - Todos os direitos reservados</sub>
-
-<br/>
-
-**Sociedade Filarmônica 25 de Março - Desde 1868**
-
-</div>
+Desenvolvido por **Antônio Júnior** para a **Sociedade Filarmônica 25 de Março**, fundada em 1868 em Feira de Santana, Bahia.

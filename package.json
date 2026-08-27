@@ -1,6 +1,6 @@
 {
   "name": "acervo-filarmonica",
-  "version": "3.1.0",
+  "version": "3.2.0",
   "type": "module",
   "description": "Acervo Digital da Sociedade Filarmônica 25 de Março",
   "main": "worker/src/index.js",
