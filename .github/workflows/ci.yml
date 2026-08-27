@@ -55,6 +55,9 @@ jobs:
       - name: Check route and OpenAPI contract
         run: npm run api:contract:check
 
+      - name: Validate Worker deployment configuration
+        run: npx wrangler deploy --dry-run
+
       # Lint do Frontend
       - name: Install frontend dependencies
         run: npm ci
