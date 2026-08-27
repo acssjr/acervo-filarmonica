@@ -1,14 +1,19 @@
 export const getPostLoginDestination = (from) => {
-  const pathname = typeof from === 'string' ? from : from?.pathname;
+  const stringPathname = typeof from === 'string' ? from.split(/[?#]/, 1)[0] : null;
+  const pathname = stringPathname ?? from?.pathname;
+  const normalizedPathname = typeof pathname === 'string' && pathname.length > 1
+    ? pathname.replace(/\/+$/, '')
+    : pathname;
   if (
-    typeof pathname !== 'string'
-    || !pathname.startsWith('/')
-    || pathname.startsWith('//')
-    || pathname === '/login'
+    typeof normalizedPathname !== 'string'
+    || !normalizedPathname.startsWith('/')
+    || normalizedPathname.startsWith('//')
+    || normalizedPathname === '/login'
   ) {
     return '/';
   }
 
+  if (typeof from === 'string') return from;
   const search = typeof from === 'object' && typeof from?.search === 'string' ? from.search : '';
   const hash = typeof from === 'object' && typeof from?.hash === 'string' ? from.hash : '';
   return `${pathname}${search}${hash}`;

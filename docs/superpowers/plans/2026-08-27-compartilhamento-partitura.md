@@ -1,12 +1,12 @@
-# Compartilhamento de Partitura Implementation Plan
+# Plano de implementação do compartilhamento de partitura
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Adicionar envio de link com preview social dinâmico e preservar o envio de cópia do PDF no botão Enviar.
+**Objetivo:** Adicionar envio de link com preview social dinâmico e preservar o envio de cópia do PDF no botão Enviar.
 
-**Architecture:** O frontend concentra a composição da mensagem e a chamada das APIs nativas em uma unidade testável, enquanto um modal pequeno escolhe entre cópia e link. Uma Pages Function serve o mesmo SPA com metadados sociais específicos e gera uma imagem PNG 1200×630 por partitura usando a API oficial `ImageResponse`, sem tornar os downloads públicos.
+**Arquitetura:** O frontend concentra a composição da mensagem e a chamada das APIs nativas em uma unidade testável, enquanto um modal pequeno escolhe entre cópia e link. Uma Pages Function serve o mesmo SPA com metadados sociais específicos e gera uma imagem PNG 1200×630 por partitura usando a API oficial `ImageResponse`, sem tornar os downloads públicos.
 
-**Tech Stack:** React 18, React Router 7, Jest, Cloudflare Pages Functions, `@cloudflare/pages-plugin-vercel-og`, Wrangler 4.
+**Tecnologias:** React 18, React Router 7, Jest, Cloudflare Pages Functions, `@cloudflare/pages-plugin-vercel-og`, Wrangler 4.
 
 ---
 
