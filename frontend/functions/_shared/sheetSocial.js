@@ -1,3 +1,8 @@
+import {
+  getSingularCategoryName,
+  SHARE_PRESENTATION_VERSION
+} from '../../shared/categoryDisplay.js';
+
 export const SITE_ORIGIN = 'https://acervo.filarmonica25demarco.com';
 export const API_ORIGIN = 'https://acervo-filarmonica-api.acssjr.workers.dev';
 export const SOCIAL_IMAGE_NAME = 'social-image.png';
@@ -45,15 +50,19 @@ const versionFromDate = (value) => {
 export const buildSocialMetadata = (sheet, siteOrigin = SITE_ORIGIN) => {
   const canonicalUrl = `${siteOrigin}/acervo/${encodeURIComponent(sheet.categoryId)}/${encodeURIComponent(sheet.id)}`;
   const imageUrl = new URL(`${canonicalUrl}/${SOCIAL_IMAGE_NAME}`);
-  const version = versionFromDate(sheet.updatedAt);
-  if (version) imageUrl.searchParams.set('v', version);
+  const contentVersion = versionFromDate(sheet.updatedAt);
+  const singularCategoryName = getSingularCategoryName(sheet.categoryName);
+  imageUrl.searchParams.set(
+    'v',
+    contentVersion ? `${contentVersion}-${SHARE_PRESENTATION_VERSION}` : SHARE_PRESENTATION_VERSION
+  );
 
   return {
     pageTitle: `${sheet.title} | Acervo Digital`,
-    description: `${sheet.categoryName} de ${sheet.composer}. Entre no Acervo Digital para visualizar e baixar sua parte.`,
+    description: `${singularCategoryName} de ${sheet.composer}. Entre no Acervo Digital para visualizar e baixar sua parte.`,
     canonicalUrl,
     imageUrl: imageUrl.toString(),
-    imageAlt: `Cartão da partitura ${sheet.title}, gênero ${sheet.categoryName}`
+    imageAlt: `Cartão da partitura ${sheet.title}, gênero ${singularCategoryName}`
   };
 };
 
@@ -112,7 +121,7 @@ export const getTitleFontSize = (title) => {
 
 export const buildSocialCardContent = (sheet) => ({
   title: sheet.title,
-  categoryName: sheet.categoryName,
+  categoryName: getSingularCategoryName(sheet.categoryName),
   composer: sheet.composer,
   titleFontSize: getTitleFontSize(sheet.title)
 });

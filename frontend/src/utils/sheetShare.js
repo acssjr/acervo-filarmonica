@@ -1,3 +1,8 @@
+import {
+  getSingularCategoryName,
+  SHARE_PRESENTATION_VERSION
+} from '../../shared/categoryDisplay.js';
+
 const APP_NAME = 'Acervo Digital';
 
 const resolveOrigin = (origin) => {
@@ -20,15 +25,18 @@ export const buildSheetShareUrl = (sheet, { origin } = {}) => {
     `/acervo/${encodeURIComponent(String(sheet.category))}/${encodeURIComponent(String(sheet.id))}`,
     resolveOrigin(origin)
   );
-  const version = versionFromDate(sheet.updatedAt || sheet.atualizado_em);
-  if (version) url.searchParams.set('v', version);
+  const contentVersion = versionFromDate(sheet.updatedAt || sheet.atualizado_em);
+  url.searchParams.set(
+    'v',
+    contentVersion ? `${contentVersion}-${SHARE_PRESENTATION_VERSION}` : SHARE_PRESENTATION_VERSION
+  );
   return url.toString();
 };
 
 export const buildSheetShareText = (sheet, categoryName) => {
   const title = sheet?.title?.trim() || 'Partitura';
   const composer = sheet?.composer?.trim();
-  const genre = categoryName?.trim() || sheet?.category?.trim();
+  const genre = getSingularCategoryName(categoryName || sheet?.category);
   const attribution = composer ? `“${title}”, de ${composer}` : `“${title}”`;
   const genreLine = genre ? `\nGênero: ${genre}` : '';
 

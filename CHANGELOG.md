@@ -6,6 +6,10 @@ O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e o 
 
 ## [Não publicado]
 
+### Corrigido
+
+- Gêneros de partituras compartilhadas agora aparecem no singular no texto, nos metadados e no cartão social, sem alterar o cadastro das categorias.
+
 ## [3.2.0] - 2026-08-27
 
 ### Adicionado

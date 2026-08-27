@@ -7,6 +7,7 @@ export default [
     ignores: [
       'frontend/*',
       '!frontend/functions',
+      '!frontend/shared',
       'node_modules/**',
       '.wrangler/**',
       'database/**',
@@ -19,7 +20,7 @@ export default [
   js.configs.recommended,
 
   {
-    files: ['worker/src/**/*.js', 'worker/*.js', 'frontend/functions/**/*.js'],
+    files: ['worker/src/**/*.js', 'worker/*.js', 'frontend/functions/**/*.js', 'frontend/shared/**/*.js'],
     languageOptions: {
       ecmaVersion: 2024,
       sourceType: 'module',

@@ -13,12 +13,12 @@ describe('sheetShare', () => {
   test('monta URL canônica codificada com versão', () => {
     const url = buildSheetShareUrl({ ...sheet, category: 'marchas festivas' }, { origin: 'https://acervo.exemplo.com/' });
 
-    expect(url).toBe('https://acervo.exemplo.com/acervo/marchas%20festivas/96?v=mtbh0g00');
+    expect(url).toBe('https://acervo.exemplo.com/acervo/marchas%20festivas/96?v=mtbh0g00-genre-singular-v1');
   });
 
   test('monta a mensagem com peça, compositor e gênero', () => {
     expect(buildSheetShareText(sheet, 'Marchas')).toBe(
-      "🎺 Partitura disponível no Acervo Digital!\n\n“Senhora Sant'Anna”, de Tertuliano Santos\nGênero: Marchas\n\nAcesse e encontre a sua parte:"
+      "🎺 Partitura disponível no Acervo Digital!\n\n“Senhora Sant'Anna”, de Tertuliano Santos\nGênero: Marcha\n\nAcesse e encontre a sua parte:"
     );
   });
 
