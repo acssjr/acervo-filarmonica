@@ -8,15 +8,108 @@ Sistema web para organizar, consultar e distribuir o acervo de partituras da Soc
 [![Status](https://img.shields.io/badge/status-em%20produção-success?style=for-the-badge)](https://acervo.filarmonica25demarco.com)
 [![CI](https://img.shields.io/github/actions/workflow/status/acssjr/acervo-filarmonica/ci.yml?branch=main&style=for-the-badge&label=CI&logo=github)](https://github.com/acssjr/acervo-filarmonica/actions/workflows/ci.yml)
 
-[Acessar o Acervo](https://acervo.filarmonica25demarco.com) · [Instalação](INSTALL.md) · [Arquitetura](docs/ARCHITECTURE.md) · [Changelog](CHANGELOG.md) · [Segurança](SECURITY.md)
+[Acessar o Acervo](https://acervo.filarmonica25demarco.com) · [Arquitetura](docs/ARCHITECTURE.md) · [Changelog](CHANGELOG.md) · [Segurança](SECURITY.md)
 
 </div>
 
 ## Sobre o projeto
 
-O Acervo Digital substitui a procura manual por pastas e arquivos dispersos por um catálogo acessível no celular e no computador. Músicos encontram a parte do próprio instrumento; maestro e administradores organizam repertórios, ensaios, presenças, usuários e o acervo completo.
+O Acervo Digital reduz o trabalho de organizar, localizar e distribuir centenas de partes musicais. Em vez de cadastrar cada PDF manualmente ou procurar arquivos em pastas dispersas, a administração envia pastas completas, revisa o que foi reconhecido e publica tudo em um único fluxo.
+
+No celular ou no computador, cada músico encontra a parte do próprio instrumento. Maestro e administradores organizam repertórios, ensaios, presenças, usuários e o acervo completo no mesmo lugar.
 
 O projeto começou como uma página HTML única e evoluiu para uma aplicação React com backend modular no Cloudflare Workers, banco D1 e armazenamento de PDFs no R2.
+
+Este é um projeto de uso institucional, desenvolvido para as necessidades da Sociedade Filarmônica 25 de Março. O repositório documenta sua evolução e manutenção, mas não é apresentado como template ou sistema genérico para clonagem.
+
+## Como o Acervo poupa tempo
+
+### Upload de pasta: uma obra completa de uma vez
+
+Para cadastrar uma partitura, basta arrastar a pasta da obra para a área administrativa. Cada PDF dentro dela é analisado como uma parte da mesma peça.
+
+```text
+📂 Senhora Sant'Anna - Marcha - Tertuliano Santos/
+├── 📄 Grade.pdf
+├── 📄 01 - Flautim.pdf
+├── 📄 02 - Clarinete Bb 1.pdf
+├── 📄 03 - Clarinete Bb 2.pdf
+├── 📄 Trompete Bb 1.pdf
+├── 📄 Trombone 1.pdf
+└── 📄 Bombo.pdf
+```
+
+Nesse fluxo, o sistema:
+
+1. identifica título, gênero e compositor pelo nome e pela posição da pasta;
+2. reconhece o instrumento de cada arquivo, mesmo com diferenças de numeração e escrita;
+3. organiza todas as partes em uma única obra;
+4. mostra uma revisão antes do envio;
+5. permite corrigir metadados ou instrumentos sem renomear os arquivos no computador;
+6. envia os PDFs com progresso visível e atualiza o acervo ao concluir.
+
+### Importação em lote: várias obras no mesmo envio
+
+Quando há muitas partituras para cadastrar, a pasta principal pode conter uma subpasta para cada obra:
+
+```text
+📂 Minha Coleção/
+├── 📂 Dois Corações - Dobrado - Estevam Moura/
+│   ├── 📄 Grade.pdf
+│   ├── 📄 Clarinete Bb 1.pdf
+│   └── 📄 Trompete Bb 1.pdf
+├── 📂 Saudades - Valsa - Autor Desconhecido/
+│   ├── 📄 Grade.pdf
+│   └── 📄 Flauta.pdf
+└── 📂 Hino Nacional - Hino Cívico/
+    ├── 📄 Grade.pdf
+    └── 📄 Trombone.pdf
+```
+
+O Acervo separa as obras, extrai os dados de cada pasta e apresenta uma revisão geral. Assim, dezenas de partituras podem ser preparadas no mesmo processo, mantendo edição individual quando alguma informação precisa de ajuste.
+
+Também é possível organizar primeiro por gênero:
+
+```text
+📂 Repertório/
+├── 📂 Dobrados/
+│   ├── 📂 Dois Corações/
+│   └── 📂 Cisne Branco/
+├── 📂 Marchas/
+│   └── 📂 Senhora Sant'Anna/
+└── 📂 Hinos Religiosos/
+    └── 📂 Hino de Nossa Senhora/
+```
+
+### O que é reconhecido automaticamente
+
+O analisador aceita diferentes padrões encontrados em acervos antigos e atuais:
+
+| Nome recebido | Interpretação |
+|---|---|
+| `01 - Clarinete Bb 1.pdf` | Clarinete Bb 1 |
+| `15 III Trompete Bb.pdf` | Trompete Bb 3 |
+| `I e II Clarinetes in Bb.pdf` | Clarinete Bb 1 e 2 |
+| `Caixa-clara.pdf` | Caixa |
+| `Barítono Bb TC.pdf` | Barítono Bb TC |
+| `BarÃ­tono.pdf` | Barítono, com correção de codificação |
+
+Para o gênero, a análise considera nesta ordem:
+
+1. a pasta de gênero acima da obra;
+2. o padrão `Título - Gênero - Compositor`;
+3. palavras reconhecidas no título.
+
+Antes do envio, nada é publicado automaticamente: o administrador pode conferir e corrigir o resultado.
+
+### Arrastar e soltar decide o fluxo
+
+| O que é arrastado | O que o Acervo abre |
+|---|---|
+| Uma pasta com PDFs | Upload de pasta para uma obra |
+| Uma pasta com subpastas | Importação em lote para várias obras |
+
+Além de poupar o cadastro manual, o sistema detecta possíveis duplicatas, permite substituir partes existentes e atualiza as notificações depois do upload.
 
 ## O que o sistema oferece
 
@@ -41,19 +134,11 @@ O projeto começou como uma página HTML única e evoluiu para uma aplicação R
 - gestão de músicos, ensaios, presença, avisos, fundos visuais e configurações;
 - painel de analytics e histórico de atividades administrativas.
 
-## Regras importantes do acervo
+## Distribuição e integridade do acervo
 
-### Bombardino C e Bombardino Bb
+Nos downloads de repertório, o sistema confere tanto o cadastro da parte quanto a existência real do PDF. Se alguma obra não tiver o instrumento solicitado, ela é informada antes do download e um pacote parcial só é gerado depois da confirmação.
 
-As duas tonalidades são tratadas como instrumentos diferentes em todo o fluxo. Um arquivo identificado apenas como `Bombardino` ou `Euphonium` é normalizado como **Bombardino C**, conforme a convenção do acervo.
-
-Nos downloads de repertório:
-
-- Bombardino C nunca recebe uma parte de Bombardino Bb como substituta;
-- Bombardino Bb nunca recebe uma parte de Bombardino C como substituta;
-- o sistema verifica o cadastro no D1 e a existência real do PDF no R2;
-- obras sem a parte pedida são listadas antes do download;
-- um pacote parcial só é gerado depois da confirmação do usuário.
+Tonalidades diferentes não são usadas como substitutas. Por exemplo, Bombardino C e Bombardino Bb permanecem separados; um arquivo identificado apenas como `Bombardino` ou `Euphonium` segue a convenção do acervo e é tratado como Bombardino C.
 
 ### Arquivos e metadados
 
@@ -118,81 +203,13 @@ Veja mais detalhes em [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 Detalhes e orientações para reportar vulnerabilidades estão em [SECURITY.md](SECURITY.md).
 
-## Desenvolvimento local
-
-### Requisitos
-
-- Node.js 22;
-- npm;
-- conta Cloudflare apenas para operações remotas.
-
-### Instalação
-
-```powershell
-git clone https://github.com/acssjr/acervo-filarmonica.git
-cd acervo-filarmonica
-npm ci
-npm ci --prefix frontend
-npm run db:init
-```
-
-Inicie a API e o frontend em terminais separados:
-
-```powershell
-npm run api:local
-```
-
-```powershell
-npm run dev --prefix frontend
-```
-
-| Serviço | Endereço local |
-|---|---|
-| Frontend | `http://localhost:5173` |
-| API | `http://localhost:8787` |
-| Saúde da API | `http://localhost:8787/api/health` |
-
-O seed local cria somente usuários de desenvolvimento. Ele nunca deve ser aplicado em produção. Consulte o passo a passo completo em [INSTALL.md](INSTALL.md).
-
-## Comandos principais
-
-| Comando | Finalidade |
-|---|---|
-| `npm run api:local` | Inicia o Worker com D1 e R2 locais |
-| `npm run db:init` | Aplica migrações e insere o seed local |
-| `npm run db:migrate:local` | Aplica migrações no D1 local |
-| `npm run db:schema:test` | Confere o schema usado nos testes |
-| `npm run api:contract:check` | Confere a paridade entre rotas e OpenAPI |
-| `npm run api:types:check` | Confere os tipos gerados para o frontend |
-| `npm test` | Executa os testes do Worker |
-| `npm run lint:worker` | Valida Worker e Pages Functions |
-| `npm test --prefix frontend -- --runInBand` | Executa os testes do frontend |
-| `npm run lint --prefix frontend` | Valida o frontend |
-| `npm run typecheck --prefix frontend` | Valida o cliente tipado da API |
-| `npm run build --prefix frontend` | Gera o frontend de produção |
-
-## Publicação
-
-O push para `main` executa lint, testes, validações de contrato, build e deploy no Cloudflare. Migrações remotas **não são aplicadas automaticamente** pelo CI: o token de publicação segue o princípio do menor privilégio.
-
-Quando houver migration pendente, a ordem segura é:
-
-1. revisar e aplicar a migration no D1 com credencial autorizada;
-2. publicar o Worker;
-3. confirmar `/api/health` e os fluxos essenciais;
-4. publicar o frontend;
-5. observar logs e registrar o resultado.
-
-Siga sempre o [checklist de publicação](docs/DEPLOYMENT-CHECKLIST.md). Não execute seed, reset ou migration remota apenas para desenvolver localmente.
-
-## Documentação
+## Documentação técnica interna
 
 | Documento | Conteúdo |
 |---|---|
-| [INSTALL.md](INSTALL.md) | Instalação e desenvolvimento local |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Fluxo da aplicação e fontes de verdade |
 | [docs/TESTING-STRATEGY.md](docs/TESTING-STRATEGY.md) | Estratégia e camadas de testes |
-| [docs/DEPLOYMENT-CHECKLIST.md](docs/DEPLOYMENT-CHECKLIST.md) | Migrações, publicação, smoke tests e rollback |
+| [docs/DEPLOYMENT-CHECKLIST.md](docs/DEPLOYMENT-CHECKLIST.md) | Publicação, migrações, verificações e rollback |
 | [SECURITY.md](SECURITY.md) | Modelo de segurança e reporte responsável |
 | [CHANGELOG.md](CHANGELOG.md) | Histórico das versões |
 
