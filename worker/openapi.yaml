@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: Acervo Filarmonica API
   description: API do sistema de gestão de partituras da Filarmonica 25 de Março
-  version: 1.0.0
+  version: 3.2.0
   contact:
     name: Acervo Filarmonica
 
