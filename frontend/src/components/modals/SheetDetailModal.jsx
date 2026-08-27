@@ -14,7 +14,8 @@ import { API } from '@services/api';
 import CategoryIcon from '@components/common/CategoryIcon';
 import { useMediaQuery } from '@hooks/useMediaQuery';
 import { useSheetDownload, findParteExata } from '@hooks/useSheetDownload';
-import { PartePicker, DownloadConfirm, InstrumentSelector } from './sheet';
+import { shareSheetLink } from '@utils/sheetShare';
+import { PartePicker, DownloadConfirm, InstrumentSelector, ShareOptions } from './sheet';
 
 const PDFViewerModal = lazy(() => import('./PDFViewerModal'));
 
@@ -28,6 +29,8 @@ const SheetDetailModal = () => {
   // Estado local
   const isDesktop = useMediaQuery('(min-width: 1024px)');
   const [showInstrumentPicker, setShowInstrumentPicker] = useState(false);
+  const [showShareOptions, setShowShareOptions] = useState(false);
+  const showShareOptionsRef = useRef(false);
   const [partes, setPartes] = useState([]);
   const [loadingPartes, setLoadingPartes] = useState(false);
 
@@ -38,6 +41,10 @@ const SheetDetailModal = () => {
     partes
   });
   const selectedSheetId = selectedSheet?.id;
+
+  useEffect(() => {
+    showShareOptionsRef.current = showShareOptions;
+  }, [showShareOptions]);
 
   // Handler para adicionar parte ao carrinho de compartilhamento
   const handleAddToCart = useCallback((instrument) => {
@@ -100,7 +107,7 @@ const SheetDetailModal = () => {
 
       // Handler para Escape
       const handleKeyDown = (e) => {
-        if (e.key === 'Escape') {
+        if (e.key === 'Escape' && !showShareOptionsRef.current) {
           handleClose();
         }
       };
@@ -127,6 +134,7 @@ const SheetDetailModal = () => {
 
     let cancelled = false;
     setShowInstrumentPicker(false);
+    setShowShareOptions(false);
     download.handleCancelDownload();
 
     API.trackEvent({
@@ -170,6 +178,36 @@ const SheetDetailModal = () => {
     ? [...new Set(partes.map(p => p.instrumento))]
     : instrumentNames;
 
+  const handleShareLink = useCallback(async () => {
+    setShowShareOptions(false);
+    try {
+      const result = await shareSheetLink({
+        sheet: selectedSheet,
+        categoryName: category?.name
+      });
+      if (result.status === 'shared') {
+        showToast(result.copied ? 'Link compartilhado e copiado!' : 'Link compartilhado!');
+      } else if (result.status === 'copied') {
+        showToast('Link copiado!');
+      }
+      if (result.status !== 'cancelled') {
+        API.trackEvent({
+          tipo: 'partitura_compartilhada_link',
+          origem: 'detalhe_partitura',
+          partitura_id: selectedSheet.id
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao compartilhar link:', error);
+      showToast('Não foi possível compartilhar o link', 'error');
+    }
+  }, [category?.name, selectedSheet, showToast]);
+
+  const handleSendCopy = useCallback(() => {
+    setShowShareOptions(false);
+    download.handleShareInstrument(isMaestro ? 'Grade' : userInstrument);
+  }, [download, isMaestro, userInstrument]);
+
   return (
     <AnimatePresence>
       {selectedSheet && (
@@ -210,6 +248,14 @@ const SheetDetailModal = () => {
             downloading={download.downloading}
             onConfirm={download.handleConfirmDownload}
             onCancel={download.handleCancelDownload}
+          />
+
+          <ShareOptions
+            isOpen={showShareOptions}
+            onClose={() => setShowShareOptions(false)}
+            onSendCopy={handleSendCopy}
+            onShareLink={handleShareLink}
+            copyDisabled={!download.canShareFiles() || download.downloading || loadingPartes || (isMaestro && !hasGrade)}
           />
 
           {/* Visualizador de PDF embutido */}
@@ -532,32 +578,28 @@ const SheetDetailModal = () => {
 
               {/* Botoes Adicionais */}
               <div data-walkthrough="sheet-options" style={{ display: 'flex', gap: '8px' }}>
-                {download.canShareFiles() && (
                   <button
-                    onClick={() => download.handleShareInstrument(isMaestro ? 'Grade' : userInstrument)}
-                    disabled={download.downloading || loadingPartes || (isMaestro && !hasGrade)}
+                    onClick={() => setShowShareOptions(true)}
                     aria-label="Compartilhar partitura"
                     style={{
                       flex: 1,
                       padding: '10px',
                       borderRadius: '10px',
-                      background: (isMaestro && !hasGrade) ? 'var(--bg-secondary)' : 'rgba(37, 211, 102, 0.1)',
-                      border: (isMaestro && !hasGrade) ? '1.5px solid var(--border)' : '1.5px solid rgba(37, 211, 102, 0.3)',
-                      color: (isMaestro && !hasGrade) ? 'var(--text-muted)' : '#25D366',
+                      background: 'rgba(37, 211, 102, 0.1)',
+                      border: '1.5px solid rgba(37, 211, 102, 0.3)',
+                      color: '#25D366',
                       fontSize: '12px',
                       fontWeight: '600',
-                      cursor: (isMaestro && !hasGrade) || download.downloading || loadingPartes ? 'not-allowed' : 'pointer',
+                      cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      gap: '6px',
-                      opacity: (isMaestro && !hasGrade) ? 0.5 : 1
+                      gap: '6px'
                     }}
                   >
                     <div style={{ width: '14px', height: '14px' }}><Icons.Share /></div>
                     Enviar
                   </button>
-                )}
 
                 <button
                   onClick={() => toggleFavorite(selectedSheet.id)}
