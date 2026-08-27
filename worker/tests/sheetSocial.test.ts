@@ -30,7 +30,7 @@ describe('preview social de partitura', () => {
     const metadata = buildSocialMetadata(sheet, 'https://acervo.exemplo.com');
 
     expect(metadata.canonicalUrl).toBe('https://acervo.exemplo.com/acervo/marchas/96');
-    expect(metadata.imageUrl).toBe('https://acervo.exemplo.com/acervo/marchas/96/social-image.png?v=mtbh0g00');
+    expect(metadata.imageUrl).toBe('https://acervo.exemplo.com/acervo/marchas/96/social-image.png?v=mtbh0g00-genre-singular-v1');
     expect(metadata.description).toBe('Marcha de Tertuliano Santos. Entre no Acervo Digital para visualizar e baixar sua parte.');
     expect(metadata.imageAlt).toContain('gênero Marcha');
   });

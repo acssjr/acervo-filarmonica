@@ -1,4 +1,7 @@
-import { getSingularCategoryName } from '../../shared/categoryDisplay.js';
+import {
+  getSingularCategoryName,
+  SHARE_PRESENTATION_VERSION
+} from '../../shared/categoryDisplay.js';
 
 export const SITE_ORIGIN = 'https://acervo.filarmonica25demarco.com';
 export const API_ORIGIN = 'https://acervo-filarmonica-api.acssjr.workers.dev';
@@ -47,9 +50,12 @@ const versionFromDate = (value) => {
 export const buildSocialMetadata = (sheet, siteOrigin = SITE_ORIGIN) => {
   const canonicalUrl = `${siteOrigin}/acervo/${encodeURIComponent(sheet.categoryId)}/${encodeURIComponent(sheet.id)}`;
   const imageUrl = new URL(`${canonicalUrl}/${SOCIAL_IMAGE_NAME}`);
-  const version = versionFromDate(sheet.updatedAt);
+  const contentVersion = versionFromDate(sheet.updatedAt);
   const singularCategoryName = getSingularCategoryName(sheet.categoryName);
-  if (version) imageUrl.searchParams.set('v', version);
+  imageUrl.searchParams.set(
+    'v',
+    contentVersion ? `${contentVersion}-${SHARE_PRESENTATION_VERSION}` : SHARE_PRESENTATION_VERSION
+  );
 
   return {
     pageTitle: `${sheet.title} | Acervo Digital`,

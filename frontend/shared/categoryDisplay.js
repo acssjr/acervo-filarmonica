@@ -21,6 +21,8 @@ const SINGULAR_CATEGORY_NAMES = new Map([
   ['preludios', 'Prelúdio']
 ]);
 
+export const SHARE_PRESENTATION_VERSION = 'genre-singular-v1';
+
 export const getSingularCategoryName = (categoryName) => {
   if (typeof categoryName !== 'string') return '';
   const trimmedName = categoryName.trim();

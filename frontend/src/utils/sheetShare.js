@@ -1,4 +1,7 @@
-import { getSingularCategoryName } from '../../shared/categoryDisplay.js';
+import {
+  getSingularCategoryName,
+  SHARE_PRESENTATION_VERSION
+} from '../../shared/categoryDisplay.js';
 
 const APP_NAME = 'Acervo Digital';
 
@@ -22,8 +25,11 @@ export const buildSheetShareUrl = (sheet, { origin } = {}) => {
     `/acervo/${encodeURIComponent(String(sheet.category))}/${encodeURIComponent(String(sheet.id))}`,
     resolveOrigin(origin)
   );
-  const version = versionFromDate(sheet.updatedAt || sheet.atualizado_em);
-  if (version) url.searchParams.set('v', version);
+  const contentVersion = versionFromDate(sheet.updatedAt || sheet.atualizado_em);
+  url.searchParams.set(
+    'v',
+    contentVersion ? `${contentVersion}-${SHARE_PRESENTATION_VERSION}` : SHARE_PRESENTATION_VERSION
+  );
   return url.toString();
 };
 
