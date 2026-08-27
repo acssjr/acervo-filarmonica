@@ -14,7 +14,8 @@
     "dev:prod": "node scripts/dev.cjs prod",
     "dev:worker": "npm run api:local",
     "deploy": "wrangler deploy",
-    "deploy:pages": "wrangler pages deploy frontend --project-name=acervo-filarmonica",
+    "deploy:pages": "wrangler pages deploy dist --cwd frontend",
+    "pages:functions:build": "wrangler pages functions build functions --project-directory . --outdir ../.wrangler/pages-functions --sourcemap --cwd frontend",
     "setup": "node scripts/setup.cjs",
     "db:migrate": "npm run db:migrate:local",
     "db:migrate:local": "wrangler d1 migrations apply DB --local",
@@ -28,7 +29,7 @@
     "test:e2e": "npx playwright test",
     "test:e2e:ui": "npx playwright test --ui",
     "test:e2e:headed": "npx playwright test --headed",
-    "lint:worker": "eslint worker/ --max-warnings 0"
+    "lint:worker": "eslint worker/ frontend/functions/ --max-warnings 0"
   },
   "repository": {
     "type": "git",
@@ -47,9 +48,11 @@
   },
   "homepage": "https://github.com/acssjr/acervo-filarmonica#readme",
   "dependencies": {
+    "@cloudflare/pages-plugin-vercel-og": "^0.1.2",
     "fflate": "^0.8.3",
     "pdf-lib": "^1.17.1",
-    "posthog-node": "^5.51.1"
+    "posthog-node": "^5.51.1",
+    "react": "^18.2.0"
   },
   "devDependencies": {
     "@cloudflare/vitest-plugin": "^1.0.0",

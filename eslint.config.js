@@ -5,7 +5,8 @@ export default [
   // Ignorar tudo exceto worker/src e worker/*.js
   {
     ignores: [
-      'frontend/**',
+      'frontend/*',
+      '!frontend/functions',
       'node_modules/**',
       '.wrangler/**',
       'database/**',
@@ -18,7 +19,7 @@ export default [
   js.configs.recommended,
 
   {
-    files: ['worker/src/**/*.js', 'worker/*.js'],
+    files: ['worker/src/**/*.js', 'worker/*.js', 'frontend/functions/**/*.js'],
     languageOptions: {
       ecmaVersion: 2024,
       sourceType: 'module',

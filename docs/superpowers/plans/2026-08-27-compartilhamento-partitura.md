@@ -16,9 +16,10 @@
 - `frontend/src/components/modals/sheet/ShareOptions.jsx`: seletor acessível entre cópia e link.
 - `frontend/src/components/modals/SheetDetailModal.jsx`: integra o seletor ao botão existente.
 - `frontend/src/hooks/useLoginForm.js`: preserva o destino protegido após login.
-- `functions/acervo/[[path]].js`: entrega HTML com metadados e PNG social dinâmico.
-- `functions/_shared/sheetSocial.js`: valida rota, normaliza dados e injeta metadados.
-- `functions/assets/plus-jakarta-sans-700.bin`: fonte local para a imagem social.
+- `frontend/functions/acervo/[[path]].js`: entrega HTML com metadados e PNG social dinâmico.
+- `frontend/functions/_shared/sheetSocial.js`: valida rota, normaliza dados e injeta metadados.
+- `frontend/functions/assets/plus-jakarta-sans-700.bin`: fonte local para a imagem social.
+- `frontend/wrangler.jsonc`: isola o deploy do site da configuração do Worker e do D1.
 - `frontend/public/assets/images/ui/social-share-fallback.png`: fallback institucional 1200×630.
 - `.github/workflows/ci.yml`: compila Functions no CI e publica o diretório correto.
 
@@ -71,9 +72,9 @@ Cobrir rota individual com query, raiz, URL externa, protocolo relativo e loop p
 ### Task 3: Preview social automático no Cloudflare Pages
 
 **Files:**
-- Create: `functions/_shared/sheetSocial.js`
-- Create: `functions/acervo/[[path]].js`
-- Create: `functions/assets/plus-jakarta-sans-700.bin`
+- Create: `frontend/functions/_shared/sheetSocial.js`
+- Create: `frontend/functions/acervo/[[path]].js`
+- Create: `frontend/functions/assets/plus-jakarta-sans-700.bin`
 - Create: `frontend/public/assets/images/ui/social-share-fallback.png`
 - Create: `worker/tests/sheetSocial.test.ts`
 - Modify: `package.json`
@@ -111,7 +112,7 @@ Criar script `pages:functions:build` com `wrangler pages functions build functio
 
 - [ ] **Step 2: Publicar Functions junto aos assets**
 
-Manter `wrangler pages deploy frontend/dist` executado a partir da raiz, onde Wrangler detecta `functions/`, usando o Wrangler instalado no projeto.
+Executar o deploy com `--cwd frontend`, onde Wrangler detecta `frontend/functions/` e usa `frontend/wrangler.jsonc`, sem carregar os bindings do Worker da API.
 
 - [ ] **Step 3: Validar o artefato de deploy**
 

@@ -325,8 +325,23 @@ describe('SheetDetailModal', () => {
       await user.click(sendButton);
 
       expect(screen.getByRole('dialog', { name: /como deseja enviar/i })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /enviar cópia/i })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /compartilhar link/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /enviar cópia/i })).toBeDisabled();
+      expect(screen.getByText('Não disponível neste navegador')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /compartilhar link/i })).toHaveFocus();
+    });
+
+    test('Escape fecha apenas as opções e mantém os detalhes da partitura abertos', async () => {
+      const user = userEvent.setup();
+      mockSelectedSheet = createMockSheet();
+      renderModal();
+
+      await user.click(await screen.findByRole('button', { name: /compartilhar partitura/i }));
+      await user.keyboard('{Escape}');
+
+      expect(screen.queryByRole('dialog', { name: /como deseja enviar/i })).not.toBeInTheDocument();
+      expect(screen.getByRole('dialog', { name: 'Dobrado Teste' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /compartilhar partitura/i })).toHaveFocus();
+      expect(mockSetSelectedSheet).not.toHaveBeenCalled();
     });
   });
 

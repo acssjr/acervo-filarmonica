@@ -53,6 +53,9 @@ describe('sheetShare', () => {
       navigatorObject: { clipboard }
     });
 
+    expect(clipboard.writeText).toHaveBeenCalledWith(
+      expect.stringMatching(/Tertuliano Santos[\s\S]*https:\/\/acervo\.exemplo\.com\/acervo\/marchas\/96/)
+    );
     expect(result).toEqual(expect.objectContaining({ status: 'copied', copied: true }));
   });
 

@@ -30,6 +30,7 @@ const SheetDetailModal = () => {
   const isDesktop = useMediaQuery('(min-width: 1024px)');
   const [showInstrumentPicker, setShowInstrumentPicker] = useState(false);
   const [showShareOptions, setShowShareOptions] = useState(false);
+  const showShareOptionsRef = useRef(false);
   const [partes, setPartes] = useState([]);
   const [loadingPartes, setLoadingPartes] = useState(false);
 
@@ -40,6 +41,10 @@ const SheetDetailModal = () => {
     partes
   });
   const selectedSheetId = selectedSheet?.id;
+
+  useEffect(() => {
+    showShareOptionsRef.current = showShareOptions;
+  }, [showShareOptions]);
 
   // Handler para adicionar parte ao carrinho de compartilhamento
   const handleAddToCart = useCallback((instrument) => {
@@ -102,7 +107,7 @@ const SheetDetailModal = () => {
 
       // Handler para Escape
       const handleKeyDown = (e) => {
-        if (e.key === 'Escape') {
+        if (e.key === 'Escape' && !showShareOptionsRef.current) {
           handleClose();
         }
       };
@@ -250,7 +255,7 @@ const SheetDetailModal = () => {
             onClose={() => setShowShareOptions(false)}
             onSendCopy={handleSendCopy}
             onShareLink={handleShareLink}
-            copyDisabled={download.downloading || loadingPartes || (isMaestro && !hasGrade)}
+            copyDisabled={!download.canShareFiles() || download.downloading || loadingPartes || (isMaestro && !hasGrade)}
           />
 
           {/* Visualizador de PDF embutido */}

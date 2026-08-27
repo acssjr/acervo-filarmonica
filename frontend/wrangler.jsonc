@@ -1,0 +1,6 @@
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "acervo-filarmonica",
+  "pages_build_output_dir": "dist",
+  "compatibility_date": "2025-11-29"
+}

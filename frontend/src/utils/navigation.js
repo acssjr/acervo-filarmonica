@@ -13,4 +13,3 @@ export const getPostLoginDestination = (from) => {
   const hash = typeof from === 'object' && typeof from?.hash === 'string' ? from.hash : '';
   return `${pathname}${search}${hash}`;
 };
-

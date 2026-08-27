@@ -19,4 +19,3 @@ describe('getPostLoginDestination', () => {
     expect(getPostLoginDestination(destination)).toBe('/');
   });
 });
-

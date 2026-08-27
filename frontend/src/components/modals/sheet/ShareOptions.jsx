@@ -4,16 +4,34 @@ import { Icons } from '@constants/icons';
 
 const ShareOptions = ({ isOpen, onClose, onSendCopy, onShareLink, copyDisabled = false }) => {
   const firstButtonRef = useRef(null);
+  const linkButtonRef = useRef(null);
+  const dialogRef = useRef(null);
 
   useEffect(() => {
     if (!isOpen) return undefined;
-    firstButtonRef.current?.focus();
+    const previouslyFocused = document.activeElement;
+    (copyDisabled ? linkButtonRef.current : firstButtonRef.current)?.focus();
     const handleKeyDown = (event) => {
       if (event.key === 'Escape') onClose();
+      if (event.key === 'Tab') {
+        const buttons = [...(dialogRef.current?.querySelectorAll('button:not(:disabled)') || [])];
+        const firstButton = buttons[0];
+        const lastButton = buttons.at(-1);
+        if (event.shiftKey && document.activeElement === firstButton) {
+          event.preventDefault();
+          lastButton?.focus();
+        } else if (!event.shiftKey && document.activeElement === lastButton) {
+          event.preventDefault();
+          firstButton?.focus();
+        }
+      }
     };
     document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      previouslyFocused?.focus();
+    };
+  }, [isOpen, onClose, copyDisabled]);
 
   if (!isOpen) return null;
 
@@ -45,6 +63,7 @@ const ShareOptions = ({ isOpen, onClose, onSendCopy, onShareLink, copyDisabled =
         }}
       />
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="share-options-title"
@@ -93,11 +112,13 @@ const ShareOptions = ({ isOpen, onClose, onSendCopy, onShareLink, copyDisabled =
             </span>
             <span>
               <strong style={{ display: 'block', fontSize: '13px', marginBottom: '2px' }}>Enviar cópia</strong>
-              <span style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)' }}>Compartilha o PDF do seu instrumento</span>
+              <span style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)' }}>
+                {copyDisabled ? 'Não disponível neste navegador' : 'Compartilha o PDF do seu instrumento'}
+              </span>
             </span>
           </button>
 
-          <button type="button" onClick={onShareLink} style={{ ...optionStyle, cursor: 'pointer', borderColor: 'rgba(212, 175, 55, 0.35)' }}>
+          <button ref={linkButtonRef} type="button" onClick={onShareLink} style={{ ...optionStyle, cursor: 'pointer', borderColor: 'rgba(212, 175, 55, 0.35)' }}>
             <span style={{ width: '36px', height: '36px', padding: '9px', borderRadius: '10px', color: 'var(--accent)', background: 'rgba(212, 175, 55, 0.12)', flexShrink: 0 }}>
               <Icons.Share />
             </span>

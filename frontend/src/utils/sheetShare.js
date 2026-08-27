@@ -5,7 +5,6 @@ const resolveOrigin = (origin) => {
   if (!value) throw new Error('Origem da aplicação indisponível');
   return value.replace(/\/$/, '');
 };
-
 const versionFromDate = (value) => {
   if (!value) return null;
   const timestamp = Date.parse(value);
@@ -54,7 +53,11 @@ export const shareSheetLink = async ({
 }) => {
   const url = buildSheetShareUrl(sheet, { origin });
   const text = buildSheetShareText(sheet, categoryName);
-  const copyPromise = copyText(url, navigatorObject?.clipboard);
+  const shareMessage = `${text}\n${url}`;
+  const copyPromise = copyText(
+    typeof navigatorObject?.share === 'function' ? url : shareMessage,
+    navigatorObject?.clipboard
+  );
 
   if (typeof navigatorObject?.share !== 'function') {
     const copied = await copyPromise;
@@ -78,4 +81,3 @@ export const shareSheetLink = async ({
     throw error;
   }
 };
-
