@@ -104,7 +104,8 @@ export const DataProvider = ({ children }) => {
               downloads: p.downloads || 0,
               featured: p.destaque === 1,
               hasFile: !!p.arquivo_nome,
-              apiId: p.id
+              apiId: p.id,
+              updatedAt: p.atualizado_em
             }));
             setSheets(mappedSheets);
           }

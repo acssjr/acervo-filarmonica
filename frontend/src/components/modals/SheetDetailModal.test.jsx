@@ -315,6 +315,21 @@ describe('SheetDetailModal', () => {
     });
   });
 
+  describe('Opcoes de compartilhamento', () => {
+    test('botao Enviar oferece cópia e link mesmo sem Web Share de arquivos', async () => {
+      const user = userEvent.setup();
+      mockSelectedSheet = createMockSheet();
+      renderModal();
+
+      const sendButton = await screen.findByRole('button', { name: /compartilhar partitura/i });
+      await user.click(sendButton);
+
+      expect(screen.getByRole('dialog', { name: /como deseja enviar/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /enviar cópia/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /compartilhar link/i })).toBeInTheDocument();
+    });
+  });
+
   describe('Seletor de Instrumentos', () => {
     test('exibe botao para escolher outro instrumento', async () => {
       mockSelectedSheet = createMockSheet();
