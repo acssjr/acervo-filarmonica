@@ -29,7 +29,7 @@
     "test:e2e": "npx playwright test",
     "test:e2e:ui": "npx playwright test --ui",
     "test:e2e:headed": "npx playwright test --headed",
-    "lint:worker": "eslint worker/ frontend/functions/ --max-warnings 0"
+    "lint:worker": "eslint worker/ frontend/functions/ frontend/shared/ --max-warnings 0"
   },
   "repository": {
     "type": "git",

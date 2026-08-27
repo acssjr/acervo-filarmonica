@@ -1,3 +1,5 @@
+import { getSingularCategoryName } from '../../shared/categoryDisplay.js';
+
 const APP_NAME = 'Acervo Digital';
 
 const resolveOrigin = (origin) => {
@@ -28,7 +30,7 @@ export const buildSheetShareUrl = (sheet, { origin } = {}) => {
 export const buildSheetShareText = (sheet, categoryName) => {
   const title = sheet?.title?.trim() || 'Partitura';
   const composer = sheet?.composer?.trim();
-  const genre = categoryName?.trim() || sheet?.category?.trim();
+  const genre = getSingularCategoryName(categoryName || sheet?.category);
   const attribution = composer ? `“${title}”, de ${composer}` : `“${title}”`;
   const genreLine = genre ? `\nGênero: ${genre}` : '';
 
