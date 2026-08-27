@@ -113,5 +113,6 @@ export const getTitleFontSize = (title) => {
 export const buildSocialCardContent = (sheet) => ({
   title: sheet.title,
   categoryName: sheet.categoryName,
+  composer: sheet.composer,
   titleFontSize: getTitleFontSize(sheet.title)
 });

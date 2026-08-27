@@ -140,7 +140,42 @@ const cardElement = (sheet) => {
             letterSpacing: '-1.5px',
             color: '#fff6df'
           }
-        }, content.title)
+        }, content.title),
+        React.createElement('div', {
+          key: 'composer-glass',
+          style: {
+            alignSelf: 'flex-start',
+            display: 'flex',
+            flexDirection: 'column',
+            marginTop: '24px',
+            padding: '13px 20px 14px',
+            borderRadius: '16px',
+            background: 'rgba(255, 246, 223, 0.10)',
+            border: '1px solid rgba(255, 246, 223, 0.24)',
+            boxShadow: '0 12px 32px rgba(20, 5, 8, 0.20)'
+          }
+        }, [
+          React.createElement('div', {
+            key: 'composer-label',
+            style: {
+              fontSize: '14px',
+              lineHeight: 1,
+              color: 'rgba(244, 228, 188, 0.62)',
+              letterSpacing: '1.4px',
+              textTransform: 'uppercase'
+            }
+          }, 'Compositor'),
+          React.createElement('div', {
+            key: 'composer-name',
+            style: {
+              marginTop: '7px',
+              fontSize: '23px',
+              lineHeight: 1.1,
+              color: '#fff6df',
+              fontWeight: 700
+            }
+          }, content.composer)
+        ])
       ]),
       React.createElement('div', {
         key: 'footer',

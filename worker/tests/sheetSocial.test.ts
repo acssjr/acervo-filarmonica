@@ -57,13 +57,14 @@ describe('preview social de partitura', () => {
     expect(buildSocialTags(metadata)).toContain('rel="canonical"');
   });
 
-  test('conteúdo visual não recebe o compositor', () => {
+  test('conteúdo visual recebe o nome, mas não uma imagem do compositor', () => {
     expect(buildSocialCardContent(sheet)).toEqual({
       title: "Senhora Sant'Anna",
       categoryName: 'Marchas',
+      composer: 'Tertuliano Santos',
       titleFontSize: 62
     });
-    expect(buildSocialCardContent(sheet)).not.toHaveProperty('composer');
+    expect(buildSocialCardContent(sheet)).not.toHaveProperty('composerImage');
   });
 
   test('reduz títulos longos para caber no cartão', () => {
