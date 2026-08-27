@@ -90,7 +90,7 @@ Validar `/acervo/:categoria/:id`, consultar `https://acervo-filarmonica-api.acss
 
 - [ ] **Step 3: Implementar a imagem automática**
 
-Atender `/acervo/:categoria/:id/social-image.png` com `ImageResponse` 1200×630. Usar vinho, dourado, brasão, Plus Jakarta Sans, gênero e título; não colocar compositor na imagem.
+Atender `/acervo/:categoria/:id/social-image.png` com `ImageResponse` 1200×630. Usar vinho, dourado, brasão, Plus Jakarta Sans, gênero, título e o nome do compositor em uma faixa glassmorphism. Não buscar nem gerar foto do compositor.
 
 - [ ] **Step 4: Garantir fallback e cache**
 
@@ -133,7 +133,7 @@ Executar `npm test`, `npm run lint:worker`, `npm run db:schema:test`, e no front
 
 - [ ] **Step 3: Inspecionar o resultado de Senhora Sant’Anna**
 
-Gerar a resposta local para a peça 96, validar metadados, tipo `image/png`, dimensões 1200×630 e ausência do compositor dentro da imagem.
+Gerar a resposta local para a peça 96, validar metadados, tipo `image/png`, dimensões 1200×630, presença do nome “Tertuliano Santos” e ausência de qualquer foto de compositor.
 
 - [ ] **Step 4: Revisar diff e estado do repositório**
 

@@ -51,7 +51,7 @@ Uma Cloudflare Pages Function intercepta somente URLs individuais de partitura. 
 - Open Graph (`og:title`, `og:description`, `og:type`, `og:url`, `og:image`, dimensões e texto alternativo);
 - Twitter Card.
 
-A imagem social é gerada automaticamente para qualquer partitura no formato PNG 1200×630. O cartão usa a identidade vinho e dourado, o brasão, Plus Jakarta Sans, o gênero e o título da peça. O compositor não aparece dentro da imagem. Ele permanece no texto compartilhado e na descrição do preview.
+A imagem social é gerada automaticamente para qualquer partitura no formato PNG 1200×630. O cartão usa a identidade vinho e dourado, o brasão, Plus Jakarta Sans, o gênero, o título e o nome do compositor. O nome aparece em uma faixa translúcida com efeito glassmorphism; nenhuma foto ou imagem do compositor é buscada ou gerada.
 
 A imagem usa a API `ImageResponse` do plugin oficial `@cloudflare/pages-plugin-vercel-og`. A fonte necessária fica versionada no projeto para a geração não depender de uma requisição externa. Respostas válidas recebem cache público curto e `stale-while-revalidate`; respostas ausentes não são convertidas em previews falsos.
 
