@@ -23,7 +23,18 @@ describe('controle do tutorial no upload administrativo', () => {
       loading: false,
       tutoriaisAtivos: false,
       tutorialCompleted: false,
-      tutorialClosedThisSession: false
+      tutorialClosedThisSession: false,
+      isMobile: false
+    })).toBe(true);
+  });
+
+  test('libera uma ação pendente quando o viewport muda para mobile', () => {
+    expect(canExecutePendingAdminAction({
+      loading: false,
+      tutoriaisAtivos: true,
+      tutorialCompleted: false,
+      tutorialClosedThisSession: false,
+      isMobile: true
     })).toBe(true);
   });
 });

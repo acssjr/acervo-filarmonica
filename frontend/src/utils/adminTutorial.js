@@ -8,9 +8,11 @@ export const canExecutePendingAdminAction = ({
   loading,
   tutoriaisAtivos,
   tutorialCompleted,
-  tutorialClosedThisSession
+  tutorialClosedThisSession,
+  isMobile
 }) => !loading && (
   !tutoriaisAtivos ||
+  isMobile ||
   tutorialCompleted ||
   tutorialClosedThisSession
 );

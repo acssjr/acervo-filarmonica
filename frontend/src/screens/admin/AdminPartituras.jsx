@@ -617,7 +617,8 @@ const AdminPartituras = () => {
       loading,
       tutoriaisAtivos,
       tutorialCompleted,
-      tutorialClosedThisSession
+      tutorialClosedThisSession,
+      isMobile
     });
 
     if (canExecute) {
@@ -627,7 +628,7 @@ const AdminPartituras = () => {
       }
       setPendingAction(null);
     }
-  }, [showTutorial, tutorialPending, pendingAction, loading, tutoriaisAtivos]);
+  }, [showTutorial, tutorialPending, pendingAction, loading, tutoriaisAtivos, isMobile]);
 
   // Carregar partes quando expandir
   const loadPartes = useCallback(async (partituraId) => {
