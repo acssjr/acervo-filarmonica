@@ -39,6 +39,39 @@ export function setupConfigRoutes(router) {
     }
   }, [adminMiddleware]);
 
+  // GET /api/config/tutoriais - Retorna o estado global dos tutoriais (público)
+  router.get('/api/config/tutoriais', async (request, env) => {
+    try {
+      const result = await env.DB.prepare(
+        "SELECT valor FROM configuracoes WHERE chave = 'tutoriais_ativos'"
+      ).first();
+
+      return jsonResponse({ ativo: result?.valor !== 'false' }, 200, request);
+    } catch {
+      // Preserva o comportamento existente se a configuração estiver indisponível.
+      return jsonResponse({ ativo: true }, 200, request);
+    }
+  });
+
+  // PUT /api/config/tutoriais - Atualiza os dois tutoriais globalmente (admin)
+  router.put('/api/config/tutoriais', async (request, env) => {
+    try {
+      const body = await request.json();
+      if (typeof body?.ativo !== 'boolean') {
+        return errorResponse('Valor inválido', 400, request);
+      }
+      const ativo = body.ativo === true;
+
+      await env.DB.prepare(
+        "INSERT OR REPLACE INTO configuracoes (chave, valor, atualizado_em) VALUES ('tutoriais_ativos', ?, CURRENT_TIMESTAMP)"
+      ).bind(ativo ? 'true' : 'false').run();
+
+      return jsonResponse({ ativo, mensagem: 'Configuração atualizada' }, 200, request);
+    } catch (error) {
+      return errorResponse('Erro ao atualizar configuração: ' + error.message, 500, request);
+    }
+  }, [adminMiddleware]);
+
   // GET /api/config/dias-ensaio - Retorna dias de ensaio configurados (público)
   router.get('/api/config/dias-ensaio', async (request, env) => {
     try {

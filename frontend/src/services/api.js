@@ -664,6 +664,21 @@ export const API = {
     });
   },
 
+  async getTutoriaisAtivos() {
+    try {
+      return await this.request('/api/config/tutoriais', {}, { skipAuthCheck: true });
+    } catch {
+      return { ativo: true };
+    }
+  },
+
+  async setTutoriaisAtivos(ativo) {
+    return this.request('/api/config/tutoriais', {
+      method: 'PUT',
+      body: JSON.stringify({ ativo })
+    });
+  },
+
   async getDiasEnsaio() {
     return this.request('/api/config/dias-ensaio', {}, { skipAuthCheck: true });
   },

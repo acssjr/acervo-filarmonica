@@ -1,46 +1,50 @@
+import React from 'react';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, jest, test } from '@jest/globals';
 
 const mockSetUser = jest.fn();
 const mockShowToast = jest.fn();
 const mockClearNotifications = jest.fn();
 const mockSetModoRecesso = jest.fn();
+const mockSetTutoriaisAtivos = jest.fn();
 const mockSetDiasEnsaio = jest.fn();
+const mockSetTutoriaisApi = jest.fn();
+const mockDiasEnsaio = { dias: [1, 3], hora: 19 };
 const mockStorageRemove = jest.fn();
 const mockAPI = {
-  logout: jest.fn(),
+  setTutoriaisAtivos: mockSetTutoriaisApi,
   setModoRecesso: jest.fn(),
   setDiasEnsaio: jest.fn(),
   uploadFotoPerfil: jest.fn(),
-  updatePerfil: jest.fn()
+  updatePerfil: jest.fn(),
+  logout: jest.fn()
 };
 
 jest.unstable_mockModule('@contexts/AuthContext', () => ({
   useAuth: () => ({
-    user: { id: 1, nome: 'Admin', username: 'admin' },
+    user: { username: 'admin', name: 'Administrador', isAdmin: true },
     setUser: mockSetUser
   })
 }));
 
 jest.unstable_mockModule('@contexts/UIContext', () => ({
-  useUI: () => ({
-    showToast: mockShowToast
-  })
+  useUI: () => ({ showToast: mockShowToast })
 }));
 
 jest.unstable_mockModule('@contexts/DataContext', () => ({
   useData: () => ({
     modoRecesso: false,
     setModoRecesso: mockSetModoRecesso,
-    diasEnsaio: { dias: ['terca'], hora: '20:00' },
+    tutoriaisAtivos: true,
+    setTutoriaisAtivos: mockSetTutoriaisAtivos,
+    diasEnsaio: mockDiasEnsaio,
     setDiasEnsaio: mockSetDiasEnsaio
   })
 }));
 
 jest.unstable_mockModule('@contexts/NotificationContext', () => ({
-  useNotifications: () => ({
-    clearNotifications: mockClearNotifications
-  })
+  useNotifications: () => ({ clearNotifications: mockClearNotifications })
 }));
 
 jest.unstable_mockModule('@services/api', () => ({
@@ -48,9 +52,7 @@ jest.unstable_mockModule('@services/api', () => ({
 }));
 
 jest.unstable_mockModule('@services/storage', () => ({
-  Storage: {
-    remove: mockStorageRemove
-  }
+  Storage: { remove: mockStorageRemove }
 }));
 
 jest.unstable_mockModule('@components/modals', () => ({
@@ -60,9 +62,9 @@ jest.unstable_mockModule('@components/modals', () => ({
   PROFILE_LEGACY_VERSIONS: [],
   PROFILE_ABOUT_CONFIG: {
     subtitle: '',
-    maxWidth: '600px',
-    footerText: '',
-    infoCards: [{ value: '3.2.0' }]
+    maxWidth: '640px',
+    infoCards: [{ value: '3.2.0' }],
+    footerText: ''
   }
 }));
 
@@ -75,6 +77,7 @@ describe('AdminConfig', () => {
     jest.clearAllMocks();
     consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
     mockAPI.logout.mockResolvedValue();
+    mockSetTutoriaisApi.mockResolvedValue({ ativo: false });
   });
 
   afterEach(() => {
@@ -105,5 +108,35 @@ describe('AdminConfig', () => {
       expect(mockClearNotifications).toHaveBeenCalledTimes(1);
       expect(mockSetUser).toHaveBeenCalledWith(null);
     });
+  });
+
+  test('desativa os tutoriais globalmente', async () => {
+    const user = userEvent.setup();
+    render(<AdminConfig />);
+
+    const toggle = screen.getByRole('switch', { name: 'Ativar tutoriais de primeiro uso' });
+    expect(toggle).toHaveAttribute('aria-checked', 'true');
+
+    await user.click(toggle);
+
+    await waitFor(() => {
+      expect(mockSetTutoriaisApi).toHaveBeenCalledWith(false);
+    });
+    expect(mockSetTutoriaisAtivos).toHaveBeenCalledWith(false);
+    expect(mockShowToast).toHaveBeenCalledWith('Tutoriais desativados');
+  });
+
+  test('restaura o estado quando a API falha', async () => {
+    mockSetTutoriaisApi.mockRejectedValueOnce(new Error('offline'));
+    const user = userEvent.setup();
+    render(<AdminConfig />);
+
+    await user.click(screen.getByRole('switch', { name: 'Ativar tutoriais de primeiro uso' }));
+
+    await waitFor(() => {
+      expect(mockSetTutoriaisAtivos).toHaveBeenLastCalledWith(true);
+    });
+    expect(mockSetTutoriaisAtivos).toHaveBeenNthCalledWith(1, false);
+    expect(mockShowToast).toHaveBeenCalledWith('Erro ao atualizar tutoriais', 'error');
   });
 });

@@ -6,6 +6,7 @@ import { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspense } fro
 // Flag para debug - remover em produção
 const DEBUG_TUTORIAL = false;
 import { useUI } from '@contexts/UIContext';
+import { useData } from '@contexts/DataContext';
 import { useMediaQuery } from '@hooks/useMediaQuery';
 import { notifyNotificationsChanged } from '@contexts/notificationEvents';
 import { API } from '@services/api';
@@ -106,6 +107,7 @@ const detectInstrumento = (filename) => {
 
 const AdminPartituras = () => {
   const { showToast } = useUI();
+  const { tutoriaisAtivos, isLoading: dataLoading } = useData();
   const isMobile = useMediaQuery('(max-width: 767px)');
   const [partituras, setPartituras] = useState([]);
   const [categorias, setCategorias] = useState([]);
@@ -219,7 +221,11 @@ const AdminPartituras = () => {
 
   // Tutorial de onboarding
   // tutorialPending = true durante o delay antes do tutorial aparecer (bloqueia interações)
-  const [showTutorial, setShowTutorial, tutorialPending] = useTutorial(partituras, loading);
+  const [showTutorial, setShowTutorial, tutorialPending] = useTutorial(
+    partituras,
+    loading || dataLoading,
+    tutoriaisAtivos
+  );
 
   // Rastrear quando o tutorial aparece
   useEffect(() => {

@@ -606,11 +606,17 @@ const TutorialOverlay = ({
 // Hook para verificar se deve mostrar o tutorial
 // Retorna [showTutorial, setShowTutorial, tutorialPending]
 // tutorialPending = true durante o delay antes do tutorial aparecer (bloqueia interações)
-export const useTutorial = (partituras, loading) => {
+export const useTutorial = (partituras, loading, tutoriaisAtivos = true) => {
   const [showTutorial, setShowTutorial] = useState(false);
   const [tutorialPending, setTutorialPending] = useState(false);
 
   useEffect(() => {
+    if (!tutoriaisAtivos) {
+      setShowTutorial(false);
+      setTutorialPending(false);
+      return;
+    }
+
     // Não mostra em mobile
     if (window.innerWidth < 768) return;
 
@@ -634,7 +640,7 @@ export const useTutorial = (partituras, loading) => {
         setTutorialPending(false);
       };
     }
-  }, [loading, partituras]);
+  }, [loading, partituras, tutoriaisAtivos]);
 
   return [showTutorial, setShowTutorial, tutorialPending];
 };

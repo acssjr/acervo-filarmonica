@@ -48,6 +48,7 @@ export const DataProvider = ({ children }) => {
   // Configurações de ensaio
   const [diasEnsaio, setDiasEnsaio] = useState({ dias: [1, 3], hora: 19 });
   const [modoRecesso, setModoRecesso] = useState(false);
+  const [tutoriaisAtivos, setTutoriaisAtivos] = useState(true);
   const [repertorioAtivo, setRepertorioAtivo] = useState(null);
 
   // Favoritos - Otimizado: usa Set para lookups O(1)
@@ -83,14 +84,16 @@ export const DataProvider = ({ children }) => {
           ]);
 
           // Carrega configurações de ensaio de forma independente (não bloqueante)
-          const [diasEnsaioRes, modoRecessoRes, repertorioAtivoRes] = await Promise.allSettled([
+          const [diasEnsaioRes, modoRecessoRes, tutoriaisRes, repertorioAtivoRes] = await Promise.allSettled([
             API.getDiasEnsaio(),
             API.getModoRecesso(),
+            API.getTutoriaisAtivos(),
             API.getRepertorioAtivo()
           ]);
 
           const diasEnsaioApi = diasEnsaioRes.status === 'fulfilled' ? diasEnsaioRes.value : null;
           const modoRecessoApi = modoRecessoRes.status === 'fulfilled' ? modoRecessoRes.value : null;
+          const tutoriaisApi = tutoriaisRes.status === 'fulfilled' ? tutoriaisRes.value : null;
           const repertorioAtivoApi = repertorioAtivoRes.status === 'fulfilled' ? repertorioAtivoRes.value : null;
 
           if (partituras && partituras.length > 0) {
@@ -134,6 +137,9 @@ export const DataProvider = ({ children }) => {
           }
           if (modoRecessoApi) {
             setModoRecesso(modoRecessoApi.ativo ?? false);
+          }
+          if (tutoriaisApi) {
+            setTutoriaisAtivos(tutoriaisApi.ativo ?? true);
           }
           if (repertorioAtivoApi) {
             setRepertorioAtivo(repertorioAtivoApi);
@@ -269,6 +275,8 @@ export const DataProvider = ({ children }) => {
       setDiasEnsaio,
       modoRecesso,
       setModoRecesso,
+      tutoriaisAtivos,
+      setTutoriaisAtivos,
       repertorioAtivo,
       setRepertorioAtivo
     }}>
