@@ -2020,6 +2020,23 @@ paths:
       responses:
         '200': { description: Recesso atualizado, content: { application/json: { schema: { type: object, additionalProperties: true } } } }
 
+  /api/config/tutoriais:
+    get:
+      tags: [Health]
+      operationId: getTutoriaisAtivos
+      responses:
+        '200': { description: Estado global dos tutoriais, content: { application/json: { schema: { type: object, required: [ativo], properties: { ativo: { type: boolean } } } } } }
+    put:
+      tags: [Health]
+      operationId: updateTutoriaisAtivos
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [ativo], properties: { ativo: { type: boolean } } } } }
+      responses:
+        '200': { description: Tutoriais atualizados, content: { application/json: { schema: { type: object, required: [ativo], properties: { ativo: { type: boolean }, mensagem: { type: string } } } } } }
+        '400': { description: Valor inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+
   /api/config/dias-ensaio:
     get:
       tags: [Health]

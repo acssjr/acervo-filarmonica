@@ -1879,3 +1879,82 @@ describe('Rotas de Configuração - Modo Recesso', () => {
     });
   });
 });
+
+// ============================================================
+// TESTES DE CONFIGURAÇÕES - Tutoriais de primeiro uso
+// ============================================================
+
+describe('Rotas de Configuração - Tutoriais', () => {
+  let userToken: string;
+  let adminToken: string;
+
+  beforeAll(async () => {
+    userToken = await createTestToken(2, false);
+    adminToken = await createTestToken(1, true);
+  });
+
+  it('retorna ativo por padrão e sem autenticação', async () => {
+    await env.DB.prepare("DELETE FROM configuracoes WHERE chave = 'tutoriais_ativos'").run();
+
+    const response = await SELF.fetch('https://test.local/api/config/tutoriais');
+    const data = await response.json() as { ativo: boolean };
+
+    expect(response.status).toBe(200);
+    expect(data.ativo).toBe(true);
+  });
+
+  it('rejeita atualização sem token', async () => {
+    const response = await SELF.fetch('https://test.local/api/config/tutoriais', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ativo: false }),
+    });
+
+    expect([401, 403]).toContain(response.status);
+  });
+
+  it('rejeita atualização por usuário comum', async () => {
+    const response = await SELF.fetch('https://test.local/api/config/tutoriais', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${userToken}`,
+      },
+      body: JSON.stringify({ ativo: false }),
+    });
+
+    expect(response.status).toBe(403);
+  });
+
+  it('rejeita valor que não seja booleano', async () => {
+    const response = await SELF.fetch('https://test.local/api/config/tutoriais', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${adminToken}`,
+      },
+      body: JSON.stringify({ ativo: 'false' }),
+    });
+
+    expect(response.status).toBe(400);
+  });
+
+  it('permite que admin desative e persiste a configuração', async () => {
+    const updateResponse = await SELF.fetch('https://test.local/api/config/tutoriais', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${adminToken}`,
+      },
+      body: JSON.stringify({ ativo: false }),
+    });
+    const updateData = await updateResponse.json() as { ativo: boolean; mensagem: string };
+
+    expect(updateResponse.status).toBe(200);
+    expect(updateData).toEqual({ ativo: false, mensagem: 'Configuração atualizada' });
+
+    const getResponse = await SELF.fetch('https://test.local/api/config/tutoriais');
+    const getData = await getResponse.json() as { ativo: boolean };
+    expect(getData.ativo).toBe(false);
+  });
+});

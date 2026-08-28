@@ -14,13 +14,22 @@ const AdminConfig = () => {
   const { user, setUser } = useAuth();
   const { showToast } = useUI();
   const { clearNotifications } = useNotifications();
-  const { modoRecesso, setModoRecesso, diasEnsaio: diasEnsaioCtx, setDiasEnsaio: setDiasEnsaioCtx } = useData();
+  const {
+    modoRecesso,
+    setModoRecesso,
+    tutoriaisAtivos,
+    setTutoriaisAtivos,
+    tutoriaisLoading,
+    diasEnsaio: diasEnsaioCtx,
+    setDiasEnsaio: setDiasEnsaioCtx
+  } = useData();
   const [showChangePin, setShowChangePin] = useState(false);
   const [showAboutModal, setShowAboutModal] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [diasEnsaio, setDiasEnsaio] = useState(diasEnsaioCtx.dias);
   const [horaEnsaio, setHoraEnsaio] = useState(diasEnsaioCtx.hora);
   const [savingDias, setSavingDias] = useState(false);
+  const [savingTutoriais, setSavingTutoriais] = useState(false);
 
   useEffect(() => {
     setDiasEnsaio(diasEnsaioCtx.dias);
@@ -36,6 +45,24 @@ const AdminConfig = () => {
     } catch {
       setModoRecesso(!novoValor);
       showToast('Erro ao atualizar configuração', 'error');
+    }
+  };
+
+  const handleToggleTutoriais = async () => {
+    if (savingTutoriais || tutoriaisLoading) return;
+
+    const novoValor = !tutoriaisAtivos;
+    setTutoriaisAtivos(novoValor);
+    setSavingTutoriais(true);
+
+    try {
+      await API.setTutoriaisAtivos(novoValor);
+      showToast(novoValor ? 'Tutoriais ativados' : 'Tutoriais desativados');
+    } catch {
+      setTutoriaisAtivos(!novoValor);
+      showToast('Erro ao atualizar tutoriais', 'error');
+    } finally {
+      setSavingTutoriais(false);
     }
   };
 
@@ -343,6 +370,74 @@ const AdminConfig = () => {
               transition: 'left 0.2s',
               boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
             }} />
+          </button>
+        </div>
+
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: '16px',
+          padding: '16px 0 4px',
+          borderTop: '1px solid var(--border)'
+        }}>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div style={{
+              color: 'var(--text-primary)',
+              fontWeight: '500',
+              marginBottom: '4px',
+            }}>
+              Tutoriais de primeiro uso
+            </div>
+            <div style={{
+              fontSize: '13px',
+              color: 'var(--text-muted)',
+              lineHeight: '1.45'
+            }}>
+              Exibe o passo a passo para músicos e administradores
+            </div>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-label="Ativar tutoriais de primeiro uso"
+            aria-checked={tutoriaisAtivos}
+            disabled={savingTutoriais || tutoriaisLoading}
+            onClick={handleToggleTutoriais}
+            style={{
+              width: '56px',
+              minWidth: '56px',
+              height: '44px',
+              border: 'none',
+              background: 'transparent',
+              position: 'relative',
+              cursor: (savingTutoriais || tutoriaisLoading) ? 'wait' : 'pointer',
+              opacity: (savingTutoriais || tutoriaisLoading) ? 0.7 : 1,
+              padding: 0
+            }}
+          >
+            <span style={{
+              width: '52px',
+              height: '28px',
+              borderRadius: '14px',
+              background: tutoriaisAtivos ? '#D4AF37' : 'var(--border)',
+              position: 'absolute',
+              top: '8px',
+              left: '2px',
+              transition: 'background 0.2s'
+            }}>
+              <span style={{
+                width: '22px',
+                height: '22px',
+                borderRadius: '50%',
+                background: '#fff',
+                position: 'absolute',
+                top: '3px',
+                left: tutoriaisAtivos ? '27px' : '3px',
+                transition: 'left 0.2s',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+              }} />
+            </span>
           </button>
         </div>
       </div>

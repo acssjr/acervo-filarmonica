@@ -6,6 +6,7 @@ import { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspense } fro
 // Flag para debug - remover em produção
 const DEBUG_TUTORIAL = false;
 import { useUI } from '@contexts/UIContext';
+import { useData } from '@contexts/DataContext';
 import { useMediaQuery } from '@hooks/useMediaQuery';
 import { notifyNotificationsChanged } from '@contexts/notificationEvents';
 import { API } from '@services/api';
@@ -16,6 +17,7 @@ import TutorialOverlay, { useTutorial } from '@components/onboarding/TutorialOve
 import RepertorioSelectorModal from '@components/modals/RepertorioSelectorModal';
 import Storage from '@services/storage';
 import { API_BASE_URL } from '@constants/api';
+import { canExecutePendingAdminAction, shouldWaitForAdminTutorial } from '@utils/adminTutorial';
 
 const PDFViewerModal = lazy(() => import('@components/modals/PDFViewerModal'));
 const ImportacaoLoteModal = lazy(() => import('@components/modals/ImportacaoLoteModal'));
@@ -106,6 +108,7 @@ const detectInstrumento = (filename) => {
 
 const AdminPartituras = () => {
   const { showToast } = useUI();
+  const { tutoriaisAtivos, isLoading: dataLoading } = useData();
   const isMobile = useMediaQuery('(max-width: 767px)');
   const [partituras, setPartituras] = useState([]);
   const [categorias, setCategorias] = useState([]);
@@ -219,7 +222,11 @@ const AdminPartituras = () => {
 
   // Tutorial de onboarding
   // tutorialPending = true durante o delay antes do tutorial aparecer (bloqueia interações)
-  const [showTutorial, setShowTutorial, tutorialPending] = useTutorial(partituras, loading);
+  const [showTutorial, setShowTutorial, tutorialPending] = useTutorial(
+    partituras,
+    loading || dataLoading,
+    tutoriaisAtivos
+  );
 
   // Rastrear quando o tutorial aparece
   useEffect(() => {
@@ -570,7 +577,7 @@ const AdminPartituras = () => {
 
         // Se tutorial não foi completado e não é mobile, SEMPRE guarda a ação
         // O modal só abre após o tutorial ser fechado
-        if (!tutorialCompleted && !isMobile) {
+        if (shouldWaitForAdminTutorial({ tutoriaisAtivos, tutorialCompleted, isMobile })) {
           setPendingAction('openUploadModal');
         } else {
           setShowUploadModal(true);
@@ -579,7 +586,7 @@ const AdminPartituras = () => {
     };
     window.addEventListener('admin-partituras-action', handler);
     return () => window.removeEventListener('admin-partituras-action', handler);
-  }, [showToast]);
+  }, [showToast, tutoriaisAtivos]);
 
   // Executar ação pendente após tutorial ser fechado
   // Só executa quando o tutorial foi realmente mostrado e fechado (não apenas "ainda não apareceu")
@@ -606,7 +613,13 @@ const AdminPartituras = () => {
     //    a) Tutorial foi completado no passado (já está no Storage)
     //    b) Tutorial foi mostrado NESTA sessão e agora está fechado
     const tutorialClosedThisSession = tutorialWasShown.current && !showTutorial && !tutorialPending;
-    const canExecute = !loading && (tutorialCompleted || tutorialClosedThisSession);
+    const canExecute = canExecutePendingAdminAction({
+      loading,
+      tutoriaisAtivos,
+      tutorialCompleted,
+      tutorialClosedThisSession,
+      isMobile
+    });
 
     if (canExecute) {
       if (DEBUG_TUTORIAL) console.warn('[Tutorial] Executando ação pendente:', pendingAction);
@@ -615,7 +628,7 @@ const AdminPartituras = () => {
       }
       setPendingAction(null);
     }
-  }, [showTutorial, tutorialPending, pendingAction, loading]);
+  }, [showTutorial, tutorialPending, pendingAction, loading, tutoriaisAtivos, isMobile]);
 
   // Carregar partes quando expandir
   const loadPartes = useCallback(async (partituraId) => {

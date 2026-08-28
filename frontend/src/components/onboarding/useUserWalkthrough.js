@@ -9,11 +9,17 @@ import { USER_WALKTHROUGH_STORAGE_KEY } from './walkthroughSteps';
 
 export const useUserWalkthrough = () => {
   const { user } = useAuth();
-  const { sheets, loading } = useData();
+  const { sheets, isLoading: loading, tutoriaisAtivos } = useData();
   const [showWalkthrough, setShowWalkthrough] = useState(false);
   const [walkthroughPending, setWalkthroughPending] = useState(false);
 
   useEffect(() => {
+    if (!tutoriaisAtivos) {
+      setShowWalkthrough(false);
+      setWalkthroughPending(false);
+      return;
+    }
+
     const completed = Storage.get(USER_WALKTHROUGH_STORAGE_KEY, false);
 
     // Não mostra se não estiver autenticado
@@ -41,7 +47,7 @@ export const useUserWalkthrough = () => {
       clearTimeout(timer);
       setWalkthroughPending(false);
     };
-  }, [user, sheets, loading]);
+  }, [user, sheets, loading, tutoriaisAtivos]);
 
   const completeWalkthrough = () => {
     Storage.set(USER_WALKTHROUGH_STORAGE_KEY, true);

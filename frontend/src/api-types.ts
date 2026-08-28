@@ -952,6 +952,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/config/tutoriais": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getTutoriaisAtivos"];
+        put: operations["updateTutoriaisAtivos"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/config/dias-ensaio": {
         parameters: {
             query?: never;
@@ -3322,6 +3338,66 @@ export interface operations {
                     "application/json": {
                         [key: string]: unknown;
                     };
+                };
+            };
+        };
+    };
+    getTutoriaisAtivos: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Estado global dos tutoriais */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ativo: boolean;
+                    };
+                };
+            };
+        };
+    };
+    updateTutoriaisAtivos: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    ativo: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description Tutoriais atualizados */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        ativo: boolean;
+                        mensagem?: string;
+                    };
+                };
+            };
+            /** @description Valor inválido */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
