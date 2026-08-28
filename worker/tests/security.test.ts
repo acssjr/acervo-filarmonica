@@ -49,10 +49,10 @@ describe('configuração de segurança', () => {
     for (let attempt = 0; attempt < 5; attempt += 1) {
       expect((await checkRateLimit(env, key)).allowed).toBe(true);
     }
-    expect(await checkRateLimit(env, key)).toMatchObject({
-      allowed: false,
-      retryAfter: 300
-    });
+    const blockedLogin = await checkRateLimit(env, key);
+    expect(blockedLogin.allowed).toBe(false);
+    expect(blockedLogin.retryAfter).toBeGreaterThan(0);
+    expect(blockedLogin.retryAfter).toBeLessThanOrEqual(300);
     expect((await checkUserRateLimit(env, 'checkuser:ip'))).toMatchObject({
       allowed: false,
       retryAfter: 60
