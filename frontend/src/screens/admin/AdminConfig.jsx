@@ -19,6 +19,7 @@ const AdminConfig = () => {
     setModoRecesso,
     tutoriaisAtivos,
     setTutoriaisAtivos,
+    tutoriaisLoading,
     diasEnsaio: diasEnsaioCtx,
     setDiasEnsaio: setDiasEnsaioCtx
   } = useData();
@@ -48,7 +49,7 @@ const AdminConfig = () => {
   };
 
   const handleToggleTutoriais = async () => {
-    if (savingTutoriais) return;
+    if (savingTutoriais || tutoriaisLoading) return;
 
     const novoValor = !tutoriaisAtivos;
     setTutoriaisAtivos(novoValor);
@@ -401,7 +402,7 @@ const AdminConfig = () => {
             role="switch"
             aria-label="Ativar tutoriais de primeiro uso"
             aria-checked={tutoriaisAtivos}
-            disabled={savingTutoriais}
+            disabled={savingTutoriais || tutoriaisLoading}
             onClick={handleToggleTutoriais}
             style={{
               width: '56px',
@@ -410,8 +411,8 @@ const AdminConfig = () => {
               border: 'none',
               background: 'transparent',
               position: 'relative',
-              cursor: savingTutoriais ? 'wait' : 'pointer',
-              opacity: savingTutoriais ? 0.7 : 1,
+              cursor: (savingTutoriais || tutoriaisLoading) ? 'wait' : 'pointer',
+              opacity: (savingTutoriais || tutoriaisLoading) ? 0.7 : 1,
               padding: 0
             }}
           >

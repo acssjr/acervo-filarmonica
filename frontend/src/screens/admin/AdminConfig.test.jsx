@@ -38,6 +38,7 @@ jest.unstable_mockModule('@contexts/DataContext', () => ({
     setModoRecesso: mockSetModoRecesso,
     tutoriaisAtivos: true,
     setTutoriaisAtivos: mockSetTutoriaisAtivos,
+    tutoriaisLoading: false,
     diasEnsaio: mockDiasEnsaio,
     setDiasEnsaio: mockSetDiasEnsaio
   })

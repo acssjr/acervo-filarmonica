@@ -49,6 +49,7 @@ export const DataProvider = ({ children }) => {
   const [diasEnsaio, setDiasEnsaio] = useState({ dias: [1, 3], hora: 19 });
   const [modoRecesso, setModoRecesso] = useState(false);
   const [tutoriaisAtivos, setTutoriaisAtivos] = useState(true);
+  const [tutoriaisLoading, setTutoriaisLoading] = useState(true);
   const [repertorioAtivo, setRepertorioAtivo] = useState(null);
 
   // Favoritos - Otimizado: usa Set para lookups O(1)
@@ -66,7 +67,10 @@ export const DataProvider = ({ children }) => {
   // Carrega dados da API ao iniciar
   useEffect(() => {
     const loadFromAPI = async () => {
+      let tutoriaisPromise = Promise.resolve();
+
       if (!USE_API) {
+        setTutoriaisLoading(false);
         setIsLoading(false);
         return;
       }
@@ -76,6 +80,14 @@ export const DataProvider = ({ children }) => {
         setApiOnline(isOnline);
 
         if (isOnline) {
+          // A configuração global precisa ser consultada mesmo quando alguma
+          // carga principal do acervo falhar.
+          tutoriaisPromise = API.getTutoriaisAtivos().then((tutoriaisApi) => {
+            if (tutoriaisApi) {
+              setTutoriaisAtivos(tutoriaisApi.ativo ?? true);
+            }
+          });
+
           // Carrega dados principais em paralelo (se falhar, aborta)
           const [partituras, categoriasApi, instrumentosApi] = await Promise.all([
             API.getPartituras(),
@@ -84,16 +96,14 @@ export const DataProvider = ({ children }) => {
           ]);
 
           // Carrega configurações de ensaio de forma independente (não bloqueante)
-          const [diasEnsaioRes, modoRecessoRes, tutoriaisRes, repertorioAtivoRes] = await Promise.allSettled([
+          const [diasEnsaioRes, modoRecessoRes, repertorioAtivoRes] = await Promise.allSettled([
             API.getDiasEnsaio(),
             API.getModoRecesso(),
-            API.getTutoriaisAtivos(),
             API.getRepertorioAtivo()
           ]);
 
           const diasEnsaioApi = diasEnsaioRes.status === 'fulfilled' ? diasEnsaioRes.value : null;
           const modoRecessoApi = modoRecessoRes.status === 'fulfilled' ? modoRecessoRes.value : null;
-          const tutoriaisApi = tutoriaisRes.status === 'fulfilled' ? tutoriaisRes.value : null;
           const repertorioAtivoApi = repertorioAtivoRes.status === 'fulfilled' ? repertorioAtivoRes.value : null;
 
           if (partituras && partituras.length > 0) {
@@ -138,9 +148,6 @@ export const DataProvider = ({ children }) => {
           if (modoRecessoApi) {
             setModoRecesso(modoRecessoApi.ativo ?? false);
           }
-          if (tutoriaisApi) {
-            setTutoriaisAtivos(tutoriaisApi.ativo ?? true);
-          }
           if (repertorioAtivoApi) {
             setRepertorioAtivo(repertorioAtivoApi);
           }
@@ -148,6 +155,8 @@ export const DataProvider = ({ children }) => {
       } catch (error) {
         console.error('Erro ao carregar da API:', error);
       } finally {
+        await tutoriaisPromise;
+        setTutoriaisLoading(false);
         setIsLoading(false);
       }
     };
@@ -277,6 +286,7 @@ export const DataProvider = ({ children }) => {
       setModoRecesso,
       tutoriaisAtivos,
       setTutoriaisAtivos,
+      tutoriaisLoading,
       repertorioAtivo,
       setRepertorioAtivo
     }}>
