@@ -48,6 +48,8 @@ Create the following focused modules before deleting or shrinking the current mo
 - `frontend/src/screens/admin/analytics/components/AnalyticsTrend.jsx`: reusable Recharts trend visualization.
 - `frontend/src/screens/admin/analytics/components/InsightCard.jsx`: alert/discovery/recognition presentation.
 - `frontend/src/screens/admin/analytics/analyticsFormatters.js`: labels, numbers, dates, and explanatory copy.
+- `frontend/src/utils/analyticsTracking.js`: deduplicate deliberate repertoire-open events between renders.
+- `frontend/src/utils/analyticsTracking.test.js`: tracker event and deduplication coverage.
 - `frontend/src/screens/admin/auditoria/AdminAudit.jsx`: separated administrative history screen.
 - `frontend/src/screens/admin/auditoria/AdminAudit.test.jsx`: audit screen states and filters.
 - `frontend/src/screens/admin/analytics/AnalyticsOverview.test.jsx`: overview and navigation behavior.
@@ -143,6 +145,8 @@ git commit -m "feat: centralizar periodos e projecoes do analytics"
 - Modify: `worker/tests/trackingService.test.ts`
 - Modify: `frontend/src/screens/RepertorioScreen.jsx:828-903`
 - Modify: `frontend/src/services/api.js:503-530`
+- Create: `frontend/src/utils/analyticsTracking.js`
+- Create: `frontend/src/utils/analyticsTracking.test.js`
 
 **Interfaces:**
 - `buildTrackingEventPayload({ tipo: 'repertorio_aberto', origem: 'repertorio', repertorio_id })` returns a valid payload.
@@ -172,7 +176,7 @@ Add `repertorio_aberto` to the allow-list. In `RepertorioScreen`, keep a `tracke
 
 - [ ] **Step 4: Verify server and frontend tests**
 
-Run: `npx vitest run worker/tests/trackingService.test.ts frontend/src/screens/RepertorioScreen.test.js`
+Run: `npx vitest run worker/tests/trackingService.test.ts` and, from `frontend/`, `node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand --testMatch "<rootDir>/src/utils/analyticsTracking.test.js" --testMatch "<rootDir>/src/screens/RepertorioScreen.test.js" --config jest.config.js`
 
 Expected: PASS, with one event for initial selection and one for a deliberate switch.
 
