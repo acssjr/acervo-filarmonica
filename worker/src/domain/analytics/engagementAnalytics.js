@@ -97,8 +97,9 @@ async function queryRanking(env, start, end) {
     LIMIT 100
   `).bind(start, end, start, end).all();
 
-  return emptyResults(result).map((item) => ({
+  return emptyResults(result).map((item, index) => ({
     ...item,
+    posicao: index + 1,
     visualizacoes: toNumber(item.visualizacoes),
     downloads: toNumber(item.downloads),
     buscas: toNumber(item.buscas),

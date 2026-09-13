@@ -9,14 +9,16 @@ function normalizeLegacyAnalyticsDashboard(legacy) {
   const usageSummary = usage.resumo || {};
   const attendance = legacy?.ensaios || {};
   const attendanceSummary = attendance.resumo || {};
-  const sheetRanking = (usage.top_partituras || []).map((item) => ({
+  const sheetRanking = (usage.top_partituras || []).map((item, index) => ({
     ...item,
+    posicao: index + 1,
     acessos_pdf: Number(item.visualizacoes || 0) + Number(item.downloads || 0),
     usuarios: 0,
     instrumentos_explorados: 0,
   }));
-  const engagementRanking = (usage.ranking_musicos || []).map((item) => ({
+  const engagementRanking = (usage.ranking_musicos || []).map((item, index) => ({
     ...item,
+    posicao: index + 1,
     total_acoes: Number(item.visualizacoes || 0) + Number(item.downloads || 0) + Number(item.buscas || 0),
     favoritos: 0,
     repertorios: 0,
@@ -59,7 +61,7 @@ function normalizeLegacyAnalyticsDashboard(legacy) {
     rankings: {
       engajamento: engagementRanking,
       partituras: sheetRanking,
-      assiduidade: attendance.assiduidade_musicos || [],
+      assiduidade: (attendance.assiduidade_musicos || []).map((item, index) => ({ ...item, posicao: item.posicao || index + 1 })),
     },
     projecoes: null,
     amostras: {},
