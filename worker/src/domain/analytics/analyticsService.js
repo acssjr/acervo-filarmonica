@@ -1,5 +1,6 @@
 // worker/src/domain/analytics/analyticsService.js
 import { jsonResponse } from '../../infrastructure/index.js';
+import { parseAnalyticsPeriod } from './periodUtils.js';
 
 const NAIPES_VALIDOS = ['Madeiras', 'Metais', 'Percussão'];
 
@@ -27,12 +28,12 @@ const AUDIT_ACTIVITY_PLACEHOLDERS = AUDIT_ACTIVITY_TYPES.map(() => '?').join(', 
 const emptyResults = (result) => result?.results || [];
 
 function getPeriod(url) {
-  const now = new Date();
-  const startDefault = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
-  const endDefault = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
-  const start = url.searchParams.get('inicio') || startDefault.toISOString().slice(0, 10);
-  const end = url.searchParams.get('fim') || endDefault.toISOString().slice(0, 10);
-  return { start, end };
+  const period = parseAnalyticsPeriod(url);
+  return {
+    start: period.atual.inicio,
+    end: period.atual.fim,
+    period,
+  };
 }
 
 function getPositiveStreak(userId, ensaiosDesc, presencasSet) {
@@ -558,9 +559,20 @@ async function getAlteracoes(env, start, end, url) {
 export async function getAnalyticsDashboard(request, env, _params, _context) {
   try {
     const url = new URL(request.url);
-    const { start, end } = getPeriod(url);
+    const { start, end, period } = getPeriod(url);
     const section = url.searchParams.get('section') || 'all';
-    const base = { periodo: { inicio: start, fim: end } };
+    const base = {
+      periodo: {
+        inicio: start,
+        fim: end,
+        fim_solicitado: period.atual.fimSolicitado,
+        dias_decorridos: period.atual.diasDecorridos,
+        dias_totais: period.atual.diasTotais,
+        incompleto: period.atual.incompleto,
+        comparacao: period.comparacao,
+        projecao: period.projecao,
+      }
+    };
 
     if (section === 'acervo') {
       return jsonResponse({
