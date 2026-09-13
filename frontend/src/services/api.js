@@ -4,6 +4,69 @@
 import Storage from './storage';
 import { API_BASE_URL, TOKEN_EXPIRY_BUFFER_MS } from '@constants/api';
 
+function normalizeLegacyAnalyticsDashboard(legacy) {
+  const usage = legacy?.uso_acervo || {};
+  const usageSummary = usage.resumo || {};
+  const attendance = legacy?.ensaios || {};
+  const attendanceSummary = attendance.resumo || {};
+  const sheetRanking = (usage.top_partituras || []).map((item) => ({
+    ...item,
+    acessos_pdf: Number(item.visualizacoes || 0) + Number(item.downloads || 0),
+    usuarios: 0,
+    instrumentos_explorados: 0,
+  }));
+  const engagementRanking = (usage.ranking_musicos || []).map((item) => ({
+    ...item,
+    total_acoes: Number(item.visualizacoes || 0) + Number(item.downloads || 0) + Number(item.buscas || 0),
+    favoritos: 0,
+    repertorios: 0,
+    dias_ativos: 0,
+    sessoes: 0,
+  }));
+  const summarySheets = sheetRanking.reduce((summary, item) => ({
+    visualizacoes: summary.visualizacoes + Number(item.visualizacoes || 0),
+    downloads: summary.downloads + Number(item.downloads || 0),
+    acessos_pdf: summary.acessos_pdf + Number(item.acessos_pdf || 0),
+    usuarios: summary.usuarios + Number(item.usuarios || 0),
+    partituras_com_acao: summary.partituras_com_acao + 1,
+  }), { visualizacoes: 0, downloads: 0, acessos_pdf: 0, usuarios: 0, partituras_com_acao: 0 });
+
+  return {
+    periodo: legacy.periodo || null,
+    resumo: {
+      engajamento: {
+        total_acoes: engagementRanking.reduce((total, item) => total + Number(item.total_acoes || 0), 0),
+        visualizacoes: Number(usageSummary.pdfs_visualizados || 0),
+        downloads: Number(usageSummary.downloads_reais || 0),
+        buscas: engagementRanking.reduce((total, item) => total + Number(item.buscas || 0), 0),
+        favoritos: 0,
+        repertorios: 0,
+        usuarios_com_acao: engagementRanking.length,
+        usuarios_elegiveis: engagementRanking.length,
+        variacao_acoes: null,
+      },
+      partituras: { ...summarySheets, variacao_acessos: null },
+      assiduidade: {
+        ensaios_realizados: Number(attendanceSummary.ensaios_registrados || 0),
+        presencas_total: 0,
+        presencas_esperadas: 0,
+        taxa_media: attendanceSummary.presenca_media ?? null,
+        musicos_com_presenca: 0,
+        sem_ensaios: Number(attendanceSummary.ensaios_registrados || 0) === 0,
+      },
+    },
+    insights: usage.insights || [],
+    rankings: {
+      engajamento: engagementRanking,
+      partituras: sheetRanking,
+      assiduidade: attendance.assiduidade_musicos || [],
+    },
+    projecoes: null,
+    amostras: {},
+    _legacy: legacy,
+  };
+}
+
 // Callback para notificar quando token expirar
 let onTokenExpired = null;
 
@@ -483,16 +546,61 @@ export const API = {
   },
 
   async getAnalyticsOverview(queryString = '') {
-    return this.request(`/api/admin/analytics/overview${queryString}`);
+    try {
+      return await this.request(`/api/admin/analytics/overview${queryString}`);
+    } catch (error) {
+      if (error.message !== 'Endpoint não encontrado') throw error;
+      const legacy = await this.getAnalyticsDashboard(queryString);
+      return normalizeLegacyAnalyticsDashboard(legacy);
+    }
   },
 
   async getAnalyticsDetail(view, queryString = '') {
     const params = queryString ? `${queryString}&view=${encodeURIComponent(view)}` : `?view=${encodeURIComponent(view)}`;
-    return this.request(`/api/admin/analytics/detail${params}`);
+    try {
+      return await this.request(`/api/admin/analytics/detail${params}`);
+    } catch (error) {
+      if (error.message !== 'Endpoint não encontrado') throw error;
+      const legacy = normalizeLegacyAnalyticsDashboard(await this.getAnalyticsDashboard(queryString));
+      const detailMap = {
+        engajamento: legacy._legacy?.uso_acervo ? {
+          ...legacy.resumo.engajamento,
+          ranking: legacy.rankings.engajamento,
+          tendencia: [],
+          amostras: {},
+        } : {},
+        partituras: legacy._legacy?.uso_acervo ? {
+          ...legacy.resumo.partituras,
+          ranking: legacy.rankings.partituras,
+          partes: legacy._legacy.uso_acervo.top_partes || [],
+          tendencia: [],
+          amostras: {},
+        } : {},
+        assiduidade: {
+          ...legacy.resumo.assiduidade,
+          ranking: legacy.rankings.assiduidade,
+          naipes: legacy._legacy?.ensaios?.presenca_naipes || [],
+          tendencia: legacy._legacy?.tendencia_presenca || [],
+          amostra: {},
+        },
+      };
+      return { [view]: detailMap[view], periodo: legacy.periodo, projecao: null, insights: legacy.insights };
+    }
   },
 
   async getAuditActivities(queryString = '') {
-    return this.request(`/api/admin/auditoria${queryString}`);
+    try {
+      return await this.request(`/api/admin/auditoria${queryString}`);
+    } catch (error) {
+      if (error.message !== 'Endpoint não encontrado') throw error;
+      const legacy = await this.getAnalyticsDashboard(`${queryString}${queryString ? '&' : '?'}section=alteracoes`);
+      return {
+        periodo: legacy.periodo || null,
+        usuarios: legacy.alteracoes?.usuarios || [],
+        atividades: legacy.alteracoes?.atividades || legacy.atividade_recente || [],
+        total: legacy.alteracoes?.total || legacy.total_atividades || 0,
+      };
+    }
   },
 
   async trackSearch(termo, resultadosCount) {
