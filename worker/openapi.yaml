@@ -1896,6 +1896,47 @@ paths:
         '200': { description: Dashboard analítico, content: { application/json: { schema: { type: object, additionalProperties: true } } } }
         '401': { description: Não autenticado, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
 
+  /api/admin/analytics/overview:
+    get:
+      tags: [Estatisticas]
+      operationId: getAnalyticsOverview
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - { name: inicio, in: query, schema: { type: string, format: date } }
+        - { name: fim, in: query, schema: { type: string, format: date } }
+      responses:
+        '200': { description: Visão geral do analytics, content: { application/json: { schema: { type: object, additionalProperties: true } } } }
+        '401': { description: Não autenticado, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+
+  /api/admin/analytics/detail:
+    get:
+      tags: [Estatisticas]
+      operationId: getAnalyticsDetail
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - { name: view, in: query, required: true, schema: { type: string, enum: [engajamento, partituras, assiduidade] } }
+        - { name: inicio, in: query, schema: { type: string, format: date } }
+        - { name: fim, in: query, schema: { type: string, format: date } }
+      responses:
+        '200': { description: Detalhe do analytics, content: { application/json: { schema: { type: object, additionalProperties: true } } } }
+        '400': { description: Visão inválida, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '401': { description: Não autenticado, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+
+  /api/admin/auditoria:
+    get:
+      tags: [Estatisticas]
+      operationId: getAuditActivities
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - { name: inicio, in: query, schema: { type: string, format: date } }
+        - { name: fim, in: query, schema: { type: string, format: date } }
+        - { name: atividade_usuario_id, in: query, schema: { type: integer } }
+        - { name: atividades_limit, in: query, schema: { type: integer, minimum: 1, maximum: 100 } }
+        - { name: atividades_offset, in: query, schema: { type: integer, minimum: 0 } }
+      responses:
+        '200': { description: Atividades administrativas, content: { application/json: { schema: { type: object, additionalProperties: true } } } }
+        '401': { description: Não autenticado, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+
   /api/assets/list/backgrounds:
     get:
       tags: [Health]

@@ -157,6 +157,9 @@ export async function getSheetAnalytics(env, period) {
     ranking,
     partes: await queryPartRanking(env, period.atual.inicio, period.atual.fim),
     tendencia: [],
+    comparacao: {
+      resumo: resumoAnterior,
+    },
     amostras: {
       partituras_com_acao: resumo.partituras_com_acao,
       partituras_com_acao_anterior: resumoAnterior.partituras_com_acao,

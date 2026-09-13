@@ -6,7 +6,12 @@ import {
   getEstatisticasAdmin,
   getInstrumentos
 } from '../domain/estatisticas/estatisticaService.js';
-import { getAnalyticsDashboard } from '../domain/analytics/analyticsService.js';
+import {
+  getAnalyticsDashboard,
+  getAnalyticsDetail,
+  getAnalyticsOverview,
+} from '../domain/analytics/analyticsService.js';
+import { getAuditActivities } from '../domain/auditoria/auditService.js';
 import {
   isTrackingValidationError,
   normalizeTrackingSessionId,
@@ -89,4 +94,7 @@ export function setupEstatisticaRoutes(router) {
 
   // Dashboard de Analytics (Admin)
   router.get('/api/admin/analytics/dashboard', getAnalyticsDashboard, [adminMiddleware]);
+  router.get('/api/admin/analytics/overview', getAnalyticsOverview, [adminMiddleware]);
+  router.get('/api/admin/analytics/detail', getAnalyticsDetail, [adminMiddleware]);
+  router.get('/api/admin/auditoria', getAuditActivities, [adminMiddleware]);
 }

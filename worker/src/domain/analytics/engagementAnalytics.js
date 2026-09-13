@@ -168,6 +168,9 @@ export async function getEngagementAnalytics(env, period) {
     },
     ranking: currentRanking,
     tendencia: await queryTrend(env, period.atual.inicio, period.atual.fim),
+    comparacao: {
+      resumo: resumoAnterior,
+    },
     amostras: {
       usuarios_com_acao: resumo.usuarios_com_acao,
       usuarios_com_acao_anterior: resumoAnterior.usuarios_com_acao,
