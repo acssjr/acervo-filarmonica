@@ -5,6 +5,8 @@ import {
   REPERTOIRE_ACTION_WEIGHT,
 } from '../src/domain/analytics/engagementAnalytics.js';
 import { getSheetAnalytics } from '../src/domain/analytics/sheetAnalytics.js';
+import { getAttendanceAnalytics } from '../src/domain/analytics/attendanceAnalytics.js';
+import { buildAnalyticsInsights } from '../src/domain/analytics/insightService.js';
 
 const period = {
   atual: {
@@ -81,6 +83,14 @@ describe('analytics metric services', () => {
         INSERT INTO logs_download (partitura_id, instrumento_id, usuario_id, data)
         VALUES (?, 'Trompete', 210, '2099-01-06 10:00:00')
       `).bind(secondSheetId),
+      env.DB.prepare(`
+        INSERT OR IGNORE INTO presencas (usuario_id, data_ensaio, criado_por)
+        VALUES
+          (210, '2099-01-10', 1),
+          (210, '2099-01-17', 1),
+          (210, '2099-01-24', 1),
+          (211, '2099-01-10', 1)
+      `),
     ]);
   });
 
@@ -112,5 +122,56 @@ describe('analytics metric services', () => {
       acessos_pdf: 3,
     });
     expect(data.ranking.some((item) => item.titulo.includes('Admin'))).toBe(false);
+  });
+
+  it('calcula percentual de presença e ordena por taxa e presenças', async () => {
+    const data = await getAttendanceAnalytics(env, period);
+
+    expect(data.resumo).toMatchObject({
+      ensaios_realizados: 3,
+      taxa_media: 67,
+    });
+    expect(data.ranking[0]).toMatchObject({
+      nome: 'Músico Ativo Analytics',
+      taxa: 100,
+      presencas: 3,
+      ensaios: 3,
+      estado: 'com_dados',
+    });
+    expect(data.ranking.some((item) => item.nome.includes('Admin'))).toBe(false);
+    expect(data.ranking.some((item) => item.nome.includes('Convidado'))).toBe(false);
+  });
+
+  it('retorna estado explícito quando o período não tem ensaios', async () => {
+    const data = await getAttendanceAnalytics(env, {
+      atual: { inicio: '2099-03-01', fim: '2099-04-01' },
+      comparacao: { inicio: '2099-02-01', fim: '2099-03-01' },
+    });
+
+    expect(data.resumo).toMatchObject({ ensaios_realizados: 0, sem_ensaios: true });
+    expect(data.ranking[0]).toMatchObject({ taxa: null, estado: 'sem_ensaios' });
+  });
+
+  it('gera alerta de queda de presença com evidências e amostra mínima', () => {
+    const insights = buildAnalyticsInsights({
+      atual: {
+        attendance: {
+          resumo: { taxa_media: 62, ensaios_realizados: 3 },
+        },
+      },
+      comparacao: {
+        attendance: {
+          resumo: { taxa_media: 84, ensaios_realizados: 3 },
+        },
+      },
+      amostras: { ensaios_atual: 3, ensaios_comparacao: 3 },
+    });
+
+    expect(insights).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'queda_presenca', tipo: 'alerta' }),
+    ]));
+    expect(insights.find((item) => item.id === 'queda_presenca')).toMatchObject({
+      evidencias: expect.objectContaining({ atual: 62, comparacao: 84, delta: -22 }),
+    });
   });
 });
