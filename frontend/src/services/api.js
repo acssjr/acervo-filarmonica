@@ -482,6 +482,19 @@ export const API = {
     return this.request(`/api/admin/analytics/dashboard${queryString}`);
   },
 
+  async getAnalyticsOverview(queryString = '') {
+    return this.request(`/api/admin/analytics/overview${queryString}`);
+  },
+
+  async getAnalyticsDetail(view, queryString = '') {
+    const params = queryString ? `${queryString}&view=${encodeURIComponent(view)}` : `?view=${encodeURIComponent(view)}`;
+    return this.request(`/api/admin/analytics/detail${params}`);
+  },
+
+  async getAuditActivities(queryString = '') {
+    return this.request(`/api/admin/auditoria${queryString}`);
+  },
+
   async trackSearch(termo, resultadosCount) {
     // Tracking silencioso (sem await no fetch se possível, mas aqui usamos helpers)
     // Não usar this.request para não lançar erro global
