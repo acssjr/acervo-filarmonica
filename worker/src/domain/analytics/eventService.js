@@ -10,6 +10,7 @@ const ALLOWED_EVENT_TYPES = new Set([
   'download_parte',
   'busca_digitada',
   'busca_realizada',
+  'repertorio_aberto',
   'favorito_adicionado',
   'favorito_removido',
   'sessao_iniciada',

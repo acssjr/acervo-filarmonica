@@ -1,38 +1,27 @@
 // worker/src/domain/analytics/analyticsService.js
 import { jsonResponse } from '../../infrastructure/index.js';
+import {
+  AnalyticsPeriodValidationError,
+  parseAnalyticsPeriod,
+  serializeAnalyticsPeriod,
+} from './periodUtils.js';
+import { getAuditActivitiesData } from '../auditoria/auditService.js';
+import { getEngagementAnalytics } from './engagementAnalytics.js';
+import { getSheetAnalytics } from './sheetAnalytics.js';
+import { getAttendanceAnalytics } from './attendanceAnalytics.js';
+import { buildAnalyticsInsights } from './insightService.js';
 
 const NAIPES_VALIDOS = ['Madeiras', 'Metais', 'Percussão'];
-
-const AUDIT_ACTIVITY_TYPES = [
-  'nova_partitura',
-  'novo_repertorio',
-  'update_repertorio',
-  'delete_repertorio',
-  'add_repertorio',
-  'remove_repertorio',
-  'reorder_repertorio',
-  'update_partitura',
-  'delete_partitura',
-  'nova_parte',
-  'update_parte',
-  'delete_parte',
-  'aviso_criado',
-  'aviso_atualizado',
-  'aviso_ativado',
-  'aviso_desativado',
-  'aviso_excluido'
-];
-const AUDIT_ACTIVITY_PLACEHOLDERS = AUDIT_ACTIVITY_TYPES.map(() => '?').join(', ');
 
 const emptyResults = (result) => result?.results || [];
 
 function getPeriod(url) {
-  const now = new Date();
-  const startDefault = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
-  const endDefault = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
-  const start = url.searchParams.get('inicio') || startDefault.toISOString().slice(0, 10);
-  const end = url.searchParams.get('fim') || endDefault.toISOString().slice(0, 10);
-  return { start, end };
+  const period = parseAnalyticsPeriod(url);
+  return {
+    start: period.atual.inicio,
+    end: period.atual.fim,
+    period,
+  };
 }
 
 function getPositiveStreak(userId, ensaiosDesc, presencasSet) {
@@ -502,65 +491,126 @@ async function getEnsaios(env, start, end) {
   };
 }
 
-async function getAlteracoes(env, start, end, url) {
-  const usuarioId = url.searchParams.get('atividade_usuario_id');
-  const rawLimit = Number.parseInt(url.searchParams.get('atividades_limit') ?? '', 10);
-  const rawOffset = Number.parseInt(url.searchParams.get('atividades_offset') ?? '', 10);
-  const limit = Math.min(Number.isFinite(rawLimit) && rawLimit > 0 ? rawLimit : 15, 100);
-  const offset = Number.isFinite(rawOffset) && rawOffset > 0 ? rawOffset : 0;
-  const params = [start, end, ...AUDIT_ACTIVITY_TYPES];
-  const usuarioFilter = usuarioId ? 'AND a.usuario_id = ?' : '';
-  if (usuarioId) params.push(usuarioId);
+async function getFocusedAnalytics(env, period) {
+  const [engagement, sheets, attendance] = await Promise.all([
+    getEngagementAnalytics(env, period),
+    getSheetAnalytics(env, period),
+    getAttendanceAnalytics(env, period),
+  ]);
 
-  const atividades = await env.DB.prepare(`
-    SELECT
-      a.id,
-      a.tipo,
-      a.titulo,
-      a.detalhes,
-      a.criado_em,
-      u.nome as usuario_nome,
-      u.id as usuario_id
-    FROM atividades a
-    LEFT JOIN usuarios u ON a.usuario_id = u.id
-    WHERE a.criado_em >= ? AND a.criado_em < ?
-      AND a.tipo IN (${AUDIT_ACTIVITY_PLACEHOLDERS})
-      ${usuarioFilter}
-    ORDER BY a.criado_em DESC
-    LIMIT ? OFFSET ?
-  `).bind(...params, limit, offset).all();
-
-  const total = await env.DB.prepare(`
-    SELECT COUNT(*) as total
-    FROM atividades a
-    WHERE a.criado_em >= ? AND a.criado_em < ?
-      AND a.tipo IN (${AUDIT_ACTIVITY_PLACEHOLDERS})
-      ${usuarioFilter}
-  `).bind(...params).first();
-
-  const usuarios = await env.DB.prepare(`
-    SELECT DISTINCT u.id, u.nome
-    FROM atividades a
-    JOIN usuarios u ON u.id = a.usuario_id
-    WHERE a.criado_em >= ? AND a.criado_em < ?
-      AND a.tipo IN (${AUDIT_ACTIVITY_PLACEHOLDERS})
-      AND u.admin = 1
-    ORDER BY u.nome ASC
-  `).bind(start, end, ...AUDIT_ACTIVITY_TYPES).all();
+  const atual = { engagement, sheets, attendance };
+  const comparacao = {
+    engagement: engagement.comparacao,
+    sheets: sheets.comparacao,
+    attendance: attendance.comparacao,
+  };
+  const amostras = {
+    ...attendance.amostra,
+    acessos_atual: sheets.amostras.partituras_com_acao,
+    acessos_comparacao: sheets.amostras.partituras_com_acao_anterior,
+  };
 
   return {
-    usuarios: emptyResults(usuarios),
-    atividades: emptyResults(atividades),
-    total: total?.total || 0
+    engagement,
+    sheets,
+    attendance,
+    insights: buildAnalyticsInsights({ atual, comparacao, amostras }),
+    amostras,
   };
+}
+
+export async function getAnalyticsOverview(request, env) {
+  try {
+    const url = new URL(request.url);
+    const period = parseAnalyticsPeriod(url);
+    const data = await getFocusedAnalytics(env, period);
+    return jsonResponse({
+      periodo: serializeAnalyticsPeriod(period),
+      resumo: {
+        engajamento: data.engagement.resumo,
+        partituras: data.sheets.resumo,
+        assiduidade: data.attendance.resumo,
+      },
+      insights: data.insights,
+      rankings: {
+        engajamento: data.engagement.ranking.slice(0, 5),
+        partituras: data.sheets.ranking.slice(0, 5),
+        assiduidade: data.attendance.ranking.slice(0, 5),
+      },
+      projecoes: period.projecao.disponivel ? {
+        acoes: Math.round(data.engagement.resumo.total_acoes * period.projecao.fator),
+        acessos_pdf: Math.round(data.sheets.resumo.acessos_pdf * period.projecao.fator),
+        downloads: Math.round(data.sheets.resumo.downloads * period.projecao.fator),
+        fator: period.projecao.fator,
+        confianca: period.projecao.confianca,
+      } : null,
+      amostras: data.amostras,
+    }, 200, request);
+  } catch (error) {
+    if (error instanceof AnalyticsPeriodValidationError) {
+      return jsonResponse({ error: error.message }, 400, request);
+    }
+    console.error('Analytics overview error:', error);
+    return jsonResponse({ error: 'Erro ao carregar visão geral de analytics' }, 500, request);
+  }
+}
+
+export async function getAnalyticsDetail(request, env) {
+  const url = new URL(request.url);
+  const view = url.searchParams.get('view');
+  const viewMap = {
+    engajamento: ['engagement', 'engajamento'],
+    partituras: ['sheets', 'partituras'],
+    assiduidade: ['attendance', 'assiduidade'],
+  };
+  if (!viewMap[view]) {
+    return jsonResponse({
+      error: 'Visão inválida',
+      visoes_validas: Object.keys(viewMap),
+    }, 400, request);
+  }
+
+  try {
+    const period = parseAnalyticsPeriod(url);
+    const data = await getFocusedAnalytics(env, period);
+    const [dataKey, responseKey] = viewMap[view];
+    return jsonResponse({
+      periodo: serializeAnalyticsPeriod(period),
+      view,
+      [responseKey]: data[dataKey],
+      projecao: period.projecao,
+      insights: data.insights.filter((item) => ({
+        assiduidade: ['queda_presenca', 'destaque_assiduidade'],
+        partituras: ['queda_acessos'],
+        engajamento: ['destaque_engajamento'],
+      })[view].includes(item.id)),
+    }, 200, request);
+  } catch (error) {
+    if (error instanceof AnalyticsPeriodValidationError) {
+      return jsonResponse({ error: error.message }, 400, request);
+    }
+    console.error('Analytics detail error:', error);
+    return jsonResponse({ error: 'Erro ao carregar detalhe de analytics' }, 500, request);
+  }
 }
 
 export async function getAnalyticsDashboard(request, env, _params, _context) {
   try {
     const url = new URL(request.url);
-    const { start, end } = getPeriod(url);
+    const { start, end, period } = getPeriod(url);
     const section = url.searchParams.get('section') || 'all';
-    const base = { periodo: { inicio: start, fim: end } };
+    const base = {
+      periodo: {
+        inicio: start,
+        fim: end,
+        fim_solicitado: period.atual.fimSolicitado,
+        dias_decorridos: period.atual.diasDecorridos,
+        dias_totais: period.atual.diasTotais,
+        incompleto: period.atual.incompleto,
+        comparacao: period.comparacao,
+        projecao: period.projecao,
+      }
+    };
 
     if (section === 'acervo') {
       return jsonResponse({
@@ -584,7 +634,7 @@ export async function getAnalyticsDashboard(request, env, _params, _context) {
     }
 
     if (section === 'alteracoes') {
-      const alteracoes = await getAlteracoes(env, start, end, url);
+      const alteracoes = await getAuditActivitiesData(env, start, end, url);
       return jsonResponse({
         ...base,
         alteracoes,
@@ -689,7 +739,7 @@ export async function getAnalyticsDashboard(request, env, _params, _context) {
     const usoAcervo = await getUsoAcervo(env, start, end);
     const pessoas = await getPessoas(env, url, start, end);
     const ensaios = await getEnsaios(env, start, end);
-    const alteracoes = await getAlteracoes(env, start, end, url);
+    const alteracoes = await getAuditActivitiesData(env, start, end, url);
 
     return jsonResponse({
       periodo: { inicio: start, fim: end },

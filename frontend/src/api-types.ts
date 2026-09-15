@@ -792,6 +792,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/analytics/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getAnalyticsOverview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/analytics/detail": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getAnalyticsDetail"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/auditoria": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getAuditActivities"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/assets/list/backgrounds": {
         parameters: {
             query?: never;
@@ -1154,6 +1202,225 @@ export interface components {
         Success: {
             success?: boolean;
             message?: string;
+        };
+        AnalyticsInterval: {
+            /** Format: date */
+            inicio: string;
+            /** Format: date */
+            fim: string;
+        };
+        AnalyticsProjection: {
+            disponivel: boolean;
+            valor: number | null;
+            fator: number | null;
+            /** @enum {string} */
+            confianca: "alta" | "media" | "indisponivel";
+        };
+        AnalyticsPeriod: {
+            /** Format: date */
+            inicio: string;
+            /** Format: date */
+            fim: string;
+            /** Format: date */
+            fim_solicitado: string;
+            dias_decorridos: number;
+            dias_totais: number;
+            incompleto: boolean;
+            comparacao: components["schemas"]["AnalyticsInterval"];
+            projecao: components["schemas"]["AnalyticsProjection"];
+        };
+        EngagementSummary: {
+            total_acoes?: number;
+            visualizacoes?: number;
+            downloads?: number;
+            buscas?: number;
+            favoritos?: number;
+            repertorios?: number;
+            usuarios_com_acao?: number;
+            usuarios_elegiveis?: number;
+            variacao_acoes?: number | null;
+        };
+        SheetSummary: {
+            visualizacoes?: number;
+            downloads?: number;
+            acessos_pdf?: number;
+            usuarios?: number;
+            partituras_com_acao?: number;
+            variacao_acessos?: number | null;
+        };
+        AttendanceSummary: {
+            ensaios_realizados?: number;
+            presencas_total?: number;
+            presencas_esperadas?: number;
+            taxa_media?: number | null;
+            musicos_com_presenca?: number;
+            sem_ensaios?: boolean;
+        };
+        EngagementRankingItem: {
+            id: number;
+            nome: string;
+            instrumento?: string | null;
+            foto_url?: string | null;
+            posicao: number;
+            visualizacoes?: number;
+            downloads?: number;
+            buscas?: number;
+            favoritos?: number;
+            repertorios?: number;
+            dias_ativos?: number;
+            sessoes?: number;
+            total_acoes: number;
+        };
+        SheetRankingItem: {
+            id: number;
+            titulo: string;
+            compositor?: string | null;
+            visualizacoes: number;
+            downloads: number;
+            acessos_pdf: number;
+            usuarios?: number;
+            instrumentos_explorados?: number;
+        };
+        PartRankingItem: {
+            id?: number | null;
+            instrumento?: string;
+            partitura_titulo?: string;
+            visualizacoes?: number;
+            downloads?: number;
+            acessos_pdf?: number;
+        };
+        AttendanceRankingItem: {
+            id: number;
+            nome: string;
+            instrumento?: string | null;
+            familia?: string;
+            foto_url?: string | null;
+            presencas: number;
+            ensaios: number;
+            taxa: number | null;
+            /** @enum {string} */
+            estado: "com_dados" | "sem_ensaios";
+            posicao: number;
+        };
+        AttendanceFamilyItem: {
+            familia?: string;
+            musicos?: number;
+            ensaios?: number;
+            presencas?: number;
+            esperadas?: number;
+            taxa?: number | null;
+            /** @enum {string} */
+            estado?: "com_dados" | "sem_ensaios";
+        };
+        AnalyticsTrendItem: {
+            /** Format: date */
+            data: string;
+            total?: number;
+            presentes?: number;
+        };
+        AnalyticsInsight: {
+            id: string;
+            /** @enum {string} */
+            tipo: "alerta" | "reconhecimento";
+            titulo: string;
+            descricao: string;
+            /** @enum {string} */
+            severidade: "alta" | "media" | "info";
+            evidencias: {
+                [key: string]: unknown;
+            };
+            /** @enum {string} */
+            confianca: "alta" | "media";
+        };
+        AnalyticsProjections: {
+            acoes?: number;
+            acessos_pdf?: number;
+            downloads?: number;
+            fator?: number;
+            /** @enum {string} */
+            confianca?: "alta" | "media";
+        } | null;
+        AnalyticsOverviewResponse: {
+            periodo: components["schemas"]["AnalyticsPeriod"];
+            resumo: {
+                engajamento?: components["schemas"]["EngagementSummary"];
+                partituras?: components["schemas"]["SheetSummary"];
+                assiduidade?: components["schemas"]["AttendanceSummary"];
+            };
+            insights: components["schemas"]["AnalyticsInsight"][];
+            rankings: {
+                engajamento?: components["schemas"]["EngagementRankingItem"][];
+                partituras?: components["schemas"]["SheetRankingItem"][];
+                assiduidade?: components["schemas"]["AttendanceRankingItem"][];
+            };
+            projecoes: components["schemas"]["AnalyticsProjections"];
+            amostras: {
+                [key: string]: number;
+            };
+        };
+        EngagementAnalyticsDetail: {
+            resumo?: components["schemas"]["EngagementSummary"];
+            ranking?: components["schemas"]["EngagementRankingItem"][];
+            tendencia?: components["schemas"]["AnalyticsTrendItem"][];
+            comparacao?: {
+                resumo?: components["schemas"]["EngagementSummary"];
+            };
+            amostras?: {
+                [key: string]: number;
+            };
+        };
+        SheetAnalyticsDetail: {
+            resumo?: components["schemas"]["SheetSummary"];
+            ranking?: components["schemas"]["SheetRankingItem"][];
+            partes?: components["schemas"]["PartRankingItem"][];
+            tendencia?: components["schemas"]["AnalyticsTrendItem"][];
+            comparacao?: {
+                resumo?: components["schemas"]["SheetSummary"];
+            };
+            amostras?: {
+                [key: string]: number;
+            };
+        };
+        AttendanceAnalyticsDetail: {
+            resumo?: components["schemas"]["AttendanceSummary"];
+            ranking?: components["schemas"]["AttendanceRankingItem"][];
+            naipes?: components["schemas"]["AttendanceFamilyItem"][];
+            tendencia?: components["schemas"]["AnalyticsTrendItem"][];
+            comparacao?: {
+                resumo?: components["schemas"]["AttendanceSummary"];
+            };
+            amostra?: {
+                [key: string]: number;
+            };
+        };
+        AnalyticsDetailResponse: {
+            periodo: components["schemas"]["AnalyticsPeriod"];
+            /** @enum {string} */
+            view: "engajamento" | "partituras" | "assiduidade";
+            engajamento?: components["schemas"]["EngagementAnalyticsDetail"];
+            partituras?: components["schemas"]["SheetAnalyticsDetail"];
+            assiduidade?: components["schemas"]["AttendanceAnalyticsDetail"];
+            projecao: components["schemas"]["AnalyticsProjection"];
+            insights: components["schemas"]["AnalyticsInsight"][];
+        };
+        AuditUser: {
+            id?: number;
+            nome?: string;
+        };
+        AuditActivity: {
+            id?: number;
+            tipo?: string;
+            titulo?: string | null;
+            detalhes?: string | null;
+            criado_em?: string;
+            usuario_nome?: string | null;
+            usuario_id?: number | null;
+        };
+        AuditActivitiesResponse: {
+            periodo: components["schemas"]["AnalyticsPeriod"];
+            usuarios: components["schemas"]["AuditUser"][];
+            atividades: components["schemas"]["AuditActivity"][];
+            total: number;
         };
         HealthResponse: {
             /** @enum {string} */
@@ -2992,6 +3259,133 @@ export interface operations {
                     "application/json": {
                         [key: string]: unknown;
                     };
+                };
+            };
+            /** @description Não autenticado */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getAnalyticsOverview: {
+        parameters: {
+            query?: {
+                inicio?: string;
+                fim?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Visão geral do analytics */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnalyticsOverviewResponse"];
+                };
+            };
+            /** @description Período inválido */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Não autenticado */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getAnalyticsDetail: {
+        parameters: {
+            query: {
+                view: "engajamento" | "partituras" | "assiduidade";
+                inicio?: string;
+                fim?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Detalhe do analytics */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnalyticsDetailResponse"];
+                };
+            };
+            /** @description Visão inválida */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Não autenticado */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getAuditActivities: {
+        parameters: {
+            query?: {
+                inicio?: string;
+                fim?: string;
+                atividade_usuario_id?: number;
+                atividades_limit?: number;
+                atividades_offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Atividades administrativas */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuditActivitiesResponse"];
+                };
+            };
+            /** @description Período inválido */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
                 };
             };
             /** @description Não autenticado */

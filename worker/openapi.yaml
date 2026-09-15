@@ -60,6 +60,261 @@ components:
         message:
           type: string
 
+    AnalyticsInterval:
+      type: object
+      required: [inicio, fim]
+      properties:
+        inicio: { type: string, format: date }
+        fim: { type: string, format: date }
+
+    AnalyticsProjection:
+      type: object
+      required: [disponivel, valor, fator, confianca]
+      properties:
+        disponivel: { type: boolean }
+        valor: { type: number, nullable: true }
+        fator: { type: number, nullable: true }
+        confianca: { type: string, enum: [alta, media, indisponivel] }
+
+    AnalyticsPeriod:
+      type: object
+      required: [inicio, fim, fim_solicitado, dias_decorridos, dias_totais, incompleto, comparacao, projecao]
+      properties:
+        inicio: { type: string, format: date }
+        fim: { type: string, format: date }
+        fim_solicitado: { type: string, format: date }
+        dias_decorridos: { type: integer, minimum: 0 }
+        dias_totais: { type: integer, minimum: 1 }
+        incompleto: { type: boolean }
+        comparacao: { $ref: '#/components/schemas/AnalyticsInterval' }
+        projecao: { $ref: '#/components/schemas/AnalyticsProjection' }
+
+    EngagementSummary:
+      type: object
+      properties:
+        total_acoes: { type: number }
+        visualizacoes: { type: integer }
+        downloads: { type: integer }
+        buscas: { type: integer }
+        favoritos: { type: integer }
+        repertorios: { type: integer }
+        usuarios_com_acao: { type: integer }
+        usuarios_elegiveis: { type: integer }
+        variacao_acoes: { type: integer, nullable: true }
+
+    SheetSummary:
+      type: object
+      properties:
+        visualizacoes: { type: integer }
+        downloads: { type: integer }
+        acessos_pdf: { type: integer }
+        usuarios: { type: integer }
+        partituras_com_acao: { type: integer }
+        variacao_acessos: { type: integer, nullable: true }
+
+    AttendanceSummary:
+      type: object
+      properties:
+        ensaios_realizados: { type: integer }
+        presencas_total: { type: integer }
+        presencas_esperadas: { type: integer }
+        taxa_media: { type: integer, nullable: true }
+        musicos_com_presenca: { type: integer }
+        sem_ensaios: { type: boolean }
+
+    EngagementRankingItem:
+      type: object
+      required: [id, nome, posicao, total_acoes]
+      properties:
+        id: { type: integer }
+        nome: { type: string }
+        instrumento: { type: string, nullable: true }
+        foto_url: { type: string, nullable: true }
+        posicao: { type: integer }
+        visualizacoes: { type: integer }
+        downloads: { type: integer }
+        buscas: { type: integer }
+        favoritos: { type: integer }
+        repertorios: { type: integer }
+        dias_ativos: { type: integer }
+        sessoes: { type: integer }
+        total_acoes: { type: number }
+
+    SheetRankingItem:
+      type: object
+      required: [id, titulo, visualizacoes, downloads, acessos_pdf]
+      properties:
+        id: { type: integer }
+        titulo: { type: string }
+        compositor: { type: string, nullable: true }
+        visualizacoes: { type: integer }
+        downloads: { type: integer }
+        acessos_pdf: { type: integer }
+        usuarios: { type: integer }
+        instrumentos_explorados: { type: integer }
+
+    PartRankingItem:
+      type: object
+      properties:
+        id: { type: integer, nullable: true }
+        instrumento: { type: string }
+        partitura_titulo: { type: string }
+        visualizacoes: { type: integer }
+        downloads: { type: integer }
+        acessos_pdf: { type: integer }
+
+    AttendanceRankingItem:
+      type: object
+      required: [id, nome, presencas, ensaios, taxa, estado, posicao]
+      properties:
+        id: { type: integer }
+        nome: { type: string }
+        instrumento: { type: string, nullable: true }
+        familia: { type: string }
+        foto_url: { type: string, nullable: true }
+        presencas: { type: integer }
+        ensaios: { type: integer }
+        taxa: { type: integer, nullable: true }
+        estado: { type: string, enum: [com_dados, sem_ensaios] }
+        posicao: { type: integer }
+
+    AttendanceFamilyItem:
+      type: object
+      properties:
+        familia: { type: string }
+        musicos: { type: integer }
+        ensaios: { type: integer }
+        presencas: { type: integer }
+        esperadas: { type: integer }
+        taxa: { type: integer, nullable: true }
+        estado: { type: string, enum: [com_dados, sem_ensaios] }
+
+    AnalyticsTrendItem:
+      type: object
+      required: [data]
+      properties:
+        data: { type: string, format: date }
+        total: { type: number }
+        presentes: { type: integer }
+
+    AnalyticsInsight:
+      type: object
+      required: [id, tipo, titulo, descricao, severidade, evidencias, confianca]
+      properties:
+        id: { type: string }
+        tipo: { type: string, enum: [alerta, reconhecimento] }
+        titulo: { type: string }
+        descricao: { type: string }
+        severidade: { type: string, enum: [alta, media, info] }
+        evidencias: { type: object, additionalProperties: true }
+        confianca: { type: string, enum: [alta, media] }
+
+    AnalyticsProjections:
+      type: object
+      nullable: true
+      properties:
+        acoes: { type: integer }
+        acessos_pdf: { type: integer }
+        downloads: { type: integer }
+        fator: { type: number }
+        confianca: { type: string, enum: [alta, media] }
+
+    AnalyticsOverviewResponse:
+      type: object
+      required: [periodo, resumo, insights, rankings, projecoes, amostras]
+      properties:
+        periodo: { $ref: '#/components/schemas/AnalyticsPeriod' }
+        resumo:
+          type: object
+          properties:
+            engajamento: { $ref: '#/components/schemas/EngagementSummary' }
+            partituras: { $ref: '#/components/schemas/SheetSummary' }
+            assiduidade: { $ref: '#/components/schemas/AttendanceSummary' }
+        insights:
+          type: array
+          items: { $ref: '#/components/schemas/AnalyticsInsight' }
+        rankings:
+          type: object
+          properties:
+            engajamento: { type: array, items: { $ref: '#/components/schemas/EngagementRankingItem' } }
+            partituras: { type: array, items: { $ref: '#/components/schemas/SheetRankingItem' } }
+            assiduidade: { type: array, items: { $ref: '#/components/schemas/AttendanceRankingItem' } }
+        projecoes: { $ref: '#/components/schemas/AnalyticsProjections' }
+        amostras: { type: object, additionalProperties: { type: integer } }
+
+    EngagementAnalyticsDetail:
+      type: object
+      properties:
+        resumo: { $ref: '#/components/schemas/EngagementSummary' }
+        ranking: { type: array, items: { $ref: '#/components/schemas/EngagementRankingItem' } }
+        tendencia: { type: array, items: { $ref: '#/components/schemas/AnalyticsTrendItem' } }
+        comparacao:
+          type: object
+          properties: { resumo: { $ref: '#/components/schemas/EngagementSummary' } }
+        amostras: { type: object, additionalProperties: { type: integer } }
+
+    SheetAnalyticsDetail:
+      type: object
+      properties:
+        resumo: { $ref: '#/components/schemas/SheetSummary' }
+        ranking: { type: array, items: { $ref: '#/components/schemas/SheetRankingItem' } }
+        partes: { type: array, items: { $ref: '#/components/schemas/PartRankingItem' } }
+        tendencia: { type: array, items: { $ref: '#/components/schemas/AnalyticsTrendItem' } }
+        comparacao:
+          type: object
+          properties: { resumo: { $ref: '#/components/schemas/SheetSummary' } }
+        amostras: { type: object, additionalProperties: { type: integer } }
+
+    AttendanceAnalyticsDetail:
+      type: object
+      properties:
+        resumo: { $ref: '#/components/schemas/AttendanceSummary' }
+        ranking: { type: array, items: { $ref: '#/components/schemas/AttendanceRankingItem' } }
+        naipes: { type: array, items: { $ref: '#/components/schemas/AttendanceFamilyItem' } }
+        tendencia: { type: array, items: { $ref: '#/components/schemas/AnalyticsTrendItem' } }
+        comparacao:
+          type: object
+          properties: { resumo: { $ref: '#/components/schemas/AttendanceSummary' } }
+        amostra: { type: object, additionalProperties: { type: integer } }
+
+    AnalyticsDetailResponse:
+      type: object
+      required: [periodo, view, projecao, insights]
+      properties:
+        periodo: { $ref: '#/components/schemas/AnalyticsPeriod' }
+        view: { type: string, enum: [engajamento, partituras, assiduidade] }
+        engajamento: { $ref: '#/components/schemas/EngagementAnalyticsDetail' }
+        partituras: { $ref: '#/components/schemas/SheetAnalyticsDetail' }
+        assiduidade: { $ref: '#/components/schemas/AttendanceAnalyticsDetail' }
+        projecao: { $ref: '#/components/schemas/AnalyticsProjection' }
+        insights: { type: array, items: { $ref: '#/components/schemas/AnalyticsInsight' } }
+
+    AuditUser:
+      type: object
+      properties:
+        id: { type: integer }
+        nome: { type: string }
+
+    AuditActivity:
+      type: object
+      properties:
+        id: { type: integer }
+        tipo: { type: string }
+        titulo: { type: string, nullable: true }
+        detalhes: { type: string, nullable: true }
+        criado_em: { type: string }
+        usuario_nome: { type: string, nullable: true }
+        usuario_id: { type: integer, nullable: true }
+
+    AuditActivitiesResponse:
+      type: object
+      required: [periodo, usuarios, atividades, total]
+      properties:
+        periodo: { $ref: '#/components/schemas/AnalyticsPeriod' }
+        usuarios: { type: array, items: { $ref: '#/components/schemas/AuditUser' } }
+        atividades: { type: array, items: { $ref: '#/components/schemas/AuditActivity' } }
+        total: { type: integer }
+
     HealthResponse:
       type: object
       required: [status, checks, timestamp]
@@ -1894,6 +2149,49 @@ paths:
         - { name: period, in: query, schema: { type: string } }
       responses:
         '200': { description: Dashboard analítico, content: { application/json: { schema: { type: object, additionalProperties: true } } } }
+        '401': { description: Não autenticado, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+
+  /api/admin/analytics/overview:
+    get:
+      tags: [Estatisticas]
+      operationId: getAnalyticsOverview
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - { name: inicio, in: query, schema: { type: string, format: date } }
+        - { name: fim, in: query, schema: { type: string, format: date } }
+      responses:
+        '200': { description: Visão geral do analytics, content: { application/json: { schema: { $ref: '#/components/schemas/AnalyticsOverviewResponse' } } } }
+        '400': { description: Período inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '401': { description: Não autenticado, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+
+  /api/admin/analytics/detail:
+    get:
+      tags: [Estatisticas]
+      operationId: getAnalyticsDetail
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - { name: view, in: query, required: true, schema: { type: string, enum: [engajamento, partituras, assiduidade] } }
+        - { name: inicio, in: query, schema: { type: string, format: date } }
+        - { name: fim, in: query, schema: { type: string, format: date } }
+      responses:
+        '200': { description: Detalhe do analytics, content: { application/json: { schema: { $ref: '#/components/schemas/AnalyticsDetailResponse' } } } }
+        '400': { description: Visão inválida, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '401': { description: Não autenticado, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+
+  /api/admin/auditoria:
+    get:
+      tags: [Estatisticas]
+      operationId: getAuditActivities
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - { name: inicio, in: query, schema: { type: string, format: date } }
+        - { name: fim, in: query, schema: { type: string, format: date } }
+        - { name: atividade_usuario_id, in: query, schema: { type: integer } }
+        - { name: atividades_limit, in: query, schema: { type: integer, minimum: 1, maximum: 100 } }
+        - { name: atividades_offset, in: query, schema: { type: integer, minimum: 0 } }
+      responses:
+        '200': { description: Atividades administrativas, content: { application/json: { schema: { $ref: '#/components/schemas/AuditActivitiesResponse' } } } }
+        '400': { description: Período inválido, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
         '401': { description: Não autenticado, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
 
   /api/assets/list/backgrounds:

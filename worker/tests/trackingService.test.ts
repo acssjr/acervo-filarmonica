@@ -54,6 +54,18 @@ describe('tracking helpers', () => {
     });
   });
 
+  it('accepts deliberate repertoire exploration events', () => {
+    expect(buildTrackingEventPayload({
+      tipo: 'repertorio_aberto',
+      origem: 'repertorio',
+      repertorio_id: 7
+    })).toMatchObject({
+      tipo: 'repertorio_aberto',
+      origem: 'repertorio',
+      repertorio_id: 7
+    });
+  });
+
   it('coerces numeric string search counts and rejects empty or invalid values', () => {
     expect(
       buildTrackingEventPayload({

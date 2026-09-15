@@ -9,6 +9,7 @@ import { useUI } from '@contexts/UIContext';
 import { useData } from '@contexts/DataContext';
 import { API } from '@services/api';
 import Storage from '@services/storage';
+import { createRepertoireTracker } from '@utils/analyticsTracking';
 import { Icons } from '@constants/icons';
 import Header from '@components/common/Header';
 import EmptyState from '@components/common/EmptyState';
@@ -837,6 +838,14 @@ const RepertorioScreen = () => {
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
   const [showDownloadModal, setShowDownloadModal] = useState(false);
+  const repertoireTrackerRef = useRef(null);
+  if (repertoireTrackerRef.current === null) {
+    repertoireTrackerRef.current = createRepertoireTracker((event) => API.trackEvent(event));
+  }
+
+  const trackRepertorioOpen = (selectedRepertorio) => {
+    repertoireTrackerRef.current(selectedRepertorio?.id);
+  };
 
   // Carregar repertórios ativos (instrumentos são prefetched em background)
   const loadRepertorio = async () => {
@@ -848,6 +857,7 @@ const RepertorioScreen = () => {
 
       if (list.length > 0) {
         setRepertorio(list[0]);
+        trackRepertorioOpen(list[0]);
         setLoading(false); // Libera UI imediatamente após dados críticos
 
         // Prefetch instrumentos em background (non-blocking)
@@ -879,6 +889,7 @@ const RepertorioScreen = () => {
 
   const handleSelectRepertorio = async (rep) => {
     setRepertorio(rep);
+    trackRepertorioOpen(rep);
     try {
       const instrumentos = await API.getRepertorioInstrumentos(rep.id);
       setRepertorioInstrumentos(instrumentos);

@@ -23,8 +23,12 @@ export async function calcularStreak(env, usuarioId) {
   // Buscar os últimos 50 ensaios REAIS registrados no banco
   // Isso garante que o cálculo seja baseado no calendário real da banda
   const ultimosEnsaiosResult = await env.DB.prepare(`
-    SELECT DISTINCT data_ensaio
-    FROM presencas
+    SELECT data_ensaio
+    FROM (
+      SELECT data_ensaio FROM ensaios_config
+      UNION
+      SELECT data_ensaio FROM presencas
+    )
     ORDER BY data_ensaio DESC
     LIMIT 50
   `).all();
@@ -71,10 +75,14 @@ export async function calcularStreak(env, usuarioId) {
  */
 export async function getPresencaUsuario(env, usuarioId) {
   // 1. Buscar os últimos 100 ensaios REAIS registrados no banco
-  // (datas onde houve pelo menos uma presença registrada por qualquer pessoa)
+  // A ocorrência do ensaio permanece registrada mesmo quando não há presentes.
   const ultimasDatas = await env.DB.prepare(`
-    SELECT DISTINCT data_ensaio
-    FROM presencas
+    SELECT data_ensaio
+    FROM (
+      SELECT data_ensaio FROM ensaios_config
+      UNION
+      SELECT data_ensaio FROM presencas
+    )
     ORDER BY data_ensaio DESC
     LIMIT 100
   `).all();
@@ -83,7 +91,13 @@ export async function getPresencaUsuario(env, usuarioId) {
 
   // Mapear numeração dos ensaios
   const allRehearsals = await env.DB.prepare(`
-    SELECT DISTINCT data_ensaio FROM presencas ORDER BY data_ensaio ASC
+    SELECT data_ensaio
+    FROM (
+      SELECT data_ensaio FROM ensaios_config
+      UNION
+      SELECT data_ensaio FROM presencas
+    )
+    ORDER BY data_ensaio ASC
   `).all();
 
   const rehearsalMap = new Map();
@@ -172,11 +186,14 @@ export async function getEstatisticasPerfil(env, usuarioId, criado_em) {
   const mesAtual = new Date().toISOString().slice(0, 7); // "2026-03"
   const mesMesResult = await env.DB.prepare(`
     SELECT
-      COUNT(DISTINCT data_ensaio) as total_mes,
-      COUNT(DISTINCT CASE WHEN usuario_id = ? THEN data_ensaio END) as presentes_mes
-    FROM presencas
-    WHERE data_ensaio LIKE ?
-  `).bind(usuarioId, `${mesAtual}%`).first();
+      (SELECT COUNT(*) FROM (
+        SELECT data_ensaio FROM ensaios_config WHERE data_ensaio LIKE ?
+        UNION
+        SELECT data_ensaio FROM presencas WHERE data_ensaio LIKE ?
+      )) as total_mes,
+      (SELECT COUNT(DISTINCT data_ensaio) FROM presencas
+       WHERE usuario_id = ? AND data_ensaio LIKE ?) as presentes_mes
+  `).bind(`${mesAtual}%`, `${mesAtual}%`, usuarioId, `${mesAtual}%`).first();
 
   const presentes_mes = mesMesResult?.presentes_mes || 0;
   const total_mes = mesMesResult?.total_mes || 0;
@@ -273,12 +290,19 @@ export async function registrarPresencas(env, dataEnsaio, usuariosIds, adminId) 
     throw new Error('Lista de usuários inválida');
   }
 
-  const results = await env.DB.batch(ids.map(usuarioId => env.DB.prepare(`
+  const results = await env.DB.batch([
+    env.DB.prepare(`
+      INSERT INTO ensaios_config (data_ensaio)
+      VALUES (?)
+      ON CONFLICT(data_ensaio) DO NOTHING
+    `).bind(dataEnsaio),
+    ...ids.map(usuarioId => env.DB.prepare(`
         INSERT INTO presencas (usuario_id, data_ensaio, criado_por)
         VALUES (?, ?, ?)
         ON CONFLICT(usuario_id, data_ensaio) DO NOTHING
-      `).bind(usuarioId, dataEnsaio, adminId)));
-  const registradas = results.reduce((total, result) => total + (result.meta?.changes || 0), 0);
+      `).bind(usuarioId, dataEnsaio, adminId)),
+  ]);
+  const registradas = results.slice(1).reduce((total, result) => total + (result.meta?.changes || 0), 0);
 
   return {
     sucesso: true,
@@ -296,8 +320,8 @@ export async function getTodasPresencas(env) {
   // Buscar todos os ensaios (datas únicas) com contagem de presenças e partituras
   const ensaios = await env.DB.prepare(`
     SELECT
-      p.data_ensaio,
-      CASE CAST(strftime('%w', p.data_ensaio) AS INTEGER)
+      er.data_ensaio,
+      CASE CAST(strftime('%w', er.data_ensaio) AS INTEGER)
         WHEN 0 THEN 'Domingo'
         WHEN 1 THEN 'Segunda'
         WHEN 2 THEN 'Terça'
@@ -308,18 +332,29 @@ export async function getTodasPresencas(env) {
       END as dia_semana,
       COUNT(DISTINCT CASE WHEN i.nome != 'Regente' THEN p.usuario_id END) as total_presencas,
       (SELECT COUNT(*) FROM ensaios_partituras ep
-       WHERE ep.data_ensaio = p.data_ensaio) as total_partituras
-    FROM presencas p
+       WHERE ep.data_ensaio = er.data_ensaio) as total_partituras
+    FROM (
+      SELECT data_ensaio FROM ensaios_config
+      UNION
+      SELECT data_ensaio FROM presencas
+    ) er
+    LEFT JOIN presencas p ON p.data_ensaio = er.data_ensaio
     LEFT JOIN usuarios u ON p.usuario_id = u.id
     LEFT JOIN instrumentos i ON u.instrumento_id = i.id
-    GROUP BY p.data_ensaio
-    ORDER BY p.data_ensaio DESC
+    GROUP BY er.data_ensaio
+    ORDER BY er.data_ensaio DESC
     LIMIT 100
   `).all();
 
   // Mapear numeração dos ensaios
   const allRehearsals = await env.DB.prepare(`
-    SELECT DISTINCT data_ensaio FROM presencas ORDER BY data_ensaio ASC
+    SELECT data_ensaio
+    FROM (
+      SELECT data_ensaio FROM ensaios_config
+      UNION
+      SELECT data_ensaio FROM presencas
+    )
+    ORDER BY data_ensaio ASC
   `).all();
 
   const rehearsalMap = new Map();
@@ -396,7 +431,8 @@ export async function removerPresenca(env, dataEnsaio, usuarioId) {
 export async function excluirEnsaio(env, dataEnsaio) {
   const results = await env.DB.batch([
     env.DB.prepare('DELETE FROM presencas WHERE data_ensaio = ?').bind(dataEnsaio),
-    env.DB.prepare('DELETE FROM ensaios_partituras WHERE data_ensaio = ?').bind(dataEnsaio)
+    env.DB.prepare('DELETE FROM ensaios_partituras WHERE data_ensaio = ?').bind(dataEnsaio),
+    env.DB.prepare('DELETE FROM ensaios_config WHERE data_ensaio = ?').bind(dataEnsaio)
   ]);
 
   return {
