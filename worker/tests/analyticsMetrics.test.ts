@@ -89,7 +89,51 @@ describe('analytics metric services', () => {
           (210, '2099-01-10', 1),
           (210, '2099-01-17', 1),
           (210, '2099-01-24', 1),
-          (211, '2099-01-10', 1)
+          (211, '2099-01-10', 1),
+          (210, '2098-12-10', 1)
+      `),
+      env.DB.prepare(`
+        INSERT OR IGNORE INTO ensaios_config (data_ensaio)
+        VALUES
+          ('2098-12-10'),
+          ('2099-01-10'),
+          ('2099-01-17'),
+          ('2099-01-24'),
+          ('2099-01-31')
+      `),
+      env.DB.prepare(`
+        INSERT INTO tracking_events (usuario_id, tipo, origem, partitura_id, criado_em)
+        VALUES
+          (210, 'pdf_visualizado_grade', 'acervo', ?, '2098-12-02 10:00:00'),
+          (210, 'repertorio_aberto', 'repertorio', NULL, '2098-12-03 10:00:00')
+      `).bind(firstSheetId),
+      env.DB.prepare(`
+        INSERT INTO logs_download (partitura_id, instrumento_id, usuario_id, data)
+        VALUES (?, 'Clarinete Bb', 210, '2098-12-04 10:00:00')
+      `).bind(firstSheetId),
+      env.DB.prepare(`
+        WITH RECURSIVE seq(n) AS (
+          SELECT 1 UNION ALL SELECT n + 1 FROM seq WHERE n < 101
+        )
+        INSERT INTO usuarios (id, username, nome, pin_hash, admin, ativo, instrumento_id, convidado)
+        SELECT 300 + n, 'analytics.bulk.' || n, 'Músico Lote ' || n, '1234', 0, 1, 'regente', 0
+        FROM seq
+      `),
+      env.DB.prepare(`
+        WITH RECURSIVE seq(n) AS (
+          SELECT 1 UNION ALL SELECT n + 1 FROM seq WHERE n < 101
+        )
+        INSERT INTO partituras (id, titulo, compositor, categoria_id, arquivo_nome, arquivo_tamanho, ativo)
+        SELECT 5000 + n, 'Partitura Lote ' || n, 'Compositor Lote', 'dobrados', 'lote-' || n || '.pdf', 100, 1
+        FROM seq
+      `),
+      env.DB.prepare(`
+        WITH RECURSIVE seq(n) AS (
+          SELECT 1 UNION ALL SELECT n + 1 FROM seq WHERE n < 101
+        )
+        INSERT INTO tracking_events (usuario_id, tipo, origem, partitura_id, criado_em)
+        SELECT 300 + n, 'pdf_visualizado_grade', 'acervo', 5000 + n, '2099-01-20 10:00:00'
+        FROM seq
       `),
     ]);
   });
@@ -110,6 +154,10 @@ describe('analytics metric services', () => {
     expect(data.ranking.some((item) => item.nome.includes('Admin'))).toBe(false);
     expect(data.ranking.some((item) => item.nome.includes('Convidado'))).toBe(false);
     expect(data.ranking.some((item) => item.nome.includes('Inativo'))).toBe(false);
+    expect(data.ranking).toHaveLength(100);
+    expect(data.resumo).toMatchObject({ total_acoes: 108, usuarios_com_acao: 103 });
+    expect(data.comparacao.resumo.total_acoes).toBe(2.5);
+    expect(data.tendencia.find((item) => item.data === '2099-01-03')?.total).toBe(1.5);
   });
 
   it('ranqueia partituras por visualização e download de PDF com o mesmo peso', async () => {
@@ -122,24 +170,31 @@ describe('analytics metric services', () => {
       acessos_pdf: 3,
     });
     expect(data.ranking.some((item) => item.titulo.includes('Admin'))).toBe(false);
+    expect(data.ranking).toHaveLength(100);
+    expect(data.resumo.acessos_pdf).toBe(105);
+    expect(data.comparacao.resumo.acessos_pdf).toBe(2);
   });
 
   it('calcula percentual de presença e ordena por taxa e presenças', async () => {
     const data = await getAttendanceAnalytics(env, period);
 
     expect(data.resumo).toMatchObject({
-      ensaios_realizados: 3,
-      taxa_media: 67,
+      ensaios_realizados: 4,
+      taxa_media: 50,
     });
     expect(data.ranking[0]).toMatchObject({
       nome: 'Músico Ativo Analytics',
-      taxa: 100,
+      taxa: 75,
       presencas: 3,
-      ensaios: 3,
+      ensaios: 4,
       estado: 'com_dados',
     });
     expect(data.ranking.some((item) => item.nome.includes('Admin'))).toBe(false);
     expect(data.ranking.some((item) => item.nome.includes('Convidado'))).toBe(false);
+    expect(data.comparacao.resumo).toMatchObject({ ensaios_realizados: 1, taxa_media: 50 });
+    expect(data.tendencia).toEqual(expect.arrayContaining([
+      expect.objectContaining({ data: '2099-01-31', presentes: 0 }),
+    ]));
   });
 
   it('retorna estado explícito quando o período não tem ensaios', async () => {

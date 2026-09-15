@@ -27,14 +27,14 @@ async function queryUsers(env) {
 
 async function queryRehearsals(env, start, end) {
   const result = await env.DB.prepare(`
-    SELECT DISTINCT p.data_ensaio
-    FROM presencas p
-    JOIN usuarios u ON u.id = p.usuario_id
-    JOIN instrumentos i ON i.id = u.instrumento_id
-    WHERE p.data_ensaio >= ? AND p.data_ensaio < ?
-      AND ${ELIGIBLE_USER_FILTER}
-      AND ${FAMILY_FILTER}
-    ORDER BY p.data_ensaio ASC
+    SELECT data_ensaio
+    FROM (
+      SELECT data_ensaio FROM ensaios_config
+      UNION
+      SELECT data_ensaio FROM presencas
+    )
+    WHERE data_ensaio >= ? AND data_ensaio < ?
+    ORDER BY data_ensaio ASC
   `).bind(start, end).all();
 
   return emptyResults(result).map((item) => item.data_ensaio);
@@ -125,15 +125,23 @@ function buildFamilySummary(users, rehearsals, rows) {
 
 async function queryTrend(env, start, end) {
   const result = await env.DB.prepare(`
-    SELECT p.data_ensaio as data, COUNT(DISTINCT p.usuario_id) as presentes
-    FROM presencas p
-    JOIN usuarios u ON u.id = p.usuario_id
-    JOIN instrumentos i ON i.id = u.instrumento_id
-    WHERE p.data_ensaio >= ? AND p.data_ensaio < ?
-      AND ${ELIGIBLE_USER_FILTER}
-      AND ${FAMILY_FILTER}
-    GROUP BY p.data_ensaio
-    ORDER BY p.data_ensaio ASC
+    SELECT
+      er.data_ensaio as data,
+      COUNT(DISTINCT CASE
+        WHEN ${ELIGIBLE_USER_FILTER} AND ${FAMILY_FILTER} THEN p.usuario_id
+        ELSE NULL
+      END) as presentes
+    FROM (
+      SELECT data_ensaio FROM ensaios_config
+      UNION
+      SELECT data_ensaio FROM presencas
+    ) er
+    LEFT JOIN presencas p ON p.data_ensaio = er.data_ensaio
+    LEFT JOIN usuarios u ON u.id = p.usuario_id
+    LEFT JOIN instrumentos i ON i.id = u.instrumento_id
+    WHERE er.data_ensaio >= ? AND er.data_ensaio < ?
+    GROUP BY er.data_ensaio
+    ORDER BY er.data_ensaio ASC
   `).bind(start, end).all();
   return emptyResults(result).map((item) => ({ ...item, presentes: toNumber(item.presentes) }));
 }

@@ -1,6 +1,10 @@
 // worker/src/domain/analytics/analyticsService.js
 import { jsonResponse } from '../../infrastructure/index.js';
-import { parseAnalyticsPeriod } from './periodUtils.js';
+import {
+  AnalyticsPeriodValidationError,
+  parseAnalyticsPeriod,
+  serializeAnalyticsPeriod,
+} from './periodUtils.js';
 import { getAuditActivitiesData } from '../auditoria/auditService.js';
 import { getEngagementAnalytics } from './engagementAnalytics.js';
 import { getSheetAnalytics } from './sheetAnalytics.js';
@@ -515,19 +519,6 @@ async function getFocusedAnalytics(env, period) {
   };
 }
 
-function serializeAnalyticsPeriod(period) {
-  return {
-    inicio: period.atual.inicio,
-    fim: period.atual.fim,
-    fim_solicitado: period.atual.fimSolicitado,
-    dias_decorridos: period.atual.diasDecorridos,
-    dias_totais: period.atual.diasTotais,
-    incompleto: period.atual.incompleto,
-    comparacao: period.comparacao,
-    projecao: period.projecao,
-  };
-}
-
 export async function getAnalyticsOverview(request, env) {
   try {
     const url = new URL(request.url);
@@ -556,6 +547,9 @@ export async function getAnalyticsOverview(request, env) {
       amostras: data.amostras,
     }, 200, request);
   } catch (error) {
+    if (error instanceof AnalyticsPeriodValidationError) {
+      return jsonResponse({ error: error.message }, 400, request);
+    }
     console.error('Analytics overview error:', error);
     return jsonResponse({ error: 'Erro ao carregar visão geral de analytics' }, 500, request);
   }
@@ -585,13 +579,16 @@ export async function getAnalyticsDetail(request, env) {
       view,
       [responseKey]: data[dataKey],
       projecao: period.projecao,
-      insights: data.insights.filter((item) => (
-        (view === 'assiduidade' && item.id.includes('presenca')) ||
-        (view === 'partituras' && item.id.includes('acesso')) ||
-        (view === 'engajamento' && item.id.includes('engajamento'))
-      )),
+      insights: data.insights.filter((item) => ({
+        assiduidade: ['queda_presenca', 'destaque_assiduidade'],
+        partituras: ['queda_acessos'],
+        engajamento: ['destaque_engajamento'],
+      })[view].includes(item.id)),
     }, 200, request);
   } catch (error) {
+    if (error instanceof AnalyticsPeriodValidationError) {
+      return jsonResponse({ error: error.message }, 400, request);
+    }
     console.error('Analytics detail error:', error);
     return jsonResponse({ error: 'Erro ao carregar detalhe de analytics' }, 500, request);
   }

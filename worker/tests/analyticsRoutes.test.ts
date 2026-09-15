@@ -27,6 +27,17 @@ describe('analytics contract routes', () => {
 
   beforeAll(async () => {
     token = await createAdminToken();
+    await env.DB.batch([
+      env.DB.prepare("UPDATE usuarios SET instrumento_id = 'trompete' WHERE id = 2"),
+      env.DB.prepare(`
+        INSERT OR IGNORE INTO ensaios_config (data_ensaio)
+        VALUES ('2099-08-10')
+      `),
+      env.DB.prepare(`
+        INSERT OR IGNORE INTO presencas (usuario_id, data_ensaio, criado_por)
+        VALUES (2, '2099-08-10', 1)
+      `),
+    ]);
   });
 
   it('retorna visão geral com período, resumo, insights e rankings', async () => {
@@ -43,6 +54,27 @@ describe('analytics contract routes', () => {
     expect(data).toHaveProperty('rankings');
   });
 
+  it('retorna 400 para intervalos inválidos', async () => {
+    const overview = await SELF.fetch(
+      'https://test.local/api/admin/analytics/overview?inicio=invalida&fim=2099-09-01',
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    expect(overview.status).toBe(400);
+    expect(await overview.json()).toMatchObject({ error: 'Data de início inválida' });
+
+    const detail = await SELF.fetch(
+      'https://test.local/api/admin/analytics/detail?view=engajamento&inicio=2099-09-01&fim=2099-08-01',
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    expect(detail.status).toBe(400);
+
+    const audit = await SELF.fetch(
+      'https://test.local/api/admin/auditoria?inicio=2099-02-30&fim=2099-09-01',
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    expect(audit.status).toBe(400);
+  });
+
   it('retorna o detalhe solicitado e rejeita visão desconhecida', async () => {
     const response = await SELF.fetch(
       'https://test.local/api/admin/analytics/detail?view=engajamento&inicio=2099-08-01&fim=2099-09-01',
@@ -50,6 +82,15 @@ describe('analytics contract routes', () => {
     );
     expect(response.status).toBe(200);
     expect(await response.json()).toHaveProperty('engajamento');
+
+    const attendance = await SELF.fetch(
+      'https://test.local/api/admin/analytics/detail?view=assiduidade&inicio=2099-08-01&fim=2099-09-01',
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    const attendanceData = await attendance.json() as { insights: Array<{ id: string }> };
+    expect(attendanceData.insights).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'destaque_assiduidade' }),
+    ]));
 
     const invalid = await SELF.fetch(
       'https://test.local/api/admin/analytics/detail?view=desconhecida',
@@ -69,5 +110,12 @@ describe('analytics contract routes', () => {
     expect(data).toHaveProperty('usuarios');
     expect(data).toHaveProperty('atividades');
     expect(data).toHaveProperty('total');
+    expect(data.periodo).toEqual(expect.objectContaining({
+      inicio: '2099-08-01',
+      fim: '2099-09-01',
+      dias_decorridos: 31,
+      dias_totais: 31,
+    }));
+    expect(data.periodo).not.toHaveProperty('atual');
   });
 });

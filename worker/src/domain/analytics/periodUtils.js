@@ -1,18 +1,25 @@
 const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const MIN_PROJECTION_DAYS = 3;
 
+export class AnalyticsPeriodValidationError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'AnalyticsPeriodValidationError';
+  }
+}
+
 function formatDate(date) {
   return date.toISOString().slice(0, 10);
 }
 
 function parseDateOnly(value, label) {
   if (!DATE_ONLY_PATTERN.test(value)) {
-    throw new Error(`${label} inválida`);
+    throw new AnalyticsPeriodValidationError(`${label} inválida`);
   }
 
   const date = new Date(`${value}T00:00:00.000Z`);
   if (Number.isNaN(date.getTime()) || formatDate(date) !== value) {
-    throw new Error(`${label} inválida`);
+    throw new AnalyticsPeriodValidationError(`${label} inválida`);
   }
 
   return date;
@@ -83,6 +90,19 @@ export function projectValue(value, period) {
   };
 }
 
+export function serializeAnalyticsPeriod(period) {
+  return {
+    inicio: period.atual.inicio,
+    fim: period.atual.fim,
+    fim_solicitado: period.atual.fimSolicitado,
+    dias_decorridos: period.atual.diasDecorridos,
+    dias_totais: period.atual.diasTotais,
+    incompleto: period.atual.incompleto,
+    comparacao: period.comparacao,
+    projecao: period.projecao,
+  };
+}
+
 export function parseAnalyticsPeriod(url, now = new Date()) {
   const today = dateOnlyFromDate(now);
   const observedEnd = addDays(today, 1);
@@ -94,7 +114,7 @@ export function parseAnalyticsPeriod(url, now = new Date()) {
   const requestedEnd = parseDateOnly(requestedEndValue, 'Data de fim');
 
   if (requestedEnd <= requestedStart) {
-    throw new Error('Data de fim deve ser posterior à data de início');
+    throw new AnalyticsPeriodValidationError('Data de fim deve ser posterior à data de início');
   }
 
   const shouldClampToToday = requestedStart <= today && requestedEnd > observedEnd;

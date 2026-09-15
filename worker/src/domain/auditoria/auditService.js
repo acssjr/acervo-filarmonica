@@ -1,5 +1,9 @@
 import { errorResponse, jsonResponse } from '../../infrastructure/index.js';
-import { parseAnalyticsPeriod } from '../analytics/periodUtils.js';
+import {
+  AnalyticsPeriodValidationError,
+  parseAnalyticsPeriod,
+  serializeAnalyticsPeriod,
+} from '../analytics/periodUtils.js';
 
 export const AUDIT_ACTIVITY_TYPES = [
   'nova_partitura',
@@ -88,8 +92,11 @@ export async function getAuditActivities(request, env) {
     const url = new URL(request.url);
     const period = parseAnalyticsPeriod(url);
     const data = await getAuditActivitiesData(env, period.atual.inicio, period.atual.fim, url);
-    return jsonResponse({ periodo: period, ...data }, 200, request);
+    return jsonResponse({ periodo: serializeAnalyticsPeriod(period), ...data }, 200, request);
   } catch (error) {
+    if (error instanceof AnalyticsPeriodValidationError) {
+      return errorResponse(error.message, 400, request);
+    }
     console.error('Audit activities error:', error);
     return errorResponse('Erro ao carregar auditoria', 500, request);
   }

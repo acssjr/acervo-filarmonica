@@ -59,7 +59,6 @@ async function querySheetRanking(env, start, end) {
     WHERE p.ativo = 1
     GROUP BY p.id, p.titulo, p.compositor
     ORDER BY acessos_pdf DESC, usuarios DESC, p.titulo COLLATE NOCASE ASC
-    LIMIT 100
   `).bind(start, end, start, end).all();
 
   return emptyResults(result).map((item) => ({
@@ -154,7 +153,7 @@ export async function getSheetAnalytics(env, period) {
         ? Math.round(((resumo.acessos_pdf - resumoAnterior.acessos_pdf) / resumoAnterior.acessos_pdf) * 100)
         : null,
     },
-    ranking,
+    ranking: ranking.slice(0, 100),
     partes: await queryPartRanking(env, period.atual.inicio, period.atual.fim),
     tendencia: [],
     comparacao: {

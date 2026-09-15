@@ -1,6 +1,8 @@
 import {
+  AnalyticsPeriodValidationError,
   parseAnalyticsPeriod,
   projectValue,
+  serializeAnalyticsPeriod,
 } from '../src/domain/analytics/periodUtils.js';
 
 describe('analytics period utilities', () => {
@@ -63,5 +65,27 @@ describe('analytics period utilities', () => {
       fator: 30 / 14,
       confianca: 'alta',
     });
+  });
+
+  it('serializa o período no contrato público em snake_case', () => {
+    const period = parseAnalyticsPeriod(
+      new URL('https://test.local/api/admin/analytics/dashboard?inicio=2026-08-01&fim=2026-09-01'),
+      new Date('2026-10-01T12:00:00Z')
+    );
+
+    expect(serializeAnalyticsPeriod(period)).toMatchObject({
+      inicio: '2026-08-01',
+      fim: '2026-09-01',
+      fim_solicitado: '2026-09-01',
+      dias_decorridos: 31,
+      dias_totais: 31,
+      incompleto: false,
+    });
+  });
+
+  it('distingue falhas de validação de período de erros internos', () => {
+    expect(() => parseAnalyticsPeriod(
+      new URL('https://test.local/api/admin/analytics/dashboard?inicio=2026-02-30')
+    )).toThrow(AnalyticsPeriodValidationError);
   });
 });

@@ -94,7 +94,6 @@ async function queryRanking(env, start, end) {
     WHERE ${ELIGIBLE_USER_FILTER}
     GROUP BY u.id, u.nome, i.nome, u.foto_url
     ORDER BY total_acoes DESC, dias_ativos DESC, u.nome COLLATE NOCASE ASC
-    LIMIT 100
   `).bind(start, end, start, end).all();
 
   return emptyResults(result).map((item, index) => ({
@@ -115,7 +114,9 @@ async function queryTrend(env, start, end) {
   const result = await env.DB.prepare(`
     SELECT data, SUM(total) as total
     FROM (
-      SELECT date(te.criado_em) as data, COUNT(*) as total
+      SELECT
+        date(te.criado_em) as data,
+        SUM(CASE WHEN te.tipo = 'repertorio_aberto' THEN ${REPERTOIRE_ACTION_WEIGHT} ELSE 1 END) as total
       FROM tracking_events te
       JOIN usuarios u ON u.id = te.usuario_id
       WHERE te.criado_em >= ? AND te.criado_em < ?
@@ -167,7 +168,7 @@ export async function getEngagementAnalytics(env, period) {
         ? Math.round(((resumo.total_acoes - resumoAnterior.total_acoes) / resumoAnterior.total_acoes) * 100)
         : null,
     },
-    ranking: currentRanking,
+    ranking: currentRanking.slice(0, 100),
     tendencia: await queryTrend(env, period.atual.inicio, period.atual.fim),
     comparacao: {
       resumo: resumoAnterior,
