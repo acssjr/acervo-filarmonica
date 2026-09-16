@@ -39,6 +39,8 @@ coverage/
 
 # Secretos
 .env
+.env.local
+.env.*.local
 
 # Playwright
 /test-results/
