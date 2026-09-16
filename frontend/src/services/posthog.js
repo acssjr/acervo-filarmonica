@@ -25,8 +25,15 @@ const sanitizeEvent = (captureResult) => {
   if (!captureResult?.properties) return captureResult;
 
   const properties = { ...captureResult.properties };
-  ['$current_url', '$host', '$pathname', '$referrer', '$referring_domain'].forEach((key) => {
+  ['$current_url', '$referrer'].forEach((key) => {
     if (properties[key]) properties[key] = withoutQueryString(properties[key]);
+  });
+
+  const setOnce = captureResult.$set_once
+    ? { ...captureResult.$set_once }
+    : null;
+  ['$initial_current_url', '$initial_referrer'].forEach((key) => {
+    if (setOnce?.[key]) setOnce[key] = withoutQueryString(setOnce[key]);
   });
 
   delete properties.username;
@@ -35,7 +42,11 @@ const sanitizeEvent = (captureResult) => {
   delete properties.pin;
   delete properties.termo_original;
 
-  return { ...captureResult, properties };
+  return {
+    ...captureResult,
+    properties,
+    ...(setOnce ? { $set_once: setOnce } : {}),
+  };
 };
 
 export const createPostHogConfig = () => ({

@@ -19,8 +19,9 @@ O SDK do navegador é carregado em um chunk separado durante tempo ocioso. Sem c
 
 - a gravação começa somente depois da autenticação;
 - o cartão de login é marcado com `data-private` e nunca entra em replay ou autocapture;
-- todos os inputs são mascarados;
-- textos exibidos na interface são mascarados nos replays e nos eventos automáticos;
+- campos comuns, incluindo buscas, permanecem visíveis para permitir a análise da experiência;
+- textos normais da interface permanecem visíveis nos replays;
+- campos `password` são mascarados e elementos com `data-private` ou `.ph-no-capture` são bloqueados;
 - corpos e cabeçalhos de rede não são gravados;
 - query strings e fragmentos são removidos das URLs;
 - textos copiados não são capturados;
@@ -72,6 +73,7 @@ Para desenvolvimento local, a captura fica desligada mesmo que exista uma chave.
 - confirmar `$pageview` e `$autocapture` no Live Events;
 - entrar com um usuário de teste e confirmar `user_logged_in` com o mesmo `distinct_id` do frontend;
 - confirmar que o replay começa somente após o login;
-- verificar que os inputs aparecem mascarados e que não há query string, PIN, login ou nome pessoal;
+- verificar que buscas e textos normais aparecem, enquanto PINs, campos `password` e elementos privados permanecem protegidos;
+- confirmar que não há query string, PIN, login ou nome pessoal nas propriedades dos eventos;
 - abrir e baixar uma partitura e confirmar somente uma ocorrência de cada evento esperado;
 - sair da conta e verificar que a sessão seguinte recebe um novo identificador de dispositivo.
