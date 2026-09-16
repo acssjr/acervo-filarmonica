@@ -180,10 +180,12 @@ describe('AdminDashboard', () => {
       renderDashboard();
 
       await waitFor(() => {
-        expect(screen.getByText('O que você precisa fazer agora?')).toBeInTheDocument();
+        expect(screen.getByRole('heading', { name: 'Acessos rápidos' })).toBeInTheDocument();
         expect(screen.getByRole('button', { name: /^Partituras Adicionar/i })).toBeInTheDocument();
         expect(screen.getByRole('button', { name: /Repertório/i })).toBeInTheDocument();
         expect(screen.getByRole('button', { name: /Presença/i })).toBeInTheDocument();
+        expect(screen.getByText('Abrir Partituras')).toBeInTheDocument();
+        expect(screen.getByText('Registrar presença')).toBeInTheDocument();
       });
     });
 

@@ -46,3 +46,12 @@
 - [ ] Executar o detector do Impeccable sobre os arquivos alterados e corrigir achados relevantes.
 - [ ] Inspecionar dashboard e Partituras no localhost em tema claro e escuro, desktop e largura móvel, sem realizar mutações na API de produção.
 - [ ] Revisar o diff para preservar funcionalidades e arquivos não relacionados.
+
+### Task 6: Refinar hierarquia após validação com o usuário
+
+- [ ] Agrupar e reordenar o menu administrativo por frequência e intenção.
+- [ ] Tornar os três acessos rápidos explicitamente acionáveis.
+- [ ] Compactar o ranking para três posições.
+- [ ] Aumentar sutilmente a separação dos cartões no tema claro e adaptar os ícones ao tema.
+- [ ] Substituir o texto genérico de partes por `Ver e editar N partes`.
+- [ ] Revalidar temas claro/escuro, testes, lint e build.

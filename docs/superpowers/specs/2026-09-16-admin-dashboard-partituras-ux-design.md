@@ -310,3 +310,11 @@ A divisão poderá ser ajustada durante a implementação para evitar abstraçõ
 - substituir a navegação lateral e inferior do painel;
 - introduzir novos indicadores estatísticos;
 - reescrever o backend de partituras quando o contrato atual já atender ao comportamento.
+
+## Refinamento aprovado após validação visual
+
+- O menu lateral será agrupado por intenção: Visão geral, Trabalho diário, Gestão e Sistema. Partituras, Repertório e Presença aparecem primeiro no fluxo operacional; Analytics permanece acessível, mas em posição terciária.
+- O centro do dashboard passa a se chamar `Acessos rápidos` e cada cartão inclui um comando textual inequívoco: abrir Partituras, abrir Repertório ou registrar Presença.
+- A estatística de partituras mais baixadas será reduzida às três primeiras posições em uma faixa compacta.
+- No tema claro, cartões e ícones de categoria ganham superfícies próprias, bordas sutis e contraste suficiente para separar peças consecutivas sem pesar visualmente.
+- O controle de expansão passa a dizer `Ver e editar N partes`, acompanhado de seta e tratamento visual de botão; toda a área informativa continua acionável.

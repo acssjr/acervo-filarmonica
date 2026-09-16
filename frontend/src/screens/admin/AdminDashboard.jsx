@@ -30,7 +30,7 @@ const ActionCard = ({ type, title, description, primary, onClick }) => (
       <span className="admin-action-icon" aria-hidden="true"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{actionIcons[type]}</svg></span>
       <svg className="admin-action-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
     </div>
-    <div><strong>{title}</strong><p>{description}</p></div>
+    <div><strong>{title}</strong><p>{description}</p><span className="admin-action-cta">{type === 'presenca' ? 'Registrar presença' : `Abrir ${title}`} <span aria-hidden="true">→</span></span></div>
   </button>
 );
 
@@ -95,7 +95,7 @@ const AdminDashboard = () => {
       </div>
 
       <section className="admin-action-section" aria-labelledby="admin-action-title">
-        <p id="admin-action-title" className="admin-section-eyebrow">O que você precisa fazer agora?</p>
+        <h2 id="admin-action-title" className="admin-action-title">Acessos rápidos</h2>
         <div className="admin-action-grid">
           <ActionCard type="partituras" title="Partituras" description="Adicionar, substituir ou organizar partes" primary onClick={() => window.adminNav?.('partituras')} />
           <ActionCard type="repertorio" title="Repertório" description="Montar e atualizar repertórios" onClick={() => window.adminNav?.('repertorio')} />
@@ -117,38 +117,17 @@ const AdminDashboard = () => {
 
       {/* Top Partituras */}
       {stats.top_partituras && stats.top_partituras.length > 0 && (
-        <div style={{
-          background: 'var(--bg-secondary)',
-          borderRadius: '16px',
-          padding: '24px',
-          border: '1px solid var(--border)'
-        }}>
-          <h2 style={{
-            fontSize: '18px',
-            fontWeight: '600',
-            marginBottom: '16px',
-            color: 'var(--text-primary)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px'
-          }}>
+        <div className="admin-top-downloads">
+          <h2>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
               <polyline points="17 6 23 6 23 12" />
             </svg>
             Partituras Mais Baixadas
           </h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {stats.top_partituras.map((p, i) => (
-              <div key={p.id} style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '12px 16px',
-                background: 'var(--bg-primary)',
-                borderRadius: '12px',
-                border: '1px solid var(--border)'
-              }}>
+          <div className="admin-top-downloads-list">
+            {stats.top_partituras.slice(0, 3).map((p, i) => (
+              <div key={p.id} className="admin-top-download-item">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <span style={{
                     width: '28px',

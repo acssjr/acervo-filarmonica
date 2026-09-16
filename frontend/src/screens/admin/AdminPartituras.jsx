@@ -1054,11 +1054,11 @@ const AdminPartituras = () => {
           >
             <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               {selectedCategoria && (
-                <span style={{
+                <span className="admin-category-icon" style={{
                   width: '24px',
                   height: '24px',
                   borderRadius: '6px',
-                  background: 'linear-gradient(145deg, #3a3a4a 0%, #2a2a38 100%)',
+                  background: 'var(--admin-category-icon-bg)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -1128,11 +1128,11 @@ const AdminPartituras = () => {
                     gap: '10px'
                   }}
                 >
-                  <span style={{
+                  <span className="admin-category-icon" style={{
                     width: '24px',
                     height: '24px',
                     borderRadius: '6px',
-                    background: 'linear-gradient(145deg, #3a3a4a 0%, #2a2a38 100%)',
+                    background: 'var(--admin-category-icon-bg)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -1317,11 +1317,11 @@ const AdminPartituras = () => {
                             <polyline points="9 18 15 12 9 6" />
                           </svg>
 
-                          <div style={{
+                          <div className="admin-category-icon" style={{
                             width: isMobile ? '38px' : '44px',
                             height: isMobile ? '38px' : '44px',
                             borderRadius: '10px',
-                            background: 'linear-gradient(145deg, #3a3a4a 0%, #2a2a38 100%)',
+                            background: 'var(--admin-category-icon-bg)',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
@@ -1376,7 +1376,7 @@ const AdminPartituras = () => {
                                 {partesCount[p.id] !== undefined ? partesCount[p.id] : (p.total_partes || '?')} partes
                               </span>
                             </div>
-                            <span className="admin-manage-parts">{isExpanded ? 'Ocultar partes' : `Gerenciar ${partesCount[p.id] ?? p.total_partes ?? ''} partes`}</span>
+                            <span className="admin-manage-parts">{isExpanded ? 'Ocultar partes' : `Ver e editar ${partesCount[p.id] ?? p.total_partes ?? ''} partes`} <span aria-hidden="true">→</span></span>
                           </div>
                         </button>
 
@@ -1990,11 +1990,11 @@ const AdminPartituras = () => {
               background: 'linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-card) 100%)'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                <div style={{
+                <div className="admin-category-icon" style={{
                   width: '56px',
                   height: '56px',
                   borderRadius: '16px',
-                  background: 'linear-gradient(145deg, #3a3a4a 0%, #2a2a38 100%)',
+                  background: 'var(--admin-category-icon-bg)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',

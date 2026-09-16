@@ -14,6 +14,7 @@ import { useMediaQuery } from '@hooks/useMediaQuery';
 import AdminContext from './AdminContext';
 import AdminBottomNav from './components/AdminBottomNav';
 import AdminMoreModal from './components/AdminMoreModal';
+import './admin-shell.css';
 
 const AdminDashboard = lazy(() => import('./AdminDashboard'));
 const AdminMusicos = lazy(() => import('./AdminMusicos'));
@@ -168,17 +169,23 @@ const AdminApp = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- configura helper global uma vez na montagem
   }, []);
 
-  const menuItems = [
-    { id: 'dashboard', icon: 'dashboard', label: 'Dashboard' },
-    { id: 'analytics', icon: 'analytics', label: 'Analytics' },
-    { id: 'musicos', icon: 'users', label: 'Músicos' },
-    { id: 'partituras', icon: 'music', label: 'Partituras' },
-    { id: 'repertorio', icon: 'repertorio', label: 'Repertório' },
-    { id: 'categorias', icon: 'folder', label: 'Categorias' },
-    { id: 'presenca', icon: 'check-circle', label: 'Presença' },
-    { id: 'avisos', icon: 'bell', label: 'Avisos' },
-    { id: 'assets', icon: 'assets', label: 'Ativos' },
-    { id: 'config', icon: 'settings', label: 'Configurações' },
+  const menuGroups = [
+    { label: 'Visão geral', items: [{ id: 'dashboard', icon: 'dashboard', label: 'Dashboard' }] },
+    { label: 'Trabalho diário', items: [
+      { id: 'partituras', icon: 'music', label: 'Partituras' },
+      { id: 'repertorio', icon: 'repertorio', label: 'Repertório' },
+      { id: 'presenca', icon: 'check-circle', label: 'Presença' },
+    ] },
+    { label: 'Gestão', items: [
+      { id: 'musicos', icon: 'users', label: 'Músicos' },
+      { id: 'categorias', icon: 'folder', label: 'Categorias' },
+      { id: 'avisos', icon: 'bell', label: 'Avisos' },
+    ] },
+    { label: 'Sistema', items: [
+      { id: 'analytics', icon: 'analytics', label: 'Analytics' },
+      { id: 'assets', icon: 'assets', label: 'Ativos' },
+      { id: 'config', icon: 'settings', label: 'Configurações' },
+    ] },
   ];
 
   // Icones do menu como SVG
@@ -411,7 +418,7 @@ const AdminApp = () => {
           top: 0,
           left: 0,
           zIndex: 100,
-          transition: isMobile ? 'transform 0.3s ease' : 'width 0.3s ease',
+          transition: isMobile ? 'transform 0.3s ease' : 'none',
           ...(isMobile ? {
             zIndex: 1002,
             transform: mobileMenuOpen ? 'translateX(0)' : 'translateX(-100%)'
@@ -564,43 +571,37 @@ const AdminApp = () => {
               flexDirection: 'column',
               gap: '2px'
             }}>
-              {menuItems.map(item => (
-                <button
-                  key={item.id}
-                  onClick={() => navigateToSection(item.id)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    padding: sidebarCollapsed && !isMobile ? '11px' : '11px 12px',
-                    borderRadius: '10px',
-                    background: activeSection === item.id ? 'rgba(255,255,255,0.2)' : 'transparent',
-                    border: 'none',
-                    color: activeSection === item.id ? '#fff' : 'rgba(255,255,255,0.7)',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    width: '100%',
-                    justifyContent: sidebarCollapsed && !isMobile ? 'center' : 'flex-start',
-                    fontSize: '14px',
-                    fontWeight: activeSection === item.id ? '600' : '500'
-                  }}
-                  title={sidebarCollapsed && !isMobile ? item.label : ''}
-                  onMouseEnter={(e) => {
-                    if (activeSection !== item.id) {
-                      e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
-                      e.currentTarget.style.color = '#fff';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (activeSection !== item.id) {
-                      e.currentTarget.style.background = 'transparent';
-                      e.currentTarget.style.color = 'rgba(255,255,255,0.7)';
-                    }
-                  }}
-                >
-                  <MenuIcon type={item.icon} active={activeSection === item.id} />
-                  {(!sidebarCollapsed || isMobile) && <span>{item.label}</span>}
-                </button>
+              {menuGroups.map((group, groupIndex) => (
+                <div className="admin-menu-group" key={group.label}>
+                  {(!sidebarCollapsed || isMobile) && <p className="admin-menu-group-label">{group.label}</p>}
+                  {sidebarCollapsed && !isMobile && groupIndex > 0 && <span className="admin-menu-divider" aria-hidden="true" />}
+                  {group.items.map(item => (
+                    <button
+                      key={item.id}
+                      onClick={() => navigateToSection(item.id)}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: '12px',
+                        padding: sidebarCollapsed && !isMobile ? '11px' : '10px 12px',
+                        borderRadius: '10px',
+                        background: activeSection === item.id ? 'rgba(255,255,255,0.2)' : 'transparent',
+                        border: 'none', color: activeSection === item.id ? '#fff' : 'rgba(255,255,255,0.72)',
+                        cursor: 'pointer', transition: 'all 0.2s', width: '100%',
+                        justifyContent: sidebarCollapsed && !isMobile ? 'center' : 'flex-start',
+                        fontSize: '14px', fontWeight: activeSection === item.id ? '600' : '500'
+                      }}
+                      title={sidebarCollapsed && !isMobile ? item.label : ''}
+                      onMouseEnter={(e) => {
+                        if (activeSection !== item.id) { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = '#fff'; }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (activeSection !== item.id) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.72)'; }
+                      }}
+                    >
+                      <MenuIcon type={item.icon} active={activeSection === item.id} />
+                      {(!sidebarCollapsed || isMobile) && <span>{item.label}</span>}
+                    </button>
+                  ))}
+                </div>
               ))}
             </div>
           </nav>
@@ -654,7 +655,7 @@ const AdminApp = () => {
           marginLeft: isMobile ? 0 : (sidebarCollapsed ? '72px' : '260px'),
           display: 'flex',
           flexDirection: 'column',
-          transition: 'margin-left 0.3s ease'
+          transition: 'none'
         }}>
           {/* Header Desktop com toggle de tema */}
           {!isMobile && (
