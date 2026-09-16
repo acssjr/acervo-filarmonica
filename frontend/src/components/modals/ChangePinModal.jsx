@@ -136,6 +136,7 @@ const ChangePinModal = ({ isOpen = true, onClose }) => {
             key={index}
             ref={refs[index]}
             type="password"
+            data-private="true"
             inputMode="numeric"
             maxLength={1}
             value={digit}

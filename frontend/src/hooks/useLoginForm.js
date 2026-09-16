@@ -10,6 +10,7 @@ import Storage from '@services/storage';
 import { API, USE_API } from '@services/api';
 import { API_BASE_URL } from '@constants/api';
 import { getPostLoginDestination } from '@utils/navigation';
+import { captureLoginFailure } from '@services/posthog';
 
 const useLoginForm = ({ onClose }) => {
   const navigate = useNavigate();
@@ -226,6 +227,7 @@ const useLoginForm = ({ onClose }) => {
         }
 
         setError('Usuário ou PIN incorreto');
+        captureLoginFailure('invalid_credentials');
         setPin(['', '', '', '']);
         // Delay para garantir que o PIN foi limpo antes de focar
         setTimeout(() => {
@@ -244,6 +246,7 @@ const useLoginForm = ({ onClose }) => {
           || message.includes('temporariamente indisponível')
           ? message
           : 'Não foi possível entrar agora. Tente novamente.';
+        captureLoginFailure(invalidCredentials ? 'invalid_credentials' : 'service_error');
         setError(invalidCredentials ? 'Usuário ou PIN incorreto' : operationalMessage);
         setPin(['', '', '', '']);
         // Delay para garantir que o PIN foi limpo antes de focar

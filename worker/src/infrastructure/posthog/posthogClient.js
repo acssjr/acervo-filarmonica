@@ -24,7 +24,7 @@ export function createPostHogClient(env) {
     host,
     flushAt: 1,
     flushInterval: 0,
-    enableExceptionAutocapture: true,
+    enableExceptionAutocapture: false,
   });
 }
 

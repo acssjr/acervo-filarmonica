@@ -193,7 +193,6 @@ export async function login(request, env) {
     distinctId,
     event: 'user_logged_in',
     properties: {
-      username: user.username,
       is_admin: user.admin === 1,
       instrumento: instrumentoNome || null,
       remember_me: !!rememberMe,
@@ -202,8 +201,6 @@ export async function login(request, env) {
       distinctId,
       properties: {
         $set: {
-          username: user.username,
-          nome: nomeExibido,
           is_admin: user.admin === 1,
           instrumento: instrumentoNome || null,
         },
@@ -287,9 +284,7 @@ export async function changePin(request, env, user) {
   await capturePostHog(env, {
       distinctId: `user_${user.id}`,
       event: 'user_pin_changed',
-      properties: {
-        username: user.username,
-      },
+      properties: {},
     });
 
   return jsonResponse({

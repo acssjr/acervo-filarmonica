@@ -90,7 +90,6 @@ export async function createUsuario(request, env) {
       distinctId: `user_${result.meta.last_row_id}`,
       event: 'usuario_created',
       properties: {
-        username,
         is_admin: !!isAdmin,
         is_guest: !!convidado,
         instrumento_id: instrumento_id || null,
@@ -204,7 +203,6 @@ export async function deleteUsuario(id, request, env, admin) {
       event: 'usuario_deactivated',
       properties: {
         target_user_id: id,
-        target_username: targetUser?.username,
       },
     });
 
