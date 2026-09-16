@@ -1,4 +1,4 @@
-import { createPostHogConfig } from './posthog';
+import { buildPostHogPersonProperties, createPostHogConfig } from './posthog';
 
 describe('PostHog session replay privacy', () => {
   it('exibe textos e campos comuns, mantendo senhas e elementos privados protegidos', () => {
@@ -53,6 +53,45 @@ describe('PostHog session replay privacy', () => {
       $initial_current_url: 'https://acervo.example/',
       $initial_referrer: 'https://google.com/search',
       $initial_pathname: '/',
+    });
+  });
+});
+
+describe('PostHog person identification', () => {
+  it('usa o nome de exibição e não inclui credenciais ou identificadores de login', () => {
+    const properties = buildPostHogPersonProperties({
+      id: 2,
+      nome_exibicao: '  Antonio Júnior  ',
+      name: 'Antonio Carlos Santos',
+      nome: 'Antonio Carlos Santos',
+      username: 'antoniojunior',
+      email: 'antonio@example.com',
+      pin: '1234',
+      isAdmin: true,
+      instrument: 'Trompete',
+    });
+
+    expect(properties).toEqual({
+      name: 'Antonio Júnior',
+      role: 'admin',
+      instrumento: 'Trompete',
+    });
+    expect(properties).not.toHaveProperty('username');
+    expect(properties).not.toHaveProperty('email');
+    expect(properties).not.toHaveProperty('pin');
+  });
+
+  it('omite o nome quando nenhuma fonte possui texto válido', () => {
+    expect(buildPostHogPersonProperties({
+      id: 3,
+      nome_exibicao: '   ',
+      name: null,
+      nome: '',
+      isAdmin: false,
+      instrument: null,
+    })).toEqual({
+      role: 'musico',
+      instrumento: null,
     });
   });
 });

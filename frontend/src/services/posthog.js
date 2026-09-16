@@ -122,17 +122,30 @@ export const initializePostHog = () => {
   }
 };
 
+export const buildPostHogPersonProperties = (user) => {
+  const displayName = [user?.nome_exibicao, user?.name, user?.nome]
+    .find((value) => typeof value === 'string' && value.trim())
+    ?.trim()
+    .replace(/\s+/g, ' ');
+
+  return {
+    ...(displayName ? { name: displayName } : {}),
+    role: user?.isAdmin ? 'admin' : 'musico',
+    instrumento: user?.instrument || null,
+  };
+};
+
 export const identifyPostHogUser = async (user) => {
   if (!user?.id) return;
   const posthog = await loadClient();
   if (!posthog) return;
 
-  const role = user.isAdmin ? 'admin' : 'musico';
-  posthog.identify(`user_${user.id}`, {
-    role,
-    instrumento: user.instrument || null,
+  const personProperties = buildPostHogPersonProperties(user);
+  posthog.identify(`user_${user.id}`, personProperties);
+  posthog.register({
+    role: personProperties.role,
+    instrumento: personProperties.instrumento,
   });
-  posthog.register({ role, instrumento: user.instrument || null });
   posthog.startSessionRecording(true);
 };
 
