@@ -143,7 +143,10 @@ export async function createPartitura(request, env, admin) {
   });
 
   // Registra atividade
-  await registrarAtividade(env, 'nova_partitura', titulo, compositor, admin.id);
+  await registrarAtividade(env, 'nova_partitura', titulo, compositor, admin.id, {
+    tipo: 'partitura',
+    id: result.meta.last_row_id
+  });
 
   // PostHog: capture partitura creation event
   await capturePostHog(env, {
@@ -271,7 +274,10 @@ export async function uploadPastaPartitura(request, env, admin) {
 
     const partesAdicionadas = arquivosValidados.length;
 
-    await registrarAtividade(env, 'nova_partitura', titulo, `${compositor} • ${partesAdicionadas} partes`, admin.id);
+    await registrarAtividade(env, 'nova_partitura', titulo, `${compositor} • ${partesAdicionadas} partes`, admin.id, {
+      tipo: 'partitura',
+      id: partituraId
+    });
 
     // PostHog: capture folder upload event
     await capturePostHog(env, {

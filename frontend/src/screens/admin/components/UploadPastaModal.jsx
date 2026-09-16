@@ -281,7 +281,7 @@ const UploadPastaModal = ({ isOpen, onClose, onSuccess, initialFiles }) => {
 
       showToast(result.message || 'Partitura criada com sucesso!');
       notifyNotificationsChanged();
-      onSuccess?.();
+      onSuccess?.(result);
       onClose();
     } catch (err) {
       setUploadPhase('error');

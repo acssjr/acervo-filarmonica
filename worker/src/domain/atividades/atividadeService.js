@@ -7,12 +7,19 @@ import { jsonResponse } from '../../infrastructure/index.js';
  *
  * Extraido de: worker/index.js linhas 308-319
  */
-export async function registrarAtividade(env, tipo, titulo, detalhes = null, usuarioId = null) {
+export async function registrarAtividade(env, tipo, titulo, detalhes = null, usuarioId = null, destino = null) {
+  const destinoId = Number(destino?.id);
+  const destinoValido = ['partitura', 'repertorio'].includes(destino?.tipo)
+    && Number.isInteger(destinoId)
+    && destinoId > 0;
+  const entidadeTipo = destinoValido ? destino.tipo : null;
+  const entidadeId = destinoValido ? destinoId : null;
+
   try {
     await env.DB.prepare(`
-      INSERT INTO atividades (tipo, titulo, detalhes, usuario_id)
-      VALUES (?, ?, ?, ?)
-    `).bind(tipo, titulo, detalhes, usuarioId).run();
+      INSERT INTO atividades (tipo, titulo, detalhes, usuario_id, entidade_tipo, entidade_id)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).bind(tipo, titulo, detalhes, usuarioId, entidadeTipo, entidadeId).run();
   } catch (e) {
     console.error('Erro ao registrar atividade:', {
       tipo,

@@ -1,7 +1,7 @@
 // ===== ADMIN PARTITURAS =====
 // Gerenciamento de partituras com expansao inline e preview de PDF
 
-import { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
+import { useState, useEffect, useLayoutEffect, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
 
 // Flag para debug - remover em produção
 const DEBUG_TUTORIAL = false;
@@ -18,6 +18,8 @@ import RepertorioSelectorModal from '@components/modals/RepertorioSelectorModal'
 import Storage from '@services/storage';
 import { API_BASE_URL } from '@constants/api';
 import { canExecutePendingAdminAction, shouldWaitForAdminTutorial } from '@utils/adminTutorial';
+import { formatPartiturasResult, getScrollAdjustment, sortPartiturasByTitle } from './adminPartiturasUtils';
+import './admin-partituras.css';
 
 const PDFViewerModal = lazy(() => import('@components/modals/PDFViewerModal'));
 const ImportacaoLoteModal = lazy(() => import('@components/modals/ImportacaoLoteModal'));
@@ -127,6 +129,8 @@ const AdminPartituras = () => {
   const [droppedFiles, setDroppedFiles] = useState(null); // Arquivos pré-carregados para os modais
   const [droppedItems, setDroppedItems] = useState(null); // Items do dataTransfer para ImportacaoLote
   const dragCounterRef = useRef(0); // Para controlar eventos de drag aninhados
+  const pageRef = useRef(null);
+  const pendingScrollAnchorRef = useRef(null);
 
   // Estado para expansao inline
   const [expandedId, setExpandedId] = useState(null);
@@ -402,8 +406,50 @@ const AdminPartituras = () => {
     }
   }, [showImportacaoLote]);
 
-  const loadData = async () => {
-    setLoading(true);
+  const captureVisiblePartituraAnchor = useCallback(() => {
+    const scrollContainer = pageRef.current?.closest('[data-admin-scroll-container]');
+    if (!scrollContainer) return null;
+
+    const containerRect = scrollContainer.getBoundingClientRect();
+    const cards = Array.from(pageRef.current.querySelectorAll('[data-partitura-id]'));
+    const visibleCard = cards.find((card) => {
+      const rect = card.getBoundingClientRect();
+      return rect.bottom > containerRect.top && rect.top < containerRect.bottom;
+    });
+
+    if (!visibleCard) return null;
+
+    return {
+      id: visibleCard.dataset.partituraId,
+      previousTop: visibleCard.getBoundingClientRect().top - containerRect.top,
+      scrollContainer
+    };
+  }, []);
+
+  useLayoutEffect(() => {
+    const anchor = pendingScrollAnchorRef.current;
+    if (!anchor || !pageRef.current) return;
+
+    const anchoredCard = Array.from(pageRef.current.querySelectorAll('[data-partitura-id]'))
+      .find(card => card.dataset.partituraId === anchor.id);
+
+    if (anchoredCard?.isConnected && anchor.scrollContainer?.isConnected) {
+      const containerTop = anchor.scrollContainer.getBoundingClientRect().top;
+      const nextTop = anchoredCard.getBoundingClientRect().top - containerTop;
+      anchor.scrollContainer.scrollTop += getScrollAdjustment({
+        previousTop: anchor.previousTop,
+        nextTop
+      });
+    }
+
+    pendingScrollAnchorRef.current = null;
+  }, [partituras]);
+
+  const loadData = async ({ silent = false } = {}) => {
+    if (silent) {
+      pendingScrollAnchorRef.current = captureVisiblePartituraAnchor();
+    }
+    if (!silent) setLoading(true);
     try {
       const [parts, cats] = await Promise.all([
         API.getPartituras(),
@@ -412,9 +458,10 @@ const AdminPartituras = () => {
       setPartituras(parts || []);
       setCategorias(cats || []);
     } catch {
+      pendingScrollAnchorRef.current = null;
       showToast('Erro ao carregar dados', 'error');
     }
-    setLoading(false);
+    if (!silent) setLoading(false);
   };
 
   // Carregar todos os repertórios
@@ -765,7 +812,7 @@ const AdminPartituras = () => {
       showToast('Parte removida com sucesso!');
       await Promise.all([
         loadPartes(partituraId),
-        loadData()
+        loadData({ silent: true })
       ]);
     } catch (err) {
       showToast(err.message || 'Erro ao remover parte', 'error');
@@ -790,7 +837,7 @@ const AdminPartituras = () => {
       notifyNotificationsChanged();
       await Promise.all([
         loadPartes(partituraId),
-        loadData()
+        loadData({ silent: true })
       ]);
     } catch (err) {
       showToast(err.message || 'Erro ao adicionar parte', 'error');
@@ -850,7 +897,7 @@ const AdminPartituras = () => {
         matchesSearch(p.titulo, search) || matchesSearch(p.compositor, search) || matchesSearch(p.arranjador, search)
       );
     }
-    return results.sort((a, b) => a.titulo?.localeCompare(b.titulo, 'pt-BR'));
+    return sortPartiturasByTitle(results);
   }, [partituras, search, filterCategoria, filterDestaque, filterNoRepertorio, partiturasInRepertorio]); // matchesSearch é module-level, não precisa de dependência
 
   // Expande primeira partitura (para tutorial)
@@ -885,7 +932,7 @@ const AdminPartituras = () => {
       await API.deletePartitura(id);
       showToast('Partitura removida!');
       if (expandedId === id) setExpandedId(null);
-      loadData();
+      loadData({ silent: true });
     } catch (e) {
       showToast(e.message, 'error');
     }
@@ -911,8 +958,9 @@ const AdminPartituras = () => {
   const selectedCategoria = categorias.find(c => c.id === filterCategoria);
 
   return (
-    <div className="page-transition" style={{ padding: '32px', maxWidth: '1000px', margin: '0 auto', }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
+    <div ref={pageRef} className="page-transition admin-partituras-page">
+      <div className="admin-partituras-heading">
+        <div>
         <h1 style={{
           fontSize: '24px',
           fontWeight: '700',
@@ -928,7 +976,9 @@ const AdminPartituras = () => {
           </svg>
           Partituras
         </h1>
-        <div style={{ display: 'flex', gap: '10px' }}>
+        <p className="admin-partituras-subtitle">Encontre uma peça, gerencie suas partes ou envie uma nova pasta.</p>
+        </div>
+        <div className="admin-partituras-upload-actions">
           <button
             data-tutorial="upload-pasta"
             onClick={() => window.adminNav?.('partituras', 'pasta')}
@@ -992,21 +1042,28 @@ const AdminPartituras = () => {
       </div>
 
       {/* Filtros */}
-      <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
-        <div style={{ flex: 1, minWidth: '250px' }}>
+      <section className="admin-partituras-toolbar" aria-labelledby="partituras-search-title">
+        <div className="admin-partituras-toolbar-title">
+          <div><h2 id="partituras-search-title">Encontre uma partitura</h2><p>Busque pelo título, compositor ou arranjador.</p></div>
+          {(search || filterCategoria || filterDestaque || filterNoRepertorio) && <button type="button" className="admin-clear-filters" onClick={() => { setSearch(''); setFilterCategoria(''); setFilterDestaque(false); setFilterNoRepertorio(false); }}>Limpar filtros</button>}
+        </div>
+        <div className="admin-partituras-filters">
+        <div className="admin-search-field">
+          <label htmlFor="admin-partituras-search">Buscar</label>
           <div className="search-bar">
             <svg className="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="11" cy="11" r="8" />
               <path d="m21 21-4.35-4.35" />
             </svg>
             <input
+              id="admin-partituras-search"
               type="text"
-              placeholder="Buscar por titulo ou compositor..."
+              placeholder="Ex.: Antonio Carlos ou Heráclio Guerreiro"
               value={search}
               onChange={e => setSearch(e.target.value)}
             />
             {search && (
-              <button className="clear-btn" onClick={() => setSearch('')}>
+              <button type="button" className="clear-btn" aria-label="Limpar busca" onClick={() => setSearch('')}>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
                 </svg>
@@ -1016,9 +1073,12 @@ const AdminPartituras = () => {
         </div>
 
         {/* Dropdown de categoria */}
-        <div style={{ position: 'relative', minWidth: '200px' }}>
+        <div className="admin-category-filter">
+          <span className="admin-filter-label">Categoria</span>
           <button
             type="button"
+            aria-haspopup="listbox"
+            aria-expanded={showCatDropdown}
             onClick={() => setShowCatDropdown(!showCatDropdown)}
             style={{
               width: '100%',
@@ -1039,11 +1099,11 @@ const AdminPartituras = () => {
           >
             <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               {selectedCategoria && (
-                <span style={{
+                <span className="admin-category-icon" style={{
                   width: '24px',
                   height: '24px',
                   borderRadius: '6px',
-                  background: 'linear-gradient(145deg, #3a3a4a 0%, #2a2a38 100%)',
+                  background: 'var(--admin-category-icon-bg)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -1113,11 +1173,11 @@ const AdminPartituras = () => {
                     gap: '10px'
                   }}
                 >
-                  <span style={{
+                  <span className="admin-category-icon" style={{
                     width: '24px',
                     height: '24px',
                     borderRadius: '6px',
-                    background: 'linear-gradient(145deg, #3a3a4a 0%, #2a2a38 100%)',
+                    background: 'var(--admin-category-icon-bg)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -1135,6 +1195,7 @@ const AdminPartituras = () => {
         {/* Filtro de Destaques */}
         <button
           type="button"
+          aria-pressed={filterDestaque}
           onClick={() => setFilterDestaque(!filterDestaque)}
           style={{
             display: 'flex',
@@ -1161,6 +1222,7 @@ const AdminPartituras = () => {
         {/* Filtro de No Repertório */}
         <button
           type="button"
+          aria-pressed={filterNoRepertorio}
           onClick={() => setFilterNoRepertorio(!filterNoRepertorio)}
           style={{
             display: 'flex',
@@ -1186,10 +1248,11 @@ const AdminPartituras = () => {
           No Repertório
         </button>
 
-      </div>
+        </div>
+      </section>
 
-      <div style={{ marginBottom: '20px', color: 'var(--text-secondary)', fontSize: '14px', }}>
-        {filtered.length} partitura(s) {search && `para "${search}"`}
+      <div className="admin-partituras-result-count" aria-live="polite">
+        {formatPartiturasResult(filtered.length, search)}
       </div>
 
       {/* Lista agrupada por letra */}
@@ -1254,7 +1317,7 @@ const AdminPartituras = () => {
                   const isExpanded = expandedId === p.id;
 
                   return (
-                    <div key={p.id} style={{
+                    <div key={p.id} id={`partitura-${p.id}`} data-partitura-id={p.id} className="admin-partitura-card" style={{
                       background: 'var(--bg-secondary)',
                       borderRadius: '16px',
                       border: isExpanded ? '1px solid rgba(52, 152, 219, 0.4)' : '1px solid var(--border)',
@@ -1272,8 +1335,13 @@ const AdminPartituras = () => {
                           cursor: isMobile ? 'default' : 'pointer',
                         }}
                       >
-                        <div
+                        <button
+                          type="button"
+                          className="admin-partitura-expand"
                           onClick={() => toggleExpand(p)}
+                          aria-expanded={isExpanded}
+                          aria-controls={`partitura-partes-${p.id}`}
+                          aria-label={`${isExpanded ? 'Ocultar' : 'Gerenciar'} partes de ${p.titulo}`}
                           style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, cursor: 'pointer', paddingBottom: isMobile ? '10px' : 0 }}
                         >
                           {/* Seta de expansao */}
@@ -1294,11 +1362,11 @@ const AdminPartituras = () => {
                             <polyline points="9 18 15 12 9 6" />
                           </svg>
 
-                          <div style={{
+                          <div className="admin-category-icon" style={{
                             width: isMobile ? '38px' : '44px',
                             height: isMobile ? '38px' : '44px',
                             borderRadius: '10px',
-                            background: 'linear-gradient(145deg, #3a3a4a 0%, #2a2a38 100%)',
+                            background: 'var(--admin-category-icon-bg)',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
@@ -1353,8 +1421,9 @@ const AdminPartituras = () => {
                                 {partesCount[p.id] !== undefined ? partesCount[p.id] : (p.total_partes || '?')} partes
                               </span>
                             </div>
+                            <span className="admin-manage-parts">{isExpanded ? 'Ocultar partes' : `Ver e editar ${partesCount[p.id] ?? p.total_partes ?? ''} partes`} <span aria-hidden="true">→</span></span>
                           </div>
-                        </div>
+                        </button>
 
                         {/* Botoes de acao */}
                         <div style={{
@@ -1367,7 +1436,7 @@ const AdminPartituras = () => {
                           margin: isMobile ? '8px -14px 0' : 0,
                           flexShrink: 0,
                         }}>
-                          <button onClick={() => toggleDestaque(p)} title={p.destaque === 1 ? 'Remover destaque' : 'Destacar'} className="btn-icon-hover" style={{
+                          <button aria-label={p.destaque === 1 ? `Remover ${p.titulo} dos destaques` : `Destacar ${p.titulo}`} onClick={() => toggleDestaque(p)} title={p.destaque === 1 ? 'Remover destaque' : 'Destacar'} className="btn-icon-hover admin-partitura-action" style={{
                             width: '36px',
                             height: '36px',
                             borderRadius: '10px',
@@ -1384,9 +1453,10 @@ const AdminPartituras = () => {
                             </svg>
                           </button>
                           <button
+                            aria-label={partiturasInRepertorio.has(p.id) ? `Alterar repertórios de ${p.titulo}` : `Adicionar ${p.titulo} a um repertório`}
                             onClick={() => openRepertorioModal(p)}
                             title={partiturasInRepertorio.has(p.id) ? 'Remover do Repertorio' : 'Adicionar ao Repertorio'}
-                            className="btn-purple-hover"
+                            className="btn-purple-hover admin-partitura-action"
                             style={{
                               width: '36px',
                               height: '36px',
@@ -1413,7 +1483,7 @@ const AdminPartituras = () => {
                               </svg>
                             )}
                           </button>
-                          <button onClick={() => openEditModal(p)} title="Editar" className="btn-info-hover" style={{
+                          <button aria-label={`Editar informações de ${p.titulo}`} onClick={() => openEditModal(p)} title="Editar informações" className="btn-info-hover admin-partitura-action admin-edit-action" style={{
                             width: '36px',
                             height: '36px',
                             borderRadius: '10px',
@@ -1429,8 +1499,9 @@ const AdminPartituras = () => {
                               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
                               <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                             </svg>
+                            <span>Editar informações</span>
                           </button>
-                          <button onClick={() => handleDelete(p.id)} title="Excluir" className="btn-danger-hover" style={{
+                          <button aria-label={`Excluir ${p.titulo}`} onClick={() => handleDelete(p.id)} title="Excluir" className="btn-danger-hover admin-partitura-action" style={{
                             width: '36px',
                             height: '36px',
                             borderRadius: '10px',
@@ -1452,7 +1523,7 @@ const AdminPartituras = () => {
 
                       {/* Area expandida - partes */}
                       {isExpanded && (
-                        <div style={{
+                        <div id={`partitura-partes-${p.id}`} style={{
                           borderTop: '1px solid var(--border)',
                           background: 'var(--bg-primary)',
                           padding: '12px'
@@ -1861,7 +1932,7 @@ const AdminPartituras = () => {
         isOpen={showUploadModal}
         onClose={() => setShowUploadModal(false)}
         onSuccess={() => {
-          loadData();
+          loadData({ silent: true });
           setShowUploadModal(false);
         }}
         categorias={categorias}
@@ -1874,7 +1945,7 @@ const AdminPartituras = () => {
           isOpen={showImportacaoLote}
           onClose={() => setShowImportacaoLote(false)}
           onSuccess={() => {
-            loadData();
+            loadData({ silent: true });
           }}
           onOpenUploadPasta={() => {
             setShowImportacaoLote(false);
@@ -1964,11 +2035,11 @@ const AdminPartituras = () => {
               background: 'linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-card) 100%)'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                <div style={{
+                <div className="admin-category-icon" style={{
                   width: '56px',
                   height: '56px',
                   borderRadius: '16px',
-                  background: 'linear-gradient(145deg, #3a3a4a 0%, #2a2a38 100%)',
+                  background: 'var(--admin-category-icon-bg)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',

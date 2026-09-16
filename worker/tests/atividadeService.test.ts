@@ -22,9 +22,44 @@ describe('registrarAtividade', () => {
     ).resolves.toBeUndefined();
 
     expect(prepare).toHaveBeenCalledWith(expect.stringContaining('INSERT INTO atividades'));
-    expect(bind).toHaveBeenCalledWith('nova_parte', 'Partitura Teste', 'Clarinete Bb 1', 1);
+    expect(bind).toHaveBeenCalledWith('nova_parte', 'Partitura Teste', 'Clarinete Bb 1', 1, null, null);
     expect(run).toHaveBeenCalled();
     expect(consoleErrorSpy).not.toHaveBeenCalled();
+  });
+
+  it('registra o destino exato da atividade quando informado', async () => {
+    const run = vi.fn().mockResolvedValue({ success: true });
+    const bind = vi.fn(() => ({ run }));
+    const prepare = vi.fn(() => ({ bind }));
+    const env = { DB: { prepare } } as unknown as Parameters<typeof registrarAtividade>[0];
+
+    await registrarAtividade(env, 'nova_parte', 'Partitura Teste', 'Clarinete Bb 1', 1, {
+      tipo: 'partitura',
+      id: 42
+    });
+
+    expect(bind).toHaveBeenCalledWith(
+      'nova_parte',
+      'Partitura Teste',
+      'Clarinete Bb 1',
+      1,
+      'partitura',
+      42
+    );
+  });
+
+  it('descarta destinos inválidos sem interromper o registro', async () => {
+    const run = vi.fn().mockResolvedValue({ success: true });
+    const bind = vi.fn(() => ({ run }));
+    const prepare = vi.fn(() => ({ bind }));
+    const env = { DB: { prepare } } as unknown as Parameters<typeof registrarAtividade>[0];
+
+    await registrarAtividade(env, 'nova_parte', 'Partitura Teste', 'Clarinete Bb 1', 1, {
+      tipo: 'partitura',
+      id: 0
+    });
+
+    expect(bind).toHaveBeenCalledWith('nova_parte', 'Partitura Teste', 'Clarinete Bb 1', 1, null, null);
   });
 
   it('trata falhas no insert como não fatais e registra contexto no log', async () => {

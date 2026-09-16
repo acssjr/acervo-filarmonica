@@ -22,19 +22,44 @@ const NOTIFICATION_MAP = {
   nova_partitura: { label: 'Nova partitura', iconName: 'Music' },
   novo_repertorio: { label: 'Novo repert\u00f3rio', iconName: 'Repertorio' },
   repertorio_atualizado: { label: 'Repert\u00f3rio atualizado', iconName: 'Repertorio' },
+  update_repertorio: { label: 'Repert\u00f3rio atualizado', iconName: 'Repertorio' },
   nova_parte: { label: 'Nova parte', iconName: 'Music' },
 };
 
 const EXCLUDED_TYPES = new Set(['login', 'download', 'busca', 'visualizacao']);
 
+const buildNotificationDescription = (activity) => {
+  const details = activity.detalhes?.trim();
+  const actor = activity.usuario_nome?.trim();
+  const attribution = actor ? ` por ${actor}` : '';
+
+  switch (activity.tipo) {
+    case 'nova_parte':
+      return `Parte ${details || 'instrumental'} adicionada${attribution}.`;
+    case 'nova_partitura':
+      return `Adicionada ao acervo${details ? ` · ${details}` : ''}${attribution}.`;
+    case 'novo_repertorio':
+      return `Novo repertório disponibilizado${attribution}.`;
+    case 'update_repertorio':
+    case 'repertorio_atualizado':
+      return `Repertório atualizado${details ? ` · ${details}` : ''}${attribution}.`;
+    default:
+      return details ? `${details}${attribution}.` : actor ? `Alteração realizada por ${actor}.` : 'Alteração realizada.';
+  }
+};
+
 // Converte atividade para notificacao
-const activityToNotification = (activity) => {
+export const activityToNotification = (activity) => {
   const mapping = NOTIFICATION_MAP[activity.tipo];
+  const entityId = Number(activity.entidade_id);
   return {
     id: `activity-${activity.id}`,
     type: activity.tipo,
     title: activity.titulo,
-    subtitle: activity.usuario_nome ? `por ${activity.usuario_nome}` : null,
+    details: activity.detalhes || null,
+    description: buildNotificationDescription(activity),
+    entityType: activity.entidade_tipo || null,
+    entityId: Number.isInteger(entityId) && entityId > 0 ? entityId : null,
     label: mapping?.label || activity.tipo,
     iconName: mapping?.iconName || 'Music',
     date: activity.criado_em,

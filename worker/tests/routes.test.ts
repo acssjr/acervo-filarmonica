@@ -938,16 +938,25 @@ describe('Atividades de notificações', () => {
     expect(response.status).toBe(201);
 
     const atividade = await env.DB.prepare(`
-      SELECT tipo, titulo, detalhes, usuario_id
+      SELECT tipo, titulo, detalhes, usuario_id, entidade_tipo, entidade_id
       FROM atividades
       WHERE tipo = 'nova_parte' AND titulo = 'Partitura Notificada'
       ORDER BY id DESC
       LIMIT 1
-    `).first() as { tipo: string; titulo: string; detalhes: string; usuario_id: number } | null;
+    `).first() as {
+      tipo: string;
+      titulo: string;
+      detalhes: string;
+      usuario_id: number;
+      entidade_tipo: string;
+      entidade_id: number;
+    } | null;
 
     expect(atividade).not.toBeNull();
     expect(atividade?.detalhes).toBe('Clarinete Bb 1');
     expect(atividade?.usuario_id).toBe(1);
+    expect(atividade?.entidade_tipo).toBe('partitura');
+    expect(atividade?.entidade_id).toBe(partituraId);
   });
 });
 
