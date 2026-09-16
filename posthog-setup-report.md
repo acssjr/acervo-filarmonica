@@ -25,8 +25,8 @@ O SDK do navegador é carregado em um chunk separado durante tempo ocioso. Sem c
 - corpos e cabeçalhos de rede não são gravados;
 - query strings e fragmentos são removidos das URLs;
 - textos copiados não são capturados;
-- PIN, nome, login, e-mail e termos digitados não são enviados como propriedades;
-- a identificação usa somente `user_<id>`, função e instrumento;
+- PIN, login, e-mail e termos digitados não são enviados como propriedades;
+- a identificação usa `user_<id>` como ID estável e envia somente nome de exibição, função e instrumento para facilitar a identificação do perfil;
 - o logout encerra o replay e redefine também o identificador do dispositivo.
 
 ## Eventos importantes
@@ -74,6 +74,6 @@ Para desenvolvimento local, a captura fica desligada mesmo que exista uma chave.
 - entrar com um usuário de teste e confirmar `user_logged_in` com o mesmo `distinct_id` do frontend;
 - confirmar que o replay começa somente após o login;
 - verificar que buscas e textos normais aparecem, enquanto PINs, campos `password` e elementos privados permanecem protegidos;
-- confirmar que não há query string, PIN, login ou nome pessoal nas propriedades dos eventos;
+- confirmar que não há query string, PIN, login ou e-mail nas propriedades dos eventos e que somente o nome de exibição aparece no perfil da pessoa;
 - abrir e baixar uma partitura e confirmar somente uma ocorrência de cada evento esperado;
 - sair da conta e verificar que a sessão seguinte recebe um novo identificador de dispositivo.

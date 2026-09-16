@@ -16,17 +16,17 @@
 - Modificar: `frontend/src/services/posthog.js`
 - Modificar: `frontend/src/services/posthog.test.js`
 
-- [ ] **Etapa 1:** Adicionar teste para `buildPostHogPersonProperties`, verificando prioridade de `nome_exibicao`, normalização de espaços e ausência de `username`, `email` e `pin`.
-- [ ] **Etapa 2:** Executar `npm test -- --runInBand src/services/posthog.test.js` em `frontend` e confirmar que o novo teste falha porque o helper ainda não existe.
-- [ ] **Etapa 3:** Implementar o helper com `name`, `role` e `instrumento`, omitindo `name` quando nenhum nome válido existir.
-- [ ] **Etapa 4:** Usar o helper em `identifyPostHogUser`, mantendo apenas `role` e `instrumento` em `posthog.register`.
-- [ ] **Etapa 5:** Reexecutar o teste direcionado e confirmar aprovação.
+- [x] **Etapa 1:** Adicionar teste para `buildPostHogPersonProperties`, verificando prioridade de `nome_exibicao`, normalização de espaços e ausência de `username`, `email` e `pin`.
+- [x] **Etapa 2:** Executar `npm test -- --runInBand src/services/posthog.test.js` em `frontend` e confirmar que o novo teste falha porque o helper ainda não existe.
+- [x] **Etapa 3:** Implementar o helper com `name`, `role` e `instrumento`, omitindo `name` quando nenhum nome válido existir.
+- [x] **Etapa 4:** Usar o helper em `identifyPostHogUser`, mantendo apenas `role` e `instrumento` em `posthog.register`.
+- [x] **Etapa 5:** Reexecutar o teste direcionado e confirmar aprovação.
 
 ### Tarefa 2: Alinhar documentação e validar
 
 **Arquivos:**
 - Modificar: `posthog-setup-report.md`
 
-- [ ] **Etapa 1:** Documentar que o nome de exibição é enviado como propriedade da pessoa, enquanto login, e-mail e PIN não são enviados.
-- [ ] **Etapa 2:** Executar `git diff --check`, testes completos, lint e build do frontend.
-- [ ] **Etapa 3:** Criar commit, enviar a branch e abrir o pull request.
+- [x] **Etapa 1:** Documentar que o nome de exibição é enviado como propriedade da pessoa, enquanto login, e-mail e PIN não são enviados.
+- [x] **Etapa 2:** Executar `git diff --check`, testes completos, lint e build do frontend.
+- [x] **Etapa 3:** Criar commit, enviar a branch e abrir o pull request.
