@@ -1,111 +1,77 @@
-# PostHog Setup Report — Acervo Digital Filarmônica 25 de Março
+# PostHog — configuração do Acervo Digital
 
-## Overview
+## Objetivo
 
-PostHog analytics has been integrated into the Cloudflare Worker backend using the `posthog-node` SDK (v5.26.2). The integration tracks 13 server-side events across 6 domain service files.
+O PostHog complementa o painel interno do Acervo. O D1 continua sendo a fonte de verdade para os relatórios administrativos; o PostHog é usado para compreender navegação, dificuldades de uso, cliques, desempenho e sessões.
 
----
+## O que está habilitado
 
-## Configuration
+- pageviews e saída de página em navegação SPA;
+- captura automática de cliques, incluindo rage clicks;
+- Web Vitals e exceções do navegador;
+- gravação de 100% das sessões autenticadas;
+- eventos de negócio confirmados pelo backend;
+- eventos de uso já validados pelo tracking interno.
 
-| Setting | Value |
-|---------|-------|
-| SDK | `posthog-node` v5.26.2 |
-| Host | `https://us.i.posthog.com` |
-| Environment | Cloudflare Workers (edge serverless) |
-| API Key | Set via `npx wrangler secret put POSTHOG_API_KEY` |
-| `POSTHOG_HOST` | Set in `wrangler.toml` `[vars]` |
+O SDK do navegador é carregado em um chunk separado durante tempo ocioso. Sem configuração, a aplicação funciona normalmente e não envia telemetria.
 
-### Serverless Pattern
+## Privacidade
 
-Because Cloudflare Workers terminate immediately after each request, the client is configured with:
+- a gravação começa somente depois da autenticação;
+- o cartão de login é marcado com `data-private` e nunca entra em replay ou autocapture;
+- todos os inputs são mascarados;
+- textos exibidos na interface são mascarados nos replays e nos eventos automáticos;
+- corpos e cabeçalhos de rede não são gravados;
+- query strings e fragmentos são removidos das URLs;
+- textos copiados não são capturados;
+- PIN, nome, login, e-mail e termos digitados não são enviados como propriedades;
+- a identificação usa somente `user_<id>`, função e instrumento;
+- o logout encerra o replay e redefine também o identificador do dispositivo.
 
-```js
-new PostHog(apiKey, {
-  host,
-  flushAt: 1,
-  flushInterval: 0,
-  enableExceptionAutocapture: true,
-});
-```
+## Eventos importantes
 
-And `await client.shutdown()` is called after every `capture()` to ensure events are flushed before the Worker exits.
+| Evento | Origem | Decisão apoiada |
+|---|---|---|
+| `user_logged_in` | backend | uso e retorno dos músicos |
+| `login_failed` | frontend | dificuldade de acesso sem registrar credenciais |
+| `partitura_aberta` | frontend | interesse real por obras |
+| `visualizacao_grade` / `visualizacao_parte` | frontend | consumo no visualizador |
+| `download_grade` / `download_parte` | frontend | conclusão do fluxo individual |
+| `partitura_downloaded` / `parte_downloaded` | backend | confirmação do arquivo entregue |
+| `busca_realizada` | frontend | volume e qualidade dos resultados, sem termo pesquisado |
+| `favorito_added` / `favorito_removed` | backend | adoção de favoritos |
+| `repertorio_downloaded` | backend | sucesso do download coletivo e partes ausentes |
+| `partitura_uploaded_with_parts` | backend | eficiência do upload de pasta |
+| `partitura_created` | backend | cadastro individual |
 
-### Null-Safe Graceful Degradation
+## Funis recomendados
 
-`createPostHogClient(env)` returns `null` if `POSTHOG_API_KEY` is not set. All capture calls are guarded by `if (posthog) { ... }`, so the API works normally without analytics if the key is missing.
+1. Login → busca ou abertura de partitura → visualização → download.
+2. Repertório aberto → instrumento escolhido → download concluído.
+3. Administração → upload de pasta → obra criada com partes.
+4. Sessão com `login_failed` → `user_logged_in`, para medir recuperação do acesso.
 
----
+Segmente por função, instrumento, navegador, sistema operacional e faixa de viewport. Use replay para investigar rage clicks, exceções, lentidão e abandono; não como substituto dos eventos de negócio.
 
-## Files Created / Modified
+## Configuração de produção
 
-| File | Change |
-|------|--------|
-| `worker/src/infrastructure/posthog/posthogClient.js` | **NEW** — PostHog client factory for Cloudflare Workers |
-| `worker/src/domain/auth/loginService.js` | Added `identify()`, `user_logged_in`, `user_pin_changed` |
-| `worker/src/domain/partituras/downloadService.js` | Added `partitura_downloaded`, `parte_downloaded` |
-| `worker/src/domain/partituras/partituraService.js` | Added `partitura_created`, `partitura_uploaded_with_parts`, `partitura_deleted` |
-| `worker/src/domain/favoritos/favoritoService.js` | Added `favorito_added`, `favorito_removed` |
-| `worker/src/domain/repertorios/repertorioService.js` | Added `repertorio_created`, `repertorio_downloaded` |
-| `worker/src/domain/usuarios/usuarioService.js` | Added `usuario_created`, `usuario_deactivated` |
-| `wrangler.toml` | Added `POSTHOG_HOST` to `[vars]`; added comment for secret key |
-| `package.json` | Added `posthog-node: ^5.26.2` to `dependencies` |
+O build do Pages lê:
 
----
+- secret do GitHub Actions `VITE_PUBLIC_POSTHOG_KEY`;
+- `VITE_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com`.
 
-## Events Tracked
+O Worker lê:
 
-| Event | File | Description |
-|-------|------|-------------|
-| `user_logged_in` | `loginService.js` | Successful login; also calls `identify()` with user profile |
-| `user_pin_changed` | `loginService.js` | User successfully changes their PIN |
-| `partitura_downloaded` | `downloadService.js` | Full partitura (score) downloaded |
-| `parte_downloaded` | `downloadService.js` | Individual instrument part downloaded |
-| `partitura_created` | `partituraService.js` | Admin creates a new partitura (single file) |
-| `partitura_uploaded_with_parts` | `partituraService.js` | Admin uploads a folder of parts for a partitura |
-| `partitura_deleted` | `partituraService.js` | Admin permanently deletes a partitura |
-| `favorito_added` | `favoritoService.js` | User adds a partitura to favorites |
-| `favorito_removed` | `favoritoService.js` | User removes a partitura from favorites |
-| `repertorio_created` | `repertorioService.js` | Admin creates a new repertório |
-| `repertorio_downloaded` | `repertorioService.js` | User bulk-downloads a repertório |
-| `usuario_created` | `usuarioService.js` | Admin creates a new user |
-| `usuario_deactivated` | `usuarioService.js` | Admin deactivates a user |
+- secret do Cloudflare Worker `POSTHOG_API_KEY`;
+- `POSTHOG_HOST` declarado em `wrangler.toml`.
 
----
+Para desenvolvimento local, a captura fica desligada mesmo que exista uma chave. Para habilitá-la deliberadamente, use `VITE_PUBLIC_POSTHOG_DEBUG=true`.
 
-## User Identification
+## Checklist depois do deploy
 
-On each successful login, `posthog.identify()` is called with:
-
-- `$set`: `username`, `nome`, `is_admin`, `instrumento` (updated on every login)
-- `$set_once`: `first_login` (set only the first time)
-
-`distinctId` format: `user_${user.id}` (e.g., `user_1`, `user_42`)
-
----
-
-## PostHog Dashboard
-
-**Dashboard:** [Analytics basics](https://us.posthog.com/project/329665/dashboard/1325108) (ID: 1325108)
-
-### Insights
-
-| Insight | ID | URL |
-|---------|----|-----|
-| Logins & Downloads Over Time | 7153425 | [cZXMTUaP](https://us.posthog.com/project/329665/insights/cZXMTUaP) |
-| Login → Download Funnel | 7153433 | [hLQHruQy](https://us.posthog.com/project/329665/insights/hLQHruQy) |
-| Content Management Activity | 7153434 | [smtMoB9s](https://us.posthog.com/project/329665/insights/smtMoB9s) |
-| Favoritos Engagement | 7153436 | [NFLTejee](https://us.posthog.com/project/329665/insights/NFLTejee) |
-| Repertório Downloads & New Users | 7153439 | [AgJfGLXt](https://us.posthog.com/project/329665/insights/AgJfGLXt) |
-
----
-
-## Deployment Note
-
-Before deploying to production, set the PostHog API key as a Wrangler secret:
-
-```bash
-npx wrangler secret put POSTHOG_API_KEY
-```
-
-This ensures the key is encrypted and not exposed in `wrangler.toml`.
+- confirmar `$pageview` e `$autocapture` no Live Events;
+- entrar com um usuário de teste e confirmar `user_logged_in` com o mesmo `distinct_id` do frontend;
+- confirmar que o replay começa somente após o login;
+- verificar que os inputs aparecem mascarados e que não há query string, PIN, login ou nome pessoal;
+- abrir e baixar uma partitura e confirmar somente uma ocorrência de cada evento esperado;
+- sair da conta e verificar que a sessão seguinte recebe um novo identificador de dispositivo.

@@ -60,6 +60,7 @@ const LoginScreen = ({ onClose, required = false }) => {
         {/* ── CARD GLASS TRUE — foto do fundo visível através ── */}
         <div
           ref={cardRef}
+          data-private="true"
           style={{
             position: 'relative',
             width: '100%',

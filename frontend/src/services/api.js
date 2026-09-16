@@ -3,6 +3,7 @@
 
 import Storage from './storage';
 import { API_BASE_URL, TOKEN_EXPIRY_BUFFER_MS } from '@constants/api';
+import { captureAcervoEvent } from '@services/posthog';
 
 function normalizeLegacyAnalyticsDashboard(legacy) {
   const usage = legacy?.uso_acervo || {};
@@ -643,6 +644,8 @@ export const API = {
       if (result?.session_id) {
         Storage.set('trackingSessionId', result.session_id);
       }
+
+      if (response.ok) captureAcervoEvent(event);
     } catch {
       // Ignorar erros de tracking
     }

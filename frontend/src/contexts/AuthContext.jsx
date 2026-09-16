@@ -5,6 +5,7 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import Storage from '@services/storage';
 import { API, USE_API } from '@services/api';
+import { identifyPostHogUser, resetPostHogUser } from '@services/posthog';
 
 const AuthContext = createContext();
 
@@ -22,6 +23,7 @@ export const AuthProvider = ({ children, onTokenExpired }) => {
   // Funcao de logout
   const logout = useCallback(async () => {
     await API.logout();
+    await resetPostHogUser();
     setUser(null);
     Storage.remove('user');
     Storage.remove('favorites');
@@ -52,6 +54,7 @@ export const AuthProvider = ({ children, onTokenExpired }) => {
   // Persiste usuario
   useEffect(() => {
     Storage.set('user', user);
+    if (user) void identifyPostHogUser(user);
   }, [user]);
 
   // Nome que o sistema usa para chamar o usuário (nome_exibicao se definido, senão nome)
