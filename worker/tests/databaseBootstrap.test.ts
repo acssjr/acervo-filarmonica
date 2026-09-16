@@ -8,7 +8,8 @@ describe('baseline do banco', () => {
       '0001_baseline.sql',
       '0002_logs_download_instrument_text.sql',
       '0003_fix_bombardino_tonalidades.sql',
-      '0004_login_rate_limits.sql'
+      '0004_login_rate_limits.sql',
+      '0005_activity_targets.sql'
     ]);
   });
 
@@ -36,6 +37,14 @@ describe('baseline do banco', () => {
     const columns = await env.DB.prepare('PRAGMA table_info(usuarios)').all<{ name: string }>();
 
     expect(columns.results.map((column) => column.name)).toContain('nome_exibicao');
+  });
+
+  it('inclui destino navegável nas atividades', async () => {
+    const columns = await env.DB.prepare('PRAGMA table_info(atividades)').all<{ name: string }>();
+    const names = columns.results.map((column) => column.name);
+
+    expect(names).toContain('entidade_tipo');
+    expect(names).toContain('entidade_id');
   });
 
   it('mantém Bombardino C e Bombardino Bb como opções distintas', async () => {

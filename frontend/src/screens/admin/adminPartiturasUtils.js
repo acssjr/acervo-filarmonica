@@ -1,6 +1,8 @@
 export const sortPartiturasByTitle = (partituras) => (
-  [...partituras].sort((a, b) => a.titulo?.localeCompare(b.titulo, 'pt-BR'))
+  [...partituras].sort((a, b) => (a.titulo ?? '').localeCompare(b.titulo ?? '', 'pt-BR'))
 );
+
+export const getScrollAdjustment = ({ previousTop, nextTop }) => nextTop - previousTop;
 
 export const formatPartiturasResult = (total, search = '') => {
   const label = total === 1 ? 'partitura encontrada' : 'partituras encontradas';

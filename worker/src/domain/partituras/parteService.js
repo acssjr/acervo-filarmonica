@@ -112,7 +112,10 @@ export async function addParte(partituraId, request, env, admin) {
       `).bind(partituraId, instrumento, nomeArquivoStorage).run()
     });
 
-    await registrarAtividade(env, 'nova_parte', partitura.titulo, instrumento, admin?.id ?? null);
+    await registrarAtividade(env, 'nova_parte', partitura.titulo, instrumento, admin?.id ?? null, {
+      tipo: 'partitura',
+      id: partituraId
+    });
 
     return jsonResponse({
       success: true,

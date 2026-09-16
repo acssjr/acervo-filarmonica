@@ -1,7 +1,7 @@
 // ===== ADMIN PARTITURAS =====
 // Gerenciamento de partituras com expansao inline e preview de PDF
 
-import { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
+import { useState, useEffect, useLayoutEffect, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
 
 // Flag para debug - remover em produção
 const DEBUG_TUTORIAL = false;
@@ -18,7 +18,7 @@ import RepertorioSelectorModal from '@components/modals/RepertorioSelectorModal'
 import Storage from '@services/storage';
 import { API_BASE_URL } from '@constants/api';
 import { canExecutePendingAdminAction, shouldWaitForAdminTutorial } from '@utils/adminTutorial';
-import { formatPartiturasResult, sortPartiturasByTitle } from './adminPartiturasUtils';
+import { formatPartiturasResult, getScrollAdjustment, sortPartiturasByTitle } from './adminPartiturasUtils';
 import './admin-partituras.css';
 
 const PDFViewerModal = lazy(() => import('@components/modals/PDFViewerModal'));
@@ -129,6 +129,8 @@ const AdminPartituras = () => {
   const [droppedFiles, setDroppedFiles] = useState(null); // Arquivos pré-carregados para os modais
   const [droppedItems, setDroppedItems] = useState(null); // Items do dataTransfer para ImportacaoLote
   const dragCounterRef = useRef(0); // Para controlar eventos de drag aninhados
+  const pageRef = useRef(null);
+  const pendingScrollAnchorRef = useRef(null);
 
   // Estado para expansao inline
   const [expandedId, setExpandedId] = useState(null);
@@ -404,7 +406,49 @@ const AdminPartituras = () => {
     }
   }, [showImportacaoLote]);
 
+  const captureVisiblePartituraAnchor = useCallback(() => {
+    const scrollContainer = pageRef.current?.closest('[data-admin-scroll-container]');
+    if (!scrollContainer) return null;
+
+    const containerRect = scrollContainer.getBoundingClientRect();
+    const cards = Array.from(pageRef.current.querySelectorAll('[data-partitura-id]'));
+    const visibleCard = cards.find((card) => {
+      const rect = card.getBoundingClientRect();
+      return rect.bottom > containerRect.top && rect.top < containerRect.bottom;
+    });
+
+    if (!visibleCard) return null;
+
+    return {
+      id: visibleCard.dataset.partituraId,
+      previousTop: visibleCard.getBoundingClientRect().top - containerRect.top,
+      scrollContainer
+    };
+  }, []);
+
+  useLayoutEffect(() => {
+    const anchor = pendingScrollAnchorRef.current;
+    if (!anchor || !pageRef.current) return;
+
+    const anchoredCard = Array.from(pageRef.current.querySelectorAll('[data-partitura-id]'))
+      .find(card => card.dataset.partituraId === anchor.id);
+
+    if (anchoredCard?.isConnected && anchor.scrollContainer?.isConnected) {
+      const containerTop = anchor.scrollContainer.getBoundingClientRect().top;
+      const nextTop = anchoredCard.getBoundingClientRect().top - containerTop;
+      anchor.scrollContainer.scrollTop += getScrollAdjustment({
+        previousTop: anchor.previousTop,
+        nextTop
+      });
+    }
+
+    pendingScrollAnchorRef.current = null;
+  }, [partituras]);
+
   const loadData = async ({ silent = false } = {}) => {
+    if (silent) {
+      pendingScrollAnchorRef.current = captureVisiblePartituraAnchor();
+    }
     if (!silent) setLoading(true);
     try {
       const [parts, cats] = await Promise.all([
@@ -414,6 +458,7 @@ const AdminPartituras = () => {
       setPartituras(parts || []);
       setCategorias(cats || []);
     } catch {
+      pendingScrollAnchorRef.current = null;
       showToast('Erro ao carregar dados', 'error');
     }
     if (!silent) setLoading(false);
@@ -913,7 +958,7 @@ const AdminPartituras = () => {
   const selectedCategoria = categorias.find(c => c.id === filterCategoria);
 
   return (
-    <div className="page-transition admin-partituras-page">
+    <div ref={pageRef} className="page-transition admin-partituras-page">
       <div className="admin-partituras-heading">
         <div>
         <h1 style={{
@@ -1272,7 +1317,7 @@ const AdminPartituras = () => {
                   const isExpanded = expandedId === p.id;
 
                   return (
-                    <div key={p.id} id={`partitura-${p.id}`} className="admin-partitura-card" style={{
+                    <div key={p.id} id={`partitura-${p.id}`} data-partitura-id={p.id} className="admin-partitura-card" style={{
                       background: 'var(--bg-secondary)',
                       borderRadius: '16px',
                       border: isExpanded ? '1px solid rgba(52, 152, 219, 0.4)' : '1px solid var(--border)',

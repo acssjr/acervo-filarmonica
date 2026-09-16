@@ -12,6 +12,7 @@ import { useIsMobile } from '@hooks/useResponsive';
 import { useScrollLock } from '@hooks/useScrollLock';
 import { Icons } from '@constants/icons';
 import EmptyState from '@components/common/EmptyState';
+import { resolveNotificationDestination } from '@utils/notificationNavigation';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -124,15 +125,7 @@ const NotificationsPanel = () => {
   const handleNotificationClick = useCallback((notification) => {
     markNotificationAsRead(notification.id);
 
-    const sheet = sheets.find(s =>
-      s.title.toLowerCase() === notification.title.toLowerCase()
-    );
-
-    if (sheet) {
-      navigate(`/acervo/${sheet.category}/${sheet.id}`);
-    } else {
-      navigate('/acervo');
-    }
+    navigate(resolveNotificationDestination(notification, sheets));
 
     setShowNotifications(false);
   }, [markNotificationAsRead, sheets, navigate, setShowNotifications]);
@@ -273,17 +266,15 @@ const NotificationsPanel = () => {
           }}>
             {notification.title}
           </p>
-          {/* Subtitle (e.g. "por Admin") */}
-          {notification.subtitle && (
+          {/* Descrição contextual da alteração */}
+          {notification.description && (
             <p style={{
               fontSize: '12px',
               color: subColor,
-              margin: '1px 0 0',
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
+              margin: '2px 0 0',
+              lineHeight: 1.35,
             }}>
-              {notification.subtitle}
+              {notification.description}
             </p>
           )}
           {/* Date */}

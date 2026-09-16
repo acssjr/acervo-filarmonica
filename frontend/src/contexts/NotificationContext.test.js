@@ -8,7 +8,7 @@ import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 const { renderHook, act, waitFor } = await import('@testing-library/react');
 const { createElement } = await import('react');
 const { http, HttpResponse } = await import('msw');
-const { NotificationProvider, useNotifications } = await import('./NotificationContext.jsx');
+const { NotificationProvider, activityToNotification, useNotifications } = await import('./NotificationContext.jsx');
 const { server } = await import('../__tests__/mocks/server.js');
 const { API_BASE_URL } = await import('@constants/api');
 const { notifyNotificationsChanged } = await import('./notificationEvents.js');
@@ -31,6 +31,36 @@ describe('NotificationContext', () => {
       }).toThrow('useNotifications must be used within NotificationProvider');
 
       consoleSpy.mockRestore();
+    });
+  });
+
+  describe('activityToNotification()', () => {
+    it('explica qual parte foi adicionada e preserva o destino exato', () => {
+      expect(activityToNotification({
+        id: 12,
+        tipo: 'nova_parte',
+        titulo: 'Coisa nº 1',
+        detalhes: 'Trompete Bb 1',
+        usuario_nome: 'Antonio Neves',
+        entidade_tipo: 'partitura',
+        entidade_id: 42,
+        criado_em: '2026-09-16T10:00:00Z'
+      })).toMatchObject({
+        title: 'Coisa nº 1',
+        description: 'Parte Trompete Bb 1 adicionada por Antonio Neves.',
+        entityType: 'partitura',
+        entityId: 42
+      });
+    });
+
+    it('descreve uma nova partitura sem exigir nome do responsável', () => {
+      expect(activityToNotification({
+        id: 13,
+        tipo: 'nova_partitura',
+        titulo: 'Nova Marcha',
+        detalhes: 'Compositor X',
+        criado_em: '2026-09-16T10:00:00Z'
+      }).description).toBe('Adicionada ao acervo · Compositor X.');
     });
   });
 

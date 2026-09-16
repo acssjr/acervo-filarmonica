@@ -517,7 +517,10 @@ export async function createRepertorio(request, env, admin) {
   const batchResult = await env.DB.batch(statements);
   const result = batchResult[batchResult.length - 1];
 
-  await registrarAtividade(env, 'novo_repertorio', nome, null, admin.id);
+  await registrarAtividade(env, 'novo_repertorio', nome, null, admin.id, {
+    tipo: 'repertorio',
+    id: result.meta.last_row_id
+  });
 
   // PostHog: capture repertório creation event
   await capturePostHog(env, {
@@ -591,7 +594,10 @@ export async function updateRepertorio(id, request, env, admin) {
     : [updateStatement];
   await env.DB.batch(statements);
 
-  await registrarAtividade(env, 'update_repertorio', updated.nome, detalhes, admin?.id ?? null);
+  await registrarAtividade(env, 'update_repertorio', updated.nome, detalhes, admin?.id ?? null, {
+    tipo: 'repertorio',
+    id
+  });
 
   return jsonResponse({
     success: true,

@@ -707,7 +707,7 @@ const AdminApp = () => {
           )}
 
           {/* Conteudo */}
-          <div style={{ flex: 1, overflow: 'auto', paddingBottom: isMobile ? '112px' : 0 }}>
+          <div data-admin-scroll-container style={{ flex: 1, overflow: 'auto', paddingBottom: isMobile ? '112px' : 0 }}>
             <Suspense fallback={<SectionLoader />}>
               {renderContent()}
             </Suspense>
