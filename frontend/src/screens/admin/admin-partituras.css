@@ -1,0 +1,50 @@
+.admin-partituras-page { padding: 32px; max-width: 1100px; margin: 0 auto; }
+.admin-partituras-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 22px; }
+.admin-partituras-heading h1 { margin: 0; }
+.admin-partituras-subtitle { margin: 6px 0 0; color: var(--text-secondary); font-size: 13px; }
+.admin-partituras-upload-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+.admin-partituras-toolbar { position: sticky; top: 0; z-index: 30; margin: 0 0 14px; padding: 16px; border: 1px solid var(--border); border-radius: 16px; background: color-mix(in srgb, var(--bg-primary) 94%, transparent); box-shadow: 0 8px 22px rgba(0,0,0,.06); backdrop-filter: blur(12px); }
+.admin-partituras-toolbar-title { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.admin-partituras-toolbar-title h2 { margin: 0 0 3px; color: var(--text-primary); font-size: 15px; }
+.admin-partituras-toolbar-title p { margin: 0; color: var(--text-secondary); font-size: 12px; }
+.admin-clear-filters { min-height: 36px; border: 0; background: transparent; color: #a67d00; font-weight: 700; cursor: pointer; }
+.admin-clear-filters:hover { text-decoration: underline; }
+.admin-partituras-filters { display: grid; grid-template-columns: minmax(260px,1.6fr) minmax(190px,.8fr) auto auto; gap: 10px; align-items: end; }
+.admin-search-field, .admin-category-filter { min-width: 0; position: relative; }
+.admin-search-field > label, .admin-filter-label { display: block; margin: 0 0 6px 2px; color: var(--text-primary); font-size: 11px; font-weight: 750; text-transform: uppercase; letter-spacing: .04em; }
+.admin-partituras-toolbar .search-bar, .admin-category-filter > button { min-height: 46px; border-color: color-mix(in srgb, var(--text-secondary) 42%, var(--border)) !important; background: var(--bg-secondary) !important; }
+.admin-partituras-toolbar .search-bar:focus-within { border-color: #b89116 !important; box-shadow: 0 0 0 3px rgba(212,175,55,.17); }
+.admin-partituras-toolbar input::placeholder { color: color-mix(in srgb, var(--text-secondary) 84%, transparent); opacity: 1; }
+.admin-partituras-result-count { margin: 0 0 18px; color: var(--text-secondary); font-size: 13px; font-weight: 600; }
+.admin-partitura-card { content-visibility: auto; contain-intrinsic-size: auto 78px; }
+.admin-partitura-expand { min-width: 0; border: 0; background: transparent; color: inherit; text-align: left; font: inherit; }
+.admin-partitura-expand:focus-visible { outline: 3px solid rgba(212,175,55,.48); outline-offset: 3px; border-radius: 10px; }
+.admin-manage-parts { display: inline-flex; margin-top: 6px; color: #a67d00; font-size: 11px; font-weight: 750; }
+.admin-partitura-card:hover { border-color: color-mix(in srgb, #d4af37 38%, var(--border)) !important; }
+.admin-partitura-action { min-width: 44px !important; width: 44px !important; min-height: 44px !important; height: 44px !important; }
+.admin-edit-action { width: auto !important; padding: 0 12px; gap: 7px; }
+.admin-edit-action span { display: inline; white-space: nowrap; font-size: 12px; font-weight: 700; }
+.admin-partitura-action:focus-visible { outline: 3px solid rgba(212,175,55,.46); outline-offset: 2px; }
+@media (max-width: 900px) {
+  .admin-partituras-filters { grid-template-columns: minmax(220px,1fr) minmax(180px,.7fr); }
+  .admin-partituras-filters > button { justify-content: center; }
+}
+@media (max-width: 767px) {
+  .admin-partituras-page { padding: 16px 12px 92px; }
+  .admin-partituras-heading { flex-direction: column; margin-bottom: 16px; }
+  .admin-partituras-upload-actions { width: 100%; display: grid; grid-template-columns: 1fr 1fr; }
+  .admin-partituras-upload-actions button { justify-content: center; padding-inline: 10px !important; min-height: 46px; }
+  .admin-partituras-toolbar { position: relative; padding: 14px; border-radius: 14px; }
+  .admin-partituras-toolbar-title { align-items: center; }
+  .admin-partituras-toolbar-title p { display: none; }
+  .admin-partituras-filters { grid-template-columns: 1fr 1fr; }
+  .admin-search-field { grid-column: 1 / -1; }
+  .admin-partituras-filters > button { min-height: 44px; padding-inline: 10px !important; }
+  .admin-partitura-expand { width: 100%; }
+  .admin-edit-action { flex: 1; justify-content: center !important; }
+}
+@media (max-width: 390px) {
+  .admin-partituras-upload-actions, .admin-partituras-filters { grid-template-columns: 1fr; }
+  .admin-search-field { grid-column: auto; }
+}
+@media (prefers-reduced-motion: reduce) { .admin-partitura-card, .admin-partitura-expand svg { transition: none !important; } }

@@ -76,7 +76,7 @@ jest.unstable_mockModule('@utils/formatters', () => ({
 }));
 
 // ===== IMPORTACOES APOS MOCKS =====
-const { render, screen, waitFor } = await import('@testing-library/react');
+const { render, screen, waitFor, fireEvent } = await import('@testing-library/react');
 const { default: AdminDashboard } = await import('./AdminDashboard');
 
 // ===== HELPERS =====
@@ -91,6 +91,7 @@ describe('AdminDashboard', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockLoading = false;
+    window.adminNav = jest.fn();
   });
 
   describe('Renderizacao', () => {
@@ -116,8 +117,7 @@ describe('AdminDashboard', () => {
 
       await waitFor(() => {
         // Dashboard exibe mensagem contextual baseada no horário
-        const msg = screen.queryByText(/organizar|ordem|resolver/i);
-        expect(msg).toBeInTheDocument();
+        expect(screen.getAllByText(/organizar|ordem|resolver/i).length).toBeGreaterThan(0);
       });
     });
   });
@@ -136,7 +136,7 @@ describe('AdminDashboard', () => {
       renderDashboard();
 
       await waitFor(() => {
-        expect(screen.getByText('Partituras')).toBeInTheDocument();
+        expect(screen.getAllByText('Partituras').length).toBeGreaterThan(0);
         expect(screen.getByText('150')).toBeInTheDocument();
       });
     });
@@ -170,42 +170,34 @@ describe('AdminDashboard', () => {
         expect(screen.queryByText('150')).not.toBeInTheDocument();
         // Labels dos cards ainda são visíveis
         expect(screen.getByText('Músicos Ativos')).toBeInTheDocument();
-        expect(screen.getByText('Partituras')).toBeInTheDocument();
+        expect(screen.getAllByText('Partituras').length).toBeGreaterThan(0);
       });
     });
   });
 
-  describe('Acoes Rapidas', () => {
-    test('exibe secao de acoes rapidas', async () => {
+  describe('Centro de acoes', () => {
+    test('prioriza as tres tarefas mais frequentes', async () => {
       renderDashboard();
 
       await waitFor(() => {
-        expect(screen.getByText('Ações Rápidas')).toBeInTheDocument();
+        expect(screen.getByText('O que você precisa fazer agora?')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /^Partituras Adicionar/i })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Repertório/i })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Presença/i })).toBeInTheDocument();
       });
     });
 
-    test('exibe botao Novo Musico', async () => {
+    test('leva diretamente para a gestao de partituras', async () => {
       renderDashboard();
-
-      await waitFor(() => {
-        expect(screen.getByText('Novo Músico')).toBeInTheDocument();
-      });
+      fireEvent.click(screen.getByRole('button', { name: /^Partituras/i }));
+      expect(window.adminNav).toHaveBeenCalledWith('partituras');
     });
 
-    test('exibe botao Nova Pasta', async () => {
+    test('mantem analytics como acesso secundario', async () => {
       renderDashboard();
-
-      await waitFor(() => {
-        expect(screen.getByText('Nova Pasta')).toBeInTheDocument();
-      });
-    });
-
-    test('exibe botao Nova Categoria', async () => {
-      renderDashboard();
-
-      await waitFor(() => {
-        expect(screen.getByText('Nova Categoria')).toBeInTheDocument();
-      });
+      const analytics = screen.getByRole('button', { name: /Ver analytics/i });
+      fireEvent.click(analytics);
+      expect(window.adminNav).toHaveBeenCalledWith('analytics');
     });
   });
 
