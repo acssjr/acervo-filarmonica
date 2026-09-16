@@ -38,54 +38,56 @@ const sanitizeEvent = (captureResult) => {
   return { ...captureResult, properties };
 };
 
+export const createPostHogConfig = () => ({
+  api_host: POSTHOG_HOST,
+  defaults: '2025-11-30',
+  autocapture: {
+    css_selector_ignorelist: [
+      '.ph-no-capture',
+      '.ph-no-autocapture',
+      '[data-ph-no-autocapture]',
+      '[data-private]',
+    ],
+    element_attribute_ignorelist: ['value', 'data-value', 'data-token'],
+    capture_copied_text: false,
+  },
+  capture_pageview: 'history_change',
+  capture_pageleave: true,
+  capture_exceptions: true,
+  capture_performance: { web_vitals: true },
+  person_profiles: 'identified_only',
+  persistence: 'localStorage',
+  mask_all_element_attributes: false,
+  mask_all_text: false,
+  mask_personal_data_properties: true,
+  custom_personal_data_properties: ['token', 'auth', 'email', 'username', 'user'],
+  disable_session_recording: true,
+  enable_recording_console_log: false,
+  session_recording: {
+    maskAllInputs: false,
+    maskInputOptions: { password: true },
+    blockSelector: '.ph-no-capture, [data-private]',
+    recordHeaders: false,
+    recordBody: false,
+    captureCanvas: false,
+    sampleRate: 1,
+    session_idle_threshold_ms: 5 * 60 * 1000,
+    maskCapturedNetworkRequestFn: (request) => ({
+      ...request,
+      name: withoutQueryString(request.name),
+    }),
+  },
+  before_send: sanitizeEvent,
+  debug: POSTHOG_DEBUG,
+});
+
 const loadClient = async () => {
   if (!IS_ENABLED) return null;
   if (client) return client;
   if (clientPromise) return clientPromise;
 
   clientPromise = import('posthog-js').then(({ default: posthog }) => {
-    posthog.init(POSTHOG_KEY, {
-      api_host: POSTHOG_HOST,
-      defaults: '2025-11-30',
-      autocapture: {
-        css_selector_ignorelist: [
-          '.ph-no-capture',
-          '.ph-no-autocapture',
-          '[data-ph-no-autocapture]',
-          '[data-private]',
-        ],
-        element_attribute_ignorelist: ['value', 'data-value', 'data-token'],
-        capture_copied_text: false,
-      },
-      capture_pageview: 'history_change',
-      capture_pageleave: true,
-      capture_exceptions: true,
-      capture_performance: { web_vitals: true },
-      person_profiles: 'identified_only',
-      persistence: 'localStorage',
-      mask_all_element_attributes: false,
-      mask_all_text: true,
-      mask_personal_data_properties: true,
-      custom_personal_data_properties: ['token', 'auth', 'email', 'username', 'user'],
-      disable_session_recording: true,
-      enable_recording_console_log: false,
-      session_recording: {
-        maskAllInputs: true,
-        maskTextSelector: '*',
-        blockSelector: '.ph-no-capture, [data-private]',
-        recordHeaders: false,
-        recordBody: false,
-        captureCanvas: false,
-        sampleRate: 1,
-        session_idle_threshold_ms: 5 * 60 * 1000,
-        maskCapturedNetworkRequestFn: (request) => ({
-          ...request,
-          name: withoutQueryString(request.name),
-        }),
-      },
-      before_send: sanitizeEvent,
-      debug: POSTHOG_DEBUG,
-    });
+    posthog.init(POSTHOG_KEY, createPostHogConfig());
 
     client = posthog;
     return client;

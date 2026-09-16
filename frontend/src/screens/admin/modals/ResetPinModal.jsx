@@ -35,6 +35,7 @@ const ResetPinModal = ({ usuario, onReset, onClose }) => {
         </label>
         <input
           type="text"
+          data-private="true"
           maxLength={4}
           style={{
             width: '100%',

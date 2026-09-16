@@ -276,6 +276,7 @@ const UsuarioFormModal = ({ usuario, instrumentos, onSave, onClose }) => {
                 <div style={{ position: 'relative' }}>
                   <input
                     type="text"
+                    data-private="true"
                     placeholder="1234"
                     maxLength={4}
                     value={pin}
