@@ -14,7 +14,8 @@ import {
   substituirParte,
   renomearParte,
   deleteParte,
-  corrigirBombardinosPartitura
+  corrigirBombardinosPartitura,
+  uploadAudio, removeAudio, updateYoutubeUrl, getAudioAccess, streamAudio
 } from '../domain/partituras/index.js';
 
 /**
@@ -28,6 +29,10 @@ export function setupPartituraRoutes(router) {
     const id = params.id;
     return getPartitura(id, req, env);
   });
+
+  router.get('/api/partituras/:id/audio/access', (req, env, params) => getAudioAccess(params.id, req, env), [authMiddleware]);
+  router.get('/api/partituras/:id/audio/stream', (req, env, params) => streamAudio(params.id, req, env));
+  router.register('HEAD', '/api/partituras/:id/audio/stream', (req, env, params) => streamAudio(params.id, req, env));
 
   // Rotas autenticadas (downloads)
   // IMPORTANTE: rota mais específica (/parte/:id) deve vir ANTES da genérica (/:id)
@@ -60,6 +65,9 @@ export function setupPartituraRoutes(router) {
     const id = params.id;
     return deletePartitura(id, req, env, context.user, context);
   }, [adminMiddleware]);
+  router.put('/api/partituras/:id/audio', (req, env, params) => uploadAudio(params.id, req, env), [adminMiddleware]);
+  router.delete('/api/partituras/:id/audio', (req, env, params) => removeAudio(params.id, req, env), [adminMiddleware]);
+  router.put('/api/partituras/:id/youtube', (req, env, params) => updateYoutubeUrl(params.id, req, env), [adminMiddleware]);
 
   // Rota autenticada - listar partes (qualquer usuário logado pode ver para download)
   router.get('/api/partituras/:id/partes', (req, env, params) => {

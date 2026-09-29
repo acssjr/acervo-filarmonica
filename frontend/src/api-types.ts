@@ -126,6 +126,76 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/partituras/{id}/audio": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Anexar ou substituir áudio oficial (admin) */
+        put: operations["uploadPartituraAudio"];
+        post?: never;
+        /** Remover áudio oficial (admin) */
+        delete: operations["removePartituraAudio"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/partituras/{id}/youtube": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Definir ou remover link do YouTube (admin) */
+        put: operations["updatePartituraYoutube"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/partituras/{id}/audio/access": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Emitir URL temporária para reprodução */
+        get: operations["getPartituraAudioAccess"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/partituras/{id}/audio/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Entregar áudio via URL temporária e HTTP Range */
+        get: operations["streamPartituraAudio"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        /** Consultar tamanho e faixas do áudio */
+        head: operations["headPartituraAudio"];
+        patch?: never;
+        trace?: never;
+    };
     "/api/partituras/{id}/partes": {
         parameters: {
             query?: never;
@@ -1508,6 +1578,11 @@ export interface components {
             descricao?: string | null;
             arquivo_nome?: string;
             arquivo_tamanho?: number;
+            has_audio?: boolean;
+            audio_name?: string | null;
+            audio_mime?: string | null;
+            audio_size?: number | null;
+            youtube_url?: string | null;
             destaque?: number;
             total_partes?: number;
             /** Format: date-time */
@@ -1975,6 +2050,200 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["Success"];
                 };
+            };
+        };
+    };
+    uploadPartituraAudio: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    audio: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Áudio salvo */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Arquivo inválido */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    removePartituraAudio: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Áudio removido */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    updatePartituraYoutube: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    youtube_url?: string | null;
+                };
+            };
+        };
+        responses: {
+            /** @description Link atualizado */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description URL inválida */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    getPartituraAudioAccess: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description URL assinada */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uri */
+                        url?: string;
+                        expires_at?: number;
+                    };
+                };
+            };
+        };
+    };
+    streamPartituraAudio: {
+        parameters: {
+            query: {
+                exp: number;
+                sig: string;
+            };
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Áudio completo */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Faixa parcial */
+            206: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Faixa inválida */
+            416: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    headPartituraAudio: {
+        parameters: {
+            query: {
+                exp: number;
+                sig: string;
+            };
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Metadados do áudio */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Metadados da faixa parcial */
+            206: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Assinatura inválida ou expirada */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Faixa inválida */
+            416: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

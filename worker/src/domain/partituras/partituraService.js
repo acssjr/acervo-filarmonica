@@ -15,6 +15,11 @@ import { buildUpdateDetails, describeBoolean } from '../atividades/auditUtils.js
 import { capturePostHog } from '../../infrastructure/posthog/posthogClient.js';
 import { canonicalizeInstrumentName } from '../instrumentos/instrumentUtils.js';
 
+function publicPartitura(row) {
+  const { audio_key: _audioKey, ...partitura } = row;
+  return { ...partitura, has_audio: Boolean(_audioKey) };
+}
+
 /**
  * Listar todas as partituras
  *
@@ -54,7 +59,7 @@ export async function getPartituras(request, env) {
   const stmt = env.DB.prepare(query);
   const result = await (params.length ? stmt.bind(...params) : stmt).all();
 
-  return jsonResponse(result.results, 200, request);
+  return jsonResponse(result.results.map(publicPartitura), 200, request);
 }
 
 /**
@@ -74,7 +79,7 @@ export async function getPartitura(id, request, env) {
     return errorResponse('Partitura não encontrada', 404, request);
   }
 
-  return jsonResponse(result, 200, request);
+  return jsonResponse(publicPartitura(result), 200, request);
 }
 
 /**
@@ -331,6 +336,7 @@ export async function deleteBucketObjects(bucket, keys) {
 export function getPartituraDeleteKeys(partitura, partes = []) {
   return [
     partitura?.arquivo_nome,
+    partitura?.audio_key,
     ...partes.map(parte => parte?.arquivo_nome)
   ].filter(Boolean);
 }
@@ -433,7 +439,7 @@ export async function updatePartitura(id, request, env, user) {
 
 export async function deletePartitura(id, request, env, user, context = null) {
   // Busca info antes de deletar para log
-  const partitura = await env.DB.prepare('SELECT titulo, arquivo_nome FROM partituras WHERE id = ?').bind(id).first();
+  const partitura = await env.DB.prepare('SELECT titulo, arquivo_nome, audio_key FROM partituras WHERE id = ?').bind(id).first();
 
   if (!partitura) {
     return errorResponse('Partitura não encontrada', 404, request);

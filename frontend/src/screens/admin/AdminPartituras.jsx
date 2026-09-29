@@ -13,6 +13,7 @@ import { API } from '@services/api';
 import CategoryIcon from '@components/common/CategoryIcon';
 import { PartesGridSkeleton } from '@components/common/Skeleton';
 import UploadPastaModal from './components/UploadPastaModal';
+import AdminPartituraMedia from './components/AdminPartituraMedia';
 import TutorialOverlay, { useTutorial } from '@components/onboarding/TutorialOverlay';
 import RepertorioSelectorModal from '@components/modals/RepertorioSelectorModal';
 import Storage from '@services/storage';
@@ -110,7 +111,7 @@ const detectInstrumento = (filename) => {
 
 const AdminPartituras = () => {
   const { showToast } = useUI();
-  const { tutoriaisAtivos, isLoading: dataLoading } = useData();
+  const { tutoriaisAtivos, isLoading: dataLoading, setSheets } = useData();
   const isMobile = useMediaQuery('(max-width: 767px)');
   const [partituras, setPartituras] = useState([]);
   const [categorias, setCategorias] = useState([]);
@@ -182,6 +183,18 @@ const AdminPartituras = () => {
     setEditModalOpen(false);
     setEditingPartitura(null);
     setEditForm({ titulo: '', compositor: '', arranjador: '', categoria_id: '' });
+  };
+
+  const updateEditingMedia = (id, patch) => {
+    setEditingPartitura(prev => prev && String(prev.id) === String(id) ? { ...prev, ...patch } : prev);
+    setPartituras(prev => prev.map(item => String(item.id) === String(id) ? { ...item, ...patch } : item));
+    setSheets(prev => prev.map(item => String(item.id) === String(id) ? {
+      ...item,
+      hasAudio: patch.has_audio ?? item.hasAudio,
+      audioName: patch.audio_name ?? (patch.has_audio === false ? null : item.audioName),
+      audioMime: patch.audio_mime ?? (patch.has_audio === false ? null : item.audioMime),
+      youtubeUrl: patch.youtube_url !== undefined ? patch.youtube_url : item.youtubeUrl
+    } : item));
   };
 
   const saveEditModal = async () => {
@@ -2094,7 +2107,7 @@ const AdminPartituras = () => {
             </div>
 
             {/* Corpo do Modal */}
-            <div style={{ padding: '24px' }}>
+            <div style={{ padding: '24px', maxHeight: 'calc(90vh - 120px)', overflowY: 'auto' }}>
               {/* Campo Título */}
               <div style={{ marginBottom: '20px' }}>
                 <label style={{
@@ -2269,6 +2282,8 @@ const AdminPartituras = () => {
                   </div>
                 </div>
               </div>
+
+              <AdminPartituraMedia partitura={editingPartitura} onUpdate={patch => updateEditingMedia(editingPartitura.id, patch)} showToast={showToast} />
 
               {/* Botões */}
               <div style={{ display: 'flex', gap: '12px' }}>

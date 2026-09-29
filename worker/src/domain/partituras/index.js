@@ -2,3 +2,4 @@
 export * from './partituraService.js';
 export * from './parteService.js';
 export * from './downloadService.js';
+export * from './audioService.js';

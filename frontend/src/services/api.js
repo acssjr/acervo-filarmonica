@@ -192,6 +192,35 @@ export const API = {
     });
   },
 
+  async getPartituraAudioAccess(id) {
+    return this.request(`/api/partituras/${id}/audio/access`);
+  },
+
+  async uploadPartituraAudio(id, file) {
+    const token = Storage.get('authToken', null);
+    const form = new FormData();
+    form.append('audio', file);
+    const response = await fetch(`${API_BASE_URL}/api/partituras/${id}/audio`, {
+      method: 'PUT',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: form
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(result.error || 'Não foi possível enviar o áudio');
+    return result;
+  },
+
+  async removePartituraAudio(id) {
+    return this.request(`/api/partituras/${id}/audio`, { method: 'DELETE' });
+  },
+
+  async updatePartituraYoutube(id, youtubeUrl) {
+    return this.request(`/api/partituras/${id}/youtube`, {
+      method: 'PUT',
+      body: JSON.stringify({ youtube_url: youtubeUrl })
+    });
+  },
+
   async deletePartitura(id) {
     return this.request(`/api/partituras/${id}`, {
       method: 'DELETE'
