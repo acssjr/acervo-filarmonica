@@ -507,6 +507,20 @@ components:
           type: string
         arquivo_tamanho:
           type: integer
+        has_audio:
+          type: boolean
+        audio_name:
+          type: string
+          nullable: true
+        audio_mime:
+          type: string
+          nullable: true
+        audio_size:
+          type: integer
+          nullable: true
+        youtube_url:
+          type: string
+          nullable: true
         destaque:
           type: integer
         total_partes:
@@ -1086,6 +1100,125 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Success'
+
+  /api/partituras/{id}/audio:
+    put:
+      tags: [Partituras]
+      summary: Anexar ou substituir áudio oficial (admin)
+      operationId: uploadPartituraAudio
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [audio]
+              properties:
+                audio: { type: string, format: binary }
+      responses:
+        '200': { description: Áudio salvo }
+        '400': { description: Arquivo inválido }
+    delete:
+      tags: [Partituras]
+      summary: Remover áudio oficial (admin)
+      operationId: removePartituraAudio
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: Áudio removido }
+
+  /api/partituras/{id}/youtube:
+    put:
+      tags: [Partituras]
+      summary: Definir ou remover link do YouTube (admin)
+      operationId: updatePartituraYoutube
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                youtube_url: { type: string, nullable: true }
+      responses:
+        '200': { description: Link atualizado }
+        '400': { description: URL inválida }
+
+  /api/partituras/{id}/audio/access:
+    get:
+      tags: [Partituras]
+      summary: Emitir URL temporária para reprodução
+      operationId: getPartituraAudioAccess
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: URL assinada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url: { type: string, format: uri }
+                  expires_at: { type: integer }
+
+  /api/partituras/{id}/audio/stream:
+    head:
+      tags: [Partituras]
+      summary: Consultar tamanho e faixas do áudio
+      operationId: headPartituraAudio
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: Metadados do áudio }
+    get:
+      tags: [Partituras]
+      summary: Entregar áudio via URL temporária e HTTP Range
+      operationId: streamPartituraAudio
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+        - name: exp
+          in: query
+          required: true
+          schema: { type: integer }
+        - name: sig
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Áudio completo }
+        '206': { description: Faixa parcial }
+        '416': { description: Faixa inválida }
 
   /api/partituras/{id}/partes:
     get:

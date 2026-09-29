@@ -9,7 +9,8 @@ describe('baseline do banco', () => {
       '0002_logs_download_instrument_text.sql',
       '0003_fix_bombardino_tonalidades.sql',
       '0004_login_rate_limits.sql',
-      '0005_activity_targets.sql'
+      '0005_activity_targets.sql',
+      '0006_partitura_audio.sql'
     ]);
   });
 
