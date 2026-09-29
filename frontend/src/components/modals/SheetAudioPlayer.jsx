@@ -103,10 +103,10 @@ export default function SheetAudioPlayer({ sheet }) {
           <p style={{ color: 'var(--text-muted)', fontSize: 11, margin: '5px 0 10px' }}>{full ? 'Reprodução completa' : 'Trecho de até 30 segundos'}</p>
           {loading && <p role="status" style={{ fontSize: 12 }}>Carregando áudio...</p>}
           {error && <p role="alert" style={{ fontSize: 12, color: '#b32929' }}>{error} <button type="button" onClick={start}>Tentar novamente</button></p>}
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 20, color: '#5c1a1b' }}>
-            <button type="button" onClick={() => skip(-10)} disabled={loading} aria-label="Voltar 10 segundos" style={{ minWidth: 44, minHeight: 44, border: 0, background: 'none', color: 'inherit' }}>↶ 10</button>
+          <div style={{ display: 'grid', gridTemplateColumns: '72px 44px 72px', justifyContent: 'center', alignItems: 'center', columnGap: 12, color: '#5c1a1b' }}>
+            <button type="button" onClick={() => skip(-10)} disabled={loading} aria-label="Voltar 10 segundos" style={{ width: 72, minHeight: 44, border: 0, background: 'none', color: 'inherit', textAlign: 'center' }}>↶ 10</button>
             <button type="button" onClick={toggle} disabled={loading || !!error} aria-label={playing ? 'Pausar áudio' : 'Reproduzir áudio'} style={{ width: 44, height: 44, borderRadius: '50%', border: 0, background: '#5c1a1b', color: '#fff', fontSize: 16 }}>{playing ? 'Ⅱ' : '▶'}</button>
-            <button type="button" onClick={() => skip(10)} disabled={loading} aria-label="Avançar 10 segundos" style={{ minWidth: 44, minHeight: 44, border: 0, background: 'none', color: 'inherit' }}>10 ↷</button>
+            <button type="button" onClick={() => skip(10)} disabled={loading} aria-label="Avançar 10 segundos" style={{ width: 72, minHeight: 44, border: 0, background: 'none', color: 'inherit', textAlign: 'center' }}>10 ↷</button>
           </div>
           <input type="range" min="0" max={limit || 30} step="0.1" value={Math.min(currentTime, limit || 30)} onChange={event => { audioRef.current.currentTime = Number(event.target.value); }} aria-label="Posição do áudio" style={{ width: '100%', accentColor: '#b49438', marginTop: 10 }} />
           <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted)', fontSize: 10 }}><span>{formatTime(currentTime)}</span><span>{formatTime(limit)}</span></div>
