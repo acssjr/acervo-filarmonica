@@ -148,12 +148,32 @@ const renderModal = () => {
 describe('SheetDetailModal', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    Object.defineProperty(HTMLMediaElement.prototype, 'pause', { configurable: true, value: jest.fn() });
+    Object.defineProperty(HTMLMediaElement.prototype, 'load', { configurable: true, value: jest.fn() });
     mockSelectedSheet = null;
     mockFavorites = [];
     mockFavoritesSet = new Set();
   });
 
   describe('Renderizacao', () => {
+    test('mostra o botão de áudio e o link externo no modal quando cadastrados', async () => {
+      mockSelectedSheet = createMockSheet({ hasAudio: true, youtubeUrl: 'https://www.youtube.com/watch?v=abc' });
+      renderModal();
+
+      expect(await screen.findByRole('button', { name: 'Ouvir partitura' })).toBeInTheDocument();
+      const link = screen.getByRole('link', { name: /Ver no YouTube/ });
+      expect(link).toHaveAttribute('href', 'https://www.youtube.com/watch?v=abc');
+      expect(link).toHaveAttribute('target', '_blank');
+    });
+
+    test('mostra apenas o link quando não existe arquivo de áudio', async () => {
+      mockSelectedSheet = createMockSheet({ hasAudio: false, youtubeUrl: 'https://youtu.be/abc' });
+      renderModal();
+
+      expect(await screen.findByRole('link', { name: /Ver no YouTube/ })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Ouvir partitura' })).not.toBeInTheDocument();
+    });
+
     test('nao renderiza quando selectedSheet e null', () => {
       mockSelectedSheet = null;
       renderModal();

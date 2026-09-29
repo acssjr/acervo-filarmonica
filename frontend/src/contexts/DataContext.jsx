@@ -117,6 +117,10 @@ export const DataProvider = ({ children }) => {
               downloads: p.downloads || 0,
               featured: p.destaque === 1,
               hasFile: !!p.arquivo_nome,
+              hasAudio: !!p.has_audio,
+              audioName: p.audio_name || null,
+              audioMime: p.audio_mime || null,
+              youtubeUrl: p.youtube_url || null,
               apiId: p.id,
               updatedAt: p.atualizado_em
             }));

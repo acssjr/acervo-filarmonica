@@ -16,6 +16,7 @@ import { useMediaQuery } from '@hooks/useMediaQuery';
 import { useSheetDownload, findParteExata } from '@hooks/useSheetDownload';
 import { shareSheetLink } from '@utils/sheetShare';
 import { PartePicker, DownloadConfirm, InstrumentSelector, ShareOptions } from './sheet';
+import SheetAudioPlayer from './SheetAudioPlayer';
 
 const PDFViewerModal = lazy(() => import('./PDFViewerModal'));
 
@@ -458,6 +459,17 @@ const SheetDetailModal = () => {
                   </div>
                 )}
               </div>
+
+              {(selectedSheet.hasAudio || selectedSheet.youtubeUrl) && (
+                <div>
+                  {selectedSheet.hasAudio && <SheetAudioPlayer key={selectedSheet.id} sheet={selectedSheet} />}
+                  {selectedSheet.youtubeUrl && (
+                    <a href={selectedSheet.youtubeUrl} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', color: 'var(--accent)', fontSize: 12, fontWeight: 700, marginBottom: 14, textDecoration: 'underline' }}>
+                      Ver no YouTube ↗
+                    </a>
+                  )}
+                </div>
+              )}
 
               {/* Opções de Download / Ações Rápidas */}
               <div style={{ marginBottom: '14px' }}>
