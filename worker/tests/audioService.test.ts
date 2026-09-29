@@ -50,6 +50,16 @@ describe('áudio oficial da partitura', () => {
     expect(invalid.status).toBe(403);
   });
 
+  it('não anuncia áudio removido do armazenamento em HEAD', async () => {
+    const bucket = { head: vi.fn().mockResolvedValue(null) };
+    const testEnv = { DB: db(), BUCKET: bucket, JWT_SECRET: 'test-secret' };
+    const access = await getAudioAccess('7', new Request('https://test.local/api/partituras/7/audio/access'), testEnv);
+    const { url } = await access.json() as { url: string };
+    const response = await streamAudio('7', new Request(url, { method: 'HEAD' }), testEnv);
+    expect(response.status).toBe(404);
+    expect(bucket.head).toHaveBeenCalledWith(sheet.audio_key);
+  });
+
   it('protege a emissão da URL com autenticação', async () => {
     const response = await SELF.fetch('https://test.local/api/partituras/7/audio/access');
     expect(response.status).toBe(401);

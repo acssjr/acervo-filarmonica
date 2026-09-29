@@ -135,7 +135,11 @@ export async function streamAudio(id, request, env) {
   const common = { ...getCorsHeaders(request, env), 'Accept-Ranges': 'bytes', 'Content-Type': sheet.audio_mime, 'Cache-Control': 'private, no-store', 'X-Content-Type-Options': 'nosniff' };
   if (range === false) return new Response(null, { status: 416, headers: { ...common, 'Content-Range': `bytes */${size}` } });
   const headers = { ...common, 'Content-Length': String(range ? range.length : size), ...(range ? { 'Content-Range': `bytes ${range.start}-${range.end}/${size}` } : {}) };
-  if (request.method === 'HEAD') return new Response(null, { status: range ? 206 : 200, headers });
+  if (request.method === 'HEAD') {
+    const object = await env.BUCKET.head(sheet.audio_key);
+    if (!object) return errorResponse('Arquivo de áudio indisponível', 404, request);
+    return new Response(null, { status: range ? 206 : 200, headers });
+  }
   const object = await env.BUCKET.get(sheet.audio_key, range ? { range: { offset: range.start, length: range.length } } : undefined);
   if (!object) return errorResponse('Arquivo de áudio indisponível', 404, request);
   return new Response(object.body, {
