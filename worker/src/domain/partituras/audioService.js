@@ -57,7 +57,10 @@ export async function uploadAudio(id, request, env) {
   try {
     const result = await env.DB.prepare('UPDATE partituras SET audio_key = ?, audio_mime = ?, audio_name = ?, audio_size = ?, atualizado_em = CURRENT_TIMESTAMP WHERE id = ? AND ativo = 1 AND audio_key IS ?')
       .bind(key, mime, file.name, file.size, id, sheet.audio_key).run();
-    if (result.meta?.changes !== 1) throw new Error('Partitura alterada durante o envio do áudio');
+    if (result.meta?.changes !== 1) {
+      await deleteBestEffort(env.BUCKET, key);
+      return errorResponse('Partitura alterada durante o envio do áudio; tente novamente', 409, request);
+    }
   } catch (error) {
     await deleteBestEffort(env.BUCKET, key);
     throw error;

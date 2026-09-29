@@ -2205,7 +2205,10 @@ export interface operations {
     };
     headPartituraAudio: {
         parameters: {
-            query?: never;
+            query: {
+                exp: number;
+                sig: string;
+            };
             header?: never;
             path: {
                 id: number;
@@ -2216,6 +2219,27 @@ export interface operations {
         responses: {
             /** @description Metadados do áudio */
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Metadados da faixa parcial */
+            206: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Assinatura inválida ou expirada */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Faixa inválida */
+            416: {
                 headers: {
                     [name: string]: unknown;
                 };

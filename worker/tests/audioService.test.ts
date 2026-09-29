@@ -37,6 +37,19 @@ describe('áudio oficial da partitura', () => {
     expect(events).toEqual(['put', 'db', 'delete']);
   });
 
+  it('retorna conflito e remove apenas o novo objeto quando a partitura muda durante o upload', async () => {
+    const deleted: string[] = [];
+    const bucket = { put: vi.fn(), delete: vi.fn(async (key: string) => { deleted.push(key); }) };
+    const form = new FormData();
+    form.set('audio', mp3());
+    const request = new Request('https://test.local/api/partituras/7/audio', { method: 'PUT', body: form });
+    const result = await uploadAudio('7', request, { DB: db(sheet, vi.fn().mockResolvedValue({ meta: { changes: 0 } })), BUCKET: bucket });
+    expect(result.status).toBe(409);
+    expect(deleted).toHaveLength(1);
+    expect(deleted[0]).toMatch(/^audios\/7\//);
+    expect(deleted).not.toContain(sheet.audio_key);
+  });
+
   it('gera URL assinada e responde ao navegador com conteúdo parcial', async () => {
     const bucket = { get: vi.fn().mockResolvedValue({ body: new Response('abc').body }) };
     const testEnv = { DB: db(), BUCKET: bucket, JWT_SECRET: 'test-secret' };

@@ -11,6 +11,7 @@ const { default: SheetAudioPlayer } = await import('./SheetAudioPlayer');
 
 describe('SheetAudioPlayer', () => {
   beforeEach(() => {
+    mockAccess.mockReset();
     mockAccess.mockResolvedValue({ url: 'https://test.local/audio?sig=test' });
     Object.defineProperty(HTMLMediaElement.prototype, 'play', { configurable: true, value: jest.fn().mockResolvedValue(undefined) });
     Object.defineProperty(HTMLMediaElement.prototype, 'pause', { configurable: true, value: jest.fn() });
@@ -45,6 +46,33 @@ describe('SheetAudioPlayer', () => {
     await user.click(screen.getByRole('button', { name: 'Fechar player' }));
     await act(async () => resolveAccess({ url: 'https://test.local/audio' }));
 
+    expect(HTMLMediaElement.prototype.play).not.toHaveBeenCalled();
+  });
+
+  test('permite iniciar com novo clique quando o navegador bloqueia a reprodução automática', async () => {
+    const blocked = new Error('User activation required');
+    blocked.name = 'NotAllowedError';
+    const play = jest.fn().mockRejectedValueOnce(blocked).mockResolvedValue(undefined);
+    Object.defineProperty(HTMLMediaElement.prototype, 'play', { configurable: true, value: play });
+    const user = userEvent.setup();
+    render(<SheetAudioPlayer sheet={{ id: '7', title: 'Música teste' }} />);
+
+    await user.click(screen.getByRole('button', { name: 'Ouvir partitura' }));
+    expect(await screen.findByText('Toque em reproduzir para iniciar o áudio.')).toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Reproduzir áudio' }));
+    expect(play).toHaveBeenCalledTimes(2);
+    expect(mockAccess).toHaveBeenCalledTimes(1);
+  });
+
+  test('não tenta ouvir completo antes de receber a URL', async () => {
+    mockAccess.mockImplementation(() => new Promise(() => {}));
+    const user = userEvent.setup();
+    render(<SheetAudioPlayer sheet={{ id: '7', title: 'Música teste' }} />);
+
+    await user.click(screen.getByRole('button', { name: 'Ouvir partitura' }));
+    expect(screen.getByRole('button', { name: 'Ouvir completo' })).toBeDisabled();
     expect(HTMLMediaElement.prototype.play).not.toHaveBeenCalled();
   });
 });

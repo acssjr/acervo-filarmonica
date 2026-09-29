@@ -19,6 +19,7 @@ export default function SheetAudioPlayer({ sheet }) {
   const [duration, setDuration] = useState(0);
   const [rate, setRate] = useState(1);
   const [error, setError] = useState('');
+  const [hint, setHint] = useState('');
 
   useEffect(() => {
     disposedRef.current = false;
@@ -37,6 +38,7 @@ export default function SheetAudioPlayer({ sheet }) {
     const requestVersion = ++requestVersionRef.current;
     setExpanded(true);
     setError('');
+    setHint('');
     if (sheet.audioMime && audio.canPlayType(sheet.audioMime) === '') {
       setError('Este formato de áudio não é reproduzido neste navegador.');
       return;
@@ -47,7 +49,14 @@ export default function SheetAudioPlayer({ sheet }) {
       if (disposedRef.current || requestVersion !== requestVersionRef.current) return;
       audio.src = url;
       audio.preload = 'metadata';
-      await audio.play();
+      setLoading(false);
+      try {
+        await audio.play();
+      } catch (playError) {
+        if (disposedRef.current || requestVersion !== requestVersionRef.current) return;
+        if (playError?.name === 'NotAllowedError') setHint('Toque em reproduzir para iniciar o áudio.');
+        else setError('Não foi possível reproduzir o áudio');
+      }
     } catch (caught) {
       if (!disposedRef.current && requestVersion === requestVersionRef.current) setError(caught.message || 'Não foi possível carregar o áudio');
     } finally {
@@ -61,6 +70,7 @@ export default function SheetAudioPlayer({ sheet }) {
     if (audio.paused) {
       if (!audio.src) { start(); return; }
       if (!full && audio.currentTime >= Math.min(30, audio.duration || 30)) audio.currentTime = 0;
+      setHint('');
       audio.play().catch(() => setError('Não foi possível reproduzir o áudio'));
     } else audio.pause();
   };
@@ -73,7 +83,9 @@ export default function SheetAudioPlayer({ sheet }) {
   };
 
   const chooseFull = () => {
+    if (loading || !audioRef.current?.getAttribute('src')) return;
     setFull(true);
+    setHint('');
     audioRef.current?.play().catch(() => setError('Não foi possível reproduzir o áudio'));
   };
 
@@ -102,6 +114,7 @@ export default function SheetAudioPlayer({ sheet }) {
           </div>
           <p style={{ color: 'var(--text-muted)', fontSize: 11, margin: '5px 0 10px' }}>{full ? 'Reprodução completa' : 'Trecho de até 30 segundos'}</p>
           {loading && <p role="status" style={{ fontSize: 12 }}>Carregando áudio...</p>}
+          {hint && <p role="status" style={{ fontSize: 12 }}>{hint}</p>}
           {error && <p role="alert" style={{ fontSize: 12, color: '#b32929' }}>{error} <button type="button" onClick={start}>Tentar novamente</button></p>}
           <div style={{ display: 'grid', gridTemplateColumns: '72px 44px 72px', justifyContent: 'center', alignItems: 'center', columnGap: 12, color: '#5c1a1b' }}>
             <button type="button" onClick={() => skip(-10)} disabled={loading} aria-label="Voltar 10 segundos" style={{ width: 72, minHeight: 44, border: 0, background: 'none', color: 'inherit', textAlign: 'center' }}>↶ 10</button>
@@ -111,7 +124,7 @@ export default function SheetAudioPlayer({ sheet }) {
           <input type="range" min="0" max={limit || 30} step="0.1" value={Math.min(currentTime, limit || 30)} onChange={event => { audioRef.current.currentTime = Number(event.target.value); }} aria-label="Posição do áudio" style={{ width: '100%', accentColor: '#b49438', marginTop: 10 }} />
           <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted)', fontSize: 10 }}><span>{formatTime(currentTime)}</span><span>{formatTime(limit)}</span></div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 9 }}>
-            {!full ? <button type="button" onClick={chooseFull} style={{ border: 0, background: 'none', color: '#722f37', textDecoration: 'underline', fontSize: 12, fontWeight: 700, padding: '8px 0' }}>Ouvir completo</button> : <span />}
+            {!full ? <button type="button" onClick={chooseFull} disabled={loading || !!error} style={{ border: 0, background: 'none', color: '#722f37', textDecoration: 'underline', fontSize: 12, fontWeight: 700, padding: '8px 0' }}>Ouvir completo</button> : <span />}
             <label style={{ color: 'var(--text-muted)', fontSize: 11 }}>Velocidade <select aria-label="Velocidade do áudio" value={rate} onChange={event => { const next = Number(event.target.value); setRate(next); audioRef.current.playbackRate = next; }} style={{ marginLeft: 5, minHeight: 36, borderRadius: 7, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}><option value="0.75">0,75×</option><option value="1">1×</option><option value="1.25">1,25×</option><option value="1.5">1,5×</option></select></label>
           </div>
         </div>
