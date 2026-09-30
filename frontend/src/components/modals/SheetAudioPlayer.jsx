@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import { ChevronDown, Headphones, LoaderCircle, Pause, Play, RotateCcw, RotateCw } from 'lucide-react';
+import { useEffect, useId, useRef, useState } from 'react';
+import { ChevronDown, LoaderCircle, Pause, Play, RotateCcw, RotateCw } from 'lucide-react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { API } from '@services/api';
 import './SheetAudioPlayer.css';
@@ -10,7 +10,8 @@ const formatTime = (seconds) => {
   return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, '0')}`;
 };
 
-export default function SheetAudioPlayer({ sheet }) {
+export default function SheetAudioPlayer({ sheet, summary }) {
+  const controlsId = useId();
   const reducedMotion = useReducedMotion();
   const audioRef = useRef(null);
   const requestVersionRef = useRef(0);
@@ -111,23 +112,25 @@ export default function SheetAudioPlayer({ sheet }) {
   );
 
   return (
-    <section aria-label="Áudio oficial da partitura" className="sheet-audio">
+    <section aria-label="Áudio da partitura" className="sheet-audio">
       <audio ref={audioRef} preload="metadata" onLoadedMetadata={event => setDuration(event.currentTarget.duration)} onTimeUpdate={onTimeUpdate} onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} onEnded={() => setPlaying(false)} onError={() => setError('Falha ao carregar o áudio. Tente novamente.')} />
       {!started ? (
-        <button type="button" onClick={start} className="sheet-audio-start">
+        <div className="sheet-audio-summary">
+          {summary}
+        <button type="button" onClick={start} className="sheet-audio-start" aria-label="Ouvir partitura">
           <span className="sheet-audio-start-icon"><Play size={17} fill="currentColor" /></span>
-          <span>Ouvir partitura</span>
-          <Headphones size={18} className="sheet-audio-start-headphones" />
+          <span>Áudio da música</span>
         </button>
+        </div>
       ) : (
         <div className={`sheet-audio-panel${expanded ? '' : ' sheet-audio-panel-compact'}`}>
           <div className="sheet-audio-header">
+            {summary}
             <div className="sheet-audio-title">
-              <Headphones size={18} aria-hidden="true" />
-              <div><strong>Áudio oficial</strong><p>{loading ? 'Carregando áudio…' : expanded ? (full ? 'Reprodução completa' : 'Trecho de até 30 segundos') : `${playing ? 'Tocando' : 'Pausado'} · ${formatTime(currentTime)}`}</p></div>
+              <div><strong>Áudio da música</strong><p>{loading ? 'Carregando áudio…' : expanded ? (full ? 'Reprodução completa' : 'Trecho de até 30 segundos') : `${playing ? 'Tocando' : 'Pausado'} · ${formatTime(currentTime)}`}</p></div>
             </div>
             {!expanded && playButton(true)}
-            <button type="button" className="sheet-audio-disclosure" onClick={() => setExpanded(previous => !previous)} aria-label={expanded ? 'Recolher player' : 'Expandir player'} aria-expanded={expanded}>
+            <button type="button" className="sheet-audio-disclosure" onClick={() => setExpanded(previous => !previous)} aria-label={expanded ? 'Recolher player' : 'Expandir player'} aria-expanded={expanded} aria-controls={controlsId}>
               <ChevronDown size={20} />
             </button>
           </div>
@@ -135,6 +138,7 @@ export default function SheetAudioPlayer({ sheet }) {
           {error && <p role="alert" className="sheet-audio-error">{error} <button type="button" onClick={start}>Tentar novamente</button></p>}
           <motion.div
             className="sheet-audio-expansion"
+            id={controlsId}
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: expanded ? 'auto' : 0, opacity: expanded ? 1 : 0 }}
             transition={{ duration: reducedMotion ? 0 : 0.3, ease: [0.22, 1, 0.36, 1] }}

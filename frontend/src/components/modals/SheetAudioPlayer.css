@@ -1,10 +1,12 @@
-.sheet-audio { border-top: 1px solid var(--border); padding-top: 14px; margin-bottom: 18px; }
+.sheet-audio { margin-bottom: 18px; }
 .sheet-audio button { font: inherit; cursor: pointer; }
 .sheet-audio button:disabled { opacity: .45; cursor: not-allowed; }
 .sheet-audio button:focus-visible, .sheet-audio select:focus-visible, .sheet-audio-progress:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
-.sheet-audio-start { width: 100%; min-height: 56px; display: flex; align-items: center; gap: 12px; padding: 10px 14px; border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border)); border-radius: 12px; background: color-mix(in srgb, var(--accent) 7%, var(--bg-card)); color: var(--text-primary); font-size: 13px !important; font-weight: 700 !important; text-align: left; }
+.sheet-audio-summary { display: flex; align-items: center; gap: 12px; min-height: 56px; }
+.sheet-audio-downloads { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 52px; min-height: 36px; padding: 0 10px; border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary); font-size: 12px; font-weight: 600; flex-shrink: 0; }
+.sheet-audio-downloads svg { display: block; color: var(--text-secondary); }
+.sheet-audio-start { flex: 1; min-width: 0; min-height: 48px; display: flex; align-items: center; gap: 10px; padding: 6px 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-secondary); color: var(--text-primary); font-size: 13px !important; font-weight: 700 !important; text-align: left; }
 .sheet-audio-start-icon { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: #211b09; flex-shrink: 0; }
-.sheet-audio-start-headphones { margin-left: auto; color: var(--text-secondary); }
 .sheet-audio-panel { padding: 14px 16px; border: 1px solid var(--border); border-radius: 14px; background: var(--bg-secondary); color: var(--text-primary); }
 .sheet-audio-header { display: flex; align-items: center; gap: 10px; }
 .sheet-audio-title { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
@@ -16,10 +18,8 @@
 .sheet-audio-disclosure svg { transition: transform .3s cubic-bezier(.22, 1, .36, 1); }
 .sheet-audio-disclosure[aria-expanded="true"] svg { transform: rotate(180deg); }
 .sheet-audio-expansion { overflow: hidden; }
-.sheet-audio-unavailable { display: flex; align-items: center; gap: 12px; min-height: 62px; padding: 12px 16px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg-secondary); color: var(--text-secondary); }
+.sheet-audio-unavailable { display: flex; align-items: center; flex: 1; min-width: 0; gap: 8px; color: var(--text-secondary); font-size: 12px; line-height: 1.5; }
 .sheet-audio-unavailable > svg { flex-shrink: 0; }
-.sheet-audio-unavailable strong { display: block; color: var(--text-primary); font-size: 13px; line-height: 1.5; }
-.sheet-audio-unavailable p { margin: 3px 0 0; font-size: 12px; line-height: 1.5; }
 .sheet-audio-controls { display: grid; grid-template-columns: 48px 56px 48px; gap: 22px; justify-content: center; align-items: center; margin: 18px 0 20px; }
 .sheet-audio-play { width: 56px; height: 56px; padding: 0; border: 0; border-radius: 50%; background: var(--accent); color: #211b09; display: grid; place-items: center; }
 .sheet-audio-play:hover:not(:disabled) { background: var(--accent-light); }

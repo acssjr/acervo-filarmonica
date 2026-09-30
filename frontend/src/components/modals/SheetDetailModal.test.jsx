@@ -246,7 +246,7 @@ describe('SheetDetailModal', () => {
       mockSelectedSheet = createMockSheet({ hasAudio: false, youtubeUrl: null });
       renderModal();
 
-      expect(await screen.findByRole('region', { name: 'Áudio oficial da partitura' })).toBeInTheDocument();
+      expect(await screen.findByRole('region', { name: 'Áudio da partitura' })).toBeInTheDocument();
       expect(screen.getByText('Áudio ainda não disponível')).toBeInTheDocument();
       expect(screen.queryByRole('button', { name: 'Ouvir partitura' })).not.toBeInTheDocument();
       expect(screen.queryByRole('link', { name: /Ver no YouTube/ })).not.toBeInTheDocument();
