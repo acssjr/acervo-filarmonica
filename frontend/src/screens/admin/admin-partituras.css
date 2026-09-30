@@ -3,6 +3,8 @@
 .admin-partituras-heading h1 { margin: 0; }
 .admin-partituras-subtitle { margin: 6px 0 0; color: var(--text-secondary); font-size: 13px; }
 .admin-partituras-upload-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+.admin-audio-batch-trigger { min-height: 44px; padding: 10px 20px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-primary); font: inherit; font-size: 14px; cursor: pointer; }
+.admin-audio-batch-trigger:disabled { opacity: .5; cursor: not-allowed; }
 .admin-partituras-toolbar { position: sticky; top: 0; z-index: 30; margin: 0 0 14px; padding: 16px; border: 1px solid var(--border); border-radius: 16px; background: color-mix(in srgb, var(--bg-primary) 94%, transparent); box-shadow: 0 8px 22px rgba(0,0,0,.06); backdrop-filter: blur(12px); }
 .admin-partituras-toolbar-title { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
 .admin-partituras-toolbar-title h2 { margin: 0 0 3px; color: var(--text-primary); font-size: 15px; }

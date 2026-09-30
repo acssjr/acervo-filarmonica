@@ -24,6 +24,7 @@ import './admin-partituras.css';
 
 const PDFViewerModal = lazy(() => import('@components/modals/PDFViewerModal'));
 const ImportacaoLoteModal = lazy(() => import('@components/modals/ImportacaoLoteModal'));
+const AudioBatchModal = lazy(() => import('./modals/AudioBatchModal'));
 
 
 // ===== FUNÇÕES MODULE-LEVEL (não recriadas a cada render) =====
@@ -123,6 +124,7 @@ const AdminPartituras = () => {
   const [showCatDropdown, setShowCatDropdown] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showImportacaoLote, setShowImportacaoLote] = useState(false);
+  const [showAudioBatch, setShowAudioBatch] = useState(false);
 
 
   // Estado para drag & drop global na tela
@@ -292,6 +294,7 @@ const AdminPartituras = () => {
 
   // Handlers de drag & drop global
   const handleGlobalDragEnter = useCallback((e) => {
+    if (e.target.closest?.('[data-audio-batch]')) return;
     e.preventDefault();
     e.stopPropagation();
     dragCounterRef.current++;
@@ -301,9 +304,10 @@ const AdminPartituras = () => {
   }, []);
 
   const handleGlobalDragLeave = useCallback((e) => {
+    if (e.target.closest?.('[data-audio-batch]')) return;
     e.preventDefault();
     e.stopPropagation();
-    dragCounterRef.current--;
+    dragCounterRef.current = Math.max(0, dragCounterRef.current - 1);
     if (dragCounterRef.current === 0) {
       setIsDraggingOver(false);
     }
@@ -315,6 +319,7 @@ const AdminPartituras = () => {
   }, []);
 
   const handleGlobalDrop = useCallback(async (e) => {
+    if (e.target.closest?.('[data-audio-batch]')) return;
     e.preventDefault();
     e.stopPropagation();
     setIsDraggingOver(false);
@@ -992,6 +997,9 @@ const AdminPartituras = () => {
         <p className="admin-partituras-subtitle">Encontre uma peça, gerencie suas partes ou envie uma nova pasta.</p>
         </div>
         <div className="admin-partituras-upload-actions">
+          <button type="button" className="admin-audio-batch-trigger" disabled={tutorialPending || showTutorial} onClick={() => setShowAudioBatch(true)}>
+            Áudios em lote
+          </button>
           <button
             data-tutorial="upload-pasta"
             onClick={() => window.adminNav?.('partituras', 'pasta')}
@@ -1953,6 +1961,7 @@ const AdminPartituras = () => {
       />
 
       {/* Modal de Importação em Lote */}
+      {showAudioBatch && <Suspense fallback={null}><AudioBatchModal partituras={partituras} onClose={() => setShowAudioBatch(false)} onUpdate={updateEditingMedia} /></Suspense>}
       <Suspense fallback={null}>
         <ImportacaoLoteModal
           isOpen={showImportacaoLote}
