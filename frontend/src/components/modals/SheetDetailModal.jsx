@@ -6,6 +6,7 @@
 import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Headphones } from 'lucide-react';
 import { useAuth } from '@contexts/AuthContext';
 import { useUI } from '@contexts/UIContext';
 import { useData } from '@contexts/DataContext';
@@ -486,16 +487,21 @@ const SheetDetailModal = () => {
                 )}
               </div>
 
-              {(audioSheet.hasAudio || audioSheet.youtubeUrl) && (
                 <div>
-                  {audioSheet.hasAudio && <SheetAudioPlayer key={selectedSheet.id} sheet={audioSheet} />}
+                  {audioSheet.hasAudio ? <SheetAudioPlayer key={selectedSheet.id} sheet={audioSheet} /> : (
+                    <section className="sheet-audio" aria-label="Áudio oficial da partitura">
+                      <div className="sheet-audio-unavailable">
+                        <Headphones size={22} aria-hidden="true" />
+                        <div><strong>Áudio oficial</strong><p>Áudio ainda não disponível</p></div>
+                      </div>
+                    </section>
+                  )}
                   {audioSheet.youtubeUrl && (
                     <a href={audioSheet.youtubeUrl} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', color: 'var(--accent)', fontSize: 12, fontWeight: 700, marginBottom: 14, textDecoration: 'underline' }}>
                       Ver no YouTube ↗
                     </a>
                   )}
                 </div>
-              )}
 
               {/* Opções de Download / Ações Rápidas */}
               <div style={{ marginBottom: '14px' }}>

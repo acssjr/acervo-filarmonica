@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { ChevronDown, ChevronUp, Headphones, LoaderCircle, Pause, Play, RotateCcw, RotateCw } from 'lucide-react';
+import { ChevronDown, Headphones, LoaderCircle, Pause, Play, RotateCcw, RotateCw } from 'lucide-react';
+import { motion, useReducedMotion } from 'framer-motion';
 import { API } from '@services/api';
 import './SheetAudioPlayer.css';
 
@@ -10,6 +11,7 @@ const formatTime = (seconds) => {
 };
 
 export default function SheetAudioPlayer({ sheet }) {
+  const reducedMotion = useReducedMotion();
   const audioRef = useRef(null);
   const requestVersionRef = useRef(0);
   const disposedRef = useRef(false);
@@ -126,12 +128,19 @@ export default function SheetAudioPlayer({ sheet }) {
             </div>
             {!expanded && playButton(true)}
             <button type="button" className="sheet-audio-disclosure" onClick={() => setExpanded(previous => !previous)} aria-label={expanded ? 'Recolher player' : 'Expandir player'} aria-expanded={expanded}>
-              {expanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+              <ChevronDown size={20} />
             </button>
           </div>
           {hint && <p role="status" className="sheet-audio-message">{hint}</p>}
           {error && <p role="alert" className="sheet-audio-error">{error} <button type="button" onClick={start}>Tentar novamente</button></p>}
-          {expanded && (
+          <motion.div
+            className="sheet-audio-expansion"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: expanded ? 'auto' : 0, opacity: expanded ? 1 : 0 }}
+            transition={{ duration: reducedMotion ? 0 : 0.3, ease: [0.22, 1, 0.36, 1] }}
+            aria-hidden={!expanded}
+            inert={!expanded ? '' : undefined}
+          >
             <div className="sheet-audio-details">
               <div className="sheet-audio-controls">
                 <button type="button" className="sheet-audio-skip" onClick={() => skip(-10)} disabled={loading || !!error} aria-label="Voltar 10 segundos"><RotateCcw size={29} strokeWidth={1.7} /><span aria-hidden="true">10</span></button>
@@ -145,7 +154,7 @@ export default function SheetAudioPlayer({ sheet }) {
                 <label className="sheet-audio-rate">Velocidade <select aria-label="Velocidade do áudio" value={rate} onChange={event => { const next = Number(event.target.value); setRate(next); audioRef.current.playbackRate = next; }}><option value="0.75">0,75×</option><option value="1">1×</option><option value="1.25">1,25×</option><option value="1.5">1,5×</option></select></label>
               </div>
             </div>
-          )}
+          </motion.div>
         </div>
       )}
     </section>
