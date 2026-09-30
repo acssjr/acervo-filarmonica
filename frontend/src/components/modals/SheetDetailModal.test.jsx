@@ -220,6 +220,7 @@ describe('SheetDetailModal', () => {
 
       await waitFor(() => expect(screen.queryByRole('button', { name: 'Ouvir partitura' })).not.toBeInTheDocument());
       expect(screen.queryByRole('link', { name: /Ver no YouTube/ })).not.toBeInTheDocument();
+      expect(screen.getByText('Áudio ainda não disponível')).toBeInTheDocument();
     });
 
     test('mostra o botão de áudio e o link externo no modal quando cadastrados', async () => {
@@ -232,12 +233,23 @@ describe('SheetDetailModal', () => {
       expect(link).toHaveAttribute('target', '_blank');
     });
 
-    test('mostra apenas o link quando não existe arquivo de áudio', async () => {
+    test('mostra a indisponibilidade do arquivo junto ao link do YouTube', async () => {
       mockSelectedSheet = createMockSheet({ hasAudio: false, youtubeUrl: 'https://youtu.be/abc' });
       renderModal();
 
       expect(await screen.findByRole('link', { name: /Ver no YouTube/ })).toBeInTheDocument();
       expect(screen.queryByRole('button', { name: 'Ouvir partitura' })).not.toBeInTheDocument();
+      expect(screen.getByText('Áudio ainda não disponível')).toBeInTheDocument();
+    });
+
+    test('mantém a seção de áudio visível sem arquivo nem link', async () => {
+      mockSelectedSheet = createMockSheet({ hasAudio: false, youtubeUrl: null });
+      renderModal();
+
+      expect(await screen.findByRole('region', { name: 'Áudio da partitura' })).toBeInTheDocument();
+      expect(screen.getByText('Áudio ainda não disponível')).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Ouvir partitura' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('link', { name: /Ver no YouTube/ })).not.toBeInTheDocument();
     });
 
     test('nao renderiza quando selectedSheet e null', () => {

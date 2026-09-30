@@ -1,0 +1,48 @@
+.sheet-audio { margin-bottom: 18px; }
+.sheet-audio button { font: inherit; cursor: pointer; }
+.sheet-audio button:disabled { opacity: .45; cursor: not-allowed; }
+.sheet-audio button:focus-visible, .sheet-audio select:focus-visible, .sheet-audio-progress:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+.sheet-audio-summary { display: flex; align-items: center; gap: 12px; min-height: 56px; }
+.sheet-audio-downloads { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 52px; min-height: 36px; padding: 0 10px; border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary); font-size: 12px; font-weight: 600; flex-shrink: 0; }
+.sheet-audio-downloads svg { display: block; color: var(--text-secondary); }
+.sheet-audio-start { flex: 1; min-width: 0; min-height: 48px; display: flex; align-items: center; gap: 10px; padding: 6px 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-secondary); color: var(--text-primary); font-size: 13px !important; font-weight: 700 !important; text-align: left; }
+.sheet-audio-start-icon { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: #211b09; flex-shrink: 0; }
+.sheet-audio-panel { padding: 14px 16px; border: 1px solid var(--border); border-radius: 14px; background: var(--bg-secondary); color: var(--text-primary); }
+.sheet-audio-header { display: flex; align-items: center; gap: 10px; }
+.sheet-audio-title { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
+.sheet-audio-title > svg { color: var(--text-secondary); flex-shrink: 0; }
+.sheet-audio-title strong { display: block; font-size: 13px; line-height: 1.5; font-weight: 700; }
+.sheet-audio-title p { margin: 2px 0 0; color: var(--text-secondary); font-size: 11px; line-height: 1.5; }
+.sheet-audio-disclosure { width: 36px; height: 36px; border: 0; border-radius: 8px; display: grid; place-items: center; background: transparent; color: var(--text-secondary); flex-shrink: 0; }
+.sheet-audio-disclosure:hover { background: var(--bg-card-hover); color: var(--text-primary); }
+.sheet-audio-disclosure svg { transition: transform .3s cubic-bezier(.22, 1, .36, 1); }
+.sheet-audio-disclosure[aria-expanded="true"] svg { transform: rotate(180deg); }
+.sheet-audio-expansion { overflow: hidden; }
+.sheet-audio-unavailable { display: flex; align-items: center; flex: 1; min-width: 0; gap: 8px; color: var(--text-secondary); font-size: 12px; line-height: 1.5; }
+.sheet-audio-unavailable > svg { flex-shrink: 0; }
+.sheet-audio-controls { display: grid; grid-template-columns: 48px 56px 48px; gap: 22px; justify-content: center; align-items: center; margin: 18px 0 20px; }
+.sheet-audio-play { width: 56px; height: 56px; padding: 0; border: 0; border-radius: 50%; background: var(--accent); color: #211b09; display: grid; place-items: center; }
+.sheet-audio-play:hover:not(:disabled) { background: var(--accent-light); }
+.sheet-audio-play svg { display: block; }
+.sheet-audio-play-compact { width: 38px; height: 38px; flex-shrink: 0; }
+.sheet-audio-play-compact svg { width: 18px; height: 18px; }
+.sheet-audio-skip { position: relative; width: 48px; height: 48px; display: grid; place-items: center; border: 1px solid var(--border); border-radius: 50%; background: var(--bg-card); color: var(--text-primary); }
+.sheet-audio-skip:hover:not(:disabled) { background: var(--bg-card-hover); }
+.sheet-audio-skip span { position: absolute; inset: 0; display: grid; place-items: center; padding-top: 2px; font-size: 10px; font-weight: 750; }
+.sheet-audio-progress { display: block; appearance: none; width: 100%; height: 6px; padding: 0; margin: 0; border: 0; border-radius: 3px; background: linear-gradient(to right, var(--accent) var(--audio-progress), color-mix(in srgb, var(--text-secondary) 25%, var(--bg-card)) var(--audio-progress)); cursor: pointer; }
+.sheet-audio-progress::-webkit-slider-thumb { appearance: none; width: 14px; height: 14px; border: 2px solid var(--bg-card); border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.sheet-audio-progress::-moz-range-thumb { width: 12px; height: 12px; border: 2px solid var(--bg-card); border-radius: 50%; background: var(--accent); }
+.sheet-audio-times { display: flex; justify-content: space-between; margin-top: 10px; color: var(--text-secondary); font-size: 11px; font-variant-numeric: tabular-nums; }
+.sheet-audio-footer { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 15px; padding-top: 12px; border-top: 1px solid var(--border); }
+.sheet-audio-full { min-height: 36px; padding: 0 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-card); color: var(--text-primary); font-size: 12px !important; font-weight: 650 !important; white-space: nowrap; }
+.sheet-audio-full:hover:not(:disabled) { border-color: var(--accent-dark); }
+.sheet-audio-full-label { color: var(--text-secondary); font-size: 11px; }
+.sheet-audio-rate { display: flex; align-items: center; gap: 7px; color: var(--text-secondary); font-size: 11px; }
+.sheet-audio-rate select { min-height: 36px; padding: 0 5px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-card); color: var(--text-primary); font-size: 12px; cursor: pointer; }
+.sheet-audio-message, .sheet-audio-error { margin: 12px 0 0; font-size: 12px; line-height: 1.6; color: var(--text-secondary); }
+.sheet-audio-error { color: var(--text-primary); }
+.sheet-audio-error button { display: block; min-height: 36px; margin-top: 5px; border: 0; background: transparent; color: var(--text-primary); text-decoration: underline; }
+.sheet-audio-spinner { animation: sheetAudioSpin .8s linear infinite; }
+@keyframes sheetAudioSpin { to { transform: rotate(360deg); } }
+@media (max-width: 360px) { .sheet-audio-panel { padding: 12px; } .sheet-audio-footer { gap: 8px; } .sheet-audio-rate { gap: 4px; } }
+@media (prefers-reduced-motion: reduce) { .sheet-audio-spinner { animation: none; } .sheet-audio-disclosure svg { transition: none; } }
