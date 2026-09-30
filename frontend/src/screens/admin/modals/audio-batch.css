@@ -1,11 +1,10 @@
 .audio-batch-overlay { position: fixed; inset: 0; z-index: 3000; display: grid; place-items: center; padding: 20px; background: rgba(0,0,0,.65); backdrop-filter: blur(5px); }
-.audio-batch-dialog { width: min(850px,100%); max-height: 92dvh; display: flex; flex-direction: column; background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border); border-radius: 20px; box-shadow: 0 24px 80px rgba(0,0,0,.3); }
+.audio-batch-dialog { width: min(850px,100%); min-width: 0; max-height: 92dvh; display: flex; flex-direction: column; background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border); border-radius: 16px; box-shadow: 0 24px 80px rgba(0,0,0,.3); }
 .audio-batch-dialog header, .audio-batch-dialog footer { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 20px 24px; }
 .audio-batch-dialog header { border-bottom: 1px solid var(--border); }
 .audio-batch-dialog h2 { font-size: 23px; margin: 6px 0; }
 .audio-batch-dialog p { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
-.audio-batch-eyebrow { font-size: 10px; letter-spacing: .1em; color: var(--accent); font-weight: 700; }
-.audio-batch-content { overflow-y: auto; padding: 20px 24px; }
+.audio-batch-content { min-width: 0; overflow-y: auto; overflow-x: hidden; padding: 20px 24px; }
 .audio-batch-dialog button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 10px 14px; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 10px; font: inherit; font-size: 13px; cursor: pointer; }
 .audio-batch-dialog button:disabled { opacity: .5; cursor: not-allowed; }
 .audio-batch-dialog button:focus-visible, .audio-batch-dialog select:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
@@ -19,7 +18,16 @@
 .audio-batch-filename strong { display: block; overflow-wrap: anywhere; font-size: 14px; }
 .audio-batch-filename small { display: block; margin-top: 5px; color: var(--text-secondary); font-size: 11px; }
 .audio-batch-row label { font-size: 12px; }
-.audio-batch-row select { display: block; width: 100%; min-height: 44px; margin-top: 5px; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 8px; padding: 8px; }
+.audio-batch-row.identified { border-color: #38865f; background: rgba(56,134,95,.06); }
+.audio-batch-row.needs-review { border-color: #b78a29; background: rgba(183,138,41,.06); }
+.audio-batch-match-status { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12px; }
+.audio-batch-match-status.matched { color: #287a50; }
+.audio-batch-match-status.unmatched { color: #926910; }
+[data-theme="dark"] .audio-batch-match-status.matched { color: #78cba0; }
+[data-theme="dark"] .audio-batch-match-status.unmatched { color: #e9c364; }
+.audio-batch-match-status span { flex-basis: 100%; color: var(--text-secondary); overflow-wrap: anywhere; }
+.audio-batch-summary { font-weight: 600; }
+.audio-batch-row .acervo-select { margin-top: 6px; }
 .audio-batch-replace { display: flex; align-items: center; gap: 8px; color: var(--text-secondary); overflow-wrap: anywhere; }
 .audio-batch-row-bottom { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 12px; color: var(--text-secondary); }
 .audio-batch-row.success { border-color: #38865f; }
@@ -27,5 +35,6 @@
 .audio-batch-row.failed { border-color: #b54444; }
 .audio-batch-dialog footer { border-top: 1px solid var(--border); font-size: 12px; color: var(--text-secondary); }
 .audio-batch-dialog .audio-batch-submit { background: #722f37; color: #f4e4bc; border-color: #722f37; font-weight: 700; }
-.audio-batch-dialog progress { width: 100%; accent-color: #b49438; margin-bottom: 15px; }
+.audio-batch-progress { height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; margin-bottom: 15px; }
+.audio-batch-progress > span { display: block; height: 100%; background: var(--accent-dark); }
 @media(max-width:600px) { .audio-batch-overlay { padding: 8px; } .audio-batch-dialog { max-height: 96dvh; border-radius: 14px; } .audio-batch-dialog header, .audio-batch-dialog footer, .audio-batch-content { padding: 16px; } .audio-batch-row-bottom { flex-wrap: wrap; } }

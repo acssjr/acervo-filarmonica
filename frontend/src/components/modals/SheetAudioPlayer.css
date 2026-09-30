@@ -38,7 +38,8 @@
 .sheet-audio-full:hover:not(:disabled) { border-color: var(--accent-dark); }
 .sheet-audio-full-label { color: var(--text-secondary); font-size: 11px; }
 .sheet-audio-rate { display: flex; align-items: center; gap: 7px; color: var(--text-secondary); font-size: 11px; }
-.sheet-audio-rate select { min-height: 36px; padding: 0 5px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-card); color: var(--text-primary); font-size: 12px; cursor: pointer; }
+.sheet-audio-rate .acervo-select { width: 90px; }
+.sheet-audio-rate .acervo-select-trigger { padding: 8px 10px; font-size: 12px; }
 .sheet-audio-message, .sheet-audio-error { margin: 12px 0 0; font-size: 12px; line-height: 1.6; color: var(--text-secondary); }
 .sheet-audio-error { color: var(--text-primary); }
 .sheet-audio-error button { display: block; min-height: 36px; margin-top: 5px; border: 0; background: transparent; color: var(--text-primary); text-decoration: underline; }

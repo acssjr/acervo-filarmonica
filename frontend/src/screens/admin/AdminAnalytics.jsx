@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { API } from '@services/api';
+import AcervoDatePicker from '@components/common/AcervoDatePicker';
 import { useMediaQuery } from '@hooks/useMediaQuery';
 import { Activity, AlertTriangle, ArrowDownRight, ArrowUpRight, CalendarDays, Download, Eye, FileText, Flame, RefreshCw, Search, ShieldCheck, Sparkles, UserCheck, Users } from 'lucide-react';
 
@@ -57,7 +58,7 @@ function AnalyticsVisualOverrides() { return <style>{`
 `}</style>; }
 function Panel({ title, subtitle, icon: Icon, children, action }) { return <section className="analytics-panel"><AnalyticsVisualOverrides /><div className="analytics-panel-heading"><div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>{Icon && <span className="analytics-panel-icon"><Icon size={17} /></span>}<div style={{ minWidth: 0 }}><h2>{title}</h2>{subtitle && <p>{subtitle}</p>}</div></div>{action}</div>{children}</section>; }
 function MetricCard({ label, value, helper, icon: Icon, color = GOLD, delta }) { const change = deltaLabel(delta); return <article className="analytics-metric" style={{ '--metric-color': color }}><div className="analytics-metric-top"><span>{label}</span><span className="analytics-metric-icon"><Icon size={17} /></span></div><strong>{value}</strong><div className="analytics-metric-bottom"><span>{helper}</span>{change.positive !== null && <span className={change.positive ? 'analytics-positive' : 'analytics-negative'}>{change.positive ? <ArrowUpRight size={13} /> : <ArrowDownRight size={13} />}{change.text}</span>}</div></article>; }
-function DateRange({ start, end, onStartChange, onEndChange }) { return <div className="analytics-date-range"><label><CalendarDays size={14} /> Início<input type="date" value={start} onChange={(event) => onStartChange(event.target.value)} /></label><span>até</span><label><CalendarDays size={14} /> Fim<input type="date" value={end} onChange={(event) => onEndChange(event.target.value)} /></label></div>; }
+function DateRange({ start, end, onStartChange, onEndChange }) { return <div className="analytics-date-range"><div><label><CalendarDays size={14} /> Início</label><AcervoDatePicker ariaLabel="Data inicial" value={start} onChange={onStartChange} /></div><span>até</span><div><label><CalendarDays size={14} /> Fim</label><AcervoDatePicker ariaLabel="Data final" value={end} onChange={onEndChange} /></div></div>; }
 function InsightCard({ insight }) { const isAlert = insight.tipo === 'alerta'; return <article className={`analytics-insight ${isAlert ? 'is-alert' : ''}`}><span className="analytics-insight-icon">{isAlert ? <AlertTriangle size={17} /> : <Sparkles size={17} />}</span><div><strong>{insight.titulo}</strong><p>{insight.descricao}</p></div>{insight.confianca && <small>{insight.confianca}</small>}</article>; }
 function RankingTable({ items, columns, emptyTitle = 'Nenhum registro no período', visual = false, metricKey }) {
   if (!items?.length) return <EmptyState icon={Users} title={emptyTitle} />;

@@ -2,6 +2,14 @@ import { describe, test, expect } from '@jest/globals';
 import { matchAudioTitle, normalizeAudioTitle, readAudioDrop, isAudioFile } from './audioBatch';
 
 describe('associação de áudios', () => {
+  test('numeração de lote não desloca título e compositor; preserva números musicais', () => {
+    const catalog = [{ id: 29, titulo: 'Ressurreição', compositor: 'Tertuliano Santos' }, { id: 30, titulo: 'Tusca', compositor: 'Estevam Moura' }, { id: 7, titulo: 'Marcha Nº 7' }];
+    expect(matchAudioTitle('29 – Marcha Concertante Ressurreição – Tertuliano Santos – Sociedade Filarmônica 25 de Março.mp3', catalog).selectedId).toBe('29');
+    expect(matchAudioTitle('30 – Dobrado Tusca – Estevam Moura – Sociedade Filarmônica 25 de Março.mp3', catalog).selectedId).toBe('30');
+    expect(matchAudioTitle('030_Dobrado Tusca_Estevam Moura_Sociedade Filarmônica 25 de Março.wav', catalog).selectedId).toBe('30');
+    expect(matchAudioTitle('07. Marcha Nº 7.mp3', catalog).selectedId).toBe('7');
+    expect(matchAudioTitle('Marcha Nº 8.mp3', catalog).selectedId).toBe('');
+  });
   const sheets = [{ id: 1, titulo: 'Canção do Sertão' }, { id: 2, titulo: 'Marcha Nº 7' }, { id: 3, titulo: 'Marcha Nº 8' }];
   test('acentos, pontuação, extensão e sufixo de exportação', () => {
     expect(matchAudioTitle('CANCAO_DO_SERTAO - instrumentos virtuais.mp3', sheets).selectedId).toBe('1');
@@ -14,6 +22,20 @@ describe('associação de áudios', () => {
     expect(match.selectedId).toBe('');
     expect(match.candidates[0].id).toBe(1);
     expect(matchAudioTitle('desconhecido.mp3', sheets).candidates).toEqual([]);
+  });
+  test('sugere erros pequenos de escrita sem anexar à música errada', () => {
+    const catalog = [{ id: 1, titulo: 'Ressurreição' }, { id: 2, titulo: 'Marcha Nº 7' }];
+    expect(matchAudioTitle('29 – Marcha Concertante Ressureição – Tertuliano Santos.mp3', catalog).candidates.map(item => item.id)).toEqual([1]);
+    expect(matchAudioTitle('29 – Marcha Concertante Ressureição – Tertuliano Santos.mp3', catalog).selectedId).toBe('');
+    expect(matchAudioTitle('Marcha Nº 8.mp3', catalog).candidates).toEqual([]);
+  });
+  test.each([
+    '30 - Dobrado Tusca - Estevam Moura.mp3',
+    '30. Tusca - Dobrado - Estevam Moura - Sociedade Filarmônica 25 de Março.mp3',
+    '30) Tusca | Estevam Moura | Sociedade Filarmônica 25 de Março.mp3',
+    '30 — Tusca — áudio oficial.wav'
+  ])('aceita variações de exportação: %s', filename => {
+    expect(matchAudioTitle(filename, [{ id: 30, titulo: 'Tusca', compositor: 'Estevam Moura' }]).selectedId).toBe('30');
   });
   test('reconhece os nomes completos de exportação mostrados no lote real', () => {
     const catalog = [

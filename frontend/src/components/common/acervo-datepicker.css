@@ -1,0 +1,13 @@
+.acervo-date { position: relative; min-width: 0; }
+.acervo-date > input { width: 100%; min-height: 44px; border: 1px solid var(--border); border-radius: 9px; padding: 10px 44px 10px 12px !important; background: var(--bg-primary); color: var(--text-primary); font-size: 13px; }
+.acervo-date > input[aria-invalid="true"] { border-color: var(--danger, #b54444); }
+.acervo-date .acervo-date-toggle { position: absolute; inset: 0 0 0 auto; width: 44px; min-height: 44px; padding: 0; display: grid; place-items: center; border: 0; background: transparent; color: var(--text-secondary); cursor: pointer; }
+.acervo-date-calendar { position: fixed; z-index: 11000; overflow-y: auto; border-radius: 12px; padding: 12px; background: var(--bg-card); box-shadow: 0 10px 35px rgba(0,0,0,.24); color: var(--text-primary); }
+.acervo-date-calendar header, .acervo-date-calendar footer { display: flex; align-items: center; justify-content: space-between; padding: 0; gap: 8px; }
+.acervo-date-calendar header strong { font-size: 13px; text-transform: capitalize; }
+.acervo-date-calendar button { min-height: 44px; min-width: 0; padding: 6px 10px; border: 0; border-radius: 7px; background: transparent; color: var(--text-primary); font: inherit; font-size: 13px; cursor: pointer; display: inline-flex; justify-content: center; align-items: center; }
+.acervo-date-calendar button:hover { background: var(--bg-secondary); }
+.acervo-date-calendar button[aria-pressed="true"] { background: var(--icon-accent-fg); color: var(--bg-card); }
+.acervo-date-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); margin: 8px 0; }
+.acervo-date-weekday { font-size: 10px; text-align: center; padding: 8px 0; color: var(--text-secondary); }
+.acervo-date-calendar footer { border-top: 1px solid var(--border); padding-top: 6px; }

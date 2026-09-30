@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { FileAudio, FolderOpen, Upload, X } from 'lucide-react';
+import { CheckCircle2, TriangleAlert, FileAudio, FolderOpen, Upload, X } from 'lucide-react';
 import { API } from '@services/api';
+import AcervoSelect from '@components/common/AcervoSelect';
 import { AUDIO_ACCEPT, MAX_AUDIO_BYTES, captureAudioDrop, isAudioFile, matchAudioTitle, readAudioDrop } from '@utils/audioBatch';
 import './audio-batch.css';
 
@@ -77,6 +78,7 @@ export default function AudioBatchModal({ partituras, onClose, onUpdate }) {
     return '';
   };
   const eligible = rows.filter(row => row.status !== 'success' && !problem(row));
+  const identified = rows.filter(row => row.selectedId).length;
   const send = async () => {
     if (busyRef.current || !eligible.length) return;
     busyRef.current = true; stopRef.current = false; setRunning(true);
@@ -100,20 +102,31 @@ export default function AudioBatchModal({ partituras, onClose, onUpdate }) {
   return createPortal(
     <div data-audio-batch className="audio-batch-overlay" onDragOver={event => { event.preventDefault(); event.stopPropagation(); }} onDrop={drop}>
       <section ref={dialogRef} className="audio-batch-dialog" role="dialog" aria-modal="true" aria-labelledby="audio-batch-title">
-        <header><div><span className="audio-batch-eyebrow">ACERVO · ADMINISTRAÇÃO</span><h2 id="audio-batch-title">Áudios em lote</h2><p>Associe os arquivos às partituras pelo título.</p></div><button type="button" onClick={onClose} disabled={locked} aria-label="Fechar upload de áudios"><X size={20} /></button></header>
+        <header><div><h2 id="audio-batch-title">Áudios em lote</h2><p>Associe os arquivos às partituras pelo título.</p></div><button type="button" onClick={onClose} disabled={locked} aria-label="Fechar upload de áudios"><X size={20} /></button></header>
         <div className="audio-batch-content">
           <div className="audio-batch-drop"><FileAudio size={30} /><strong>Arraste áudios ou uma pasta aqui</strong><span>Inclui subpastas · MP3, WAV, M4A, OGG e WebM · até 80 MiB por arquivo</span><div><button type="button" disabled={locked} onClick={() => filesRef.current.click()}><Upload size={16} /> Selecionar arquivos</button><button type="button" disabled={locked} onClick={() => folderRef.current.click()}><FolderOpen size={16} /> Selecionar pasta</button></div></div>
           <input ref={filesRef} hidden type="file" multiple accept={AUDIO_ACCEPT} onChange={event => { addFiles(event.target.files); event.target.value = ''; }} />
           <input ref={folderRef} hidden type="file" multiple webkitdirectory="" directory="" onChange={event => { addFiles(event.target.files); event.target.value = ''; }} />
           <p className="audio-batch-help">Títulos únicos são associados automaticamente. Revise as sugestões e escolha a partitura nos casos ambíguos. Nenhum arquivo é enviado antes da sua confirmação.</p>
           <p role="status" aria-live="polite">{reading ? 'Lendo arquivos da pasta…' : message}</p>
-          {running && <progress aria-label="Progresso do lote" max={progress.total} value={progress.completed} />}
+          {rows.length > 0 && <p className="audio-batch-summary" aria-live="polite">{identified} identificados · {rows.length - identified} para revisar</p>}
+          {running && <div className="audio-batch-progress" role="progressbar" aria-label="Progresso do lote" aria-valuemin={0} aria-valuemax={progress.total} aria-valuenow={progress.completed}><span style={{ width: `${progress.completed / progress.total * 100}%` }} /></div>}
           <div className="audio-batch-rows">{rows.map(row => {
             const sheet = partituras.find(item => String(item.id) === row.selectedId);
             const issue = problem(row);
-            return <article key={row.id} className={`audio-batch-row ${row.status}`}>
+            const matched = Boolean(sheet);
+            return <article key={row.id} className={`audio-batch-row ${row.status} ${matched ? 'identified' : 'needs-review'}`}>
+              <div className={`audio-batch-match-status ${matched ? 'matched' : 'unmatched'}`}>
+                {matched ? <CheckCircle2 size={17} aria-hidden="true" /> : <TriangleAlert size={17} aria-hidden="true" />}
+                <strong>{matched ? 'Identificado' : row.candidates.length ? 'Revisar correspondência' : 'Não identificado'}</strong>
+                {matched && <span>{sheet.titulo} · {sheet.compositor || 'Sem compositor'}</span>}
+              </div>
               <div className="audio-batch-filename"><strong>{row.file.name}</strong><small>{row.file.webkitRelativePath || row.file.batchRelativePath || ''}</small><small>{(row.file.size / 1024 / 1024).toFixed(1)} MiB · {row.reason}</small></div>
-              <label>Partitura correspondente<select aria-label={`Partitura para ${row.file.name}`} disabled={locked || row.status === 'success'} value={row.selectedId} onChange={event => patchRow(row.id, { selectedId: event.target.value, replace: false })}><option value="">Selecionar partitura</option>{row.candidates.length > 0 && <optgroup label="Correspondências sugeridas">{row.candidates.map(item => <option key={item.id} value={String(item.id)}>{item.titulo} · {item.compositor || 'Sem compositor'}</option>)}</optgroup>}<optgroup label="Todas as partituras">{partituras.map(item => <option key={item.id} value={String(item.id)}>{item.titulo} · {item.compositor || 'Sem compositor'}</option>)}</optgroup></select></label>
+              <div><label htmlFor={`audio-match-${row.id}`}>Partitura correspondente</label><AcervoSelect id={`audio-match-${row.id}`} ariaLabel={`Partitura para ${row.file.name}`} searchable disabled={locked || row.status === 'success'} value={row.selectedId} onChange={selectedId => patchRow(row.id, { selectedId, replace: false, reason: selectedId ? 'Associação escolhida manualmente' : 'Selecione a partitura' })} options={[
+                { value: '', label: 'Selecionar partitura' },
+                ...row.candidates.map(item => ({ value: String(item.id), label: `${item.titulo} · ${item.compositor || 'Sem compositor'}`, group: 'Correspondências sugeridas' })),
+                ...partituras.filter(item => !row.candidates.some(candidate => String(candidate.id) === String(item.id))).map(item => ({ value: String(item.id), label: `${item.titulo} · ${item.compositor || 'Sem compositor'}`, group: 'Todas as partituras' }))
+              ]} /></div>
               {sheet?.has_audio && row.status !== 'success' && <label className="audio-batch-replace"><input type="checkbox" checked={row.replace} disabled={locked} onChange={event => patchRow(row.id, { replace: event.target.checked })} /> Substituir áudio atual: {sheet.audio_name || 'áudio anexado'}</label>}
               <div className="audio-batch-row-bottom"><span>{row.status === 'success' ? 'Áudio enviado' : row.status === 'sending' ? 'Enviando…' : row.status === 'failed' ? row.error : issue || 'Pronto para enviar'}</span><button type="button" disabled={locked} aria-label={`Remover ${row.file.name} do lote`} onClick={() => setRows(previous => previous.filter(item => item.id !== row.id))}>Remover do lote</button></div>
             </article>;

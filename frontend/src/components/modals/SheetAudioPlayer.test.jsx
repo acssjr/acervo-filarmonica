@@ -60,7 +60,8 @@ describe('SheetAudioPlayer', () => {
     fireEvent.play(audio);
     Object.defineProperty(audio, 'currentTime', { configurable: true, value: 12, writable: true });
     fireEvent.timeUpdate(audio);
-    await user.selectOptions(screen.getByRole('combobox', { name: 'Velocidade do áudio' }), '1.25');
+    await user.click(screen.getByRole('combobox', { name: 'Velocidade do áudio' }));
+    await user.click(screen.getByRole('option', { name: '1,25×' }));
     await user.click(screen.getByRole('button', { name: 'Recolher player' }));
     expect(screen.getByText('Tocando · 0:12')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Pausar áudio' })).toBeInTheDocument();

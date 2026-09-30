@@ -1,3 +1,4 @@
+import AcervoSelect from '@components/common/AcervoSelect';
 // ===== IMPORTACAO LOTE MODAL =====
 // Modal fullscreen para importação massiva de partituras
 // Estados: SELECTION -> ANALYZING -> FEEDBACK -> REVIEW -> UPLOADING -> COMPLETE
@@ -859,56 +860,9 @@ const ImportacaoLoteModal = ({ isOpen, onClose, onSuccess, onOpenUploadPasta, in
                             {pasta.arquivos.length} arquivo{pasta.arquivos.length !== 1 ? 's' : ''}
                           </span>
 
-                          {/* Tag de categoria - clicável para edição rápida */}
-                          <span
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              // Abre um prompt simples para selecionar categoria
-                              const select = e.currentTarget.querySelector('select');
-                              if (select) select.click();
-                            }}
-                            style={{
-                              fontSize: '11px',
-                              padding: '2px 8px',
-                              borderRadius: '10px',
-                              background: pasta.categoria ? 'rgba(212, 175, 55, 0.1)' : 'rgba(230, 126, 34, 0.1)',
-                              color: pasta.categoria ? '#D4AF37' : '#e67e22',
-                              border: `1px solid ${pasta.categoria ? 'rgba(212, 175, 55, 0.3)' : 'rgba(230, 126, 34, 0.3)'}`,
-                              cursor: 'pointer',
-                              fontWeight: '500',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '4px',
-                              position: 'relative'
-                            }}
-                          >
-                            {categorias.find(c => c.id === pasta.categoria)?.nome || 'Categoria'}
-                            <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                              <polyline points="6 9 12 15 18 9"/>
-                            </svg>
-                            <select
-                              value={pasta.categoria || ''}
-                              onClick={(e) => e.stopPropagation()}
-                              onChange={(e) => {
-                                e.stopPropagation();
-                                editarCategoria(pasta.id, e.target.value);
-                              }}
-                              style={{
-                                position: 'absolute',
-                                opacity: 0,
-                                top: 0,
-                                left: 0,
-                                width: '100%',
-                                height: '100%',
-                                cursor: 'pointer'
-                              }}
-                            >
-                              <option value="">Categoria</option>
-                              {categorias.map(cat => (
-                                <option key={cat.id} value={cat.id}>{cat.nome}</option>
-                              ))}
-                            </select>
-                          </span>
+                          <div onClick={event => event.stopPropagation()} style={{ minWidth: '160px', maxWidth: '240px' }}>
+                            <AcervoSelect ariaLabel={`Categoria de ${pasta.titulo || pasta.nomePasta || 'pasta'}`} value={pasta.categoria || ''} onChange={value => editarCategoria(pasta.id, value)} searchable options={[{ value: '', label: 'Categoria' }, ...categorias.map(category => ({ value: category.id, label: category.nome }))]} />
+                          </div>
 
                           {/* Tag de status/problema */}
                           {pasta.statusMotivo && (
