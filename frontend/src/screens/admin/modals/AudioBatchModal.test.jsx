@@ -12,6 +12,18 @@ function setup(partituras = sheets) {
 }
 describe('upload de áudios em lote', () => {
   beforeEach(() => { upload.mockReset(); upload.mockResolvedValue({ has_audio: true }); });
+  test('o lote de exportação fica pronto com título, gênero, compositor e instituição', () => {
+    const { add } = setup([
+      { id: 10, titulo: 'Ibotirama (País das Flores)', compositor: 'Tertuliano Santos' },
+      { id: 11, titulo: 'Allah', compositor: 'Estevam Moura' }
+    ]);
+    add([
+      file('Fantasia Ibotirama (País das Flores) _ Tertuliano Santos _ Sociedade Filarmônica 25 de Março.mp3'),
+      file('Dobrado Allah _ Estevam Moura _ Sociedade Filarmônica 25 de Março.mp3')
+    ]);
+    expect(screen.getByRole('button', { name: 'Enviar 2 áudio(s)' })).toBeEnabled();
+    expect(upload).not.toHaveBeenCalled();
+  });
   test('envia só após confirmação e permite tentar novamente uma falha', async () => {
     upload.mockRejectedValueOnce(new Error('Rede indisponível'));
     const { add, update } = setup();
