@@ -21,7 +21,13 @@ const Modal = ({ isOpen, onClose, title, children }) => {
     const key = event => {
       if (event.key === 'Escape') { event.preventDefault(); close.current(); }
       if (event.key !== 'Tab') return;
-      const controls = [...dialog.current.querySelectorAll('button:not(:disabled), input:not(:disabled), textarea:not(:disabled), a[href]')].filter(el => el.offsetParent !== null);
+      const available = [...dialog.current.querySelectorAll('button, input, textarea, select, a[href], [tabindex]')]
+        .filter(el => el.tabIndex >= 0 && !el.matches(':disabled') && !el.closest('[inert]') && el.offsetParent !== null && getComputedStyle(el).visibility !== 'hidden');
+      const controls = available.filter(el => {
+        if (!el.matches('input[type="radio"]') || !el.name) return true;
+        const group = available.filter(other => other.matches('input[type="radio"]') && other.name === el.name && other.form === el.form);
+        return el === (group.find(other => other.checked) || group[0]);
+      });
       const first = controls[0]; const last = controls[controls.length - 1];
       if (!first) { event.preventDefault(); return; }
       if (event.shiftKey && (document.activeElement === first || document.activeElement === dialog.current)) { event.preventDefault(); last.focus(); }

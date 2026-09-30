@@ -51,7 +51,7 @@ export default function AcervoSelect({ id, value, options, onChange, disabled = 
 
   useEffect(() => {
     if (visible) menu.current?.querySelector('[data-active="true"]')?.scrollIntoView?.({ block: 'nearest' });
-  }, [active, visible]);
+  }, [active, visible, positioned]);
 
   const keys = event => {
     if (event.key === 'Escape' && visible) { event.preventDefault(); event.stopPropagation(); close(true); }

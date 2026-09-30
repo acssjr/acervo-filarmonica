@@ -3,6 +3,17 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import AcervoSelect from './AcervoSelect';
 
 describe('seletor do acervo', () => {
+  test('traz opção ativa para a área visível na primeira abertura', () => {
+    const scroll = jest.fn();
+    const previous = HTMLElement.prototype.scrollIntoView;
+    HTMLElement.prototype.scrollIntoView = scroll;
+    try {
+      render(<AcervoSelect ariaLabel="Partitura" value="39" onChange={() => {}} options={Array.from({ length: 40 }, (_, i) => ({ value: String(i), label: `Peça ${i}` }))} />);
+      fireEvent.click(screen.getByRole('combobox'));
+      expect(scroll).toHaveBeenCalled();
+      expect(scroll.mock.instances.at(-1)).toBe(screen.getByRole('option', { name: 'Peça 39' }));
+    } finally { HTMLElement.prototype.scrollIntoView = previous; }
+  });
   test('busca sem acentos, escolhe opção e devolve foco ao controle', () => {
     const change = jest.fn();
     render(<AcervoSelect ariaLabel="Partitura" value="" searchable onChange={change} options={[{ value: '1', label: 'Canção' }, { value: '2', label: 'Marcha' }]} />);

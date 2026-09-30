@@ -39,7 +39,11 @@ export default function AcervoDatePicker({ value, onChange, ariaLabel = 'Data', 
   const choose = date => { onChange(isoDate(date)); setText(display(isoDate(date))); setOpen(false); button.current.focus(); };
   const keys = event => { if (event.key === 'Escape' && open) { event.preventDefault(); event.stopPropagation(); setOpen(false); button.current.focus(); } };
   return <div className="acervo-date" ref={wrapper} onKeyDown={keys}>
-    <input type="text" inputMode="numeric" aria-label={ariaLabel} placeholder="dd/mm/aaaa" value={text} style={style} aria-invalid={Boolean(text && !parse(text))} onChange={event => { setText(event.target.value); const date = parse(event.target.value); if (date) onChange(isoDate(date)); else if (!event.target.value) onChange(''); }} />
+    <input type="text" inputMode="numeric" aria-label={ariaLabel} placeholder="dd/mm/aaaa" value={text} style={style} aria-invalid={Boolean(text && !parse(text))} onBlur={() => { if (text && !parse(text)) setText(display(value)); }} onChange={event => {
+      const raw = event.target.value;
+      const formatted = /^(?:\d{1,8}|\d{2}\/\d{3,6})$/.test(raw) ? raw.replace(/\//g, '').replace(/^(\d{2})(\d)/, '$1/$2').replace(/^(\d{2}\/\d{2})(\d)/, '$1/$2') : raw;
+      setText(formatted); const date = parse(formatted); if (date) onChange(isoDate(date)); else if (!formatted) onChange('');
+    }} />
     <button ref={button} type="button" className="acervo-date-toggle" aria-label={`Escolher ${ariaLabel.toLowerCase()}`} aria-expanded={open} aria-controls={open ? uid : undefined} onClick={event => { event.stopPropagation(); if (!open) setMonth(value ? new Date(`${value}T12:00:00`) : new Date()); setOpen(!open); }}><CalendarDays size={17} /></button>
     {open && createPortal(<div ref={panel} id={uid} className="acervo-date-calendar" style={position} onKeyDown={keys} onClick={event => event.stopPropagation()}>
       <header><button type="button" aria-label="Mês anterior" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))}><ChevronLeft size={17} /></button><strong aria-live="polite">{first.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}</strong><button type="button" aria-label="Próximo mês" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))}><ChevronRight size={17} /></button></header>
