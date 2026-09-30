@@ -6,6 +6,7 @@
 import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Download, Headphones } from 'lucide-react';
 import { useAuth } from '@contexts/AuthContext';
 import { useUI } from '@contexts/UIContext';
 import { useData } from '@contexts/DataContext';
@@ -235,6 +236,13 @@ const SheetDetailModal = () => {
     download.handleShareInstrument(isMaestro ? 'Grade' : userInstrument);
   }, [download, isMaestro, userInstrument]);
 
+  const downloadSummary = (
+    <span className="sheet-audio-downloads" aria-label={`${selectedSheet?.downloads || 0} downloads`}>
+      <Download size={15} aria-hidden="true" />
+      <span>{selectedSheet?.downloads || 0}</span>
+    </span>
+  );
+
   return (
     <AnimatePresence>
       {selectedSheet && (
@@ -453,20 +461,7 @@ const SheetDetailModal = () => {
               flex: 1
             }}>
               {/* Info compacta */}
-              <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', flexWrap: 'wrap' }}>
-                <div style={{
-                  background: 'var(--bg-secondary)',
-                  padding: '8px 12px',
-                  borderRadius: '8px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px'
-                }}>
-                  <div style={{ width: '12px', height: '12px', color: 'var(--text-muted)' }}><Icons.Download /></div>
-                  <span style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-primary)', }}>
-                    {selectedSheet.downloads || 0}
-                  </span>
-                </div>
+              {(selectedSheet.year || selectedSheet.featured) && <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
                 {selectedSheet.year && (
                   <div style={{ background: 'var(--bg-secondary)', padding: '8px 12px', borderRadius: '8px' }}>
                     <span style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-primary)', }}>
@@ -484,18 +479,26 @@ const SheetDetailModal = () => {
                     </span>
                   </div>
                 )}
-              </div>
+              </div>}
 
-              {(audioSheet.hasAudio || audioSheet.youtubeUrl) && (
                 <div>
-                  {audioSheet.hasAudio && <SheetAudioPlayer key={selectedSheet.id} sheet={audioSheet} />}
+                  {audioSheet.hasAudio ? <SheetAudioPlayer key={selectedSheet.id} sheet={audioSheet} summary={downloadSummary} /> : (
+                    <section className="sheet-audio" aria-label="Áudio da partitura">
+                      <div className="sheet-audio-summary">
+                        {downloadSummary}
+                        <div className="sheet-audio-unavailable">
+                          <Headphones size={17} aria-hidden="true" />
+                          <span>Áudio ainda não disponível</span>
+                        </div>
+                      </div>
+                    </section>
+                  )}
                   {audioSheet.youtubeUrl && (
                     <a href={audioSheet.youtubeUrl} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', color: 'var(--accent)', fontSize: 12, fontWeight: 700, marginBottom: 14, textDecoration: 'underline' }}>
                       Ver no YouTube ↗
                     </a>
                   )}
                 </div>
-              )}
 
               {/* Opções de Download / Ações Rápidas */}
               <div style={{ marginBottom: '14px' }}>
