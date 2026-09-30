@@ -15,6 +15,29 @@ describe('associação de áudios', () => {
     expect(match.candidates[0].id).toBe(1);
     expect(matchAudioTitle('desconhecido.mp3', sheets).candidates).toEqual([]);
   });
+  test('reconhece os nomes completos de exportação mostrados no lote real', () => {
+    const catalog = [
+      { id: 10, titulo: 'Ibotirama (País das Flores)', compositor: 'Tertuliano Santos' },
+      { id: 11, titulo: 'Allah', compositor: 'Estevam Moura' }
+    ];
+    expect(matchAudioTitle('Fantasia Ibotirama (País das Flores) _ Tertuliano Santos _ Sociedade Filarmônica 25 de Março.mp3', catalog).selectedId).toBe('10');
+    expect(matchAudioTitle('Dobrado Allah _ Estevam Moura _ Sociedade Filarmônica 25 de Março.mp3', catalog).selectedId).toBe('11');
+  });
+  test('usa compositor para distinguir títulos repetidos sem confundir números ou títulos inteiros', () => {
+    const catalog = [
+      { id: 1, titulo: 'Lágrimas', compositor: 'Estevam Moura' },
+      { id: 2, titulo: 'Lágrimas', compositor: 'Outro Compositor' },
+      { id: 3, titulo: 'Marcha Nº 7', compositor: 'Estevam Moura' },
+      { id: 4, titulo: 'Marcha Nº 8', compositor: 'Estevam Moura' },
+      { id: 5, titulo: 'Marcha da Vida', compositor: 'Estevam Moura' },
+      { id: 6, titulo: 'da Vida', compositor: 'Estevam Moura' }
+    ];
+    expect(matchAudioTitle('Lágrimas _ Estevam Moura _ Sociedade Filarmônica 25 de Março.mp3', catalog).selectedId).toBe('1');
+    expect(matchAudioTitle('Marcha Nº7 - Estevam Moura - Sociedade Filarmônica 25 de Março.wav', catalog).selectedId).toBe('3');
+    expect(matchAudioTitle('Marcha da Vida _ Estevam Moura.mp3', catalog).selectedId).toBe('5');
+    expect(matchAudioTitle('Lágrimas _ Desconhecido _ Sociedade Filarmônica 25 de Março.mp3', catalog).selectedId).toBe('');
+    expect(matchAudioTitle('Lágrimas _ Estevam Moura.mp3', [...catalog, { id: 7, titulo: 'Lágrimas', compositor: 'Estevam Moura' }]).selectedId).toBe('');
+  });
   test('não inclui MIDI, PDFs ou arquivos vazios de nome', () => {
     expect(isAudioFile({ name: 'canção.MP3' })).toBe(true);
     expect(isAudioFile({ name: 'canção.mid' })).toBe(false);

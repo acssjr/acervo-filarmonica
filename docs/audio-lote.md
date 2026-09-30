@@ -3,7 +3,7 @@
 No painel, abra **Partituras → Áudios em lote**.
 
 1. Selecione vários arquivos, selecione uma pasta ou arraste arquivos/pastas sobre o modal. Subpastas também são lidas.
-2. Revise a partitura escolhida para cada áudio. A comparação ignora acentos, pontuação e extensão; mantém os números dos títulos. Títulos parecidos ou repetidos exigem escolha manual.
+2. Revise a partitura escolhida para cada áudio. A comparação ignora acentos, pontuação e extensão; mantém os números dos títulos. Reconhece também nomes de exportação como `Dobrado Allah _ Estevam Moura _ Sociedade Filarmônica 25 de Março.mp3`, separando título, compositor e instituição e removendo o gênero quando necessário. O título completo tem prioridade. O compositor pode distinguir títulos repetidos; ambiguidades e divergências exigem escolha manual.
 3. Caso já exista áudio, marque **Substituir áudio atual**. Dois arquivos destinados à mesma partitura bloqueiam o envio até remover ou corrigir a associação.
 4. Clique em **Enviar**. O envio é sequencial; uma falha não interrompe os próximos arquivos. Clique novamente para tentar os arquivos pendentes ou com falha. Os já enviados não são reenviados.
 
