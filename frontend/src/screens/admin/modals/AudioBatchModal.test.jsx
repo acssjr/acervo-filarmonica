@@ -11,6 +11,14 @@ function setup(partituras = sheets) {
   return { update, add: files => fireEvent.change(document.querySelector('input[type=file]'), { target: { files } }) };
 }
 describe('upload de áudios em lote', () => {
+  test('mostra identificados em verde e pendências em amarelo antes de enviar', () => {
+    const { add } = setup();
+    add([file('01 – Canção.mp3'), file('Desconhecido.mp3')]);
+    expect(screen.getByText('Identificado').closest('article')).toHaveClass('identified');
+    expect(screen.getByText('Não identificado').closest('article')).toHaveClass('needs-review');
+    expect(screen.getByText('1 identificados · 1 para revisar')).toBeInTheDocument();
+    expect(upload).not.toHaveBeenCalled();
+  });
   beforeEach(() => { upload.mockReset(); upload.mockResolvedValue({ has_audio: true }); });
   test('o lote de exportação fica pronto com título, gênero, compositor e instituição', () => {
     const { add } = setup([

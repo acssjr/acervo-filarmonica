@@ -1,3 +1,5 @@
+import { levenshteinDistance } from './search';
+
 export const AUDIO_ACCEPT = '.mp3,.wav,.m4a,.ogg,.webm';
 export const MAX_AUDIO_BYTES = 80 * 1024 * 1024;
 export const isAudioFile = file => /\.(mp3|wav|m4a|ogg|webm)$/i.test(file.name);
@@ -21,16 +23,25 @@ export function matchAudioTitle(filename, sheets) {
   // Exports use "genre title _ composer _ institution". Parse before
   // normalization so field separators do not disappear into title tokens.
   const fields = String(filename || '').replace(/\.(mp3|wav|m4a|ogg|webm)$/i, '')
-    .split(/\s+[_|–—-]\s*|\s*[_|–—-]\s+/).map(normalizeAudioTitle).filter(Boolean);
+    // A track index is metadata only when separated from the actual title.
+    // Musical numbers inside a title (Nº 7, 1812, etc.) remain intact.
+    .replace(/^\s*\d{1,4}\s*(?:[_|–—-]\s*|[.)]\s+)/, '')
+    .split(/\s*[|_–—]\s*|\s+-\s+/).map(normalizeAudioTitle).filter(Boolean);
   const titleField = fields[0] || clean;
-  const withoutGenre = titleField.replace(/^(dobrado|marcha|fantasia|arranjo|valsa|polca|maxixe)\s+/, '');
+  const genre = /^(?:marchas?(?: concertante| funebre| religiosa)?|dobrados?|fantasias?|arranjos?|valsas?|polcas?|polacas?|maxixe|boleros?|hinos?(?: religioso| civico)?|preludios?|suite)(?:\s+|$)/;
+  const stripGenre = value => value.replace(genre, '');
+  const withoutGenre = stripGenre(titleField);
   let titleMatches = sheets.filter(sheet => normalizeAudioTitle(sheet.titulo) === titleField && titleField);
   if (!titleMatches.length && withoutGenre !== titleField) {
     titleMatches = sheets.filter(sheet => normalizeAudioTitle(sheet.titulo) === withoutGenre && withoutGenre);
   }
+  if (!titleMatches.length && withoutGenre) {
+    titleMatches = sheets.filter(sheet => stripGenre(normalizeAudioTitle(sheet.titulo)) === withoutGenre);
+  }
   if (titleMatches.length) {
     const isInstitution = value => /^(sociedade filarmonica|filarmonica 25 de marco)\b/.test(value);
-    const composer = fields[1] && !isInstitution(fields[1]) ? fields[1] : '';
+    const composer = fields.slice(1).find(value => !isInstitution(value)
+      && !genre.test(value) && !/^(audio oficial|audio|oficial|instrumentos virtuais|instrumental|mix|master)$/.test(value)) || '';
     const composerMatches = composer ? titleMatches.filter(sheet => normalizeAudioTitle(sheet.compositor) === composer) : [];
     const candidates = composerMatches.length ? composerMatches : titleMatches;
     const composerConflict = composer && fields.some(isInstitution) && !composerMatches.length
@@ -44,10 +55,16 @@ export function matchAudioTitle(filename, sheets) {
     };
   }
   const tokens = new Set(withoutGenre.split(' ').filter(Boolean));
+  const numbers = value => (value.match(/\b\d+\b/g) || []).join(' ');
   const candidates = sheets.map(sheet => {
-    const title = normalizeAudioTitle(sheet.titulo).split(' ').filter(Boolean);
+    const normalized = stripGenre(normalizeAudioTitle(sheet.titulo));
+    if (numbers(normalized) !== numbers(withoutGenre)) return { sheet, score: 0 };
+    const title = normalized.split(' ').filter(Boolean);
     const overlap = title.filter(token => tokens.has(token)).length;
-    return { sheet, score: overlap / Math.max(tokens.size, title.length, 1) };
+    const tokenScore = overlap / Math.max(tokens.size, title.length, 1);
+    const length = Math.max(normalized.length, withoutGenre.length, 1);
+    const spellingScore = 1 - levenshteinDistance(normalized, withoutGenre) / length;
+    return { sheet, score: Math.max(tokenScore, spellingScore >= 0.8 && length >= 5 ? spellingScore : 0) };
   }).filter(item => item.score >= 0.5).sort((a, b) => b.score - a.score).slice(0, 5).map(item => item.sheet);
   return { selectedId: '', candidates, reason: candidates.length ? 'Título parecido: confirme a associação' : 'Selecione a partitura' };
 }

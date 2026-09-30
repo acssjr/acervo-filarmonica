@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { FileAudio, FolderOpen, Upload, X } from 'lucide-react';
+import { CheckCircle2, TriangleAlert, FileAudio, FolderOpen, Upload, X } from 'lucide-react';
 import { API } from '@services/api';
 import AcervoSelect from '@components/common/AcervoSelect';
 import { AUDIO_ACCEPT, MAX_AUDIO_BYTES, captureAudioDrop, isAudioFile, matchAudioTitle, readAudioDrop } from '@utils/audioBatch';
@@ -78,6 +78,7 @@ export default function AudioBatchModal({ partituras, onClose, onUpdate }) {
     return '';
   };
   const eligible = rows.filter(row => row.status !== 'success' && !problem(row));
+  const identified = rows.filter(row => row.selectedId).length;
   const send = async () => {
     if (busyRef.current || !eligible.length) return;
     busyRef.current = true; stopRef.current = false; setRunning(true);
@@ -108,13 +109,20 @@ export default function AudioBatchModal({ partituras, onClose, onUpdate }) {
           <input ref={folderRef} hidden type="file" multiple webkitdirectory="" directory="" onChange={event => { addFiles(event.target.files); event.target.value = ''; }} />
           <p className="audio-batch-help">Títulos únicos são associados automaticamente. Revise as sugestões e escolha a partitura nos casos ambíguos. Nenhum arquivo é enviado antes da sua confirmação.</p>
           <p role="status" aria-live="polite">{reading ? 'Lendo arquivos da pasta…' : message}</p>
+          {rows.length > 0 && <p className="audio-batch-summary" aria-live="polite">{identified} identificados · {rows.length - identified} para revisar</p>}
           {running && <div className="audio-batch-progress" role="progressbar" aria-label="Progresso do lote" aria-valuemin={0} aria-valuemax={progress.total} aria-valuenow={progress.completed}><span style={{ width: `${progress.completed / progress.total * 100}%` }} /></div>}
           <div className="audio-batch-rows">{rows.map(row => {
             const sheet = partituras.find(item => String(item.id) === row.selectedId);
             const issue = problem(row);
-            return <article key={row.id} className={`audio-batch-row ${row.status}`}>
+            const matched = Boolean(sheet);
+            return <article key={row.id} className={`audio-batch-row ${row.status} ${matched ? 'identified' : 'needs-review'}`}>
+              <div className={`audio-batch-match-status ${matched ? 'matched' : 'unmatched'}`}>
+                {matched ? <CheckCircle2 size={17} aria-hidden="true" /> : <TriangleAlert size={17} aria-hidden="true" />}
+                <strong>{matched ? 'Identificado' : row.candidates.length ? 'Revisar correspondência' : 'Não identificado'}</strong>
+                {matched && <span>{sheet.titulo} · {sheet.compositor || 'Sem compositor'}</span>}
+              </div>
               <div className="audio-batch-filename"><strong>{row.file.name}</strong><small>{row.file.webkitRelativePath || row.file.batchRelativePath || ''}</small><small>{(row.file.size / 1024 / 1024).toFixed(1)} MiB · {row.reason}</small></div>
-              <div><label htmlFor={`audio-match-${row.id}`}>Partitura correspondente</label><AcervoSelect id={`audio-match-${row.id}`} ariaLabel={`Partitura para ${row.file.name}`} searchable disabled={locked || row.status === 'success'} value={row.selectedId} onChange={selectedId => patchRow(row.id, { selectedId, replace: false })} options={[
+              <div><label htmlFor={`audio-match-${row.id}`}>Partitura correspondente</label><AcervoSelect id={`audio-match-${row.id}`} ariaLabel={`Partitura para ${row.file.name}`} searchable disabled={locked || row.status === 'success'} value={row.selectedId} onChange={selectedId => patchRow(row.id, { selectedId, replace: false, reason: selectedId ? 'Associação escolhida manualmente' : 'Selecione a partitura' })} options={[
                 { value: '', label: 'Selecionar partitura' },
                 ...row.candidates.map(item => ({ value: String(item.id), label: `${item.titulo} · ${item.compositor || 'Sem compositor'}`, group: 'Correspondências sugeridas' })),
                 ...partituras.filter(item => !row.candidates.some(candidate => String(candidate.id) === String(item.id))).map(item => ({ value: String(item.id), label: `${item.titulo} · ${item.compositor || 'Sem compositor'}`, group: 'Todas as partituras' }))
