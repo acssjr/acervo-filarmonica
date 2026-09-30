@@ -304,9 +304,10 @@ const AdminPartituras = () => {
   }, []);
 
   const handleGlobalDragLeave = useCallback((e) => {
+    if (e.target.closest?.('[data-audio-batch]')) return;
     e.preventDefault();
     e.stopPropagation();
-    dragCounterRef.current--;
+    dragCounterRef.current = Math.max(0, dragCounterRef.current - 1);
     if (dragCounterRef.current === 0) {
       setIsDraggingOver(false);
     }
