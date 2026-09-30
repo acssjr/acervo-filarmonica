@@ -1,0 +1,9 @@
+/* The indicator is fixed over the scroller and never participates in layout. */
+.acervo-scrollbar { position: fixed; z-index: 12000; pointer-events: none; }
+.acervo-scrollbar-thumb { position: relative; pointer-events: auto; touch-action: none; cursor: grab; }
+.acervo-scrollbar-thumb:active { cursor: grabbing; }
+.acervo-scrollbar.y .acervo-scrollbar-thumb { width: 12px; }
+.acervo-scrollbar.x .acervo-scrollbar-thumb { height: 12px; }
+.acervo-scrollbar-thumb::after { content: ''; position: absolute; inset: 3px; border-radius: 5px; background: color-mix(in srgb, var(--text-secondary) 65%, transparent); }
+.acervo-scrollbar-thumb:hover::after { background: var(--accent-dark); }
+@media(forced-colors:active) { .acervo-scrollbar-thumb::after { background: CanvasText; } }

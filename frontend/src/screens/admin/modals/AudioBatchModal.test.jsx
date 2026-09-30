@@ -51,7 +51,8 @@ describe('upload de áudios em lote', () => {
     upload.mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
     const { rerender } = render(<AudioBatchModal partituras={sheets} onClose={() => {}} onUpdate={() => {}} />);
     fireEvent.change(document.querySelector('input[type=file]'), { target: { files: [file('Canção.mp3'), file('Outra.mp3')] } });
-    fireEvent.change(screen.getByLabelText('Partitura para Outra.mp3'), { target: { value: '2' } });
+    fireEvent.click(screen.getByRole('combobox', { name: 'Partitura para Outra.mp3' }));
+    fireEvent.click(screen.getByRole('option', { name: 'Marcha · Sem compositor' }));
     fireEvent.click(screen.getByRole('checkbox'));
     fireEvent.click(screen.getByRole('button', { name: 'Enviar 2 áudio(s)' }));
     rerender(<AudioBatchModal partituras={sheets} onClose={() => {}} onUpdate={() => {}} />);

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ChevronDown, LoaderCircle, X } from 'lucide-react';
+import { LoaderCircle, X } from 'lucide-react';
+import AcervoSelect from '@components/common/AcervoSelect';
 import CategoryIcon from '@components/common/CategoryIcon';
 import AdminPartituraMedia from '../components/AdminPartituraMedia';
 import './editar-partitura.css';
@@ -76,13 +77,7 @@ export default function EditarPartituraModal({ partitura, form, setForm, categor
                 </div>
                 <div className="partitura-editor-field partitura-editor-field-wide">
                   <label htmlFor="edit-partitura-categoria">Categoria</label>
-                  <div className="partitura-editor-select">
-                    <select id="edit-partitura-categoria" name="categoria_id" value={form.categoria_id} onChange={change} disabled={saving}>
-                      <option value="">Sem categoria</option>
-                      {categorias.map(category => <option key={category.id} value={category.id}>{category.nome}</option>)}
-                    </select>
-                    <ChevronDown size={16} aria-hidden="true" />
-                  </div>
+                  <AcervoSelect id="edit-partitura-categoria" ariaLabel="Categoria" value={form.categoria_id} onChange={categoria_id => setForm(previous => ({ ...previous, categoria_id }))} disabled={saving} searchable options={[{ value: '', label: 'Sem categoria' }, ...categorias.map(category => ({ value: category.id, label: category.nome }))]} />
                 </div>
               </div>
             </section>

@@ -3,6 +3,7 @@
 // Design premium com glassmorphism e micro-animações
 
 import { useState, useEffect } from 'react';
+import AcervoDatePicker from '@components/common/AcervoDatePicker';
 import { useUI } from '@contexts/UIContext';
 import { API } from '@services/api';
 import { Icons } from '@constants/icons';
@@ -957,9 +958,7 @@ const ModalSimples = ({ form, setForm, saving, onClose, onSave }) => (
         </div>
         <div>
           <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '6px' }}>Data da Apresentação</label>
-          <input type="date" value={form.data_apresentacao}
-            onChange={(e) => setForm({ ...form, data_apresentacao: e.target.value })}
-            style={inputStyle} onFocus={focusInput} onBlur={blurInput} />
+          <AcervoDatePicker ariaLabel="Data da apresentação" value={form.data_apresentacao} onChange={data_apresentacao => setForm({ ...form, data_apresentacao })} style={inputStyle} />
         </div>
         <ActiveToggle value={form.ativo} onChange={() => setForm({ ...form, ativo: !form.ativo })} />
       </div>
@@ -1062,9 +1061,7 @@ const ModalCriar = ({
             <div className="modal-criar-info-row" style={{ display: 'flex', gap: '10px' }}>
               <div style={{ flex: 1 }}>
                 <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: 'var(--text-muted)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Data</label>
-                <input type="date" value={form.data_apresentacao}
-                  onChange={(e) => setForm({ ...form, data_apresentacao: e.target.value })}
-                  style={inputStyle} onFocus={focusInput} onBlur={blurInput} />
+                <AcervoDatePicker ariaLabel="Data da apresentação" value={form.data_apresentacao} onChange={data_apresentacao => setForm({ ...form, data_apresentacao })} style={inputStyle} />
               </div>
             </div>
 

@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { ChevronDown, LoaderCircle, Pause, Play, RotateCcw, RotateCw } from 'lucide-react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { API } from '@services/api';
+import AcervoSelect from '@components/common/AcervoSelect';
 import './SheetAudioPlayer.css';
 
 const formatTime = (seconds) => {
@@ -155,7 +156,7 @@ export default function SheetAudioPlayer({ sheet, summary }) {
               <div className="sheet-audio-times"><span>{formatTime(currentTime)}</span><span>{formatTime(limit)}</span></div>
               <div className="sheet-audio-footer">
                 {!full ? <button type="button" className="sheet-audio-full" onClick={chooseFull} disabled={loading || !!error}>Ouvir completo</button> : <span className="sheet-audio-full-label">Áudio completo</span>}
-                <label className="sheet-audio-rate">Velocidade <select aria-label="Velocidade do áudio" value={rate} onChange={event => { const next = Number(event.target.value); setRate(next); audioRef.current.playbackRate = next; }}><option value="0.75">0,75×</option><option value="1">1×</option><option value="1.25">1,25×</option><option value="1.5">1,5×</option></select></label>
+                <div className="sheet-audio-rate"><span>Velocidade</span><AcervoSelect ariaLabel="Velocidade do áudio" value={rate} onChange={value => { const next = Number(value); setRate(next); audioRef.current.playbackRate = next; }} options={[{ value: '0.75', label: '0,75×' }, { value: '1', label: '1×' }, { value: '1.25', label: '1,25×' }, { value: '1.5', label: '1,5×' }]} /></div>
               </div>
             </div>
           </motion.div>
