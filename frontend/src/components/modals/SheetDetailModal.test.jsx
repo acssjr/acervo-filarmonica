@@ -4,6 +4,8 @@
 // Usa mocks de modulos ESM para contextos
 
 import { describe, test, expect, jest, beforeEach } from '@jest/globals';
+import { http, HttpResponse } from 'msw';
+import { server } from '../../__tests__/mocks/server.js';
 
 // ===== MOCKS DOS CONTEXTOS =====
 // Devem ser definidos ANTES de importar o componente
@@ -117,7 +119,7 @@ jest.unstable_mockModule('./PDFViewerModal', () => ({
 // Nota: fetch e mockado pelo MSW no jest.setup.js
 
 // ===== IMPORTACOES APOS MOCKS =====
-const { render, screen, waitFor } = await import('@testing-library/react');
+const { act, render, screen, waitFor } = await import('@testing-library/react');
 const { default: userEvent } = await import('@testing-library/user-event');
 const { MemoryRouter } = await import('react-router-dom');
 const { default: SheetDetailModal } = await import('./SheetDetailModal');
@@ -156,6 +158,70 @@ describe('SheetDetailModal', () => {
   });
 
   describe('Renderizacao', () => {
+    test('ignora uma resposta atrasada da partitura anterior', async () => {
+      let resolveFirst;
+      server.use(http.get('*/api/partituras/:id', async ({ params }) => {
+        if (params.id === '1') return new Promise(resolve => { resolveFirst = resolve; });
+        return HttpResponse.json({ id: 2, has_audio: false, youtube_url: 'https://youtu.be/segunda' });
+      }));
+      mockSelectedSheet = createMockSheet();
+      const modal = renderModal();
+      await waitFor(() => expect(resolveFirst).toBeDefined());
+
+      mockSelectedSheet = createMockSheet({ id: 2, title: 'Segunda partitura' });
+      modal.rerender(<MemoryRouter><SheetDetailModal /></MemoryRouter>);
+      expect(await screen.findByRole('link', { name: /Ver no YouTube/ })).toHaveAttribute('href', 'https://youtu.be/segunda');
+
+      await act(async () => {
+        resolveFirst(HttpResponse.json({ id: 1, has_audio: true, youtube_url: 'https://youtu.be/primeira' }));
+      });
+      expect(screen.queryByRole('button', { name: 'Ouvir partitura' })).not.toBeInTheDocument();
+      expect(screen.getByRole('link', { name: /Ver no YouTube/ })).toHaveAttribute('href', 'https://youtu.be/segunda');
+    });
+
+    test('mantém o modal e a mídia conhecida quando a atualização falha', async () => {
+      mockSelectedSheet = createMockSheet({ hasAudio: true });
+      const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {});
+      server.use(http.get('*/api/partituras/:id', () => HttpResponse.json({ error: 'Indisponível' }, { status: 503 })));
+      try {
+        renderModal();
+        await waitFor(() => expect(consoleError).toHaveBeenCalledWith('Erro ao buscar mídia da partitura:', expect.any(Error)));
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Ouvir partitura' })).toBeInTheDocument();
+      } finally {
+        consoleError.mockRestore();
+      }
+    });
+
+    test('busca o áudio cadastrado ao abrir uma partitura vinda do repertório', async () => {
+      mockSelectedSheet = createMockSheet();
+      server.use(http.get('*/api/partituras/:id', () => HttpResponse.json({
+        id: 1, has_audio: true, audio_name: 'Marcha.mp3', audio_mime: 'audio/mpeg',
+        youtube_url: 'https://youtu.be/abc'
+      })));
+      renderModal();
+
+      expect(await screen.findByRole('button', { name: 'Ouvir partitura' })).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: /Ver no YouTube/ })).toHaveAttribute('href', 'https://youtu.be/abc');
+    });
+
+    test('atualiza os dados antigos da sessão após cadastrar áudio no admin', async () => {
+      mockSelectedSheet = createMockSheet({ hasAudio: false });
+      server.use(http.get('*/api/partituras/:id', () => HttpResponse.json({ id: 1, has_audio: true })));
+      renderModal();
+
+      expect(await screen.findByRole('button', { name: 'Ouvir partitura' })).toBeInTheDocument();
+    });
+
+    test('remove os controles quando a API confirma que o áudio foi removido', async () => {
+      mockSelectedSheet = createMockSheet({ hasAudio: true, youtubeUrl: 'https://youtu.be/abc' });
+      server.use(http.get('*/api/partituras/:id', () => HttpResponse.json({ id: 1, has_audio: false, youtube_url: null })));
+      renderModal();
+
+      await waitFor(() => expect(screen.queryByRole('button', { name: 'Ouvir partitura' })).not.toBeInTheDocument());
+      expect(screen.queryByRole('link', { name: /Ver no YouTube/ })).not.toBeInTheDocument();
+    });
+
     test('mostra o botão de áudio e o link externo no modal quando cadastrados', async () => {
       mockSelectedSheet = createMockSheet({ hasAudio: true, youtubeUrl: 'https://www.youtube.com/watch?v=abc' });
       renderModal();

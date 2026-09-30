@@ -34,6 +34,7 @@ const SheetDetailModal = () => {
   const showShareOptionsRef = useRef(false);
   const [partes, setPartes] = useState([]);
   const [loadingPartes, setLoadingPartes] = useState(false);
+  const [mediaDetails, setMediaDetails] = useState(null);
 
   // Hook de download
   const download = useSheetDownload({
@@ -42,6 +43,31 @@ const SheetDetailModal = () => {
     partes
   });
   const selectedSheetId = selectedSheet?.id;
+
+  // O repertório fornece dados resumidos e o cache da sessão pode estar antigo.
+  // Revalidar ao abrir garante que o modal use a mídia cadastrada no admin.
+  useEffect(() => {
+    if (!selectedSheetId) return;
+    let cancelled = false;
+    setMediaDetails(null);
+
+    API.getPartitura(selectedSheetId).then(data => {
+      if (!cancelled && data) setMediaDetails({ sheetId: selectedSheetId, data });
+    }).catch(error => {
+      if (!cancelled) console.error('Erro ao buscar mídia da partitura:', error);
+    });
+
+    return () => { cancelled = true; };
+  }, [selectedSheetId]);
+
+  const currentMedia = mediaDetails && mediaDetails.sheetId === selectedSheetId ? mediaDetails.data : null;
+  const audioSheet = selectedSheet ? {
+    ...selectedSheet,
+    hasAudio: currentMedia?.has_audio ?? selectedSheet.hasAudio,
+    audioName: currentMedia ? currentMedia.audio_name : selectedSheet.audioName,
+    audioMime: currentMedia ? currentMedia.audio_mime : selectedSheet.audioMime,
+    youtubeUrl: currentMedia && 'youtube_url' in currentMedia ? currentMedia.youtube_url : selectedSheet.youtubeUrl
+  } : null;
 
   useEffect(() => {
     showShareOptionsRef.current = showShareOptions;
@@ -460,11 +486,11 @@ const SheetDetailModal = () => {
                 )}
               </div>
 
-              {(selectedSheet.hasAudio || selectedSheet.youtubeUrl) && (
+              {(audioSheet.hasAudio || audioSheet.youtubeUrl) && (
                 <div>
-                  {selectedSheet.hasAudio && <SheetAudioPlayer key={selectedSheet.id} sheet={selectedSheet} />}
-                  {selectedSheet.youtubeUrl && (
-                    <a href={selectedSheet.youtubeUrl} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', color: 'var(--accent)', fontSize: 12, fontWeight: 700, marginBottom: 14, textDecoration: 'underline' }}>
+                  {audioSheet.hasAudio && <SheetAudioPlayer key={selectedSheet.id} sheet={audioSheet} />}
+                  {audioSheet.youtubeUrl && (
+                    <a href={audioSheet.youtubeUrl} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', color: 'var(--accent)', fontSize: 12, fontWeight: 700, marginBottom: 14, textDecoration: 'underline' }}>
                       Ver no YouTube ↗
                     </a>
                   )}
