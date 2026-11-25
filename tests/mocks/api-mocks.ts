@@ -2,7 +2,7 @@
 // Mocks para interceptar requisicoes de API nos testes E2E
 // Permite rodar testes sem backend real
 
-import { Page } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
 
 // ===== DADOS MOCK =====
 export const mockUser = {
@@ -26,10 +26,10 @@ export const mockAdminUser = {
 };
 
 export const mockCategorias = [
-  { id: 1, nome: 'Dobrados', total: 45 },
-  { id: 2, nome: 'Marchas', total: 32 },
-  { id: 3, nome: 'Hinos', total: 18 },
-  { id: 4, nome: 'Valsas', total: 12 }
+  { id: 'dobrados', nome: 'Dobrados', total: 45 },
+  { id: 'marchas', nome: 'Marchas', total: 32 },
+  { id: 'hinos', nome: 'Hinos', total: 18 },
+  { id: 'valsas', nome: 'Valsas', total: 12 }
 ];
 
 export const mockPartituras = [
@@ -37,7 +37,7 @@ export const mockPartituras = [
     id: 1,
     titulo: 'Dobrado Bandeirantes',
     compositor: 'Anacleto Medeiros',
-    categoria_id: 1,
+    categoria_id: 'dobrados',
     categoria_nome: 'Dobrados',
     criado_em: '2024-01-01T00:00:00Z'
   },
@@ -45,11 +45,17 @@ export const mockPartituras = [
     id: 2,
     titulo: 'Marcha Soldado',
     compositor: 'Tertuliano Santos',
-    categoria_id: 2,
+    categoria_id: 'marchas',
     categoria_nome: 'Marchas',
     criado_em: '2024-02-01T00:00:00Z'
   }
 ];
+
+const unexpectedApiRequests = new WeakMap<Page, string[]>();
+
+export function assertApiRequestsWereMocked(page: Page) {
+  expect(unexpectedApiRequests.get(page)).toEqual([]);
+}
 
 // ===== SETUP MOCKS =====
 export async function setupApiMocks(page: Page, options: {
@@ -57,6 +63,25 @@ export async function setupApiMocks(page: Page, options: {
   authenticated?: boolean;
 } = {}) {
   const { user = mockUser, authenticated = true } = options;
+  const unexpected: string[] = [];
+  unexpectedApiRequests.set(page, unexpected);
+  await page.route(url => url.pathname.startsWith('/api/'), async route => {
+    unexpected.push(`${route.request().method()} ${new URL(route.request().url()).pathname}`);
+    await route.abort();
+  });
+
+  await page.route('**/api/config/dias-ensaio', route => route.fulfill({ json: { dias: [1, 3], hora: 19 } }));
+  await page.route('**/api/config/recesso', route => route.fulfill({ json: { ativo: false } }));
+  await page.route('**/api/repertorio/ativo', route => route.fulfill({ json: null }));
+
+
+  await page.route('**/api/instrumentos', route => route.fulfill({
+    json: [{ id: 1, nome: 'Trompete Bb 1' }, { id: 2, nome: 'Oboé' }],
+  }));
+  await page.route('**/api/config/tutoriais', route => route.fulfill({ json: { ativo: false } }));
+  await page.route('**/api/assets/list/backgrounds', route => route.fulfill({ json: [] }));
+  await page.route('**/api/tracking/events', route => route.fulfill({ json: { success: true } }));
+
 
   // ----- CHECK USER -----
   await page.route('**/api/check-user', async (route) => {
@@ -248,18 +273,11 @@ export async function loginWithMocks(page: Page, options: {
   const usernameInput = page.locator('input[placeholder="seuusuario"]');
   await usernameInput.fill(username);
 
-  // Aguarda validacao
-  await page.waitForTimeout(500);
-
-  // Digita PIN
+  const account = username === 'admin' ? mockAdminUser : mockUser;
+  await expect(page.getByText(`Olá, ${account.nome}`, { exact: true })).toBeVisible();
   const pinInputs = page.locator('input[type="password"]');
-  const count = await pinInputs.count();
-
-  if (count === 4) {
-    for (let i = 0; i < 4; i++) {
-      await pinInputs.nth(i).fill(pin[i]);
-    }
-  } else if (count === 1) {
-    await pinInputs.first().fill(pin);
+  await expect(pinInputs).toHaveCount(4);
+  for (const [index, digit] of [...pin].entries()) {
+    await pinInputs.nth(index).fill(digit);
   }
 }

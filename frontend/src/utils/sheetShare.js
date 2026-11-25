@@ -1,6 +1,6 @@
 import {
   getSingularCategoryName,
-  SHARE_PRESENTATION_VERSION
+  titleStartsWithCategory
 } from '../../shared/categoryDisplay.js';
 
 const APP_NAME = 'Acervo Digital';
@@ -10,27 +10,15 @@ const resolveOrigin = (origin) => {
   if (!value) throw new Error('Origem da aplicação indisponível');
   return value.replace(/\/$/, '');
 };
-const versionFromDate = (value) => {
-  if (!value) return null;
-  const timestamp = Date.parse(value);
-  return Number.isNaN(timestamp) ? null : timestamp.toString(36);
-};
-
 export const buildSheetShareUrl = (sheet, { origin } = {}) => {
   if (!sheet?.id || !sheet?.category) {
     throw new Error('Partitura sem identificador ou categoria');
   }
 
-  const url = new URL(
+  return new URL(
     `/acervo/${encodeURIComponent(String(sheet.category))}/${encodeURIComponent(String(sheet.id))}`,
     resolveOrigin(origin)
-  );
-  const contentVersion = versionFromDate(sheet.updatedAt || sheet.atualizado_em);
-  url.searchParams.set(
-    'v',
-    contentVersion ? `${contentVersion}-${SHARE_PRESENTATION_VERSION}` : SHARE_PRESENTATION_VERSION
-  );
-  return url.toString();
+  ).toString();
 };
 
 export const buildSheetShareText = (sheet, categoryName) => {
@@ -38,7 +26,7 @@ export const buildSheetShareText = (sheet, categoryName) => {
   const composer = sheet?.composer?.trim();
   const genre = getSingularCategoryName(categoryName || sheet?.category);
   const attribution = composer ? `“${title}”, de ${composer}` : `“${title}”`;
-  const genreLine = genre ? `\nGênero: ${genre}` : '';
+  const genreLine = genre && !titleStartsWithCategory(title, genre) ? `\nGênero: ${genre}` : '';
 
   return `🎺 Partitura disponível no ${APP_NAME}!\n\n${attribution}${genreLine}\n\nAcesse e encontre a sua parte:`;
 };

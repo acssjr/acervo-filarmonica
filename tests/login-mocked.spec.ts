@@ -3,7 +3,9 @@
 // Usa mocks - pode rodar no CI sem backend
 
 import { test, expect } from '@playwright/test';
-import { setupApiMocks, mockUser, loginWithMocks } from './mocks/api-mocks';
+import { assertApiRequestsWereMocked, setupApiMocks, mockUser, loginWithMocks } from './mocks/api-mocks';
+
+test.afterEach(({ page }) => assertApiRequestsWereMocked(page));
 
 // Credenciais de teste - usuario mock
 const TEST_USER = {
@@ -64,7 +66,7 @@ test.describe('Login Flow (Mocked)', () => {
     await usernameInput.fill(TEST_USER.username);
 
     // Aguarda validacao do usuario
-    await page.waitForTimeout(500);
+    await expect(page.getByText(`Olá, ${mockUser.nome}`, { exact: true })).toBeVisible();
 
     // Digita o PIN
     const pinInputs = page.locator('input[type="password"]');
@@ -96,7 +98,7 @@ test.describe('Login Flow (Mocked)', () => {
     await usernameInput.fill(TEST_USER.username);
 
     // Aguarda validacao do usuario
-    await page.waitForTimeout(500);
+    await expect(page.getByText(`Olá, ${mockUser.nome}`, { exact: true })).toBeVisible();
 
     // Digita PIN incorreto
     const pinInputs = page.locator('input[type="password"]');
@@ -122,7 +124,7 @@ test.describe('Login Flow (Mocked)', () => {
     await usernameInput.fill('usuario.inexistente');
 
     // Aguarda verificacao
-    await page.waitForTimeout(1000);
+    await expect(page.getByText('Não encontrado', { exact: true })).toBeVisible();
 
     // Nao deve mostrar indicador de usuario encontrado
     await expect(page.locator('.check-icon, [data-user-found="true"]')).not.toBeVisible();
@@ -152,15 +154,20 @@ test.describe('Navigation after Login (Mocked)', () => {
     expect(page.url()).not.toContain('/login');
   });
 
-  test('pode acessar categorias/acervo', async ({ page }) => {
-    // Procura link para acervo
-    const acervoLink = page.locator('text=Acervo').or(page.locator('text=Partituras')).or(page.locator('[aria-label*="Acervo"]'));
-
-    if (await acervoLink.count() > 0) {
-      await acervoLink.first().click();
-
-      // Deve mostrar categorias mockadas
-      await expect(page.locator('text=/Dobrados|Marchas|Hinos/i').first()).toBeVisible({ timeout: 5000 });
-    }
+  test('abre a partitura de um link e mostra apenas as partes cadastradas', async ({ page }) => {
+    await page.route('**/api/partituras/1/partes', route => route.fulfill({
+      json: [
+        { id: 11, instrumento: 'Grade' },
+        { id: 12, instrumento: 'Trompa F' },
+      ],
+    }));
+    await page.goto('/acervo/dobrados/1');
+    const sheet = page.getByRole('dialog', { name: 'Dobrado Bandeirantes' });
+    await expect(sheet).toBeVisible();
+    await sheet.getByRole('button', { name: 'Outro Instrumento' }).click();
+    await expect(sheet.getByRole('option')).toHaveCount(2);
+    await expect(sheet.getByRole('button', { name: 'Oboé', exact: true })).toHaveCount(0);
+    await expect(sheet.getByRole('button', { name: 'Trompa F', exact: true })).toBeVisible();
+    await expect(sheet.getByRole('button', { name: 'Grade', exact: true })).toBeVisible();
   });
 });

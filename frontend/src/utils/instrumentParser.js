@@ -471,7 +471,7 @@ export const normalizarTexto = (texto) => {
  * @param {string} nomeArquivo - Nome do arquivo
  * @returns {{ instrumento: string, reconhecido: boolean }}
  */
-export const extrairInstrumento = (nomeArquivo) => {
+export const extrairInstrumento = (nomeArquivo, { buscaParcial = true } = {}) => {
   if (!nomeArquivo) return { instrumento: '', reconhecido: false };
 
   // Primeiro corrige encoding do nome do arquivo
@@ -564,10 +564,11 @@ export const extrairInstrumento = (nomeArquivo) => {
   }
 
   // Busca parcial usando cache otimizado (maior para menor para evitar falsos positivos)
-  const chavesOrdenadas = getChavesOrdenadas();
-  for (const chave of chavesOrdenadas) {
-    if (nomeBaseNormalizado.includes(chave) || nomeBaseNormalizado.endsWith(chave)) {
-      return { instrumento: formatarResultado(nomesPadrao[chave]), reconhecido: true };
+  if (buscaParcial) {
+    for (const chave of getChavesOrdenadas()) {
+      if (nomeBaseNormalizado.includes(chave) || nomeBaseNormalizado.endsWith(chave)) {
+        return { instrumento: formatarResultado(nomesPadrao[chave]), reconhecido: true };
+      }
     }
   }
 

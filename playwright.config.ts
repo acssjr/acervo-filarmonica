@@ -72,7 +72,7 @@ export default defineConfig({
 
   /* Run your local dev server before starting the tests */
   webServer: {
-    command: './node_modules/.bin/vite',
+    command: 'npm exec -- vite',
     cwd: './frontend',
     url: 'http://localhost:5173',
     reuseExistingServer: !process.env.CI,

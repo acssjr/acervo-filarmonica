@@ -8,7 +8,8 @@ import {
   errorResponse,
   jsonResponse,
   putWithDbCompensation,
-  readAndValidatePdf
+  readAndValidatePdf,
+  replaceStoredObject
 } from '../../infrastructure/index.js';
 import { registrarAtividade } from '../atividades/index.js';
 import { buildUpdateDetails, describeBoolean } from '../atividades/auditUtils.js';
@@ -363,8 +364,59 @@ function runAfterResponse(context, task) {
   return task;
 }
 
+async function replacePartituraPdf(id, request, env, user) {
+  const previous = await env.DB.prepare(`
+    SELECT p.titulo, p.arquivo_nome, EXISTS(SELECT 1 FROM partes WHERE partitura_id = p.id) AS has_parts
+    FROM partituras p WHERE p.id = ? AND p.ativo = 1
+  `).bind(id).first();
+  if (!previous) return errorResponse('Partitura não encontrada', 404, request);
+  if (previous.has_parts || !/\.pdf$/i.test(previous.arquivo_nome || '')) {
+    return errorResponse('Substitua o PDF pelo ID da parte existente', 409, request);
+  }
+
+  let buffer;
+  try {
+    const form = await request.formData();
+    buffer = await readAndValidatePdf(form.get('arquivo'));
+  } catch (error) {
+    return errorResponse(error.message, 400, request);
+  }
+
+  const key = buildStorageKey(STORAGE_PREFIXES.partituras, `${id}_${crypto.randomUUID()}.pdf`);
+  let conflict = false;
+  try {
+    await replaceStoredObject({
+      bucket: env.BUCKET,
+      oldKey: previous.arquivo_nome,
+      newKey: key,
+      value: buffer,
+      options: { httpMetadata: { contentType: 'application/pdf' } },
+      commit: async () => {
+        const result = await env.DB.prepare(`
+          UPDATE partituras SET arquivo_nome = ?, arquivo_tamanho = ?, atualizado_em = CURRENT_TIMESTAMP
+          WHERE id = ? AND ativo = 1 AND arquivo_nome = ?
+            AND NOT EXISTS(SELECT 1 FROM partes WHERE partitura_id = ?)
+        `).bind(key, buffer.byteLength, id, previous.arquivo_nome, id).run();
+        if (!result.meta?.changes) {
+          conflict = true;
+          throw new Error('A partitura mudou durante a substituição.');
+        }
+        return result;
+      },
+    });
+  } catch (error) {
+    if (conflict) return errorResponse(error.message, 409, request);
+    throw error;
+  }
+  await registrarAtividade(env, 'update_partitura', previous.titulo, 'PDF da obra substituído', user.id);
+  return jsonResponse({ success: true, message: 'PDF substituído!' }, 200, request);
+}
+
 export async function updatePartitura(id, request, env, user) {
   try {
+    if (request.headers.get('Content-Type')?.startsWith('multipart/form-data')) {
+      return await replacePartituraPdf(id, request, env, user);
+    }
     const data = await request.json();
     const { titulo, compositor, arranjador, categoria, categoria_id, ano, descricao, destaque } = data;
 

@@ -444,6 +444,32 @@ describe('SheetDetailModal', () => {
   });
 
   describe('Seletor de Instrumentos', () => {
+    test('mostra somente partes que a API devolveu para a obra', async () => {
+      mockSelectedSheet = createMockSheet();
+      server.use(http.get('*/api/partituras/:id/partes', () => HttpResponse.json([
+        { id: 10, instrumento: 'Grade' },
+        { id: 11, instrumento: 'Trompete Bb' },
+      ])));
+      renderModal();
+
+      await userEvent.click(await screen.findByRole('button', { name: /outro instrumento/i }));
+      expect(screen.getAllByRole('option')).toHaveLength(2);
+      expect(screen.queryByRole('button', { name: /oboé|fagote|regência geral/i })).not.toBeInTheDocument();
+    });
+
+    test('mostra erro sem oferecer a lista geral quando a busca de partes falha', async () => {
+      mockSelectedSheet = createMockSheet();
+      server.use(http.get('*/api/partituras/:id/partes', () => HttpResponse.json({}, { status: 503 })));
+      const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {});
+      try {
+        renderModal();
+        expect(await screen.findByText('Não foi possível carregar as partes desta obra.')).toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: /outro instrumento/i })).not.toBeInTheDocument();
+      } finally {
+        consoleError.mockRestore();
+      }
+    });
+
     test('exibe botao para escolher outro instrumento', async () => {
       mockSelectedSheet = createMockSheet();
       renderModal();
