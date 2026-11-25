@@ -144,7 +144,8 @@ jobs:
   # Roda automaticamente em todo push/PR - usa mocks, nao precisa de backend
   e2e-tests-mocked:
     name: E2E Tests (Mocked)
-    runs-on: ubuntu-latest
+    # Keep the runner supported by the pinned Playwright browser build.
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
 
     steps:
@@ -301,7 +302,8 @@ jobs:
   # Roda apenas via workflow_dispatch - usa backend de producao
   e2e-tests-real:
     name: E2E Tests (Real Backend)
-    runs-on: ubuntu-latest
+    # Keep the runner supported by the pinned Playwright browser build.
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     if: github.event.inputs.run_e2e_real == 'true'
 
