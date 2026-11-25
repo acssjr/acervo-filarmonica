@@ -1073,6 +1073,14 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/PartituraUpdate'
+          multipart/form-data:
+            schema:
+              type: object
+              required: [arquivo]
+              properties:
+                arquivo:
+                  type: string
+                  format: binary
       responses:
         '200':
           description: Partitura atualizada

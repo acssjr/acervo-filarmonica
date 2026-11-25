@@ -307,6 +307,73 @@ def review(draft, edits):
     draft['obras'] = run_node('revisar', draft['obras'])
 
 
+def manage(action, args):
+    if action == 'confirmar-exclusao':
+        if len(args) != 1 or not re.fullmatch(r'[A-F0-9]{10}', args[0].upper()):
+            raise ValueError('Informe o código da prévia de exclusão.')
+        code = args[0].upper()
+        plan = QUEUE / f'exclusao-{code}.json'
+        operation = load(plan)
+        start = datetime.fromisoformat(operation['data'])
+        if operation.get('estado') or stamp() > start + timedelta(minutes=30):
+            raise ValueError('A exclusão já foi tentada ou a prévia expirou. Confira o Acervo antes de repetir.')
+        phrase = 'CONFIRMO EXCLUSAO ' + code
+        with conversation() as db:
+            rows = openbot_approvals(db, phrase)
+            rows += db.execute(
+                """SELECT message_id, sent_at, UPPER(TRIM(text)), 'whatsapp', NULL
+                   FROM projection_messaging_history
+                   WHERE connection_id = ? AND author_id = ? AND platform_channel_id = ?
+                     AND thread_key = 'dm' AND UPPER(TRIM(text)) = ?""",
+                (*owner_chat(), phrase),
+            ).fetchall()
+            if not any(
+                text == phrase and start <= datetime.fromisoformat(sent) <= stamp()
+                and preview_was_shown(db, phrase, [operation['alvo']], None, start, datetime.fromisoformat(sent))
+                for _, sent, text, _, _ in rows
+            ):
+                raise ValueError('Aguardando confirmação após a exibição do alvo da exclusão.')
+        operation['estado'] = 'enviando'
+        save(plan, operation)
+        result = run_node(operation['acao'], operation)
+        operation['estado'] = 'excluida'
+        save(plan, operation)
+        return result
+
+    argc = {'consultar-partes': 1, 'substituir-parte': 3, 'substituir-obra': 2,
+            'preparar-exclusao-obra': 1, 'preparar-exclusao-parte': 2}
+    ids = args[:2] if action in {'substituir-parte', 'preparar-exclusao-parte'} else args[:1]
+    if len(args) != argc[action] or not all(re.fullmatch(r'[1-9][0-9]*', value) for value in ids):
+        raise ValueError('Informe o ID da obra e, quando aplicável, o ID da parte e o arquivo.')
+    payload = {'obra': int(args[0])}
+    if len(ids) > 1:
+        payload['parte'] = int(ids[1])
+    if action == 'consultar-partes':
+        return run_node(action, payload)
+    if action in {'substituir-parte', 'substituir-obra'}:
+        pdf = Path(args[-1]).resolve(strict=True)
+        if pdf.suffix.lower() != '.pdf' or not pdf.is_file() or not any(
+            pdf.is_relative_to(root) for root in ALLOWED_ROOTS
+        ):
+            raise ValueError('Informe um PDF recebido pelo OpenBot ou salvo em entradas.')
+        return run_node(action, {**payload, 'arquivo': str(pdf), 'nome': Path(args[-1]).name})
+
+    details = run_node('consultar-partes', payload)
+    title = ' '.join(details['obra']['titulo'].split())
+    target = f'Obra {payload["obra"]}: {title}'
+    if 'parte' in payload:
+        part = next((item for item in details['partes'] if item['id'] == payload['parte']), None)
+        if not part:
+            raise ValueError('A parte indicada não pertence a essa obra.')
+        target += f' | Parte {part["id"]}: {part["instrumento"]}'
+    code = secrets.token_hex(5).upper()
+    save(QUEUE / f'exclusao-{code}.json', {
+        **payload, 'acao': 'excluir-parte' if 'parte' in payload else 'excluir-obra',
+        'alvo': target, 'data': stamp().isoformat(timespec='milliseconds'),
+    })
+    return {'alvo': target, 'confirmacao': f'CONFIRMO EXCLUSAO {code}', 'validade_minutos': 30}
+
+
 def notify_published(record, target, manifest):
     for entry in record.values():
         current = entry.get('aviso_whatsapp', {})
@@ -384,6 +451,8 @@ def main():
     parser.add_argument('--obra', help='Nome da pasta virtual que agrupa PDFs avulsos.')
     parser.add_argument('acao', choices=[
         'recebidos', 'preparar-whatsapp', 'preparar', 'localizar-previa', 'ver', 'revisar', 'selar', 'publicar',
+        'consultar-partes', 'substituir-parte', 'substituir-obra', 'preparar-exclusao-obra', 'preparar-exclusao-parte',
+        'confirmar-exclusao',
     ])
     parser.add_argument('args', nargs='*')
     options = parser.parse_args()
@@ -393,6 +462,14 @@ def main():
     os.umask(0o077)
     for path in (DEPOSITS, QUEUE):
         path.mkdir(exist_ok=True)
+    if options.acao in {'consultar-partes', 'substituir-parte', 'substituir-obra', 'preparar-exclusao-obra',
+                        'preparar-exclusao-parte', 'confirmar-exclusao'}:
+        import fcntl
+
+        with (QUEUE / '.publicacao.lock').open('a') as lock:
+            fcntl.flock(lock, fcntl.LOCK_EX)
+            print(json.dumps(manage(options.acao, options.args), ensure_ascii=False, indent=2))
+        return
     if options.acao == 'recebidos':
         print(json.dumps([{'mensagem': message_id, 'data': sent_at, 'nome': file['name'],
                            'disponivel': bool(file.get('path') and Path(file['path']).is_file())}

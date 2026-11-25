@@ -2017,6 +2017,10 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["PartituraUpdate"];
+                "multipart/form-data": {
+                    /** Format: binary */
+                    arquivo: string;
+                };
             };
         };
         responses: {

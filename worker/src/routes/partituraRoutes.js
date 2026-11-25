@@ -1,6 +1,6 @@
 // worker/src/routes/partituraRoutes.js
-import { authMiddleware, adminMiddleware } from '../middleware/index.js';
-import { scoreImportMiddleware } from '../middleware/scoreImportMiddleware.js';
+import { authMiddleware } from '../middleware/index.js';
+import { scoreAccess, scoreImportMiddleware } from '../middleware/scoreImportMiddleware.js';
 import {
   getPartituras,
   getPartitura,
@@ -54,43 +54,43 @@ export function setupPartituraRoutes(router) {
   router.post('/api/partituras/:id/corrigir-bombardinos', (req, env, params, context) => {
     const id = params.id;
     return corrigirBombardinosPartitura(id, req, env, context.user);
-  }, [adminMiddleware]);
+  }, [scoreImportMiddleware]);
   router.post('/api/partituras', (req, env, params, context) => {
     return createPartitura(req, env, context.user);
   }, [scoreImportMiddleware]);
   router.put('/api/partituras/:id', (req, env, params, context) => {
     const id = params.id;
     return updatePartitura(id, req, env, context.user);
-  }, [adminMiddleware]);
+  }, [scoreImportMiddleware]);
   router.delete('/api/partituras/:id', (req, env, params, context) => {
     const id = params.id;
     return deletePartitura(id, req, env, context.user, context);
-  }, [adminMiddleware]);
-  router.put('/api/partituras/:id/audio', (req, env, params) => uploadAudio(params.id, req, env), [adminMiddleware]);
-  router.delete('/api/partituras/:id/audio', (req, env, params) => removeAudio(params.id, req, env), [adminMiddleware]);
-  router.put('/api/partituras/:id/youtube', (req, env, params) => updateYoutubeUrl(params.id, req, env), [adminMiddleware]);
+  }, [scoreImportMiddleware]);
+  router.put('/api/partituras/:id/audio', (req, env, params) => uploadAudio(params.id, req, env), [scoreImportMiddleware]);
+  router.delete('/api/partituras/:id/audio', (req, env, params) => removeAudio(params.id, req, env), [scoreImportMiddleware]);
+  router.put('/api/partituras/:id/youtube', (req, env, params) => updateYoutubeUrl(params.id, req, env), [scoreImportMiddleware]);
 
   // Rota autenticada - listar partes (qualquer usuário logado pode ver para download)
   router.get('/api/partituras/:id/partes', (req, env, params) => {
     const id = params.id;
     return getPartesPartitura(id, req, env);
-  }, [authMiddleware]);
+  }, [scoreAccess(authMiddleware)]);
 
   // Rotas admin - gerenciar partes
   router.post('/api/partituras/:id/partes', (req, env, params, context) => {
     const id = params.id;
     return addParte(id, req, env, context.user);
-  }, [adminMiddleware]);
+  }, [scoreImportMiddleware]);
   router.put('/api/partes/:id/substituir', (req, env, params, context) => {
     const id = params.id;
     return substituirParte(id, req, env, context.user);
-  }, [adminMiddleware]);
+  }, [scoreImportMiddleware]);
   router.put('/api/partes/:id/renomear', (req, env, params, context) => {
     const id = params.id;
     return renomearParte(id, req, env, context.user);
-  }, [adminMiddleware]);
+  }, [scoreImportMiddleware]);
   router.delete('/api/partes/:id', (req, env, params, context) => {
     const id = params.id;
     return deleteParte(id, req, env, context.user);
-  }, [adminMiddleware]);
+  }, [scoreImportMiddleware]);
 }

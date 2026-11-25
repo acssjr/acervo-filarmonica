@@ -21,6 +21,59 @@ async function catalog() {
   return { categories, scores };
 }
 
+async function management(action, input) {
+  const id = Number(input.obra);
+  if (!Number.isSafeInteger(id) || id < 1) throw new Error('ID da obra inválido.');
+  const path = `/api/partituras/${id}`;
+  const secret = (await readFile(process.env.ACERVO_IMPORT_KEY_FILE, 'utf8')).trim();
+  const headers = { 'X-Acervo-Import-Key': secret };
+  const obra = await request(path);
+  if (action === 'consultar-partes') return { obra, partes: await request(path + '/partes', { headers }) };
+
+  const isPart = ['substituir-parte', 'excluir-parte'].includes(action);
+  const parts = isPart ? await request(path + '/partes', { headers }) : [];
+  const part = isPart ? parts.find(item => item.id === Number(input.parte)) : null;
+  if (isPart && !part) throw new Error('A parte indicada não pertence a essa obra.');
+  if (action === 'substituir-parte' || action === 'substituir-obra') {
+    if (part && detectPart(input.nome) !== canonicalizeInstrumentName(part.instrumento)) {
+      throw new Error(`O nome do PDF precisa identificar a parte "${part.instrumento}".`);
+    }
+    const form = new FormData();
+    const pdf = new Blob([await readFile(input.arquivo)], { type: 'application/pdf' });
+    form.set('arquivo', pdf, 'parte.pdf');
+    if (!part) {
+      await request(path, { method: 'PUT', headers, body: form });
+      const confirmed = await request(path);
+      if (!confirmed.arquivo_nome || confirmed.arquivo_nome === obra.arquivo_nome) {
+        throw new Error('A API não confirmou a troca do PDF. Confira antes de tentar novamente.');
+      }
+      return { obra: confirmed.titulo, id, substituida: true };
+    }
+    await request(`/api/partes/${part.id}/substituir`, { method: 'PUT', headers, body: form });
+    const confirmed = (await request(path + '/partes', { headers })).find(item => item.id === part.id);
+    if (!confirmed || confirmed.instrumento !== part.instrumento || confirmed.arquivo_nome === part.arquivo_nome) {
+      throw new Error('A API não confirmou a troca do PDF. Confira antes de tentar novamente.');
+    }
+    return { obra: obra.titulo, parte: confirmed.instrumento, id: part.id, substituida: true };
+  }
+
+  const target = part ? `/api/partes/${part.id}` : path;
+  const targetId = part?.id ?? id;
+  const result = await request(target, {
+    method: 'DELETE', headers: { ...headers, 'X-Acervo-Confirm-Delete': String(targetId) },
+  });
+  if (result.success !== true) throw new Error('A API não confirmou a exclusão.');
+  if (part) {
+    if ((await request(path + '/partes', { headers })).some(item => item.id === part.id)) {
+      throw new Error('A parte ainda aparece no Acervo. Confira antes de repetir.');
+    }
+  } else {
+    const response = await fetch(api + path, { redirect: 'error', signal: AbortSignal.timeout(15_000) });
+    if (response.status !== 404) throw new Error('A ausência da obra ainda não foi confirmada pela API.');
+  }
+  return { obra: obra.titulo, parte: part?.instrumento, id: targetId, excluida: true };
+}
+
 function detectPart(filename) {
   const part = extrairInstrumento(filename, { buscaParcial: false });
   return part.reconhecido ? canonicalizeInstrumentName(part.instrumento) : '';
@@ -122,6 +175,8 @@ try {
     console.log(JSON.stringify(check(input, categories, scores)));
   } else if (action === 'enviar') {
     console.log(JSON.stringify(await upload(input)));
+  } else if (['consultar-partes', 'substituir-parte', 'substituir-obra', 'excluir-obra', 'excluir-parte'].includes(action)) {
+    console.log(JSON.stringify(await management(action, input)));
   } else {
     throw new Error('Comando inválido.');
   }

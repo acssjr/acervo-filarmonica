@@ -60,9 +60,18 @@ do agente.
   Se uma tentativa terminar sem resposta conclusiva, confira no painel antes
   de preparar um reenvio.
 
-As únicas escritas disponíveis à chave `ACERVO_IMPORT_KEY` no Worker são a
-criação de uma obra com PDF e a criação de uma obra com partes. A chave
-correspondente fica em `importacao/.import-key` no workspace do agente.
+A chave `ACERVO_IMPORT_KEY` dá acesso às operações de gestão de partituras e
+partes na API. Contas e outras áreas usam as permissões anteriores. A chave
+fica em `importacao/.import-key` no workspace do agente.
+
+- `consultar-partes ID_OBRA` resolve os IDs antes de alterar.
+- `substituir-parte ID_OBRA ID_PARTE CAMINHO_PDF` confirma o vínculo, usa o
+  nome do PDF para validar o instrumento, substitui o arquivo e relê a parte.
+- `substituir-obra ID_OBRA CAMINHO_PDF` troca o PDF de uma obra de arquivo único.
+- `preparar-exclusao-obra ID_OBRA` e `preparar-exclusao-parte ID_OBRA ID_PARTE`
+  geram o alvo literal e o código. Exiba os dois na mesma prévia e aguarde a
+  mensagem do titular `CONFIRMO EXCLUSAO CÓDIGO`, no OpenBot ou no WhatsApp
+  privado. Só então execute `confirmar-exclusao CÓDIGO`.
 O arquivo privado `importacao/canal.json` registra a conexão, o remetente e a
 conversa autorizados pelas chaves `conexao`, `remetente` e `conversa`.
 O arquivo privado `importacao/aprovacao-openbot.json` identifica o membro

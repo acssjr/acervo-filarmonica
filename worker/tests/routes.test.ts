@@ -974,7 +974,7 @@ describe('Validação de instrumentos em uploads', () => {
     { type: 'application/pdf' }
   );
 
-  it('permite cadastro com a chave do OpenBot e bloqueia seu uso em alterações', async () => {
+  it('permite gerenciar partituras com a chave do OpenBot sem liberar outras áreas', async () => {
     const router = createRouter();
     const key = 'test-import-key-with-at-least-32-characters';
     const testEnv = { DB: env.DB, BUCKET: env.BUCKET, JWT_SECRET: env.JWT_SECRET, ACERVO_IMPORT_KEY: key };
@@ -999,10 +999,46 @@ describe('Validação de instrumentos em uploads', () => {
     const saved = await router.handle(new Request(`https://test.local/api/partituras/${id}`), testEnv);
     expect(await saved.json()).toMatchObject({ id, titulo: 'Partitura importada pelo OpenBot' });
 
-    const blocked = await router.handle(new Request(`https://test.local/api/partituras/${id}`, {
-      method: 'PUT',
-      headers: { 'X-Acervo-Import-Key': key },
-      body: form(),
+    const headers = { 'X-Acervo-Import-Key': key };
+    const target = `https://test.local/api/partituras/${id}`;
+    const scorePdf = () => {
+      const upload = new FormData();
+      upload.set('arquivo', new File(['%PDF-1.7\nscore replacement'], 'score.pdf', { type: 'application/pdf' }));
+      return router.handle(new Request(target, { method: 'PUT', headers, body: upload }), testEnv);
+    };
+    expect((await scorePdf()).status).toBe(200);
+    const replacedScore = await (await router.handle(new Request(target), testEnv)).json();
+    expect(await (await env.BUCKET.get(replacedScore.arquivo_nome))?.text()).toContain('score replacement');
+    const partForm = new FormData();
+    partForm.set('instrumento', 'Trombone');
+    partForm.set('arquivo', arquivoPdf());
+    const pathname = `https://test.local/api/partituras/${id}/partes`;
+    const createdPart = await router.handle(new Request(pathname, { method: 'POST', headers, body: partForm }), testEnv);
+    expect(createdPart.status).toBe(201);
+    expect((await scorePdf()).status).toBe(409);
+    const listParts = async () => (await router.handle(new Request(pathname, { headers }), testEnv)).json();
+    const [part] = await listParts();
+    const replacement = new FormData();
+    replacement.set('arquivo', new File(['%PDF-1.7\nreplacement'], 'trombone.pdf', { type: 'application/pdf' }));
+    const change = await router.handle(new Request(`https://test.local/api/partes/${part.id}/substituir`, {
+      method: 'PUT', headers, body: replacement,
+    }), testEnv);
+    expect(change.status).toBe(200);
+    const [replaced] = await listParts();
+    expect(replaced).toMatchObject({ id: part.id, instrumento: 'Trombone' });
+    expect(replaced.arquivo_nome).not.toBe(part.arquivo_nome);
+    expect(await (await env.BUCKET.get(replaced.arquivo_nome))?.text()).toContain('replacement');
+
+    const remove = (confirmation: string) => router.handle(new Request(target, {
+      method: 'DELETE', headers: { ...headers, 'X-Acervo-Confirm-Delete': confirmation },
+    }), testEnv);
+    expect((await remove('other-id')).status).toBe(400);
+    expect((await router.handle(new Request(target), testEnv)).status).toBe(200);
+    expect((await remove(String(id))).status).toBe(200);
+    expect((await router.handle(new Request(target), testEnv)).status).toBe(404);
+
+    const blocked = await router.handle(new Request('https://test.local/api/categorias', {
+      method: 'POST', headers, body: JSON.stringify({ nome: 'Não autorizado' }),
     }), testEnv);
     expect(blocked.status).toBe(403);
   });
