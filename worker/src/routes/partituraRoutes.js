@@ -1,5 +1,6 @@
 // worker/src/routes/partituraRoutes.js
 import { authMiddleware, adminMiddleware } from '../middleware/index.js';
+import { scoreImportMiddleware } from '../middleware/scoreImportMiddleware.js';
 import {
   getPartituras,
   getPartitura,
@@ -49,14 +50,14 @@ export function setupPartituraRoutes(router) {
   // Rotas admin - partituras
   router.post('/api/partituras/upload-pasta', (req, env, params, context) => {
     return uploadPastaPartitura(req, env, context.user);
-  }, [adminMiddleware]);
+  }, [scoreImportMiddleware]);
   router.post('/api/partituras/:id/corrigir-bombardinos', (req, env, params, context) => {
     const id = params.id;
     return corrigirBombardinosPartitura(id, req, env, context.user);
   }, [adminMiddleware]);
   router.post('/api/partituras', (req, env, params, context) => {
     return createPartitura(req, env, context.user);
-  }, [adminMiddleware]);
+  }, [scoreImportMiddleware]);
   router.put('/api/partituras/:id', (req, env, params, context) => {
     const id = params.id;
     return updatePartitura(id, req, env, context.user);

@@ -1,6 +1,7 @@
 import {
   getSingularCategoryName,
-  SHARE_PRESENTATION_VERSION
+  SHARE_PRESENTATION_VERSION,
+  titleStartsWithCategory
 } from '../../shared/categoryDisplay.js';
 
 export const SITE_ORIGIN = 'https://acervo.filarmonica25demarco.com';
@@ -119,9 +120,12 @@ export const getTitleFontSize = (title) => {
   return 62;
 };
 
-export const buildSocialCardContent = (sheet) => ({
-  title: sheet.title,
-  categoryName: getSingularCategoryName(sheet.categoryName),
-  composer: sheet.composer,
-  titleFontSize: getTitleFontSize(sheet.title)
-});
+export const buildSocialCardContent = (sheet) => {
+  const category = getSingularCategoryName(sheet.categoryName);
+  return {
+    title: sheet.title,
+    categoryName: titleStartsWithCategory(sheet.title, category) ? '' : category,
+    composer: sheet.composer,
+    titleFontSize: getTitleFontSize(sheet.title)
+  };
+};

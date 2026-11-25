@@ -103,6 +103,9 @@ jobs:
       - name: Check generated D1 test schema
         run: npm run db:schema:test
 
+      - name: Verify OpenBot import review
+        run: python3 -B -m unittest discover -s tests -p test_openbot_import.py
+
   # ===== TESTES UNITARIOS (Jest) =====
   unit-tests:
     name: Unit Tests (Jest)

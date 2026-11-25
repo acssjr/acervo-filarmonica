@@ -21,11 +21,18 @@ const SINGULAR_CATEGORY_NAMES = new Map([
   ['preludios', 'Prelúdio']
 ]);
 
-export const SHARE_PRESENTATION_VERSION = 'genre-singular-v1';
+export const SHARE_PRESENTATION_VERSION = '2';
 
 export const getSingularCategoryName = (categoryName) => {
   if (typeof categoryName !== 'string') return '';
   const trimmedName = categoryName.trim();
   if (!trimmedName) return '';
   return SINGULAR_CATEGORY_NAMES.get(trimmedName.toLocaleLowerCase('pt-BR')) || trimmedName;
+};
+
+export const titleStartsWithCategory = (title, category) => {
+  const name = title.normalize('NFC').trim().toLocaleLowerCase('pt-BR');
+  const prefix = category.normalize('NFC').trim().toLocaleLowerCase('pt-BR');
+  if (!prefix || !name.startsWith(prefix)) return false;
+  return name.length === prefix.length || /^[\s:.,–—-]/.test(name.slice(prefix.length));
 };

@@ -10,16 +10,22 @@ const sheet = {
 };
 
 describe('sheetShare', () => {
-  test('monta URL canônica codificada com versão', () => {
+  test('monta URL canônica codificada sem parâmetros de imagem', () => {
     const url = buildSheetShareUrl({ ...sheet, category: 'marchas festivas' }, { origin: 'https://acervo.exemplo.com/' });
 
-    expect(url).toBe('https://acervo.exemplo.com/acervo/marchas%20festivas/96?v=mtbh0g00-genre-singular-v1');
+    expect(url).toBe('https://acervo.exemplo.com/acervo/marchas%20festivas/96');
   });
 
   test('monta a mensagem com peça, compositor e gênero', () => {
     expect(buildSheetShareText(sheet, 'Marchas')).toBe(
       "🎺 Partitura disponível no Acervo Digital!\n\n“Senhora Sant'Anna”, de Tertuliano Santos\nGênero: Marcha\n\nAcesse e encontre a sua parte:"
     );
+  });
+
+  test('evita repetir o gênero que já inicia o título', () => {
+    const message = buildSheetShareText({ ...sheet, title: 'Dobrado Prof. René Becker' }, 'Dobrados');
+    expect(message).toContain('“Dobrado Prof. René Becker”');
+    expect(message).not.toContain('Gênero:');
   });
 
   test('copia o link e abre o compartilhamento nativo', async () => {

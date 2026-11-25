@@ -12,6 +12,7 @@
 import { env, SELF } from 'cloudflare:test';
 import { describe, it, expect, beforeAll } from 'vitest';
 import { checkReadiness } from '../src/routes/healthRoutes.js';
+import { createRouter } from '../src/routes/index.js';
 
 // Helper para criar token JWT de teste
 async function createTestToken(userId: number, isAdmin: boolean = false): Promise<string> {
@@ -972,6 +973,39 @@ describe('Validação de instrumentos em uploads', () => {
     'parte.pdf',
     { type: 'application/pdf' }
   );
+
+  it('permite cadastro com a chave do OpenBot e bloqueia seu uso em alterações', async () => {
+    const router = createRouter();
+    const key = 'test-import-key-with-at-least-32-characters';
+    const testEnv = { DB: env.DB, BUCKET: env.BUCKET, JWT_SECRET: env.JWT_SECRET, ACERVO_IMPORT_KEY: key };
+    const form = () => {
+      const data = new FormData();
+      data.set('titulo', 'Partitura importada pelo OpenBot');
+      data.set('compositor', 'Compositor Teste');
+      data.set('categoria', 'dobrados');
+      data.set('arquivo', arquivoPdf());
+      return data;
+    };
+    const post = (credential: string) => router.handle(new Request('https://test.local/api/partituras', {
+      method: 'POST',
+      headers: { 'X-Acervo-Import-Key': credential },
+      body: form(),
+    }), testEnv);
+
+    expect((await post('wrong-key')).status).toBe(403);
+    const response = await post(key);
+    expect(response.status).toBe(201);
+    const { id } = await response.json();
+    const saved = await router.handle(new Request(`https://test.local/api/partituras/${id}`), testEnv);
+    expect(await saved.json()).toMatchObject({ id, titulo: 'Partitura importada pelo OpenBot' });
+
+    const blocked = await router.handle(new Request(`https://test.local/api/partituras/${id}`, {
+      method: 'PUT',
+      headers: { 'X-Acervo-Import-Key': key },
+      body: form(),
+    }), testEnv);
+    expect(blocked.status).toBe(403);
+  });
 
   it('rejeita instrumento composto apenas por espaços ao adicionar uma parte', async () => {
     const partituraId = await env.DB.prepare(`

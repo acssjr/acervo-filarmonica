@@ -20,22 +20,26 @@ import { PartePicker, DownloadConfirm, InstrumentSelector, ShareOptions } from '
 import SheetAudioPlayer from './SheetAudioPlayer';
 
 const PDFViewerModal = lazy(() => import('./PDFViewerModal'));
+const emptyParts = [];
 
 const SheetDetailModal = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
   const { selectedSheet, setSelectedSheet, showToast, addToShareCart, removeFromShareCart, shareCart } = useUI();
-  const { favoritesSet, toggleFavorite, categoriesMap, instrumentNames } = useData();
+  const { favoritesSet, toggleFavorite, categoriesMap } = useData();
 
   // Estado local
   const isDesktop = useMediaQuery('(min-width: 1024px)');
   const [showInstrumentPicker, setShowInstrumentPicker] = useState(false);
   const [showShareOptions, setShowShareOptions] = useState(false);
   const showShareOptionsRef = useRef(false);
-  const [partes, setPartes] = useState([]);
-  const [loadingPartes, setLoadingPartes] = useState(false);
+  const [partsResult, setPartsResult] = useState(null);
   const [mediaDetails, setMediaDetails] = useState(null);
+  const selectedSheetId = selectedSheet?.id;
+  const currentParts = partsResult?.sheetId === selectedSheetId ? partsResult : null;
+  const partes = currentParts?.data ?? emptyParts;
+  const loadingPartes = Boolean(selectedSheetId && !currentParts);
 
   // Hook de download
   const download = useSheetDownload({
@@ -43,7 +47,6 @@ const SheetDetailModal = () => {
     selectedSheet,
     partes
   });
-  const selectedSheetId = selectedSheet?.id;
 
   // O repertório fornece dados resumidos e o cache da sessão pode estar antigo.
   // Revalidar ao abrir garante que o modal use a mídia cadastrada no admin.
@@ -172,20 +175,16 @@ const SheetDetailModal = () => {
     });
 
     const fetchPartes = async () => {
-      setLoadingPartes(true);
       try {
         const data = await API.getPartesPartitura(selectedSheetId);
         if (!cancelled) {
-          setPartes(data || []);
+          setPartsResult({ sheetId: selectedSheetId, data: data || emptyParts });
         }
       } catch (e) {
         if (!cancelled) {
           console.error('Erro ao buscar partes:', e);
-          setPartes([]);
+          setPartsResult({ sheetId: selectedSheetId, data: emptyParts, failed: true });
         }
-      }
-      if (!cancelled) {
-        setLoadingPartes(false);
       }
     };
 
@@ -202,9 +201,7 @@ const SheetDetailModal = () => {
   const userInstrumentLower = userInstrument?.toLowerCase() || '';
   const isMaestro = userInstrumentLower === 'maestro' || userInstrumentLower === 'regente';
   const hasGrade = partes.some(p => p.instrumento?.toLowerCase() === 'grade');
-  const availableInstruments = partes.length > 0
-    ? [...new Set(partes.map(p => p.instrumento))]
-    : instrumentNames;
+  const availableInstruments = [...new Set(partes.map(p => p.instrumento))];
 
   const handleShareLink = useCallback(async () => {
     setShowShareOptions(false);
@@ -597,6 +594,8 @@ const SheetDetailModal = () => {
                 </button>
 
                 {/* Seletor de Outros Instrumentos */}
+                {currentParts?.failed && <p role="status">Não foi possível carregar as partes desta obra.</p>}
+                {availableInstruments.length > 0 && (
                 <div data-walkthrough="instrument-selector">
                   <InstrumentSelector
                     isOpen={showInstrumentPicker}
@@ -615,6 +614,7 @@ const SheetDetailModal = () => {
                     onRemoveFromCart={removeFromShareCart}
                   />
                 </div>
+                )}
               </div>
 
               {/* Botoes Adicionais */}

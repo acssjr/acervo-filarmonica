@@ -30,7 +30,7 @@ describe('preview social de partitura', () => {
     const metadata = buildSocialMetadata(sheet, 'https://acervo.exemplo.com');
 
     expect(metadata.canonicalUrl).toBe('https://acervo.exemplo.com/acervo/marchas/96');
-    expect(metadata.imageUrl).toBe('https://acervo.exemplo.com/acervo/marchas/96/social-image.png?v=mtbh0g00-genre-singular-v1');
+    expect(metadata.imageUrl).toBe('https://acervo.exemplo.com/acervo/marchas/96/social-image.png?v=mtbh0g00-2');
     expect(metadata.description).toBe('Marcha de Tertuliano Santos. Entre no Acervo Digital para visualizar e baixar sua parte.');
     expect(metadata.imageAlt).toContain('gênero Marcha');
   });
@@ -66,6 +66,12 @@ describe('preview social de partitura', () => {
       titleFontSize: 62
     });
     expect(buildSocialCardContent(sheet)).not.toHaveProperty('composerImage');
+  });
+
+  test('omite o selo de gênero quando o título já começa com ele', () => {
+    const content = buildSocialCardContent({ ...sheet, categoryName: 'Dobrados', title: 'Dobrado Prof. René Becker' });
+    expect(content).toMatchObject({ title: 'Dobrado Prof. René Becker', categoryName: '' });
+    expect(buildSocialCardContent({ ...sheet, title: 'Marchador' }).categoryName).toBe('Marcha');
   });
 
   test('reduz títulos longos para caber no cartão', () => {

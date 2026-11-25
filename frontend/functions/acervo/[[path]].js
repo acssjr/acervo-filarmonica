@@ -113,7 +113,7 @@ const cardElement = (sheet) => {
         key: 'main',
         style: { display: 'flex', flexDirection: 'column', marginTop: '70px', maxWidth: '920px' }
       }, [
-        React.createElement('div', {
+        content.categoryName && React.createElement('div', {
           key: 'genre',
           style: {
             alignSelf: 'flex-start',
@@ -230,8 +230,13 @@ const renderGenericPage = async (context) => {
 const fallbackImage = (requestUrl) => Response.redirect(new URL(FALLBACK_IMAGE_PATH, requestUrl), 302);
 
 export async function onRequestGet(context) {
-  const route = parseSheetRoute(new URL(context.request.url).pathname);
+  const url = new URL(context.request.url);
+  const route = parseSheetRoute(url.pathname);
   if (!route) return renderGenericPage(context);
+  if (!route.isImage && url.searchParams.has('v')) {
+    url.searchParams.delete('v');
+    return Response.redirect(url, 301);
+  }
 
   try {
     const sheet = await fetchSheet(route.sheetId, context.env.API_ORIGIN || API_ORIGIN);
