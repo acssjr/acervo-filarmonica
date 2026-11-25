@@ -8,7 +8,7 @@ import { useUI } from '@contexts/UIContext';
 import { notifyNotificationsChanged } from '@contexts/notificationEvents';
 import { API } from '@services/api';
 import LottieAnimation from '@components/animations/LottieAnimation';
-import { processarLote, processarFileList, filtrarPorStatus, calcularResultado } from '@utils/batchParser';
+import { lerArquivosArrastados, processarArquivos, processarFileList, filtrarPorStatus, calcularResultado } from '@utils/batchParser';
 import { uploadLote, estimarTempo, gerarResumo } from '@utils/uploadBatch';
 
 // Estados do modal
@@ -29,7 +29,7 @@ const TABS = {
   PROBLEM: 'problem'
 };
 
-const ImportacaoLoteModal = ({ isOpen, onClose, onSuccess, onOpenUploadPasta, initialItems }) => {
+const ImportacaoLoteModal = ({ isOpen, onClose, onSuccess, onOpenUploadPasta, initialFiles }) => {
   const { showToast } = useUI();
 
   // Estado principal
@@ -131,14 +131,14 @@ const ImportacaoLoteModal = ({ isOpen, onClose, onSuccess, onOpenUploadPasta, in
   // Processa items pré-carregados (drag & drop global)
   useEffect(() => {
     const processInitialItems = async () => {
-      if (!isOpen || !initialItems || initialItems.length === 0 || categorias.length === 0 || partiturasExistentes === null) return;
+      if (!isOpen || !initialFiles || initialFiles.length === 0 || categorias.length === 0 || partiturasExistentes === null) return;
       if (modalState !== STATES.SELECTION) return; // Só processa se estiver no estado inicial
 
       setModalState(STATES.ANALYZING);
 
       try {
-        const { pastas: pastasAnalisadas, estatisticas: stats } = await processarLote(
-          initialItems,
+        const { pastas: pastasAnalisadas, estatisticas: stats } = processarArquivos(
+          initialFiles,
           categorias,
           partiturasExistentes,
           setAnalyzeProgress
@@ -166,7 +166,7 @@ const ImportacaoLoteModal = ({ isOpen, onClose, onSuccess, onOpenUploadPasta, in
     };
 
     processInitialItems();
-  }, [isOpen, initialItems, categorias, partiturasExistentes, modalState, showToast]);
+  }, [isOpen, initialFiles, categorias, partiturasExistentes, modalState, showToast]);
 
   // Handlers de Drag & Drop
   const handleDragEnter = (e) => {
@@ -193,15 +193,12 @@ const ImportacaoLoteModal = ({ isOpen, onClose, onSuccess, onOpenUploadPasta, in
     e.stopPropagation();
     setIsDragging(false);
 
-    const items = e.dataTransfer.items;
-    if (!items || items.length === 0) return;
-
     // Inicia análise
     setModalState(STATES.ANALYZING);
 
     try {
-      const { pastas: pastasAnalisadas, estatisticas: stats } = await processarLote(
-        items,
+      const { pastas: pastasAnalisadas, estatisticas: stats } = processarArquivos(
+        await lerArquivosArrastados(e.dataTransfer),
         categorias,
         partiturasExistentes,
         setAnalyzeProgress

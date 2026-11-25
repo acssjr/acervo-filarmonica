@@ -10,7 +10,9 @@ describe('baseline do banco', () => {
       '0003_fix_bombardino_tonalidades.sql',
       '0004_login_rate_limits.sql',
       '0005_activity_targets.sql',
-      '0006_partitura_audio.sql'
+      '0006_partitura_audio.sql',
+      '0007_partitura_editaveis.sql',
+      '0008_openbot_operacoes.sql'
     ]);
   });
 

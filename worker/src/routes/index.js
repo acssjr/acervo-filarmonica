@@ -17,6 +17,8 @@ import { setupConfigRoutes } from './configRoutes.js';
 import { setupPresencaRoutes } from './presencaRoutes.js';
 import { setupEnsaioRoutes } from './ensaioRoutes.js';
 import { setupAvisoRoutes } from './avisoRoutes.js';
+import { setupOpenBotRoutes } from './openBotRoutes.js';
+import { setupEditavelRoutes } from './editavelRoutes.js';
 import { setupAssetRoutes } from './assetRoutes.js';
 
 /**
@@ -45,6 +47,8 @@ export function createRouter() {
   setupEnsaioRoutes(router);
   setupAvisoRoutes(router);
   setupAssetRoutes(router);
+  setupEditavelRoutes(router);
+  setupOpenBotRoutes(router);
 
   return router;
 }

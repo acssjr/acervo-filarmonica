@@ -25,6 +25,8 @@ const AdminConfig = lazy(() => import('./AdminConfig'));
 const AdminPresenca = lazy(() => import('./AdminPresenca'));
 const AdminAvisos = lazy(() => import('./AdminAvisos'));
 const AdminAnalytics = lazy(() => import('./AdminAnalytics'));
+const AdminOpenBot = lazy(() => import('./AdminOpenBot'));
+const AdminEditaveis = lazy(() => import('./AdminEditaveis'));
 const AdminAssets = lazy(() => import('./AdminAssets'));
 
 const SectionLoader = () => (
@@ -183,6 +185,8 @@ const AdminApp = () => {
     ] },
     { label: 'Sistema', items: [
       { id: 'analytics', icon: 'analytics', label: 'Analytics' },
+      { id: 'aprovar-openbot', icon: 'config', label: 'Aprovações do OpenBot' },
+      { id: 'editaveis', icon: 'assets', label: 'Arquivos editáveis' },
       { id: 'assets', icon: 'assets', label: 'Ativos' },
       { id: 'config', icon: 'settings', label: 'Configurações' },
     ] },
@@ -274,6 +278,8 @@ const AdminApp = () => {
       case 'categorias': return <AdminCategorias />;
       case 'presenca': return <AdminPresenca />;
       case 'avisos': return <AdminAvisos />;
+      case 'aprovar-openbot': return <AdminOpenBot />;
+      case 'editaveis': return <AdminEditaveis />;
       case 'assets': return <AdminAssets />;
       case 'config': return <AdminConfig />;
       default: return <AdminDashboard />;

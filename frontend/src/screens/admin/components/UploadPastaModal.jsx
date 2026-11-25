@@ -10,13 +10,13 @@ import CategoryIcon from '@components/common/CategoryIcon';
 import LottieAnimation from '@components/animations/LottieAnimation';
 import { extrairInstrumento } from '@utils/instrumentParser';
 import { analisarMetadados } from '@utils/metadataParser';
+import { arquivosSelecionados, groupFilesByFolder, lerArquivosArrastados } from '@utils/batchParser';
 
-const UploadPastaModal = ({ isOpen, onClose, onSuccess, initialFiles }) => {
+const UploadPastaModal = ({ isOpen, onClose, onSuccess, initialFiles, onOpenBatch, categorias }) => {
   const { showToast } = useUI();
   const [_files, setFiles] = useState([]);
   const [folderName, setFolderName] = useState('');
   const [parsedData, setParsedData] = useState([]);
-  const [categorias, setCategorias] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
 
@@ -59,19 +59,6 @@ const UploadPastaModal = ({ isOpen, onClose, onSuccess, initialFiles }) => {
   const reconhecidos = parsedData.filter(p => p.reconhecido).length;
   const naoReconhecidos = parsedData.filter(p => !p.reconhecido).length;
 
-  // Carrega categorias
-  useEffect(() => {
-    const loadCategorias = async () => {
-      try {
-        const cats = await API.getCategorias();
-        setCategorias(cats || []);
-      } catch {
-        console.error('Erro ao carregar categorias');
-      }
-    };
-    if (isOpen) loadCategorias();
-  }, [isOpen]);
-
   // Alterna frases engraçadas durante upload
   useEffect(() => {
     if (uploading && (uploadPhase === 'uploading' || uploadPhase === 'processing')) {
@@ -103,13 +90,13 @@ const UploadPastaModal = ({ isOpen, onClose, onSuccess, initialFiles }) => {
   // Processa arquivos pré-carregados (drag & drop global)
   useEffect(() => {
     if (isOpen && initialFiles && initialFiles.files && initialFiles.files.length > 0) {
-      processFiles(initialFiles.files, initialFiles.folderName + '/');
+      processFiles(initialFiles.files, initialFiles.folderPath, initialFiles.pasta);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- processFiles é função local estável
-  }, [isOpen, initialFiles]);
+  }, [isOpen, initialFiles, categorias]);
 
   // Processa os arquivos
-  const processFiles = (pdfFiles, folderPath) => {
+  const processFiles = (pdfFiles, folderPath, pasta) => {
     if (pdfFiles.length === 0) {
       showToast('Nenhum arquivo PDF encontrado na pasta', 'error');
       return;
@@ -117,18 +104,17 @@ const UploadPastaModal = ({ isOpen, onClose, onSuccess, initialFiles }) => {
 
     setFiles(pdfFiles);
 
-    const pathParts = folderPath.split('/');
-    const pastaName = pathParts.length > 0 ? pathParts[0] : 'Pasta sem nome';
+    const pastaName = folderPath.split('/').filter(Boolean).at(-1) || pdfFiles[0].name.replace(/\.pdf$/i, '');
     setFolderName(pastaName);
 
     // Usa análise multi-camada para melhor detecção
-    const metadados = analisarMetadados(folderPath, pastaName, categorias);
+    const metadados = pasta || analisarMetadados(folderPath, pastaName, categorias);
     setTitulo(metadados.titulo);
     setCompositor(metadados.compositor);
     setArranjador(metadados.arranjador || '');
     setCategoria(metadados.categoria);
 
-    const parsed = pdfFiles.map(file => {
+    const parsed = pasta?.arquivos || pdfFiles.map(file => {
       const { instrumento, reconhecido } = extrairInstrumento(file.name);
       return { file, nomeOriginal: file.name, instrumento, reconhecido };
     });
@@ -136,40 +122,18 @@ const UploadPastaModal = ({ isOpen, onClose, onSuccess, initialFiles }) => {
     setParsedData(parsed);
   };
 
-  // Processa os arquivos quando selecionados via input
-  const handleFolderSelect = (e) => {
-    const fileList = Array.from(e.target.files);
-    if (fileList.length === 0) return;
-    const pdfFiles = fileList.filter(f => f.name.toLowerCase().endsWith('.pdf'));
-    const firstPath = pdfFiles[0]?.webkitRelativePath || pdfFiles[0]?.name || '';
-    processFiles(pdfFiles, firstPath);
+  const processSelection = files => {
+    const groups = groupFilesByFolder(files);
+    if (!groups.size) return showToast('Nenhum arquivo PDF encontrado', 'error');
+    if (groups.size > 1) return onOpenBatch(files);
+    const [[folderPath, group]] = groups;
+    processFiles(group.map(item => item.file), folderPath);
   };
 
-  // Função recursiva para ler arquivos de pasta (drag & drop)
-  const readAllEntriesRecursively = async (entry, path = '') => {
-    const files = [];
-    if (entry.isFile) {
-      const file = await new Promise((resolve) => entry.file(resolve));
-      Object.defineProperty(file, 'webkitRelativePath', { value: path + file.name, writable: false });
-      files.push(file);
-    } else if (entry.isDirectory) {
-      const reader = entry.createReader();
-      const entries = await new Promise((resolve) => {
-        const allEntries = [];
-        const readEntries = () => {
-          reader.readEntries((results) => {
-            if (results.length === 0) resolve(allEntries);
-            else { allEntries.push(...results); readEntries(); }
-          });
-        };
-        readEntries();
-      });
-      for (const childEntry of entries) {
-        const childFiles = await readAllEntriesRecursively(childEntry, path + entry.name + '/');
-        files.push(...childFiles);
-      }
-    }
-    return files;
+  const handleFolderSelect = (e) => {
+    const files = arquivosSelecionados(e.target.files);
+    e.target.value = '';
+    if (files.length) processSelection(files);
   };
 
   // Handlers de Drag & Drop
@@ -182,43 +146,11 @@ const UploadPastaModal = ({ isOpen, onClose, onSuccess, initialFiles }) => {
     e.stopPropagation();
     setIsDragging(false);
 
-    const items = e.dataTransfer.items;
-    if (!items || items.length === 0) return;
-
-    let folderEntry = null;
-    let folderName = '';
-
-    for (const item of items) {
-      const entry = item.webkitGetAsEntry?.();
-      if (entry?.isDirectory) {
-        folderEntry = entry;
-        folderName = entry.name;
-        break;
-      }
-    }
-
-    if (!folderEntry) {
-      const droppedFiles = Array.from(e.dataTransfer.files);
-      const pdfFiles = droppedFiles.filter(f => f.name.toLowerCase().endsWith('.pdf'));
-      if (pdfFiles.length === 0) {
-        showToast('Arraste uma pasta contendo arquivos PDF', 'error');
-        return;
-      }
-      processFiles(pdfFiles, pdfFiles[0].name);
-      return;
-    }
-
     try {
-      const allFiles = await readAllEntriesRecursively(folderEntry, '');
-      const pdfFiles = allFiles.filter(f => f.name.toLowerCase().endsWith('.pdf'));
-      if (pdfFiles.length === 0) {
-        showToast('Nenhum arquivo PDF encontrado na pasta', 'error');
-        return;
-      }
-      processFiles(pdfFiles, folderName + '/');
+      processSelection(await lerArquivosArrastados(e.dataTransfer));
     } catch (err) {
       console.error('Erro ao ler pasta:', err);
-      showToast('Erro ao ler a pasta arrastada', 'error');
+      showToast('Erro ao ler a pasta arrastada. Tente selecionar a pasta.', 'error');
     }
   };
 
@@ -693,6 +625,11 @@ const UploadPastaModal = ({ isOpen, onClose, onSuccess, initialFiles }) => {
               <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
                 Pasta com PDFs das partes da partitura
               </div>
+              <button type="button" onClick={event => {
+                event.stopPropagation();
+                document.getElementById('partitura-pdf-input')?.click();
+              }}>Escolher PDFs avulsos</button>
+              <input id="partitura-pdf-input" type="file" accept=".pdf,application/pdf" multiple hidden onClick={event => event.stopPropagation()} onChange={handleFolderSelect} />
             </div>
           ) : (
             <>

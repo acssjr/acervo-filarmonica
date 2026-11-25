@@ -16,7 +16,7 @@ import { errorResponse } from '../infrastructure/response/helpers.js';
  * @returns {Response|void}
  */
 export async function authMiddleware(request, env, next, context) {
-  const user = await verifyUser(request, env);
+  const user = context.delegatedUser || await verifyUser(request, env);
 
   if (!user) {
     return errorResponse('Não autorizado', 401, request);

@@ -16,9 +16,9 @@ import { errorResponse } from '../infrastructure/response/helpers.js';
  * @returns {Response|void}
  */
 export async function adminMiddleware(request, env, next, context) {
-  const user = await verifyAdmin(request, env);
+  const user = context.delegatedUser || await verifyAdmin(request, env);
 
-  if (!user) {
+  if (user?.admin !== 1) {
     return errorResponse('Acesso negado - requer privilégios de administrador', 403, request);
   }
 

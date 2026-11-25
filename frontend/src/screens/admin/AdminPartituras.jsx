@@ -18,6 +18,7 @@ import TutorialOverlay, { useTutorial } from '@components/onboarding/TutorialOve
 import RepertorioSelectorModal from '@components/modals/RepertorioSelectorModal';
 import Storage from '@services/storage';
 import { API_BASE_URL } from '@constants/api';
+import { groupFilesByFolder, lerArquivosArrastados } from '@utils/batchParser';
 import { canExecutePendingAdminAction, shouldWaitForAdminTutorial } from '@utils/adminTutorial';
 import { formatPartiturasResult, getScrollAdjustment, sortPartiturasByTitle } from './adminPartiturasUtils';
 import './admin-partituras.css';
@@ -130,7 +131,7 @@ const AdminPartituras = () => {
   // Estado para drag & drop global na tela
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [droppedFiles, setDroppedFiles] = useState(null); // Arquivos pré-carregados para os modais
-  const [droppedItems, setDroppedItems] = useState(null); // Items do dataTransfer para ImportacaoLote
+  const [batchFiles, setBatchFiles] = useState(null);
   const dragCounterRef = useRef(0); // Para controlar eventos de drag aninhados
   const pageRef = useRef(null);
   const pendingScrollAnchorRef = useRef(null);
@@ -258,40 +259,6 @@ const AdminPartituras = () => {
   // Usa função matchesSearch de module-level (não recriada a cada render)
 
   // ===== DRAG & DROP GLOBAL =====
-  // Função para ler entradas de diretório recursivamente
-  const readAllEntriesRecursively = async (entry, path = '') => {
-    const files = [];
-    if (entry.isFile) {
-      const file = await new Promise((resolve) => entry.file(resolve));
-      Object.defineProperty(file, 'webkitRelativePath', {
-        value: path + file.name,
-        writable: false
-      });
-      files.push(file);
-    } else if (entry.isDirectory) {
-      const reader = entry.createReader();
-      const entries = await new Promise((resolve) => {
-        const allEntries = [];
-        const readEntries = () => {
-          reader.readEntries((results) => {
-            if (results.length === 0) {
-              resolve(allEntries);
-            } else {
-              allEntries.push(...results);
-              readEntries();
-            }
-          });
-        };
-        readEntries();
-      });
-      for (const childEntry of entries) {
-        const childFiles = await readAllEntriesRecursively(childEntry, path + entry.name + '/');
-        files.push(...childFiles);
-      }
-    }
-    return files;
-  };
-
   // Handlers de drag & drop global
   const handleGlobalDragEnter = useCallback((e) => {
     if (e.target.closest?.('[data-audio-batch]')) return;
@@ -318,82 +285,31 @@ const AdminPartituras = () => {
     e.stopPropagation();
   }, []);
 
+  const openBatch = useCallback(files => {
+    setShowUploadModal(false);
+    setBatchFiles(files);
+    setShowImportacaoLote(true);
+  }, []);
+
   const handleGlobalDrop = useCallback(async (e) => {
     if (e.target.closest?.('[data-audio-batch]')) return;
     e.preventDefault();
     e.stopPropagation();
     setIsDraggingOver(false);
     dragCounterRef.current = 0;
-
-    const items = e.dataTransfer.items;
-    if (!items || items.length === 0) return;
-
-    // Conta quantas pastas foram soltas
-    const folderEntries = [];
-    for (const item of items) {
-      const entry = item.webkitGetAsEntry?.();
-      if (entry?.isDirectory) {
-        folderEntries.push(entry);
-      }
+    try {
+      const files = await lerArquivosArrastados(e.dataTransfer);
+      const groups = groupFilesByFolder(files);
+      if (!groups.size) return showToast('Nenhum arquivo PDF encontrado', 'error');
+      if (groups.size > 1) return openBatch(files);
+      const [[folderPath, group]] = groups;
+      setDroppedFiles({ files: group.map(item => item.file), folderPath });
+      setShowUploadModal(true);
+    } catch (error) {
+      console.error('Erro ao ler arquivos arrastados:', error);
+      showToast('Erro ao ler os arquivos arrastados. Tente selecionar a pasta.', 'error');
     }
-
-    if (folderEntries.length === 0) {
-      showToast('Arraste uma pasta contendo arquivos PDF', 'error');
-      return;
-    }
-
-    // Verifica se é uma pasta com subpastas (lote) ou pasta simples
-    if (folderEntries.length === 1) {
-      const mainFolder = folderEntries[0];
-      const reader = mainFolder.createReader();
-
-      const entries = await new Promise((resolve) => {
-        const allEntries = [];
-        const readEntries = () => {
-          reader.readEntries((results) => {
-            if (results.length === 0) {
-              resolve(allEntries);
-            } else {
-              allEntries.push(...results);
-              readEntries();
-            }
-          });
-        };
-        readEntries();
-      });
-
-      // Conta subpastas que contêm PDFs
-      const subFolders = entries.filter(e => e.isDirectory);
-      const hasPDFsInRoot = entries.some(e => e.isFile && e.name.toLowerCase().endsWith('.pdf'));
-
-      if (subFolders.length > 0 && !hasPDFsInRoot) {
-        // Tem subpastas e não tem PDFs na raiz -> Importação em Lote
-        // Passa os items originais para o modal de lote processar
-        setDroppedItems(items);
-        setShowImportacaoLote(true);
-      } else if (hasPDFsInRoot) {
-        // Tem PDFs na raiz -> Upload de Pasta simples
-        const allFiles = await readAllEntriesRecursively(mainFolder, '');
-        const pdfFiles = allFiles.filter(f => f.name.toLowerCase().endsWith('.pdf'));
-
-        if (pdfFiles.length === 0) {
-          showToast('Nenhum arquivo PDF encontrado na pasta', 'error');
-          return;
-        }
-
-        setDroppedFiles({ files: pdfFiles, folderName: mainFolder.name });
-        setShowUploadModal(true);
-      } else {
-        // Pasta vazia ou sem PDFs
-        showToast('Nenhum arquivo PDF encontrado na pasta', 'error');
-      }
-    } else {
-      // Múltiplas pastas soltas -> Importação em Lote
-      setDroppedItems(items);
-      setShowImportacaoLote(true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- readAllEntriesRecursively é função recursiva estável
-  }, [showToast]);
+  }, [openBatch, showToast]);
 
   // Registra os event listeners globais
   useEffect(() => {
@@ -420,7 +336,7 @@ const AdminPartituras = () => {
 
   useEffect(() => {
     if (!showImportacaoLote) {
-      setDroppedItems(null);
+      setBatchFiles(null);
     }
   }, [showImportacaoLote]);
 
@@ -1958,6 +1874,7 @@ const AdminPartituras = () => {
         }}
         categorias={categorias}
         initialFiles={droppedFiles}
+        onOpenBatch={openBatch}
       />
 
       {/* Modal de Importação em Lote */}
@@ -1969,12 +1886,12 @@ const AdminPartituras = () => {
           onSuccess={() => {
             loadData({ silent: true });
           }}
-          onOpenUploadPasta={() => {
+          onOpenUploadPasta={pasta => {
+            setDroppedFiles({ files: pasta.arquivos.map(item => item.file), folderPath: pasta.caminho, pasta });
             setShowImportacaoLote(false);
-            // TODO: Abrir UploadPastaModal com dados pré-preenchidos
             setShowUploadModal(true);
           }}
-          initialItems={droppedItems}
+          initialFiles={batchFiles}
         />
       </Suspense>
 

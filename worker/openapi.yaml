@@ -2630,3 +2630,158 @@ paths:
       responses:
         '200': { description: Configuração atualizada, content: { application/json: { schema: { type: object, additionalProperties: true } } } }
         '400': { description: Data ou URL inválida, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+
+  /api/admin/editaveis:
+    get:
+      summary: Lista arquivos editáveis e suas versões (admin)
+      responses:
+        '200':
+          description: Obras com versões, em ordem da mais recente para a mais antiga
+        '403':
+          description: Acesso restrito a administradores
+    post:
+      summary: Guarda o primeiro arquivo editável da obra (admin)
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [arquivo]
+              properties:
+                titulo:
+                  type: string
+                arquivo:
+                  type: string
+                  format: binary
+      responses:
+        '201':
+          description: Original guardado
+        '400':
+          description: Arquivo ou título inválido
+        '403':
+          description: Acesso restrito a administradores
+
+  /api/admin/editaveis/{id}/versoes:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: string }
+    post:
+      summary: Acrescenta uma versão à obra (admin)
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [arquivo]
+              properties:
+                arquivo:
+                  type: string
+                  format: binary
+      responses:
+        '201':
+          description: Nova versão guardada
+        '400':
+          description: Arquivo inválido
+        '403':
+          description: Acesso restrito a administradores
+        '404':
+          description: Obra não encontrada
+        '409':
+          description: O conteúdo já consta no histórico
+
+  /api/admin/editaveis/{id}/versoes/{versao}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: string }
+      - in: path
+        name: versao
+        required: true
+        schema: { type: integer }
+    get:
+      summary: Baixa o original de uma versão (admin)
+      responses:
+        '200':
+          description: Arquivo original
+          content:
+            application/octet-stream:
+              schema: { type: string, format: binary }
+        '403':
+          description: Acesso restrito a administradores
+        '404':
+          description: Versão não encontrada
+
+  /api/admin/openbot/consulta:
+    post:
+      summary: Consulta JSON em nome da conta do OpenBot
+      responses:
+        '200': { description: Resultado da operação de leitura }
+        '403': { description: Credencial inválida }
+
+  /api/admin/openbot/operacoes:
+    get:
+      summary: Lista as alterações propostas pelo OpenBot (admin)
+      responses:
+        '200': { description: Até 100 operações }
+        '403': { description: Acesso restrito a administradores }
+    post:
+      summary: Registra uma alteração JSON para o administrador decidir
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [metodo, destino]
+              properties:
+                metodo:
+                  type: string
+                  enum: [POST, PUT, PATCH, DELETE]
+                destino:
+                  type: string
+                dados: {}
+      responses:
+        '201': { description: Prévia pendente }
+        '403': { description: Credencial inválida }
+
+  /api/admin/openbot/operacoes/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: string }
+    get:
+      summary: Consulta o estado de uma alteração pelo OpenBot
+      responses:
+        '200': { description: Estado e resultado da operação }
+        '403': { description: Credencial inválida }
+        '404': { description: Operação inexistente }
+
+  /api/admin/openbot/operacoes/{id}/decisao:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: string }
+    post:
+      summary: Aprova e executa ou recusa uma alteração proposta (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [acao]
+              properties:
+                acao:
+                  type: string
+                  enum: [aprovar, recusar]
+      responses:
+        '200': { description: Estado e resultado da decisão }
+        '403': { description: Acesso restrito a administradores }
+        '409': { description: Operação indisponível, expirada ou já decidida }
