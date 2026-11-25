@@ -1,0 +1,39 @@
+.admin-editaveis {
+  display: grid;
+  gap: 1rem;
+  max-width: 54rem;
+  padding: clamp(1rem, 4vw, 2rem);
+  color: var(--text);
+}
+
+.admin-editaveis :is(h1, h2, p) { margin: 0; }
+.admin-editaveis h1 { margin-bottom: .4rem; }
+.admin-editaveis h2 { margin-bottom: .7rem; font-size: 1.2rem; }
+.admin-editaveis-panel {
+  display: grid;
+  gap: .75rem;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: .75rem;
+}
+
+.admin-editaveis-form {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+  align-items: end;
+}
+.admin-editaveis label { display: grid; gap: .35rem; min-width: 0; }
+.admin-editaveis :is(input, select, button) {
+  padding: .65rem .75rem;
+  border: 1px solid var(--border);
+  border-radius: .45rem;
+  color: inherit;
+  background: var(--bg-card, transparent);
+  font: inherit;
+  max-width: 100%;
+}
+.admin-editaveis button { justify-self: start; width: fit-content; cursor: pointer; }
+.admin-editaveis button:disabled { cursor: wait; opacity: .6; }
+.admin-editaveis summary { cursor: pointer; }
+.admin-editaveis li { margin-top: .8rem; overflow-wrap: anywhere; }
+.admin-editaveis li :is(span, small) { display: block; margin-top: .2rem; }
+.admin-editaveis pre { white-space: pre-wrap; overflow-wrap: anywhere; }

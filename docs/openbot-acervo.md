@@ -85,3 +85,28 @@ e copie o resultado para `importacao/acervo-openbot.mjs` ao lado do Python:
 ```sh
 npm exec -- esbuild scripts/acervo-openbot.mjs --bundle --platform=node --format=esm --outfile=tmp/acervo-openbot.mjs
 ```
+
+## Consultas e alterações do OpenBot
+
+O comando administrativo usa uma credencial própria, definida no Worker como
+secret ACERVO_OPENBOT_KEY e em um arquivo .openbot-key no mesmo diretório do
+script no VPS. Configure ACERVO_OPENBOT_ADMIN_ID com o ID da conta administrativa
+de integração que fará as consultas. A credencial de importação continua sendo
+usada para os fluxos com arquivos. A integração administrativa cobre consultas
+e alterações JSON dos módulos do Acervo. O painel continua tratando as
+alterações de contas e credenciais e os demais formulários com anexos.
+
+Use o Node do agente para executar acervo-openbot-admin.mjs. Exemplos:
+
+```sh
+node acervo-openbot-admin.mjs consultar /api/repertorios
+printf '%s\n' '{"nome":"Concerto de Natal"}' | node acervo-openbot-admin.mjs propor /api/repertorios POST
+printf '%s\n' '{"nome":"Concerto de Natal - Revisado"}' | node acervo-openbot-admin.mjs propor /api/repertorio/37 PUT
+node acervo-openbot-admin.mjs estado ID_DA_SOLICITACAO
+```
+
+Informe ao solicitante o ID e a alteração proposta. O administrador decide
+em **Admin > Aprovações do OpenBot**. As prévias expiram após 24 horas. Só
+informe que a alteração foi aplicada quando o estado for concluida. Se o
+estado ficar incerta ou executando após uma interrupção, confira o painel
+antes de enviar uma nova proposta.

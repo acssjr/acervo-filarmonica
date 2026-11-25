@@ -1,10 +1,13 @@
 // ===== ADMIN MORE MODAL =====
 // Modal central com as seções extras do painel admin — liquid glass, mobile-first
 
+import { FileMusic, ListChecks } from 'lucide-react';
 import { useUI } from '@contexts/UIContext';
 import { useAuth } from '@contexts/AuthContext';
 
 const EXTRA_SECTIONS = [
+  { id: 'aprovar-openbot', label: 'Aprovações do OpenBot', icon: color => <ListChecks size={26} color={color} /> },
+  { id: 'editaveis', label: 'Arquivos editáveis', icon: color => <FileMusic size={26} color={color} /> },
   {
     id: 'analytics',
     label: 'Analytics',

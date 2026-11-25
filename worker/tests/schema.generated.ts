@@ -1,5 +1,5 @@
 // Gerado por scripts/generate-test-schema.cjs. Não edite manualmente.
-export const SCHEMA_MIGRATIONS = ["0001_baseline.sql","0002_logs_download_instrument_text.sql","0003_fix_bombardino_tonalidades.sql","0004_login_rate_limits.sql","0005_activity_targets.sql","0006_partitura_audio.sql"];
+export const SCHEMA_MIGRATIONS = ["0001_baseline.sql","0002_logs_download_instrument_text.sql","0003_fix_bombardino_tonalidades.sql","0004_login_rate_limits.sql","0005_activity_targets.sql","0006_partitura_audio.sql","0007_partitura_editaveis.sql","0008_openbot_operacoes.sql"];
 export const SCHEMA_STATEMENTS = [
   "CREATE TABLE IF NOT EXISTS categorias (\n    id TEXT PRIMARY KEY,\n    nome TEXT NOT NULL,\n    emoji TEXT NOT NULL,\n    cor TEXT NOT NULL,\n    descricao TEXT,\n    ordem INTEGER DEFAULT 0\n)",
   "INSERT OR IGNORE INTO categorias (id, nome, emoji, cor, descricao, ordem) VALUES\n    ('dobrados', 'Dobrados', '🎺', '#e74c3c', 'Marchas militares brasileiras', 1),\n    ('marchas', 'Marchas', '🥁', '#3498db', 'Marchas tradicionais', 2),\n    ('marchas-funebres', 'Marchas Fúnebres', '✝️', '#555555', 'Marchas fúnebres', 3),\n    ('marchas-religiosas', 'Marchas Religiosas', '⛪', '#8B4513', 'Marchas religiosas e processionais', 4),\n    ('fantasias', 'Fantasias', '✨', '#27ae60', 'Fantasias e suítes', 5),\n    ('polacas', 'Polacas', '👑', '#e67e22', 'Polacas e polonaises', 6),\n    ('boleros', 'Boleros', '☀️', '#e91e63', 'Boleros espanhóis', 7),\n    ('valsas', 'Valsas', '💃', '#9b59b6', 'Valsas clássicas e brasileiras', 8),\n    ('arranjos', 'Arranjos', '🎛️', '#00bcd4', 'Arranjos diversos', 9),\n    ('hinos', 'Hinos', '🏴', '#ffc107', 'Hinos em geral', 10),\n    ('hinos-civicos', 'Hinos Cívicos', '🏛️', '#2196F3', 'Hinos cívicos e patrióticos', 11),\n    ('hinos-religiosos', 'Hinos Religiosos', '⛪', '#795548', 'Hinos sacros e religiosos', 12),\n    ('preludios', 'Prelúdios', '✨', '#673AB7', 'Prelúdios e aberturas', 13)",
@@ -75,5 +75,10 @@ export const SCHEMA_STATEMENTS = [
   "ALTER TABLE partituras ADD COLUMN audio_name TEXT",
   "ALTER TABLE partituras ADD COLUMN audio_size INTEGER",
   "ALTER TABLE partituras ADD COLUMN youtube_url TEXT",
-  "CREATE INDEX IF NOT EXISTS idx_partituras_midia\nON partituras(ativo, titulo)\nWHERE audio_key IS NOT NULL OR youtube_url IS NOT NULL"
+  "CREATE INDEX IF NOT EXISTS idx_partituras_midia\nON partituras(ativo, titulo)\nWHERE audio_key IS NOT NULL OR youtube_url IS NOT NULL",
+  "CREATE TABLE partitura_editaveis (\n    id TEXT PRIMARY KEY,\n    titulo TEXT NOT NULL\n)",
+  "CREATE TABLE partitura_editavel_versoes (\n    id INTEGER PRIMARY KEY AUTOINCREMENT,\n    editavel_id TEXT NOT NULL REFERENCES partitura_editaveis(id),\n    arquivo_chave TEXT NOT NULL UNIQUE,\n    arquivo_nome TEXT NOT NULL,\n    formato TEXT NOT NULL CHECK (formato IN ('sib', 'musx')),\n    tamanho INTEGER NOT NULL,\n    sha256 TEXT NOT NULL,\n    metadados TEXT NOT NULL,\n    criado_em TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,\n    criado_por INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,\n    UNIQUE (editavel_id, sha256)\n)",
+  "CREATE INDEX idx_editavel_versoes ON partitura_editavel_versoes(editavel_id, id DESC)",
+  "CREATE TABLE openbot_operacoes (\n    id TEXT PRIMARY KEY,\n    metodo TEXT NOT NULL,\n    destino TEXT NOT NULL,\n    dados TEXT,\n    estado TEXT NOT NULL DEFAULT 'pendente',\n    criado_em INTEGER NOT NULL,\n    decidido_por INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,\n    decidido_em INTEGER,\n    http_status INTEGER,\n    resultado TEXT\n)",
+  "CREATE INDEX idx_openbot_operacoes_pendentes ON openbot_operacoes(estado, criado_em DESC)"
 ];

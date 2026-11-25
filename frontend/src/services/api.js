@@ -105,7 +105,7 @@ export const API = {
 
   // Helper para fazer requisicoes
   async request(endpoint, options = {}, internal = {}) {
-    const { skipAuthCheck = false } = internal;
+    const { skipAuthCheck = false, responseType = 'json' } = internal;
     try {
       // Verifica expiração do token apenas para requisições autenticadas
       if (!skipAuthCheck && this.isTokenExpired()) {
@@ -118,7 +118,7 @@ export const API = {
 
       const token = Storage.get('authToken', null);
       const headers = {
-        'Content-Type': 'application/json',
+        ...(!(options.body instanceof FormData) && { 'Content-Type': 'application/json' }),
         ...(token && { 'Authorization': `Bearer ${token}` }),
         ...options.headers
       };
@@ -144,11 +144,24 @@ export const API = {
         throw new Error(error.error || `HTTP ${response.status}`);
       }
 
-      return await response.json();
+      return await (responseType === 'blob' ? response.blob() : response.json());
     } catch (error) {
       console.error(`API Error [${endpoint}]:`, error);
       throw error;
     }
+  },
+
+  getOpenBotOperacoes() { return this.request('/api/admin/openbot/operacoes'); },
+  decidirOpenBotOperacao(id, acao) {
+    return this.request('/api/admin/openbot/operacoes/' + id + '/decisao', { method: 'POST', body: JSON.stringify({ acao }) });
+  },
+
+  getEditaveis() { return this.request('/api/admin/editaveis'); },
+  uploadEditavel(id, body) {
+    return this.request(id ? '/api/admin/editaveis/' + id + '/versoes' : '/api/admin/editaveis', { method: 'POST', body });
+  },
+  downloadEditavel(id, versao) {
+    return this.request('/api/admin/editaveis/' + id + '/versoes/' + versao, {}, { responseType: 'blob' });
   },
 
   // ============ PARTITURAS ============

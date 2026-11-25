@@ -48,11 +48,11 @@ const generateId = () => {
  * @param {string} path - Caminho relativo atual
  * @returns {Promise<Array<{file: File, path: string}>>} Lista de arquivos com caminhos
  */
-export const readDirectoryRecursively = async (entry, path = '') => {
+const readDirectoryRecursively = async (entry, path = '') => {
   const results = [];
 
   if (entry.isFile) {
-    const file = await new Promise((resolve) => entry.file(resolve));
+    const file = await new Promise((resolve, reject) => entry.file(resolve, reject));
     results.push({
       file,
       path: path + file.name,
@@ -60,7 +60,7 @@ export const readDirectoryRecursively = async (entry, path = '') => {
     });
   } else if (entry.isDirectory) {
     const reader = entry.createReader();
-    const entries = await new Promise((resolve) => {
+    const entries = await new Promise((resolve, reject) => {
       const allEntries = [];
       const readEntries = () => {
         reader.readEntries((batch) => {
@@ -70,7 +70,7 @@ export const readDirectoryRecursively = async (entry, path = '') => {
             allEntries.push(...batch);
             readEntries();
           }
-        });
+        }, reject);
       };
       readEntries();
     });
@@ -104,6 +104,7 @@ export const groupFilesByFolder = (files) => {
     // Pega a pasta imediata (pai direto do arquivo)
     const pathParts = normalizedPath.split('/');
     pathParts.pop(); // Remove o nome do arquivo
+    while (pathParts.length > 1 && /^(pdfs?|partes|grade|grades)$/.test(normalizarTexto(pathParts.at(-1)))) pathParts.pop();
     const folderPath = pathParts.join('/');
 
     if (!groups.has(folderPath)) {
@@ -178,7 +179,7 @@ export const analisarPasta = (folderPath, files, categorias = [], partiturasExis
   // Normaliza separadores de caminho (Windows usa \, web usa /)
   const caminhoNormalizado = (folderPath || '').replace(/\\/g, '/');
   const pathParts = caminhoNormalizado.split('/').filter(p => p.trim());
-  const nomePasta = pathParts[pathParts.length - 1] || 'Pasta sem nome';
+  const nomePasta = pathParts.at(-1) || (files.length === 1 ? files[0].file.name.replace(/\.pdf$/i, '') : 'PDFs avulsos');
 
   // Analisa metadados usando a função multi-camada
   const metadados = analisarMetadados(caminhoNormalizado, nomePasta, categorias);
@@ -218,26 +219,29 @@ export const analisarPasta = (folderPath, files, categorias = [], partiturasExis
   return pastaData;
 };
 
-/**
- * Processa um lote de arquivos arrastados e retorna as partituras detectadas
- * @param {DataTransferItemList} items - Items do DataTransfer
- * @param {Array} categorias - Lista de categorias disponíveis
- * @param {Array} partiturasExistentes - Lista de partituras existentes para detectar duplicatas
- * @param {Function} onProgress - Callback de progresso (opcional)
- * @returns {Promise<{ pastas: Array, estatisticas: Object }>}
- */
-export const processarLote = async (items, categorias = [], partiturasExistentes = [], onProgress = null) => {
-  const allFiles = [];
+export const arquivosSelecionados = fileList => Array.from(fileList, file => ({
+  file,
+  path: file.webkitRelativePath || file.name
+}));
 
-  // Lê todas as entradas de diretório
-  for (let i = 0; i < items.length; i++) {
-    const entry = items[i].webkitGetAsEntry?.();
-    if (entry) {
-      const files = await readDirectoryRecursively(entry, '');
-      allFiles.push(...files);
-    }
-  }
+// Capture os arquivos e as entradas antes do primeiro await do evento drop.
+export async function lerArquivosArrastados(dataTransfer) {
+  const files = arquivosSelecionados(dataTransfer.files || []);
+  const items = Array.from(dataTransfer.items || []).filter(item => item.kind === 'file');
+  if (!items.length) return files;
+  const entries = items.map(item => ({
+    entry: item.getAsEntry?.() || item.webkitGetAsEntry?.(),
+    fallback: item.getAsFile?.()
+  }));
+  if (!entries.some(({ entry }) => entry)) return files;
+  const rows = await Promise.all(entries.map(({ entry, fallback }) => {
+    if (entry) return readDirectoryRecursively(entry);
+    return fallback ? arquivosSelecionados([fallback]) : [];
+  }));
+  return rows.flat();
+}
 
+export const processarArquivos = (allFiles, categorias = [], partiturasExistentes = [], onProgress = null) => {
   // Agrupa por pasta
   const grupos = groupFilesByFolder(allFiles);
   const totalPastas = grupos.size;
@@ -285,69 +289,8 @@ export const processarLote = async (items, categorias = [], partiturasExistentes
   return { pastas, estatisticas };
 };
 
-/**
- * Processa arquivos de um input de diretório (fallback para input file)
- * @param {FileList} fileList - Lista de arquivos do input
- * @param {Array} categorias - Lista de categorias disponíveis
- * @param {Array} partiturasExistentes - Lista de partituras existentes para detectar duplicatas
- * @param {Function} onProgress - Callback de progresso (opcional)
- * @returns {Promise<{ pastas: Array, estatisticas: Object }>}
- */
-export const processarFileList = async (fileList, categorias = [], partiturasExistentes = [], onProgress = null) => {
-  const files = Array.from(fileList)
-    .filter(f => f.name.toLowerCase().endsWith('.pdf'))
-    .map(f => ({
-      file: f,
-      path: f.webkitRelativePath || f.name,
-      fullPath: f.webkitRelativePath ? f.webkitRelativePath.split('/').slice(0, -1).join('/') : ''
-    }));
-
-  // Agrupa por pasta
-  const grupos = groupFilesByFolder(files.map(f => ({ ...f, path: f.path })));
-  const totalPastas = grupos.size;
-  let processadas = 0;
-
-  // Analisa cada pasta
-  const pastas = [];
-  for (const [folderPath, folderFiles] of grupos) {
-    const pastaAnalisada = analisarPasta(folderPath, folderFiles, categorias, partiturasExistentes);
-    pastas.push(pastaAnalisada);
-    processadas++;
-
-    if (onProgress) {
-      onProgress({
-        processadas,
-        total: totalPastas,
-        percentual: Math.round((processadas / totalPastas) * 100),
-        pastaAtual: folderPath
-      });
-    }
-  }
-
-  // Calcula estatísticas em um único loop
-  const estatisticas = pastas.reduce((acc, pasta) => {
-    acc.total++;
-    if (pasta.status === 'ready') acc.prontas++;
-    else if (pasta.status === 'attention') acc.atencao++;
-    else if (pasta.status === 'problem') acc.problemas++;
-
-    acc.totalArquivos += pasta.arquivos.length;
-    acc.instrumentosReconhecidos += pasta.arquivos.filter(a => a.reconhecido).length;
-    acc.instrumentosNaoReconhecidos += pasta.arquivos.filter(a => !a.reconhecido).length;
-
-    return acc;
-  }, {
-    total: 0,
-    prontas: 0,
-    atencao: 0,
-    problemas: 0,
-    totalArquivos: 0,
-    instrumentosReconhecidos: 0,
-    instrumentosNaoReconhecidos: 0
-  });
-
-  return { pastas, estatisticas };
-};
+export const processarFileList = (fileList, ...options) =>
+  processarArquivos(arquivosSelecionados(fileList), ...options);
 
 /**
  * Filtra pastas por status
