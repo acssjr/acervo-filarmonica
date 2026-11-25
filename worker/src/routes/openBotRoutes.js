@@ -7,6 +7,12 @@ const PREFIX = '/api/admin/openbot';
 const MAX_AGE = 24 * 60 * 60 * 1000;
 const MAX_JSON = 64 * 1024;
 const encode = new TextEncoder();
+const CATALOG_READS = new Set(['/api/partituras', '/api/partituras/:id', '/api/partituras/:id/partes', '/api/categorias', '/api/repertorio/ativo']);
+const MULTIPART_ROUTES = new Set([
+  'POST /api/partituras', 'POST /api/partituras/upload-pasta', 'POST /api/partituras/:id/corrigir-bombardinos',
+  'POST /api/partituras/:id/partes', 'PUT /api/partituras/:id/audio', 'PUT /api/partes/:id/substituir',
+  'POST /api/admin/assets/upload', 'POST /api/admin/editaveis', 'POST /api/admin/editaveis/:id/versoes'
+]);
 
 function serviceKey(request, env, next) {
   const actual = encode.encode(request.headers.get('X-Acervo-OpenBot-Key') || '');
@@ -24,9 +30,9 @@ function targetRoute(router, request, method, path) {
   const route = router.routes.find(item => item.method === method && item.regex.test(url.pathname));
   if (!route) return null;
   // Credenciais e uploads multipart continuam nos fluxos administrativos próprios.
-  if (method !== 'GET' && (/^\/api\/usuarios(?:\/|$)/.test(route.path) || route.middleware.includes(scoreImportMiddleware))) return null;
-  if (method !== 'GET' && /\/upload$|\/audio$|\/partes$|\/editaveis(?:\/|$)/.test(route.path) && method === 'POST') return null;
-  if (method === 'PUT' && /\/audio$/.test(route.path)) return null;
+  if (method !== 'GET' && /^\/api\/usuarios(?:\/|$)/.test(route.path)) return null;
+  if (MULTIPART_ROUTES.has(method + ' ' + route.path)) return null;
+  if (method === 'GET' && CATALOG_READS.has(route.path)) return url;
   if (route.middleware.includes(adminMiddleware) || route.middleware.includes(scoreImportMiddleware)) return url;
   if (method === 'GET' && route.middleware.includes(authMiddleware)) return url;
   return null;

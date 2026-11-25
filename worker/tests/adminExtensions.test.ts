@@ -68,6 +68,12 @@ describe('operações do OpenBot', () => {
     const ops = openbot + '/operacoes';
     const consulta = await call(openbot + '/consulta', { method: 'POST', key: botKey, payload: { destino: '/api/repertorios' } });
     expect(consulta.status).toBe(200);
+    const catalog = await call(openbot + '/consulta', { method: 'POST', key: botKey, payload: { destino: '/api/partituras?categoria=dobrados' } });
+    expect(catalog.status).toBe(200);
+    const scoreProposal = await call(ops, { method: 'POST', key: botKey, payload: {
+      metodo: 'PUT', destino: '/api/partituras/123', dados: { titulo: 'Nova edição' }
+    } });
+    expect(scoreProposal.status).toBe(201);
     const proposed = { metodo: 'POST', destino: '/api/repertorios', dados: { nome: 'Repertório OpenBot' } };
     expect((await call(ops, { method: 'POST', key: 'invalida', payload: proposed })).status).toBe(403);
     const create = await call(ops, { method: 'POST', key: botKey, payload: proposed });
