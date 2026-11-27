@@ -202,6 +202,23 @@ describe('API Service', () => {
       expect(callback).toHaveBeenCalled();
     });
 
+    it('preserva a sessão nova quando chega um 401 de uma requisição anterior ao login', async () => {
+      let token = null;
+      mockStorage.get.mockImplementation((key) => key === 'authToken' ? token : null);
+      const callback = jest.fn();
+      API.setOnTokenExpired(callback);
+      let respond;
+      global.fetch = jest.fn().mockImplementation(() => new Promise(resolve => { respond = resolve; }));
+
+      const previousRequest = API.request('/api/test');
+      token = 'new-session-token';
+      respond({ status: 401, json: async () => ({ error: 'Não autorizado' }) });
+
+      await expect(previousRequest).rejects.toThrow('Não autorizado');
+      expect(mockStorage.remove).not.toHaveBeenCalled();
+      expect(callback).not.toHaveBeenCalled();
+    });
+
     it('lanca erro em resposta nao-ok', async () => {
       mockStorage.get.mockReturnValue(null);
 

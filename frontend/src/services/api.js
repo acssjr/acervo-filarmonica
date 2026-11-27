@@ -131,10 +131,10 @@ export const API = {
       // Se receber 401, token expirou ou é inválido - limpa sessão
       if (response.status === 401) {
         const error = await response.json().catch(() => ({ error: 'Não autorizado' }));
-        // Qualquer 401 indica que o token não é mais válido
-        this.clearAuth();
-        if (onTokenExpired) {
-          onTokenExpired();
+        // Uma resposta atrasada pode pertencer à sessão anterior ao login.
+        if (token === Storage.get('authToken', null)) {
+          this.clearAuth();
+          onTokenExpired?.();
         }
         throw new Error(error.error || 'Sessão expirada. Faça login novamente.');
       }
@@ -259,7 +259,7 @@ export const API = {
   },
 
   async getPartesPartitura(partituraId) {
-    return this.request(`/api/partituras/${partituraId}/partes`);
+    return this.request(`/api/partituras/${partituraId}/partes`, { cache: 'no-store' });
   },
 
   async addPartePartitura(partituraId, formData) {
