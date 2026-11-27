@@ -171,3 +171,39 @@ test.describe('Navigation after Login (Mocked)', () => {
     await expect(sheet.getByRole('button', { name: 'Grade', exact: true })).toBeVisible();
   });
 });
+
+test('abre as partes do link compartilhado sem esperar pelos favoritos após o login', async ({ page }) => {
+  await setupApiMocks(page);
+
+  let releaseFavorites!: () => void;
+  const favoritesReady = new Promise<void>(resolve => { releaseFavorites = resolve; });
+  await page.route('**/api/favoritos/ids', async (route) => {
+    await favoritesReady;
+    await route.fulfill({ json: [] });
+  });
+  let partsStatus: number | undefined;
+  await page.route('**/api/partituras/1/partes', async (route) => {
+    partsStatus = route.request().headers().authorization ? 200 : 401;
+    if (partsStatus === 401) {
+      await route.fulfill({ status: 401, json: { error: 'Não autorizado' } });
+      return;
+    }
+    await route.fulfill({ json: [{ id: 11, instrumento: 'Trompete Bb 1' }] });
+  });
+
+  try {
+    await page.goto('/acervo/dobrados/1');
+    await expect(page).toHaveURL(/\/login$/, { timeout: 12000 });
+    await page.getByPlaceholder('seuusuario').fill(TEST_USER.username);
+    await expect(page.getByText('Olá, Musico Teste', { exact: true })).toBeVisible();
+    for (const [index, digit] of [...TEST_USER.pin].entries()) {
+      await page.locator('input[type="password"]').nth(index).fill(digit);
+    }
+
+    await expect(page).toHaveURL(/\/acervo\/dobrados\/1$/, { timeout: 5000 });
+    await expect.poll(() => partsStatus).toBe(200);
+    await expect(page.getByText('Não foi possível carregar as partes desta obra.')).toHaveCount(0);
+  } finally {
+    releaseFavorites();
+  }
+});

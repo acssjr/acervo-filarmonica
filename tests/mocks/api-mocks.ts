@@ -79,6 +79,9 @@ export async function setupApiMocks(page: Page, options: {
     json: [{ id: 1, nome: 'Trompete Bb 1' }, { id: 2, nome: 'Oboé' }],
   }));
   await page.route('**/api/config/tutoriais', route => route.fulfill({ json: { ativo: false } }));
+  await page.route('**/api/avisos/nao-lidos', route => route.fulfill({ json: [] }));
+  await page.route('**/api/presenca/minhas', route => route.fulfill({ json: [] }));
+  await page.route('**/api/minhas-atividades', route => route.fulfill({ json: [] }));
   await page.route('**/api/assets/list/backgrounds', route => route.fulfill({ json: [] }));
   await page.route('**/api/tracking/events', route => route.fulfill({ json: { success: true } }));
 

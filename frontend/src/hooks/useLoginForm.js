@@ -2,19 +2,15 @@
 // Hook com toda a logica de autenticacao do login
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@contexts/AuthContext';
 import { useUI } from '@contexts/UIContext';
 import { useData } from '@contexts/DataContext';
 import Storage from '@services/storage';
 import { API, USE_API } from '@services/api';
 import { API_BASE_URL } from '@constants/api';
-import { getPostLoginDestination } from '@utils/navigation';
 import { captureLoginFailure } from '@services/posthog';
 
 const useLoginForm = ({ onClose }) => {
-  const navigate = useNavigate();
-  const location = useLocation();
   const { setUser } = useAuth();
   const { showToast } = useUI();
   const { setFavorites } = useData();
@@ -214,12 +210,7 @@ const useLoginForm = ({ onClose }) => {
 
             showToast(`Bem-vindo, ${result.user.nome.split(' ')[0]}!`, 'success', { instrument: result.user.instrumento_nome });
 
-            // Redireciona apos login bem-sucedido
-            if (onClose) {
-              onClose();
-            } else {
-              navigate(getPostLoginDestination(location.state?.from), { replace: true });
-            }
+            onClose?.();
 
             setIsLoading(false);
             return;
@@ -262,7 +253,7 @@ const useLoginForm = ({ onClose }) => {
       setIsLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- pinRefs é ref estável
-  }, [pin, username, rememberMe, onClose, navigate, location.state, setUser, setFavorites, showToast]);
+  }, [pin, username, rememberMe, onClose, setUser, setFavorites, showToast]);
 
   // Handler do backspace no PIN
   const handlePinKeyDown = useCallback((index, e) => {

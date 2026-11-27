@@ -16,6 +16,7 @@ import DesktopLayout from '@components/layout/DesktopLayout';
 
 // Modals - carregados sempre (necessários globalmente)
 import SheetDetailModal from '@components/modals/SheetDetailModal';
+import { getPostLoginDestination } from '@utils/navigation';
 import NotificationsPanel from '@components/modals/NotificationsPanel';
 import ShareCartModal from '@components/modals/ShareCartModal';
 import UpdateNotification from '@components/common/UpdateNotification';
@@ -415,16 +416,14 @@ const AppContent = () => {
 const LoginRoute = () => {
   const { user } = useAuth();
   const { isLoading } = useData();
+  const location = useLocation();
 
   if (isLoading) {
     return <LoadingScreen />;
   }
 
-  // Se ja logado, redireciona para pagina inicial
-  // Todos os usuarios (incluindo admin) vao para / (home com musicas)
-  // Admin pode acessar area administrativa via AdminToggle no header
   if (user) {
-    return <Navigate to="/" replace />;
+    return <Navigate to={getPostLoginDestination(location.state?.from)} replace />;
   }
 
   return <LoginScreen required={true} />;
