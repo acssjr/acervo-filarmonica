@@ -255,7 +255,13 @@ const GlobalUserWalkthrough = () => {
 
 // App Content - providers estao no main.jsx
 const AppContent = () => {
-  const { toast, clearToast } = useUI();
+  const { user } = useAuth();
+  const location = useLocation();
+  const { toast, clearToast, setSelectedSheet } = useUI();
+
+  useEffect(() => {
+    if (!user) setSelectedSheet(null);
+  }, [user, setSelectedSheet]);
 
   // Inicia prefetch após carregamento inicial
   useEffect(() => {
@@ -394,7 +400,7 @@ const AppContent = () => {
       </Routes>
 
       {/* Modals (globais) */}
-      <SheetDetailModal />
+      {user && location.pathname !== '/login' && <SheetDetailModal />}
       <NotificationsPanel />
       <ShareCartModal />
 
