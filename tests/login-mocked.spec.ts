@@ -172,8 +172,15 @@ test.describe('Navigation after Login (Mocked)', () => {
   });
 });
 
-test('abre as partes do link compartilhado sem esperar pelos favoritos após o login', async ({ page }) => {
+test('abre as partes do link compartilhado com usuário salvo sem sessão e favoritos pendentes', async ({ page }) => {
   await setupApiMocks(page);
+  await page.addInitScript(() => {
+    localStorage.setItem('fil_version', '7');
+    localStorage.setItem('fil_user', JSON.stringify({
+      id: 1, username: 'musico.teste', name: 'Musico Teste', instrument: 'Trompete Bb 1'
+    }));
+    localStorage.removeItem('fil_authToken');
+  });
 
   let releaseFavorites!: () => void;
   const favoritesReady = new Promise<void>(resolve => { releaseFavorites = resolve; });
@@ -181,9 +188,10 @@ test('abre as partes do link compartilhado sem esperar pelos favoritos após o l
     await favoritesReady;
     await route.fulfill({ json: [] });
   });
-  let partsStatus: number | undefined;
+  const partsStatuses: number[] = [];
   await page.route('**/api/partituras/1/partes', async (route) => {
-    partsStatus = route.request().headers().authorization ? 200 : 401;
+    const partsStatus = route.request().headers().authorization ? 200 : 401;
+    partsStatuses.push(partsStatus);
     if (partsStatus === 401) {
       await route.fulfill({ status: 401, json: { error: 'Não autorizado' } });
       return;
@@ -194,6 +202,9 @@ test('abre as partes do link compartilhado sem esperar pelos favoritos após o l
   try {
     await page.goto('/acervo/dobrados/1');
     await expect(page).toHaveURL(/\/login$/, { timeout: 12000 });
+    const sheet = page.getByRole('dialog', { name: 'Dobrado Bandeirantes' });
+    await expect(sheet).toHaveCount(0);
+    expect(partsStatuses).toEqual([]);
     await page.getByPlaceholder('seuusuario').fill(TEST_USER.username);
     await expect(page.getByText('Olá, Musico Teste', { exact: true })).toBeVisible();
     for (const [index, digit] of [...TEST_USER.pin].entries()) {
@@ -201,7 +212,10 @@ test('abre as partes do link compartilhado sem esperar pelos favoritos após o l
     }
 
     await expect(page).toHaveURL(/\/acervo\/dobrados\/1$/, { timeout: 5000 });
-    await expect.poll(() => partsStatus).toBe(200);
+    await expect(sheet).toBeVisible();
+    await sheet.getByRole('button', { name: 'Outro Instrumento' }).click();
+    await expect(sheet.getByRole('option', { name: /Trompete Bb 1/ })).toBeVisible();
+    expect(partsStatuses).toEqual([200]);
     await expect(page.getByText('Não foi possível carregar as partes desta obra.')).toHaveCount(0);
   } finally {
     releaseFavorites();
